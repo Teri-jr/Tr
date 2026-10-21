@@ -1,0 +1,1137 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>受験勉強 運行表</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="運行表">
+<!-- Android Chrome のアドレスバー/ステータスバー色(ヘッダーの運行板に合わせる) -->
+<meta name="theme-color" content="#12161c" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#080a0d" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#12161c">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<style>
+:root {
+  --bg: #f4f5f7;
+  --panel: #ffffff;
+  --panel-2: #eef0f3;
+  --text: #16181d;
+  --sub: #646b76;
+  --line: #e1e4e9;
+  --accent: #0b7a53;
+  --accent-text: #ffffff;
+  --late: #d92d20;
+  --late-bg: #fdecea;
+  --early: #1d64c8;
+  --ontime: #13804b;
+  --board: #12161c;
+  --board-text: #f5b301;
+  --running-bg: #fff8e1;
+  --running-line: #f5b301;
+  --done: #9aa1ab;
+  --danger: #c4321f;
+  --break-bg: #e2f5f1;
+  --break-line: #159a88;
+  --break-text: #0d6e61;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0e1013;
+    --panel: #171a1f;
+    --panel-2: #20242b;
+    --text: #e9ecf1;
+    --sub: #9aa3af;
+    --line: #2a2f37;
+    --accent: #2fb57f;
+    --accent-text: #06140e;
+    --late: #ff6b5e;
+    --late-bg: #3a1714;
+    --early: #69a8ff;
+    --ontime: #3ccf8e;
+    --board: #080a0d;
+    --running-bg: #2a2410;
+    --done: #5f6670;
+    --danger: #ff7a66;
+    --break-bg: #0f2724;
+    --break-line: #2bb3a1;
+    --break-text: #5fd6c4;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+  padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
+}
+.num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+button, select, input, textarea { font: inherit; color: inherit; }
+button {
+  min-height: 44px; min-width: 44px;
+  border: 1px solid var(--line); border-radius: 10px;
+  background: var(--panel-2); padding: 0 14px;
+  touch-action: manipulation; cursor: pointer;
+}
+button:active { filter: brightness(0.9); }
+button:disabled { opacity: 0.35; cursor: default; }
+button.primary { background: var(--accent); color: var(--accent-text); border-color: transparent; font-weight: 700; }
+button.danger { color: var(--danger); }
+button.big { min-height: 56px; font-size: 18px; padding: 0 22px; }
+input, select, textarea {
+  min-height: 44px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--panel); padding: 8px 12px; font-size: 16px; width: 100%;
+}
+textarea { resize: vertical; min-height: 64px; }
+label { display: block; font-size: 13px; color: var(--sub); margin-bottom: 4px; }
+
+/* ---------- header (departure board) ---------- */
+header.board {
+  background: var(--board); color: #e8ecf2;
+  padding: calc(10px + env(safe-area-inset-top)) 16px 10px;
+  margin: 0 calc(-1 * env(safe-area-inset-right)) 0 calc(-1 * env(safe-area-inset-left));
+  padding-left: calc(16px + env(safe-area-inset-left)); padding-right: calc(16px + env(safe-area-inset-right));
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.board .title { font-weight: 800; letter-spacing: 0.08em; font-size: 15px; color: #c9d1dc; }
+.board .clock { font-size: 26px; font-weight: 700; color: var(--board-text); letter-spacing: 0.04em; margin-left: auto; }
+.board .pomo-badge { font-size: 14px; font-weight: 700; color: #ffd0c8; background: #2a1d1f; border-radius: 99px; padding: 3px 10px; }
+.datenav { display: flex; align-items: center; gap: 6px; width: 100%; }
+.datenav button { background: #1f2630; color: #e8ecf2; border-color: #2b3440; }
+.datenav .date { flex: 1; text-align: center; font-weight: 700; }
+.datenav .date small { display: block; font-weight: 400; color: #9aa6b4; font-size: 12px; }
+
+/* ---------- layout ---------- */
+main {
+  display: grid; gap: 12px; padding: 12px 16px 40px;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "debug" "banner" "form" "settings" "current" "table" "pomo" "data";
+  max-width: 760px; margin: 0 auto;
+}
+@media (min-width: 900px) and (orientation: landscape) {
+  main {
+    max-width: 1400px;
+    grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr);
+    grid-template-areas: "debug debug" "banner banner" "table form" "table settings" "table current" "table pomo" "table data" "table .";
+    grid-template-rows: auto auto auto auto auto auto auto 1fr;
+    align-items: start;
+  }
+  #tableCard { position: sticky; top: 12px; max-height: calc(100vh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow: auto; }
+}
+#banner { grid-area: banner; }
+#settingsCard { grid-area: settings; }
+#currentCard { grid-area: current; }
+#tableCard { grid-area: table; }
+#formCard { grid-area: form; }
+#pomoCard { grid-area: pomo; }
+#dataCard { grid-area: data; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+.card h2 { margin: 0 0 10px; font-size: 14px; color: var(--sub); letter-spacing: 0.06em; font-weight: 700; }
+
+/* ---------- banner ---------- */
+.warn {
+  background: var(--late-bg); color: var(--late); border: 1px solid var(--late);
+  border-radius: 12px; padding: 12px 14px; font-weight: 700;
+}
+.okstrip { color: var(--sub); font-size: 14px; padding: 0 4px; }
+.okstrip b { color: var(--ontime); }
+
+/* ---------- settings ---------- */
+.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.timepick { display: flex; align-items: center; gap: 4px; }
+.timepick select { width: auto; flex: 1; padding: 8px 6px; }
+
+/* ---------- current ---------- */
+.cur-name { font-size: 20px; font-weight: 800; margin: 2px 0 4px; word-break: break-word; }
+.cur-remain { font-size: 40px; font-weight: 800; line-height: 1.1; }
+.cur-remain.over { color: var(--late); }
+.cur-sub { color: var(--sub); font-size: 14px; margin-top: 4px; }
+.btnrow { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.btnrow .grow { flex: 1; }
+.pill { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: var(--running-line); color: #2a1f00; }
+
+/* ---------- timetable ---------- */
+.tt { list-style: none; margin: 0; padding: 0; }
+.tt-head, .row { display: grid; grid-template-columns: 2.2em 6.6em minmax(0, 1fr); column-gap: 10px; }
+.tt-head { font-size: 12px; color: var(--sub); padding: 0 4px 6px; border-bottom: 2px solid var(--text); }
+.row { padding: 12px 4px; border-bottom: 1px solid var(--line); align-items: start; }
+.row .no { font-weight: 800; color: var(--sub); padding-top: 2px; text-align: center; }
+.row .t-exp { font-size: 18px; font-weight: 700; line-height: 1.25; }
+.row .t-plan { font-size: 12px; color: var(--sub); }
+.row .name { font-weight: 700; font-size: 17px; word-break: break-word; }
+.row .memo { font-size: 13px; color: var(--sub); white-space: pre-wrap; word-break: break-word; }
+.row .meta { font-size: 13px; color: var(--sub); margin-top: 2px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.delay { font-weight: 700; }
+.delay.late { color: var(--late); }
+.delay.early { color: var(--early); }
+.delay.ontime { color: var(--ontime); }
+.row .acts { grid-column: 2 / -1; display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.row .acts button { padding: 0 10px; font-size: 15px; }
+.row.running { background: var(--running-bg); box-shadow: inset 4px 0 0 var(--running-line); border-radius: 8px; }
+.row.done .name, .row.done .t-exp { color: var(--done); }
+.row.done .name { text-decoration: line-through; }
+.row.end { border-bottom: none; padding-top: 10px; }
+.row.end .name { font-weight: 700; color: var(--sub); }
+.empty { color: var(--sub); text-align: center; padding: 24px 8px; }
+
+button.armed { background: var(--late); color: #fff; border-color: transparent; font-weight: 700; }
+#formCard.editing { border: 2px solid var(--running-line); }
+.row.editing { box-shadow: inset 4px 0 0 var(--accent); }
+.form-msg { color: var(--late); font-size: 14px; font-weight: 700; min-height: 0; }
+.form-msg:empty { display: none; }
+
+/* ---------- pomodoro ---------- */
+.row.seg { padding: 6px 4px; border-bottom: 1px dashed var(--line); font-size: 14px; align-items: center; }
+.row.seg .t-exp { font-size: 14px; font-weight: 600; }
+.row.seg .name { font-size: 14px; font-weight: 600; }
+.row.seg.brk { background: var(--break-bg); box-shadow: inset 4px 0 0 var(--break-line); border-radius: 6px; }
+.row.seg.brk .name, .row.seg.brk .t-exp { color: var(--break-text); }
+.row.seg.past .name, .row.seg.past .t-exp { opacity: 0.5; }
+.row.seg.now { outline: 2px solid var(--running-line); outline-offset: -2px; border-radius: 6px; }
+.pill.brk { background: var(--break-line); color: #fff; }
+.pill.work { background: #e5484d; color: #fff; }
+#currentCard.in-break { background: var(--break-bg); border-color: var(--break-line); }
+.note { font-size: 13px; color: var(--sub); margin: 10px 0 0; }
+.toggle { display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 16px; color: var(--text); margin: 0; cursor: pointer; }
+.toggle input { width: 26px; height: 26px; min-height: 0; margin: 0; accent-color: #e5484d; }
+.pomo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.pomo-today { font-size: 22px; font-weight: 800; }
+.hist { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; font-size: 13px; color: var(--sub); }
+.hist span { background: var(--panel-2); border-radius: 8px; padding: 4px 8px; }
+.hist span.today { outline: 1px solid var(--sub); color: var(--text); }
+.msg { font-size: 14px; margin-top: 8px; }
+.msg.err { color: var(--late); font-weight: 700; }
+.msg:empty { display: none; }
+.import-confirm { margin-top: 10px; padding: 10px; border: 1px solid var(--running-line); border-radius: 10px; background: var(--running-bg); }
+#flash {
+  position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: #fff; font-size: 44px; font-weight: 800; text-align: center; padding: 24px;
+  background: #e5484d; animation: flash 0.6s steps(2, jump-none) 5;
+}
+#flash.brk { background: var(--break-line); }
+#flash.over { background: #d92d20; }
+#flash small { font-size: 16px; font-weight: 600; margin-top: 16px; opacity: 0.9; }
+#flash[hidden] { display: none; }
+@keyframes flash { from { opacity: 1; } to { opacity: 0.25; } }
+
+/* ---------- debug ---------- */
+#debugCard { grid-area: debug; border-style: dashed; border-color: var(--late); }
+#debugCard[hidden] { display: none; }
+#debugCard [data-dbg] { padding: 0 6px; white-space: nowrap; }
+.debug-tag { font-size: 11px; font-weight: 800; background: var(--late); color: #fff; border-radius: 4px; padding: 1px 6px; vertical-align: middle; }
+
+/* ---------- form ---------- */
+.form-grid { display: grid; gap: 10px; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chips button { min-width: 52px; padding: 0 10px; }
+.durrow { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; }
+</style>
+</head>
+<body>
+<header class="board">
+  <span class="title">受験勉強 運行表</span>
+  <span class="pomo-badge num" id="pomoBadge">今日の🍅 0個</span>
+  <span class="clock num" id="clock">--:--</span>
+  <div class="datenav">
+    <button id="prevDay" aria-label="前の日">‹</button>
+    <div class="date num" id="dateLabel"></div>
+    <button id="nextDay" aria-label="次の日">›</button>
+    <button id="todayBtn">今日</button>
+  </div>
+</header>
+
+<main>
+  <section class="card" id="debugCard" hidden>
+    <h2>デバッグ: 現在時刻の上書き <span class="debug-tag">?debug</span></h2>
+    <div class="form-grid">
+      <div>
+        <label for="dbgTime">この日時から時計を進める</label>
+        <input id="dbgTime" type="datetime-local" step="60" class="num">
+      </div>
+      <div class="btnrow" style="margin-top:0">
+        <button class="primary grow" id="dbgApply">適用</button>
+        <button id="dbgReset">実時刻に戻す</button>
+      </div>
+      <label style="margin:0">時計を分単位で戻す / 進める</label>
+      <div class="btnrow" style="margin-top:0">
+        <button class="grow" data-dbg="-60">−60</button>
+        <button class="grow" data-dbg="-10">−10</button>
+        <button class="grow" data-dbg="1">+1</button>
+        <button class="grow" data-dbg="10">+10</button>
+        <button class="grow" data-dbg="60">+60</button>
+      </div>
+      <div class="cur-sub num" id="dbgInfo"></div>
+    </div>
+  </section>
+
+  <div id="banner"></div>
+
+  <section class="card" id="settingsCard">
+    <h2>ダイヤ設定</h2>
+    <div class="settings-grid">
+      <div>
+        <label>開始時刻</label>
+        <div class="timepick num"><select id="startH"></select>:<select id="startM"></select></div>
+      </div>
+      <div>
+        <label>就寝期限</label>
+        <div class="timepick num"><select id="deadH"></select>:<select id="deadM"></select></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="currentCard"></section>
+
+  <section class="card" id="tableCard">
+    <h2>時刻表</h2>
+    <div class="tt-head"><span>#</span><span>見込み<br>(予定)</span><span>タスク / ズレ</span></div>
+    <ol class="tt" id="tt"></ol>
+  </section>
+
+  <section class="card" id="formCard">
+    <h2 id="formTitle">タスクを追加</h2>
+    <form id="taskForm" class="form-grid" autocomplete="off">
+      <div>
+        <label for="fName">タスク名</label>
+        <input id="fName" required maxlength="60" placeholder="例: 英単語 ターゲット 1-200" enterkeyhint="next">
+      </div>
+      <div class="durrow">
+        <div>
+          <label for="fDur">所要時間(分)</label>
+          <input id="fDur" type="number" inputmode="numeric" min="1" max="600" required value="30" class="num">
+        </div>
+      </div>
+      <div class="chips" id="durChips">
+        <button type="button" data-dur="15">15</button>
+        <button type="button" data-dur="25">25</button>
+        <button type="button" data-dur="30">30</button>
+        <button type="button" data-dur="45">45</button>
+        <button type="button" data-dur="60">60</button>
+        <button type="button" data-dur="90">90</button>
+      </div>
+      <label class="toggle"><input type="checkbox" id="fPomo"> 🍅 ポモドーロで区切る</label>
+      <div>
+        <label for="fMemo">メモ(任意)</label>
+        <textarea id="fMemo" maxlength="300" placeholder="範囲・ページなど"></textarea>
+      </div>
+      <div class="form-msg" id="formMsg" role="alert"></div>
+      <div class="btnrow">
+        <button type="submit" class="primary grow" id="fSubmit">追加</button>
+        <button type="button" id="fCancel" hidden>キャンセル</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="card" id="pomoCard">
+    <h2>ポモドーロ</h2>
+    <div class="pomo-today num" id="pomoToday">今日の🍅 0個</div>
+    <div class="hist num" id="pomoHist"></div>
+    <div class="pomo-grid">
+      <div><label for="pWork">作業(分)</label><input id="pWork" type="number" inputmode="numeric" min="1" max="180" class="num"></div>
+      <div><label for="pBrk">休憩(分)</label><input id="pBrk" type="number" inputmode="numeric" min="0" max="60" class="num"></div>
+      <div><label for="pLong">長休憩(分)</label><input id="pLong" type="number" inputmode="numeric" min="0" max="120" class="num"></div>
+      <div><label for="pEvery">長休憩は何回ごと</label><input id="pEvery" type="number" inputmode="numeric" min="1" max="20" class="num"></div>
+    </div>
+    <div class="btnrow">
+      <button id="soundTest" class="grow">🔊 音を有効にしてテスト</button>
+    </div>
+    <div class="cur-sub" id="soundState"></div>
+    <div class="btnrow">
+      <button id="notifyBtn" class="grow" hidden>🔔 通知を有効にする</button>
+      <button id="notifyToggle" class="grow" hidden></button>
+      <button id="notifyTest" hidden>テスト通知</button>
+    </div>
+    <div class="cur-sub" id="notifyState"></div>
+    <p class="note">※ 音は最初に「開始」(またはこのボタン)を押したときに有効になります(iPhoneの制限)。画面を閉じている間や他のアプリを開いている間は、区切りの音や通知が出ないことがあります(アプリの動作自体が止まるため)。消音モードでも鳴らないことがあります。戻ってきたときに画面の点滅で知らせます。</p>
+    <p class="note" id="wakeState"></p>
+  </section>
+
+  <section class="card" id="dataCard">
+    <h2>データの書き出し・読み込み</h2>
+    <div class="btnrow" style="margin-top:0">
+      <button id="exportBtn" class="grow">書き出す(JSON)</button>
+      <button id="shareBtn" class="grow" hidden>共有で送る</button>
+      <button id="importBtn" class="grow">読み込む</button>
+    </div>
+    <input type="file" id="importFile" hidden>
+    <div id="importConfirm"></div>
+    <div class="msg" id="dataMsg" role="status"></div>
+    <p class="note">全日付のタスク・実績・設定を1つのファイルにします。読み込むと、ファイルに含まれる日付のデータで上書きされます(含まれない日付はそのまま)。</p>
+  </section>
+</main>
+
+<div id="flash" hidden></div>
+
+<script>
+(() => {
+'use strict';
+
+/* ================= storage ================= */
+const PREFIX = 'ttable:';
+const APP_ID = 'study-timetable';
+const ROLLOVER_H = 4; // 朝4時までは前日扱い
+const DEFAULT_SETTINGS = { start: 19 * 60, deadline: 24 * 60 };
+const DEFAULT_POMO = { work: 25, brk: 5, long: 15, every: 4 };
+
+const store = {
+  get(k) { try { return JSON.parse(localStorage.getItem(PREFIX + k)); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(PREFIX + k, JSON.stringify(v)); } catch (e) { const b = document.getElementById('banner'); if (b) b.insertAdjacentHTML('afterbegin', '<div class="warn">保存に失敗しました(ストレージ容量またはプライベートモード)</div>'); } },
+  keys() { const out = []; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith(PREFIX)) out.push(k.slice(PREFIX.length)); } } catch (e) {} return out; }
+};
+
+function loadDay(ds) {
+  const d = store.get('day:' + ds);
+  if (d && Array.isArray(d.tasks)) return d;
+  return { settings: { ...(store.get('lastSettings') || DEFAULT_SETTINGS) }, tasks: [] };
+}
+function saveDay() {
+  store.set('day:' + dayStr, data);
+  store.set('lastSettings', data.settings);
+}
+function loadPomoCfg() {
+  const c = { ...DEFAULT_POMO, ...(store.get('pomo') || {}) };
+  c.work = Math.max(1, c.work); c.every = Math.max(1, c.every);
+  return c;
+}
+
+/* ================= clock (debug override) ================= */
+// ?debug のときだけ、現在時刻をずらせる(オフセット方式なので上書き後も時計は進む)
+const DEBUG = new URLSearchParams(location.search).has('debug');
+let debugOffset = 0;
+if (DEBUG) { try { debugOffset = +sessionStorage.getItem(PREFIX + 'debugOffset') || 0; } catch (e) {} }
+const nowMs = () => Date.now() + debugOffset;
+function setDebugOffset(v) {
+  debugOffset = v;
+  try { sessionStorage.setItem(PREFIX + 'debugOffset', String(v)); } catch (e) {}
+}
+
+/* ================= date / time utils ================= */
+const pad = n => String(n).padStart(2, '0');
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const logicalToday = () => ymd(new Date(nowMs() - ROLLOVER_H * 3600e3));
+function baseOf(ds) { const [y, m, d] = ds.split('-').map(Number); return new Date(y, m - 1, d).getTime(); }
+function shiftDay(ds, n) { const [y, m, d] = ds.split('-').map(Number); return ymd(new Date(y, m - 1, d + n)); }
+// その日(論理日付)の0時からの分。翌日0:00〜3:59は1440〜1679になるので、24:00をまたいでも単調に増える
+const msToMin = ms => (ms - baseOf(dayStr)) / 60000;
+function fmt(min) { const m = Math.floor(min + 1e-6); return `${Math.floor(m / 60)}:${pad(((m % 60) + 60) % 60)}`; }
+function fmtSec(min) { const s = Math.max(0, Math.ceil(min * 60 - 1e-6)); return `${Math.floor(s / 60)}:${pad(s % 60)}`; }
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+/* ================= state ================= */
+let dayStr = logicalToday();
+let data = loadDay(dayStr);
+let pomoCfg = loadPomoCfg();
+let editingId = null;
+
+const isToday = () => dayStr === logicalToday();
+// 今日、または朝4時をまたいで実行中のタスクが残っている日は「運行中」として現在時刻を反映
+const isLive = () => isToday() || data.tasks.some(t => t.actualStart && !t.actualEnd);
+const nowMin = () => msToMin(nowMs());
+const taskState = t => t.actualEnd ? 'done' : t.actualStart ? 'running' : 'pending';
+const effDur = t => Math.max(1, t.dur + (t.adj || 0));
+// 開始済みのタスクは開始時点の設定で固定(途中で設定を変えても過去の時刻がずれない)
+const cfgOf = t => t.cfg || pomoCfg;
+
+/* ================= schedule (core) ================= */
+// タスクを作業/休憩のフェーズに分ける。work=作業合計(分), n0=その日のそれまでのポモドーロ数(長休憩の判定用)
+// withMods=true のとき、休憩の延長(ext)・スキップ(skip)の記録を反映する
+function buildPhases(t, start, work, n0, withMods) {
+  if (!t.pomo) return { phases: [{ k: 'w', s: start, e: start + work, i: 0, full: false }], end: start + work, n: n0 };
+  const c = cfgOf(t);
+  const phases = [];
+  let rem = work, cur = start, n = n0, bi = 0;
+  while (rem > 1e-9) {
+    const wl = Math.min(c.work, rem);
+    n++;
+    phases.push({ k: 'w', s: cur, e: cur + wl, i: phases.length, no: n, full: wl >= c.work });
+    cur += wl; rem -= wl;
+    if (rem > 1e-9) { // 最後の作業の後には休憩を入れない
+      const long = n % c.every === 0;
+      const m = withMods && t.brk && t.brk[bi];
+      let be = cur + (long ? c.long : c.brk) + (m && m.ext || 0);
+      if (m && m.skip != null) be = Math.min(be, Math.max(cur, msToMin(m.skip)));
+      if (be > cur + 1e-9) phases.push({ k: 'b', s: cur, e: be, i: phases.length, long, bi });
+      cur = Math.max(cur, be); bi++;
+    }
+  }
+  return { phases, end: cur, n };
+}
+const countFull = (phases, limit) => phases.filter(p => p.k === 'w' && p.full && p.e <= limit + 1e-9).length;
+
+// 予定(plan)は設定開始時刻 + 元の所要時間(と標準の休憩)の積み上げ。見込み(exp)は実績・現在時刻・休憩の延長を反映。
+function computeSchedule() {
+  const now = isLive() ? nowMin() : null;
+  let plan = data.settings.start, cur = data.settings.start;
+  let nPlan = 0, nExp = 0, pomoDone = 0;
+  const rows = data.tasks.map(t => {
+    const st = taskState(t);
+    const pp = buildPhases(t, plan, t.dur, nPlan, false);
+    nPlan = pp.n;
+    const ps = plan, pe = pp.end;
+    plan = pe;
+    let s, e, ph, target, curPh = null;
+    if (st === 'done') {
+      s = msToMin(t.actualStart); e = msToMin(t.actualEnd);
+      ph = buildPhases(t, s, effDur(t), nExp, true);
+      pomoDone += countFull(ph.phases, e);
+      ph.phases = ph.phases.filter(p => p.s < e - 1e-9).map(p => ({ ...p, e: Math.min(p.e, e) }));
+      nExp += ph.phases.filter(p => p.k === 'w').length;
+      target = ph.end;
+    } else if (st === 'running') {
+      s = msToMin(t.actualStart);
+      ph = buildPhases(t, s, effDur(t), nExp, true);
+      nExp = ph.n; target = ph.end;
+      e = now !== null ? Math.max(target, now) : target;
+      if (now !== null) {
+        pomoDone += countFull(ph.phases, now);
+        curPh = now >= target - 1e-9 ? 'over' : (ph.phases.find(p => now >= p.s - 1e-9 && now < p.e) || ph.phases[0]);
+      }
+    } else {
+      s = now !== null ? Math.max(cur, now) : cur;
+      ph = buildPhases(t, s, effDur(t), nExp, true);
+      nExp = ph.n; target = ph.end; e = target;
+    }
+    cur = e;
+    return { t, st, ps, pe, s, e, target, phases: ph.phases, curPh, delay: Math.floor(e + 1e-6) - pe };
+  });
+  return { rows, end: cur, planEnd: plan, now, pomoDone };
+}
+
+/* ================= alerts: sound / flash / vibration ================= */
+// 音は Web Audio。iOS はユーザー操作の中で一度鳴らさないと使えないので、「開始」などのタップで unlock する
+const audio = {
+  ctx: null,
+  unlock() {
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      if (!this.ctx) this.ctx = new AC();
+      if (this.ctx.state !== 'running') this.ctx.resume();
+      const b = this.ctx.createBuffer(1, 1, 22050), src = this.ctx.createBufferSource();
+      src.buffer = b; src.connect(this.ctx.destination); src.start(0);
+    } catch (e) {}
+  },
+  get ready() { return !!this.ctx && this.ctx.state === 'running'; },
+  play(freqs) {
+    if (!this.ctx) return;
+    try {
+      if (this.ctx.state !== 'running') this.ctx.resume();
+      const t0 = this.ctx.currentTime + 0.05;
+      freqs.forEach((f, i) => {
+        const o = this.ctx.createOscillator(), g = this.ctx.createGain(), st = t0 + i * 0.3;
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, st);
+        g.gain.exponentialRampToValueAtTime(0.4, st + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, st + 0.26);
+        o.connect(g); g.connect(this.ctx.destination);
+        o.start(st); o.stop(st + 0.28);
+      });
+    } catch (e) {}
+  }
+};
+// Android Chrome など対応端末だけで振動。iOS Safari は navigator.vibrate が無いので何もしない
+function vibrate(pattern) {
+  try { if (typeof navigator.vibrate === 'function') navigator.vibrate(pattern); } catch (e) {}
+}
+const SIGNALS = {
+  brk:  { title: '☕ 休憩', sub: 'おつかれさま。休憩に入りましょう', tones: [880, 660, 880, 660], vib: [300, 150, 300] },
+  work: { title: '🍅 作業再開', sub: '次のポモドーロを始めます', tones: [523, 659, 784, 1047], vib: [150, 100, 150, 100, 150] },
+  over: { title: '⏰ 時間です', sub: '予定の所要時間に達しました', tones: [988, 988, 988], vib: [500, 200, 500] }
+};
+/* ---------- browser notification ---------- */
+// 許可はボタンを押したときだけ求める。iOS はホーム画面に追加したWebアプリでのみ、Service Worker 経由で通知できる
+const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const IS_STANDALONE = navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+const SW_OK = 'serviceWorker' in navigator && window.isSecureContext;
+const notifySupported = () => 'Notification' in window;
+const notifyEnabled = () => notifySupported() && Notification.permission === 'granted' && store.get('notify') !== false;
+let swReg = null;
+if (SW_OK) navigator.serviceWorker.register('sw.js').then(reg => { swReg = reg; }).catch(() => {});
+
+async function showNotice(title, body) {
+  const opts = { body, tag: 'ttable-phase', renotify: true, icon: 'icon-192.png', badge: 'icon-192.png' };
+  try {
+    const reg = swReg || (SW_OK ? await Promise.race([navigator.serviceWorker.ready, new Promise(res => setTimeout(() => res(null), 3000))]) : null);
+    if (reg && reg.showNotification) { await reg.showNotification(title, opts); return true; }
+    if (!IS_IOS) { new Notification(title, opts); return true; } // iOS は new Notification() 不可
+  } catch (e) {}
+  return false;
+}
+// 画面を見ているときは音と点滅で十分なので、裏にあるときだけ通知する
+function notifyPhase(kind, body) {
+  if (!notifyEnabled()) return;
+  if (!document.hidden && document.hasFocus()) return;
+  showNotice(SIGNALS[kind].title, body);
+}
+function notifyStatus() {
+  if (!window.isSecureContext) return { msg: '🔕 通知: https で公開したページ(またはlocalhost)でのみ使えます。' };
+  if (IS_IOS && !IS_STANDALONE) return { msg: '🔕 通知: ホーム画面に追加すると通知が使えます(Safariの共有ボタン →「ホーム画面に追加」→ 追加したアイコンから開く)。' };
+  if (!notifySupported()) return { msg: '🔕 通知: このブラウザでは使えません。' };
+  if (Notification.permission === 'denied') return { msg: '🔕 通知: ブロックされています。端末(ブラウザ)の設定でこのアプリの通知を許可してください。' };
+  if (Notification.permission === 'default') return { msg: '🔕 通知: まだ許可されていません。', ask: true };
+  return { msg: notifyEnabled() ? '🔔 通知: ON(アプリが裏にあるときに区切りを通知)' : '🔕 通知: OFF', granted: true };
+}
+
+let flashTimer = null;
+function signal(kind, body) {
+  const sg = SIGNALS[kind];
+  notifyPhase(kind, body || sg.sub);
+  audio.play(sg.tones);
+  vibrate(sg.vib);
+  const f = $('flash');
+  f.className = kind === 'work' ? '' : kind;
+  f.innerHTML = `${sg.title}<small>${sg.sub}<br>(タップで閉じる)</small>`;
+  f.hidden = false;
+  f.style.animation = 'none'; void f.offsetWidth; f.style.animation = '';
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => { f.hidden = true; }, 6000);
+}
+
+// 実行中タスクの現在フェーズ。tick で変化を検出したら知らせる(ボタン操作による変化では鳴らさない)
+let phaseKeyNow = null, phaseKindNow = null, phaseKeySeen = null;
+function updatePhaseKey(sc) {
+  const r = sc.rows.find(x => x.st === 'running');
+  if (!r || !r.curPh) { phaseKeyNow = null; phaseKindNow = null; return; }
+  phaseKindNow = r.curPh === 'over' ? 'over' : r.curPh.k === 'b' ? 'brk' : 'work';
+  phaseKeyNow = r.t.id + ':' + (r.curPh === 'over' ? 'over' : r.curPh.i);
+}
+// 通知の本文: 「A英語 ・ 19:30 まで休憩」など
+function phaseBody() {
+  const r = lastSc && lastSc.rows.find(x => x.st === 'running');
+  if (!r || !r.curPh) return '';
+  if (r.curPh === 'over') return `${r.t.name} ・ 予定の所要時間(${fmt(r.target)}終了)に達しました`;
+  return `${r.t.name} ・ ${fmt(r.curPh.e)} まで${r.curPh.k === 'b' ? (r.curPh.long ? '長休憩' : '休憩') : '作業'}`;
+}
+function detectTransition() {
+  if (phaseKeySeen && phaseKeyNow && phaseKeyNow !== phaseKeySeen && phaseKeyNow.split(':')[0] === phaseKeySeen.split(':')[0]) {
+    signal(phaseKindNow, phaseBody());
+  }
+  phaseKeySeen = phaseKeyNow;
+}
+
+/* ================= wake lock ================= */
+// ポモドーロ中は画面を消さない。非対応の端末では何もしない
+let wakeLock = null;
+const wakeSupported = 'wakeLock' in navigator;
+async function syncWakeLock(want) {
+  if (!wakeSupported) return;
+  try {
+    if (want && !wakeLock && !document.hidden) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => { wakeLock = null; });
+    } else if (!want && wakeLock) {
+      const w = wakeLock; wakeLock = null; await w.release();
+    }
+  } catch (e) { wakeLock = null; }
+}
+
+/* ================= two-tap confirm ================= */
+// confirm() は埋め込み表示などで無言でキャンセル扱いになるため、「もう一度押して確定」方式にする
+const ARM_MS = 4000;
+let armed = null; // { key, until }
+const armKey = (act, id) => act + ':' + id;
+const isArmed = key => armed && armed.key === key && nowMs() < armed.until;
+function armBtn(act, id, label, cls = '') {
+  const on = isArmed(armKey(act, id));
+  return `<button class="${cls} ${on ? 'armed' : ''}" data-act="${act}" data-id="${id}">${on ? 'もう一度押して確定' : label}</button>`;
+}
+// 1回目は待機状態にしてfalse、4秒以内の2回目でtrue
+function confirmTap(act, t) {
+  const key = armKey(act, t.id);
+  if (isArmed(key)) { armed = null; return true; }
+  armed = { key, until: nowMs() + ARM_MS };
+  render();
+  return false;
+}
+
+/* ================= rendering ================= */
+const $ = id => document.getElementById(id);
+const lastHTML = {};
+function setHTML(id, html) { if (lastHTML[id] !== html) { $(id).innerHTML = html; lastHTML[id] = html; } }
+function setText(id, txt) { const el = $(id); if (el && el.textContent !== txt) el.textContent = txt; }
+
+function delayHTML(d) {
+  if (d > 0) return `<span class="delay late">+${d}分 遅れ</span>`;
+  if (d < 0) return `<span class="delay early">${-d}分 早い</span>`;
+  return `<span class="delay ontime">定刻</span>`;
+}
+
+let lastSc = null;
+function render() {
+  const now = new Date(nowMs());
+  $('clock').textContent = (isLive() ? fmt(msToMin(now.getTime())) : `${pad(now.getHours())}:${pad(now.getMinutes())}`) + (debugOffset ? ' *' : '');
+  if (DEBUG) setHTML('dbgInfo', debugOffset
+    ? `上書き中: ${now.toLocaleString('ja-JP')}(実時刻との差 ${Math.round(debugOffset / 60000)}分)・ 論理日付 ${logicalToday()} ・ 計算用の現在 ${fmt(msToMin(now.getTime()))}(${Math.floor(msToMin(now.getTime()))}分)`
+    : `実時刻で動作中 ・ 論理日付 ${logicalToday()}`);
+  const [y, m, d] = dayStr.split('-').map(Number);
+  const wd = '日月火水木金土'[new Date(y, m - 1, d).getDay()];
+  setHTML('dateLabel', `${m}月${d}日(${wd})<small>${isToday() ? '今日' : dayStr < logicalToday() ? '過去の日' : '先の日'}</small>`);
+
+  const sc = computeSchedule();
+  lastSc = sc;
+  renderBanner(sc);
+  renderCurrent(sc);
+  renderTable(sc);
+  renderPomo(sc);
+  updatePhaseKey(sc);
+  const running = sc.rows.find(r => r.st === 'running');
+  syncWakeLock(!!(running && running.t.pomo));
+}
+
+function renderBanner(sc) {
+  const dl = data.settings.deadline;
+  if (!sc.rows.length) { setHTML('banner', ''); return; }
+  const over = Math.floor(sc.end + 1e-6) - dl;
+  if (over > 0) {
+    setHTML('banner', `<div class="warn">⚠ 就寝期限 ${fmt(dl)} を <span class="num">${over}分</span> 超える見込みです(最終見込み <span class="num">${fmt(sc.end)}</span>)</div>`);
+  } else {
+    setHTML('banner', `<div class="okstrip">最終見込み <span class="num">${fmt(sc.end)}</span> ・ 就寝期限 ${fmt(dl)} まで <b class="num">余裕 ${-over}分</b></div>`);
+  }
+}
+
+// タイマーの文字は1秒ごとに変わるので、カードのHTMLとは別に textContent だけ書き換える(ボタンを作り直すとタップを取りこぼすため)
+function timerText(r, now) {
+  const overMin = Math.floor(now + 1e-6) - Math.floor(r.target + 1e-6); // 時計表示と揃える
+  if (r.curPh === 'over') return overMin < 1 ? '時間です' : `${overMin}分 超過`;
+  if (r.t.pomo) return `あと ${fmtSec(r.curPh.e - now)}`;
+  return `あと ${Math.ceil(r.target - now - 1e-6)}分`;
+}
+
+function renderCurrent(sc) {
+  const running = sc.rows.find(r => r.st === 'running');
+  const next = sc.rows.find(r => r.st === 'pending');
+  const lastDone = [...sc.rows].reverse().find(r => r.st === 'done');
+  let h = '<h2>運行状況</h2>';
+  let inBreak = false;
+  if (!isLive()) {
+    h += `<div class="cur-sub">開始・終了の記録は「今日」の画面でのみできます。</div>`;
+  } else if (running) {
+    const t = running.t, ph = running.curPh;
+    const adj = t.adj || 0;
+    const workPhases = running.phases.filter(p => p.k === 'w');
+    let pill = '<span class="pill">実行中</span>', phaseLine = '', extraBtns = '';
+    if (t.pomo && ph !== 'over') {
+      if (ph.k === 'w') {
+        pill = `<span class="pill work">🍅 作業中 ${workPhases.indexOf(workPhases.find(p => p.i === ph.i)) + 1}/${workPhases.length}</span>`;
+        phaseLine = `この作業は ${fmt(ph.e)} まで`;
+      } else {
+        inBreak = true;
+        pill = `<span class="pill brk">☕ ${ph.long ? '長休憩' : '休憩'}</span>`;
+        phaseLine = `休憩は ${fmt(ph.e)} まで(次の作業 ${fmt(ph.e)} 開始)`;
+        extraBtns = `<div class="btnrow">
+          <button class="grow" data-act="skipbrk" data-id="${t.id}" data-bi="${ph.bi}">休憩を飛ばす</button>
+          <button class="grow" data-act="extbrk" data-id="${t.id}" data-bi="${ph.bi}">休憩を+5分</button>
+        </div>`;
+      }
+    }
+    const over = ph === 'over';
+    h += `${pill}
+      <div class="cur-name">${esc(t.name)}</div>
+      <div class="cur-remain num ${over ? 'over' : ''}" id="curTimer"></div>
+      ${phaseLine ? `<div class="cur-sub num">${phaseLine}</div>` : ''}
+      <div class="cur-sub num">開始 ${fmt(running.s)} ・ 終了見込み ${fmt(running.target)} ・ ${t.pomo ? '作業' : '所要'} ${effDur(t)}分${adj ? `(${adj > 0 ? '+' : ''}${adj})` : ''}</div>
+      ${extraBtns}
+      <div class="btnrow">
+        <button class="primary big grow" data-act="finish" data-id="${t.id}">終了</button>
+      </div>
+      <div class="btnrow">
+        <button class="grow" data-act="adj" data-v="-5" data-id="${t.id}" ${effDur(t) <= 5 ? 'disabled' : ''}>${t.pomo ? '作業 ' : ''}−5分</button>
+        <button class="grow" data-act="adj" data-v="5" data-id="${t.id}">${t.pomo ? '作業 ' : ''}+5分</button>
+        ${armBtn('unstart', t.id, '開始を取消', 'danger')}
+      </div>
+      ${t.pomo ? `<p class="note">${audio.ready ? '🔊 音は有効です。' : '🔇 音が無効です(「ポモドーロ」欄のボタンで有効化)。'}画面を閉じている間は音や通知が出ないことがあります。</p>` : ''}`;
+  } else if (next) {
+    h += `<div class="cur-sub">次の発車</div>
+      <div class="cur-name">${next.t.pomo ? '🍅 ' : ''}${esc(next.t.name)}</div>
+      <div class="cur-sub num">予定 ${fmt(next.ps)} 発 ・ 見込み ${fmt(next.s)} 発 ・ ${next.t.dur}分</div>
+      <div class="btnrow">
+        <button class="primary big grow" data-act="start" data-id="${next.t.id}">開始</button>
+        ${lastDone ? armBtn('unfinish', lastDone.t.id, '直前の終了を取消') : ''}
+      </div>`;
+  } else if (sc.rows.length) {
+    h += `<div class="cur-name">本日の運行は終了しました 🎉</div>
+      <div class="cur-sub num">終着 ${fmt(sc.end)}(予定 ${fmt(sc.planEnd)})</div>
+      ${lastDone ? `<div class="btnrow">${armBtn('unfinish', lastDone.t.id, '直前の終了を取消')}</div>` : ''}`;
+  } else {
+    h += `<div class="cur-sub">タスクを追加すると時刻表ができます。</div>`;
+  }
+  setHTML('currentCard', h);
+  $('currentCard').classList.toggle('in-break', inBreak);
+  if (running && running.curPh && sc.now !== null) setText('curTimer', timerText(running, sc.now));
+}
+
+function segRows(r, now) {
+  if (!r.t.pomo || r.phases.length < 2) return '';
+  return r.phases.map(p => {
+    const past = r.st === 'done' || (now !== null && r.st === 'running' && p.e <= now + 1e-9);
+    const isNow = r.st === 'running' && r.curPh && r.curPh !== 'over' && r.curPh.i === p.i;
+    const len = Math.round(p.e - p.s);
+    const label = p.k === 'w' ? `🍅 作業 ${len}分` : `☕ ${p.long ? '長休憩' : '休憩'} ${len}分`;
+    return `<li class="row seg ${p.k === 'b' ? 'brk' : ''} ${past && !isNow ? 'past' : ''} ${isNow ? 'now' : ''}">
+      <div></div><div class="t-exp num">${fmt(p.s)}–${fmt(p.e)}</div><div class="name">${label}</div></li>`;
+  }).join('');
+}
+
+function renderTable(sc) {
+  if (!sc.rows.length) { setHTML('tt', `<li class="empty">まだタスクがありません</li>`); return; }
+  const n = sc.rows.length;
+  let h = sc.rows.map((r, i) => {
+    const t = r.t;
+    const prevPending = i > 0 && sc.rows[i - 1].st === 'pending';
+    const nextPending = i < n - 1 && sc.rows[i + 1].st === 'pending';
+    const canMove = r.st === 'pending';
+    const label = r.st === 'done' ? '実績' : r.st === 'running' ? '実行中' : '';
+    const brkMin = Math.round(r.phases.filter(p => p.k === 'b').reduce((a, p) => a + p.e - p.s, 0));
+    const pomoInfo = t.pomo ? `<span>🍅×${r.phases.filter(p => p.k === 'w').length}${brkMin ? ` +休憩${brkMin}分` : ''}</span>` : '';
+    return `<li class="row ${r.st} ${editingId === t.id ? 'editing' : ''}">
+      <div class="no num">${i + 1}</div>
+      <div>
+        <div class="t-exp num">${fmt(r.s)}<br>${fmt(r.e)}</div>
+        <div class="t-plan num">(${fmt(r.ps)}–${fmt(r.pe)})</div>
+      </div>
+      <div>
+        <div class="name">${esc(t.name)}</div>
+        ${t.memo ? `<div class="memo">${esc(t.memo)}</div>` : ''}
+        <div class="meta num"><span>${t.pomo ? '作業' : ''}${effDur(t)}分</span>${pomoInfo}${label ? `<span>${label}</span>` : ''}${delayHTML(r.delay)}</div>
+      </div>
+      <div class="acts">
+        <button data-act="up" data-id="${t.id}" aria-label="上へ" ${canMove && prevPending ? '' : 'disabled'}>↑</button>
+        <button data-act="down" data-id="${t.id}" aria-label="下へ" ${canMove && nextPending ? '' : 'disabled'}>↓</button>
+        <button data-act="pomo" data-id="${t.id}" aria-pressed="${!!t.pomo}" ${r.st === 'pending' ? '' : 'disabled'}>🍅${t.pomo ? 'ON' : 'OFF'}</button>
+        <button data-act="edit" data-id="${t.id}">${editingId === t.id ? '編集中' : '編集'}</button>
+        ${armBtn('del', t.id, '削除', 'danger')}
+      </div>
+    </li>${segRows(r, sc.now)}`;
+  }).join('');
+  const over = Math.floor(sc.end + 1e-6) - data.settings.deadline;
+  h += `<li class="row end"><div class="no">終</div><div class="t-exp num">${fmt(sc.end)}</div>
+    <div class="name">終着 ・ 期限 ${fmt(data.settings.deadline)} ${over > 0 ? `<span class="delay late">${over}分超過</span>` : `<span class="delay ontime">余裕 ${-over}分</span>`}</div></li>`;
+  setHTML('tt', h);
+}
+
+function renderPomo(sc) {
+  // 完了ポモドーロ数をその日のデータに記録(他の日の履歴表示用)
+  if ((data.pomoDone || 0) !== sc.pomoDone && (sc.pomoDone || data.tasks.length)) { data.pomoDone = sc.pomoDone; saveDay(); }
+  const label = isToday() ? '今日' : `${+dayStr.slice(5, 7)}/${+dayStr.slice(8)}`;
+  setText('pomoBadge', `${label}の🍅 ${sc.pomoDone}個`);
+  setText('pomoToday', `${label}の🍅 ${sc.pomoDone}個`);
+  const today = logicalToday();
+  let hist = '';
+  for (let i = 6; i >= 0; i--) {
+    const ds = shiftDay(today, -i);
+    const cnt = ds === dayStr ? sc.pomoDone : ((store.get('day:' + ds) || {}).pomoDone || 0);
+    hist += `<span class="${ds === today ? 'today' : ''}">${+ds.slice(5, 7)}/${+ds.slice(8)} 🍅${cnt}</span>`;
+  }
+  setHTML('pomoHist', '直近7日 ' + hist);
+  setText('soundState', audio.ctx ? (audio.ready ? '🔊 音: 有効' : '🔇 音: 一時停止中(もう一度ボタンを押してください)') : '🔇 音: まだ無効(「開始」かこのボタンで有効になります)');
+  const ns = notifyStatus();
+  setText('notifyState', ns.msg);
+  $('notifyBtn').hidden = !ns.ask;
+  $('notifyToggle').hidden = !ns.granted;
+  $('notifyTest').hidden = !notifyEnabled();
+  setText('notifyToggle', notifyEnabled() ? '🔕 通知をOFFにする' : '🔔 通知をONにする');
+  setText('wakeState', wakeSupported
+    ? `画面スリープ防止: ${wakeLock ? 'ON(ポモドーロ実行中)' : 'ポモドーロ実行中だけONになります'}`
+    : '画面スリープ防止: この端末・ブラウザでは使えません(画面の自動ロック設定に従います)');
+}
+
+/* ================= settings UI ================= */
+function fillTimeSelect(hId, mId) {
+  const hs = $(hId), ms = $(mId);
+  for (let h = 0; h <= 29; h++) hs.add(new Option(pad(h), h));
+  for (let m = 0; m < 60; m += 5) ms.add(new Option(pad(m), m));
+}
+function setTimeSelect(hId, mId, min) {
+  $(hId).value = Math.floor(min / 60);
+  const m = min % 60;
+  if (![...$(mId).options].some(o => +o.value === m)) $(mId).add(new Option(pad(m), m));
+  $(mId).value = m;
+}
+const readTimeSelect = (hId, mId) => +$(hId).value * 60 + +$(mId).value;
+function syncSettingsUI() {
+  setTimeSelect('startH', 'startM', data.settings.start);
+  setTimeSelect('deadH', 'deadM', data.settings.deadline);
+}
+fillTimeSelect('startH', 'startM');
+fillTimeSelect('deadH', 'deadM');
+['startH', 'startM', 'deadH', 'deadM'].forEach(id => $(id).addEventListener('change', () => {
+  data.settings.start = readTimeSelect('startH', 'startM');
+  data.settings.deadline = readTimeSelect('deadH', 'deadM');
+  saveDay(); render();
+}));
+
+const POMO_FIELDS = { pWork: ['work', 1, 180], pBrk: ['brk', 0, 60], pLong: ['long', 0, 120], pEvery: ['every', 1, 20] };
+function syncPomoUI() { for (const [id, [k]] of Object.entries(POMO_FIELDS)) $(id).value = pomoCfg[k]; }
+for (const [id, [k, min, max]] of Object.entries(POMO_FIELDS)) {
+  $(id).addEventListener('change', () => {
+    const v = Math.round(+$(id).value);
+    if (Number.isFinite(v) && v >= min && v <= max) { pomoCfg[k] = v; store.set('pomo', pomoCfg); }
+    syncPomoUI(); render();
+  });
+}
+$('soundTest').addEventListener('click', () => { audio.unlock(); audio.play(SIGNALS.work.tones); vibrate(100); render(); });
+$('notifyBtn').addEventListener('click', async () => {
+  audio.unlock();
+  try {
+    const res = await Notification.requestPermission(); // ボタンを押したときだけ許可を求める
+    if (res === 'granted') { store.set('notify', true); showNotice('🔔 通知が有効になりました', '区切りのとき、アプリが裏にあれば通知します'); }
+  } catch (e) {}
+  render();
+});
+$('notifyToggle').addEventListener('click', () => { store.set('notify', !notifyEnabled()); render(); });
+$('notifyTest').addEventListener('click', async () => {
+  const ok = await showNotice('🍅 テスト通知', '区切りのときはこのように通知されます');
+  if (!ok) setText('notifyState', '🔕 通知を出せませんでした。ページを再読み込みしてもう一度お試しください。');
+});
+
+/* ================= form ================= */
+function resetForm() {
+  editingId = null;
+  $('taskForm').reset();
+  $('fDur').value = 30;
+  $('fPomo').checked = !!store.get('lastPomo');
+  $('fPomo').disabled = false;
+  $('formTitle').textContent = 'タスクを追加';
+  $('fSubmit').textContent = '追加';
+  $('fCancel').hidden = true;
+  $('formMsg').textContent = '';
+  $('formCard').classList.remove('editing');
+  render();
+}
+$('taskForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const name = $('fName').value.trim();
+  const dur = Math.round(+$('fDur').value);
+  if (!name) { $('fName').focus(); return; }
+  if (!(dur >= 1 && dur <= 600)) { $('formMsg').textContent = '所要時間は1〜600分で入力してください'; return; }
+  $('formMsg').textContent = '';
+  const memo = $('fMemo').value.trim();
+  const pomo = $('fPomo').checked;
+  if (editingId) {
+    const t = data.tasks.find(x => x.id === editingId);
+    if (t) {
+      Object.assign(t, { name, dur, memo });
+      if (taskState(t) === 'pending') t.pomo = pomo; // 開始後はポモドーロのON/OFFを変えない
+    }
+  } else {
+    data.tasks.push({ id: uid(), name, dur, memo, pomo, adj: 0, actualStart: null, actualEnd: null });
+    store.set('lastPomo', pomo);
+  }
+  saveDay(); resetForm(); render();
+});
+$('fCancel').addEventListener('click', resetForm);
+$('durChips').addEventListener('click', e => {
+  const b = e.target.closest('[data-dur]');
+  if (b) $('fDur').value = b.dataset.dur;
+});
+
+/* ================= actions ================= */
+function brkMod(t, bi) {
+  t.brk = t.brk || {};
+  return (t.brk[bi] = t.brk[bi] || { ext: 0, skip: null });
+}
+const actions = {
+  start(t) {
+    if (!isLive() || data.tasks.some(x => taskState(x) === 'running')) return false;
+    audio.unlock();
+    t.actualStart = nowMs(); t.actualEnd = null; t.adj = 0;
+    t.brk = {};
+    if (t.pomo) t.cfg = { ...pomoCfg }; else delete t.cfg;
+  },
+  finish(t) { if (taskState(t) === 'running') t.actualEnd = nowMs(); },
+  unstart(t) {
+    if (!confirmTap('unstart', t)) return false;
+    t.actualStart = null; t.adj = 0; delete t.cfg; delete t.brk;
+  },
+  unfinish(t) {
+    if (data.tasks.some(x => taskState(x) === 'running')) return false;
+    if (!confirmTap('unfinish', t)) return false;
+    t.actualEnd = null;
+  },
+  adj(t, btn) {
+    const v = +btn.dataset.v;
+    if (t.dur + (t.adj || 0) + v < 1) return false;
+    t.adj = (t.adj || 0) + v;
+  },
+  skipbrk(t, btn) { if (taskState(t) !== 'running') return false; brkMod(t, +btn.dataset.bi).skip = nowMs(); },
+  extbrk(t, btn) { if (taskState(t) !== 'running') return false; brkMod(t, +btn.dataset.bi).ext += 5; },
+  pomo(t) { if (taskState(t) !== 'pending') return false; t.pomo = !t.pomo; },
+  up(t) { move(t, -1); },
+  down(t) { move(t, 1); },
+  edit(t) {
+    editingId = t.id;
+    $('fName').value = t.name; $('fDur').value = t.dur; $('fMemo').value = t.memo || '';
+    $('fPomo').checked = !!t.pomo;
+    $('fPomo').disabled = taskState(t) !== 'pending';
+    $('formTitle').textContent = 'タスクを編集';
+    $('fSubmit').textContent = '更新';
+    $('fCancel').hidden = false;
+    $('formMsg').textContent = '';
+    $('formCard').classList.add('editing');
+    render();
+    $('formCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return false;
+  },
+  del(t) {
+    if (!confirmTap('del', t)) return false;
+    data.tasks = data.tasks.filter(x => x !== t);
+    if (editingId === t.id) resetForm();
+  }
+};
+function move(t, dir) {
+  const i = data.tasks.indexOf(t), j = i + dir;
+  if (j < 0 || j >= data.tasks.length) return;
+  if (taskState(t) !== 'pending' || taskState(data.tasks[j]) !== 'pending') return;
+  [data.tasks[i], data.tasks[j]] = [data.tasks[j], data.tasks[i]];
+}
+document.addEventListener('click', e => {
+  const btn = e.target.closest('[data-act]');
+  if (!btn || btn.disabled) return;
+  const t = data.tasks.find(x => x.id === btn.dataset.id);
+  const fn = actions[btn.dataset.act];
+  if (!t || !fn) return;
+  if (audio.ctx && !audio.ready) audio.unlock(); // iOS で中断された音を、タップのついでに復帰
+  if (fn(t, btn) === false) return;
+  saveDay(); render();
+  phaseKeySeen = phaseKeyNow; // 操作による切り替わりでは鳴らさない
+});
+$('flash').addEventListener('click', () => { $('flash').hidden = true; });
+
+/* ================= export / import ================= */
+const VALID_KEY = k => /^day:\d{4}-\d{2}-\d{2}$/.test(k) || ['lastSettings', 'pomo', 'lastPomo'].includes(k);
+function buildExport() {
+  const out = {};
+  for (const k of store.keys()) if (VALID_KEY(k)) out[k] = store.get(k);
+  const d = new Date(nowMs());
+  const name = `study-timetable-${ymd(d).replace(/-/g, '')}-${pad(d.getHours())}${pad(d.getMinutes())}.json`;
+  const json = JSON.stringify({ app: APP_ID, version: 2, exportedAt: d.toISOString(), data: out }, null, 1);
+  return { name, json, days: Object.keys(out).filter(k => k.startsWith('day:')).length };
+}
+function dataMsg(txt, err) { const m = $('dataMsg'); m.textContent = txt; m.className = 'msg' + (err ? ' err' : ''); }
+$('exportBtn').addEventListener('click', () => {
+  const { name, json, days } = buildExport();
+  const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  dataMsg(`${days}日分を ${name} に書き出しました。`);
+});
+// iPhone/iPad は「共有」から「ファイルに保存」やAirDropで送れる
+try {
+  if (navigator.canShare && navigator.canShare({ files: [new File(['{}'], 't.json', { type: 'application/json' })] })) $('shareBtn').hidden = false;
+} catch (e) {}
+$('shareBtn').addEventListener('click', async () => {
+  const { name, json, days } = buildExport();
+  try {
+    await navigator.share({ files: [new File([json], name, { type: 'application/json' })], title: name });
+    dataMsg(`${days}日分を共有しました。`);
+  } catch (e) { if (e && e.name !== 'AbortError') dataMsg('共有できませんでした。「書き出す」を使ってください。', true); }
+});
+
+let pendingImport = null;
+$('importBtn').addEventListener('click', () => { $('importFile').value = ''; $('importFile').click(); });
+$('importFile').addEventListener('change', async () => {
+  const f = $('importFile').files[0];
+  if (!f) return;
+  try {
+    const obj = JSON.parse(await f.text());
+    if (!obj || obj.app !== APP_ID || typeof obj.data !== 'object') throw new Error('このアプリのデータではありません');
+    const entries = Object.entries(obj.data).filter(([k, v]) => VALID_KEY(k) && v !== null && (!k.startsWith('day:') || Array.isArray(v.tasks)));
+    const days = entries.map(([k]) => k).filter(k => k.startsWith('day:')).sort();
+    if (!entries.length) throw new Error('読み込めるデータがありません');
+    pendingImport = entries;
+    const range = days.length ? `${days[0].slice(4)} 〜 ${days[days.length - 1].slice(4)}` : '設定のみ';
+    $('importConfirm').innerHTML = `<div class="import-confirm">
+      <b>${esc(f.name)}</b><br>${days.length}日分(${range})を読み込みます。同じ日付のデータは上書きされます。
+      <div class="btnrow"><button class="primary grow" id="importDo">読み込む</button><button id="importCancel">やめる</button></div></div>`;
+    dataMsg('');
+  } catch (e) {
+    pendingImport = null; $('importConfirm').innerHTML = '';
+    dataMsg('読み込めませんでした: ' + (e.message || 'JSONの形式が正しくありません'), true);
+  }
+});
+$('importConfirm').addEventListener('click', e => {
+  if (e.target.id === 'importCancel') { pendingImport = null; $('importConfirm').innerHTML = ''; return; }
+  if (e.target.id !== 'importDo' || !pendingImport) return;
+  for (const [k, v] of pendingImport) store.set(k, v);
+  const n = pendingImport.filter(([k]) => k.startsWith('day:')).length;
+  pendingImport = null; $('importConfirm').innerHTML = '';
+  data = loadDay(dayStr); pomoCfg = loadPomoCfg();
+  syncSettingsUI(); syncPomoUI(); resetForm(); render();
+  phaseKeySeen = phaseKeyNow;
+  dataMsg(`${n}日分を読み込みました。`);
+});
+
+/* ================= day navigation ================= */
+function gotoDay(ds) {
+  dayStr = ds; data = loadDay(ds);
+  resetForm(); syncSettingsUI(); render();
+  phaseKeySeen = phaseKeyNow;
+}
+$('prevDay').addEventListener('click', () => gotoDay(shiftDay(dayStr, -1)));
+$('nextDay').addEventListener('click', () => gotoDay(shiftDay(dayStr, 1)));
+$('todayBtn').addEventListener('click', () => gotoDay(logicalToday()));
+
+/* ================= tick ================= */
+let lastToday = logicalToday();
+let heldDay = null; // 朝4時をまたいだ時に実行中タスクがあって留まった日
+function tick() {
+  const lt = logicalToday();
+  const running = data.tasks.some(x => taskState(x) === 'running');
+  // 朝4時をまたいだ時、今日を見ていたなら新しい日へ。実行中タスクがあれば終了するまで留まる
+  if (lt !== lastToday) {
+    if (dayStr === lastToday) { if (running) heldDay = dayStr; else { gotoDay(lt); heldDay = null; } }
+    lastToday = lt;
+  } else if (heldDay && heldDay === dayStr && !running) {
+    heldDay = null; gotoDay(lt);
+  }
+  render();
+  detectTransition();
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
+window.addEventListener('storage', () => { data = loadDay(dayStr); pomoCfg = loadPomoCfg(); syncSettingsUI(); syncPomoUI(); render(); phaseKeySeen = phaseKeyNow; });
+
+if (DEBUG) {
+  $('debugCard').hidden = false;
+  const toLocalInput = ms => { const d = new Date(ms); return `${ymd(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+  $('dbgTime').value = toLocalInput(nowMs());
+  const afterChange = () => { $('dbgTime').value = toLocalInput(nowMs()); tick(); };
+  $('dbgApply').addEventListener('click', () => {
+    const v = $('dbgTime').value;
+    if (!v) return;
+    const [d, t] = v.split('T'); const [y, m, dd] = d.split('-').map(Number); const [hh, mm] = t.split(':').map(Number);
+    setDebugOffset(new Date(y, m - 1, dd, hh, mm).getTime() - Date.now());
+    afterChange();
+  });
+  $('dbgReset').addEventListener('click', () => { setDebugOffset(0); afterChange(); });
+  $('debugCard').addEventListener('click', e => {
+    const b = e.target.closest('[data-dbg]');
+    if (b) { setDebugOffset(debugOffset + +b.dataset.dbg * 60000); afterChange(); }
+  });
+}
+
+syncSettingsUI();
+syncPomoUI();
+$('fPomo').checked = !!store.get('lastPomo');
+render();
+phaseKeySeen = phaseKeyNow;
+setInterval(tick, 1000);
+})();
+</script>
+</body>
+</html>
