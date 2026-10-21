@@ -1,0 +1,53 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:N;src:url('file:///root/.fonts/NotoSansJP-400.woff2');font-weight:400}
+@font-face{font-family:N;src:url('file:///root/.fonts/NotoSansJP-700.woff2');font-weight:700}
+@font-face{font-family:N;src:url('file:///root/.fonts/NotoSansJP-900.woff2');font-weight:900}
+*{box-sizing:border-box;margin:0}
+body{width:1920px;height:1080px;overflow:hidden;font-family:N;color:#f2f4f7;
+ background:radial-gradient(1200px 800px at 75% 45%,#1d2a38 0,#0b0f14 70%);position:relative}
+.rail{position:absolute;left:0;right:0;bottom:70px;height:10px;background:repeating-linear-gradient(90deg,#f5b301 0 60px,transparent 60px 90px);opacity:.85}
+.line{position:absolute;left:0;right:0;bottom:92px;height:2px;background:#f5b30155}
+.no{position:absolute;left:120px;top:110px;font:700 30px N;color:#f5b301;letter-spacing:.2em;display:flex;gap:18px;align-items:center}
+.no b{background:#f5b301;color:#111;border-radius:8px;padding:2px 14px;letter-spacing:0}
+.copy{position:absolute;left:120px;top:250px;width:900px}
+.copy h1{font-weight:900;font-size:96px;line-height:1.25;letter-spacing:.02em}
+.copy h1 em{font-style:normal;color:#f5b301}
+.copy p{margin-top:36px;font-size:36px;color:#aab4c2;font-weight:700;line-height:1.6}
+.phone{position:absolute;width:420px;border-radius:56px;padding:16px;background:#22272f;box-shadow:0 40px 90px #000a,inset 0 0 0 3px #3a414b}
+.scr{width:388px;height:var(--h,800px);overflow:hidden;border-radius:42px;position:relative;background:#0e1013}
+.scr img{position:absolute;left:-1px;width:390px;top:calc(var(--y) * -1px)}
+.board{display:inline-flex;align-items:center;gap:28px;background:#080a0d;border:3px solid #2a2f37;border-radius:16px;padding:18px 34px;margin-bottom:40px}
+.board span{font:700 34px N;color:#c9d1dc;letter-spacing:.1em}.board i{font:700 54px N;font-style:normal;color:#f5b301;letter-spacing:.05em}
+.pill{display:inline-block;margin-top:40px;background:#13804b;color:#fff;font:900 48px N;padding:14px 34px;border-radius:999px}
+.pill.red{background:#d92d20}
+.ring{position:absolute;border:6px solid #f5b301;border-radius:18px;box-shadow:0 0 30px #f5b30188}
+.laptop{position:absolute;left:1010px;top:250px;width:860px}
+.laptop .s{border:18px solid #22272f;border-bottom-width:24px;border-radius:24px 24px 0 0;overflow:hidden;box-shadow:0 40px 90px #000a}
+.laptop .s img{width:100%;display:block}
+.laptop .b{height:28px;background:linear-gradient(#3a414b,#22272f);border-radius:0 0 30px 30px;margin:0 -50px}
+.center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.center h1{font:900 104px N;line-height:1.3}.center h1 em{font-style:normal;color:#f5b301}
+.logo{display:flex;align-items:center;gap:34px;margin-top:70px}.logo img{width:150px;border-radius:34px}
+.logo b{font:900 84px N;letter-spacing:.06em}.logo small{display:block;font:700 30px N;color:#aab4c2;letter-spacing:.1em;margin-top:6px}
+</style></head><body><div class="line"></div><div class="rail"></div><div id="c"></div>
+<script>
+const n=+location.hash.slice(1);
+const ph=(x,top,y,h,extra='')=>`<div class="phone" style="left:${x}px;top:${top}px"><div class="scr" style="--y:${y};--h:${h}px"><img src="app_full_dark.png">${extra}</div></div>`;
+const no=(i,t)=>`<div class="no"><b>${String(i).padStart(2,'0')}</b>${t}</div>`;
+const S={
+1:`<div class="copy" style="top:300px"><div class="board"><span>受験勉強 運行表</span><i>19:00 発</i></div>
+<h1>勉強の1日を、<br><em>電車のダイヤ</em>の<br>ように。</h1></div>`+ph(1300,110,0,830),
+2:no(1,'かんたん入力')+`<div class="copy"><h1>入れるだけで<br><em>時刻表</em>が完成</h1><p>科目と所要時間を入れれば、<br>到着見込みを自動で計算。</p></div>`
+ +ph(950,150,170,770)+`<div style="position:absolute;left:1395px;top:500px;font:900 80px N;color:#f5b301">▶</div>`+ph(1460,110,1263,830),
+3:no(2,'遅れを見える化')+`<div class="copy"><h1>予定との<em>ズレ</em>が<br>ひと目でわかる</h1><span class="pill red">+8分 遅れ</span><p>実績から、残りの到着時刻を<br>リアルタイムで更新。</p></div>`
+ +ph(1300,110,1300,830,`<div class="ring" style="left:4px;top:30px;width:380px;height:150px"></div><div class="ring" style="left:4px;top:248px;width:380px;height:225px"></div>`),
+4:no(3,'終電ならぬ、就寝期限')+`<div class="copy"><h1><em>就寝時間</em>を<br>守れる</h1><span class="pill">余裕 72分</span><p>終着見込みと就寝期限を比べて、<br>超えそうなら警告。</p></div>`
+ +ph(1300,110,1880,830,`<div class="ring" style="left:4px;top:660px;width:380px;height:85px"></div>`),
+5:no(4,'集中モード')+`<div class="copy"><h1>🍅 <em>ポモドーロ</em><br>タイマー内蔵</h1><p>25分作業＋5分休憩を<br>時刻表に自動で組み込み。</p></div>`+ph(1300,110,845,830),
+6:no(5,'インストール不要')+`<div class="copy" style="width:820px"><h1><em>どこでも</em><br>使える</h1><p>スマホでも、パソコンでも。<br>ホーム画面に追加して<br>アプリのように。</p></div>
+<div class="laptop"><div class="s"><img src="desktop.png"></div><div class="b"></div></div>`
+ +`<div class="phone" style="left:860px;top:430px;width:300px;padding:12px;border-radius:44px"><div class="scr" style="width:276px;height:560px;border-radius:34px"><img src="app_full_dark.png" style="width:278px;top:-${830*276/390}px"></div></div>`,
+7:`<div class="center"><h1>今日の勉強を、<br><em>最後まで走り切ろう。</em></h1><div class="logo"><img src="icon-512.png"><div style="text-align:left"><b>受験勉強 運行表</b><small>ブラウザですぐ使える</small></div></div></div>`
+};
+document.getElementById('c').innerHTML=S[n];
+</script></body></html>
