@@ -417,6 +417,7 @@ button.armed { background: var(--late); color: #fff; border-color: transparent; 
       </div>
       <div class="btnrow">
         <button id="soundTest" class="grow">🔊 音を有効にしてテスト</button>
+        <button id="soundToggle" class="grow"></button>
       </div>
       <div class="cur-sub" id="soundState"></div>
       <div class="btnrow">
@@ -595,6 +596,7 @@ function computeSchedule() {
 
 /* ================= alerts: sound / flash / vibration ================= */
 // 音は Web Audio。iOS はユーザー操作の中で一度鳴らさないと使えないので、「開始」などのタップで unlock する
+const soundOn = () => store.get('sound') !== false; // 初期値はON
 const audio = {
   ctx: null,
   unlock() {
@@ -608,8 +610,9 @@ const audio = {
     } catch (e) {}
   },
   get ready() { return !!this.ctx && this.ctx.state === 'running'; },
-  play(freqs) {
-    if (!this.ctx) return;
+  // 区切りの音。OFFのときは鳴らさない(テストボタンだけは force で鳴らす)
+  play(freqs, force) {
+    if (!this.ctx || (!force && !soundOn())) return;
     try {
       if (this.ctx.state !== 'running') this.ctx.resume();
       const t0 = this.ctx.currentTime + 0.05;
@@ -838,7 +841,7 @@ function renderCurrent(sc) {
         <button class="grow" data-act="adj" data-v="5" data-id="${t.id}">${t.pomo ? '作業 ' : ''}+5分</button>
         ${armBtn('unstart', t.id, '開始を取消', 'danger')}
       </div>
-      ${t.pomo ? `<p class="note">${audio.ready ? '🔊 音は有効です。' : '🔇 音が無効です(「ポモドーロ」欄のボタンで有効化)。'}画面を閉じている間は音や通知が出ないことがあります。</p>` : ''}`;
+      ${t.pomo ? `<p class="note">${!soundOn() ? '🔇 音はOFFです(点滅と通知は出ます)。' : audio.ready ? '🔊 音は有効です。' : '🔇 音が無効です(「ポモドーロ」欄のボタンで有効化)。'}画面を閉じている間は音や通知が出ないことがあります。</p>` : ''}`;
   } else if (next) {
     h += `<div class="cur-sub">次の発車</div>
       <div class="cur-name">${next.t.pomo ? '🍅 ' : ''}${esc(next.t.name)}</div>
@@ -922,7 +925,8 @@ function renderPomo(sc) {
     hist += `<span class="${ds === today ? 'today' : ''}">${+ds.slice(5, 7)}/${+ds.slice(8)} 🍅${cnt}</span>`;
   }
   setHTML('pomoHist', '直近7日 ' + hist);
-  setText('soundState', audio.ctx ? (audio.ready ? '🔊 音: 有効' : '🔇 音: 一時停止中(もう一度ボタンを押してください)') : '🔇 音: まだ無効(「開始」かこのボタンで有効になります)');
+  setText('soundToggle', soundOn() ? '🔇 音をOFFにする' : '🔊 音をONにする');
+  setText('soundState', !soundOn() ? '🔇 音: OFF(区切りは点滅と通知だけで知らせます)' : audio.ctx ? (audio.ready ? '🔊 音: 有効' : '🔇 音: 一時停止中(もう一度ボタンを押してください)') : '🔇 音: まだ無効(「開始」かこのボタンで有効になります)');
   const ns = notifyStatus();
   setText('notifyState', ns.msg);
   $('notifyBtn').hidden = !ns.ask;
@@ -968,7 +972,8 @@ for (const [id, [k, min, max]] of Object.entries(POMO_FIELDS)) {
     syncPomoUI(); render();
   });
 }
-$('soundTest').addEventListener('click', () => { audio.unlock(); audio.play(SIGNALS.work.tones); vibrate(100); render(); });
+$('soundTest').addEventListener('click', () => { audio.unlock(); audio.play(SIGNALS.work.tones, true); vibrate(100); render(); });
+$('soundToggle').addEventListener('click', () => { store.set('sound', !soundOn()); if (soundOn()) audio.unlock(); render(); });
 $('notifyBtn').addEventListener('click', async () => {
   audio.unlock();
   try {
@@ -1198,7 +1203,7 @@ $('resetUndo').addEventListener('click', () => {
 });
 
 /* ================= export / import ================= */
-const VALID_KEY = k => /^day:\d{4}-\d{2}-\d{2}$/.test(k) || ['lastSettings', 'pomo', 'lastPomo'].includes(k);
+const VALID_KEY = k => /^day:\d{4}-\d{2}-\d{2}$/.test(k) || ['lastSettings', 'pomo', 'lastPomo', 'sound'].includes(k);
 function buildExport() {
   const out = {};
   for (const k of store.keys()) if (VALID_KEY(k)) out[k] = store.get(k);
