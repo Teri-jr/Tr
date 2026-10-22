@@ -456,7 +456,7 @@
   #startBtn { font-size: 1.25rem; padding: 14px; color: var(--accent); border-color: var(--accent); margin-bottom: 4px; }
   #startBtn { font-size: 0; }
   #startBtn::before { content: "▶ "; font-size: 1.25rem; animation: blink 1s steps(2) infinite; }
-  #startBtn::after { content: "たたかう"; font-size: 1.25rem; }
+  #startBtn::after { content: attr(data-game); font-size: 1.25rem; }
   #startBtn:hover:not(:disabled) { background: var(--accent); color: var(--bg); }
 
   .note { color: var(--sub); font-size: .9rem; margin: 10px 0 0; }
@@ -764,6 +764,92 @@
   /* テーマ共通: そのテーマでだけ出す部品 */
   html:not([data-skin="game"]) .game-only { display: none !important; }
   html:not([data-skin="paper"]) .stamp { display: none !important; }
+
+  /* ---------- カードめくり ---------- */
+  .flip { perspective: 1400px; cursor: pointer; margin: 4px 0 10px; outline: none; -webkit-tap-highlight-color: transparent; }
+  .flip-inner { position: relative; display: grid; transform-style: preserve-3d; transition: transform .55s cubic-bezier(.3, .7, .2, 1); }
+  .flip.flipped .flip-inner { transform: rotateY(180deg); }
+  .flip.instant .flip-inner { transition: none; }
+  .face {
+    grid-area: 1 / 1; min-height: 250px; padding: 22px 18px; display: flex; flex-direction: column; justify-content: center; gap: 8px;
+    backface-visibility: hidden; -webkit-backface-visibility: hidden; text-align: center; overflow-wrap: anywhere;
+  }
+  .face.back { transform: rotateY(180deg); text-align: left; justify-content: flex-start; }
+  .face-label { font-size: .85rem; opacity: .7; }
+  .face-main { font-size: clamp(1.9rem, 8.5vw, 2.6rem); font-weight: 800; line-height: 1.3; }
+  .face-main.def { font-size: 1.15rem; font-weight: 500; line-height: 1.6; }
+  .face-hint { font-size: .9rem; opacity: .8; }
+  .face .detail { margin-top: 6px; font-size: .92rem; }
+  .flip:focus-visible .face { outline: 2px dashed currentColor; outline-offset: -6px; }
+  .flip-note { text-align: center; }
+  #cardActions button:disabled { opacity: .3; }
+
+  /* ---------- 赤シート ---------- */
+  html {
+    --sheet-ink: #d93025; --sheet-tint: rgba(225, 30, 45, .34); --sheet-edge: #c62828;
+  }
+  @media (prefers-color-scheme: dark) {
+    html[data-skin="normal"]:not([data-theme="light"]) { --sheet-ink: #ff6b6b; --sheet-tint: rgba(255, 70, 80, .3); --sheet-edge: #e53935; }
+  }
+  html[data-skin="normal"][data-theme="dark"] { --sheet-ink: #ff6b6b; --sheet-tint: rgba(255, 70, 80, .3); --sheet-edge: #e53935; }
+  html[data-skin="future"] { --sheet-ink: #ff3b6b; --sheet-tint: rgba(255, 30, 90, .24); --sheet-edge: #ff2b6b; }
+  html[data-skin="game"] { --sheet-ink: #f83800; --sheet-tint: rgba(248, 56, 0, .32); --sheet-edge: #f83800; }
+  html[data-skin="paper"] { --sheet-ink: #c8301e; --sheet-tint: rgba(205, 35, 30, .36); --sheet-edge: #a8261a; }
+  #sheetView { padding-bottom: 65vh; }
+  .sheet-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+  .sheet-head .row { gap: 8px; }
+  .sheet-list { list-style: none; margin: 0; padding: 0; }
+  .sheet-list li {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2px 14px; align-items: baseline;
+    padding: 10px 2px; border-top: 1px dashed rgba(128, 128, 128, .35); cursor: pointer; -webkit-tap-highlight-color: transparent;
+  }
+  .sheet-list li:first-child { border-top: none; }
+  .sheet-list .no { grid-column: 1 / -1; font-size: .72rem; opacity: .55; }
+  .sheet-list .q { font-weight: 700; overflow-wrap: anywhere; }
+  .sheet-list .q.def { font-weight: 500; font-size: .9rem; }
+  .sheet-list .a { color: var(--sheet-ink); font-weight: 700; overflow-wrap: anywhere; transition: color .12s; }
+  .sheet-list .a.covered { color: transparent; }
+  .sheet-list li.peek .a.covered { color: var(--sheet-ink); }
+  .red-sheet {
+    position: fixed; left: 0; right: 0; bottom: 0; top: 60vh; z-index: 40; pointer-events: none;
+    background: var(--sheet-tint); border-top: 3px solid var(--sheet-edge);
+    box-shadow: 0 -6px 18px rgba(0, 0, 0, .15);
+  }
+  .red-sheet.off { display: none; }
+  .red-sheet-handle {
+    position: absolute; top: 0; left: 50%; transform: translate(-50%, -100%);
+    padding: 6px 18px 5px; border-radius: 10px 10px 0 0; background: var(--sheet-edge); color: #fff;
+    font-size: .85rem; white-space: nowrap; cursor: grab; pointer-events: auto; touch-action: none; user-select: none;
+  }
+  .red-sheet-handle:active { cursor: grabbing; }
+
+  /* テーマごとのカードの見た目 */
+  html[data-skin="normal"] .face { background: var(--card); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 6px 18px rgba(0, 0, 0, .08); }
+  html[data-skin="normal"] .face.back { background: var(--accent-weak); }
+  html[data-skin="normal"] .face.back .face-main { color: var(--accent); }
+  html[data-skin="future"] .face {
+    background: linear-gradient(160deg, rgba(0, 229, 255, .09), rgba(12, 20, 34, .9) 60%); border: 1px solid var(--accent);
+    box-shadow: 0 0 22px rgba(0, 229, 255, .25), inset 0 0 30px rgba(0, 229, 255, .08);
+  }
+  html[data-skin="future"] .face.back { border-color: var(--accent-2); box-shadow: 0 0 22px rgba(255, 43, 214, .25), inset 0 0 30px rgba(255, 43, 214, .08); }
+  html[data-skin="future"] .face-main { font-family: var(--f-display); color: #fff; text-shadow: 0 0 18px rgba(0, 229, 255, .55); }
+  html[data-skin="future"] .face-main.def { font-family: var(--f-body); text-shadow: none; }
+  html[data-skin="future"] .face-label { font-family: var(--f-mono); color: var(--accent); letter-spacing: .12em; opacity: 1; }
+  html[data-skin="game"] .face { background: var(--bg); border: 4px solid var(--text); border-radius: 8px; }
+  html[data-skin="game"] .face.back { border-color: var(--accent); }
+  html[data-skin="game"] .face-main { font-weight: 400; }
+  html[data-skin="game"] .face.back .face-main { color: var(--accent); }
+  html[data-skin="game"] .face-label::before { content: "＊ "; }
+  html[data-skin="paper"] .face {
+    background: repeating-linear-gradient(#fffdf6 0 31px, rgba(90, 130, 200, .28) 31px 32px);
+    border-top: 6px solid var(--red); box-shadow: 2px 4px 0 rgba(60, 40, 10, .12), 0 0 0 1px rgba(120, 100, 60, .25);
+    border-radius: 3px;
+  }
+  html[data-skin="paper"] .face.back .face-main { color: var(--red); font-family: var(--f-pen); font-weight: 600; }
+  html[data-skin="paper"] .red-sheet { mix-blend-mode: multiply; }
+  html[data-skin="paper"] .red-sheet-handle, html[data-skin="normal"] .red-sheet-handle { mix-blend-mode: normal; }
+  html[data-skin="game"] .red-sheet-handle { border-radius: 0; }
+  html[data-skin="future"] .red-sheet { box-shadow: 0 -2px 18px rgba(255, 43, 107, .5); }
 </style>
 <script>
   // 描画前に保存済みのテーマを当てる（ちらつき防止）
@@ -812,6 +898,14 @@
 
   <!-- 設定 -->
   <section id="setupView" class="hidden">
+    <div class="card">
+      <h2>学習方法</h2>
+      <div class="row" id="studyGroup">
+        <label class="chip"><input type="radio" name="study" value="test" checked><span>テスト</span></label>
+        <label class="chip"><input type="radio" name="study" value="card"><span>カードめくり</span></label>
+        <label class="chip"><input type="radio" name="study" value="sheet"><span>赤シート</span></label>
+      </div>
+    </div>
     <div class="card" id="modeCard">
       <h2>出題モード</h2>
       <div class="row" id="modeGroup">
@@ -821,7 +915,7 @@
         <label class="chip"><input type="radio" name="mode" value="mix"><span>ランダム</span></label>
       </div>
     </div>
-    <div class="card">
+    <div class="card" id="formatCard">
       <h2>出題形式</h2>
       <div class="row" id="formatGroup">
         <label class="chip"><input type="radio" name="format" value="choice" checked><span>4択</span></label>
@@ -841,7 +935,7 @@
         <button class="secondary pick-btn" id="spanAllBtn">全範囲</button>
       </div>
     </div>
-    <div class="card">
+    <div class="card" id="countCard">
       <h2>問題数</h2>
       <div class="row" style="align-items:center">
         <input type="number" id="countInput" min="1" value="10">
@@ -849,7 +943,7 @@
         <span class="note" id="poolInfo" style="margin:0"></span>
       </div>
     </div>
-    <button class="block" id="startBtn">テスト開始</button>
+    <button class="block" id="startBtn" data-game="たたかう">テスト開始</button>
     <p id="setupErr" class="err"></p>
     <div class="card" style="margin-top:14px">
       <h2>苦手データ</h2>
@@ -876,6 +970,51 @@
     <button class="secondary block" id="quitBtn">中断して結果を見る</button>
   </section>
 
+  <!-- カードめくり -->
+  <section id="cardView" class="hidden">
+    <div class="card">
+      <div class="progress"><span id="cardProg"></span><span id="cardScore"></span></div>
+      <div class="bar"><div id="cardBar"></div></div>
+      <div class="flip" id="flip" tabindex="0" role="button" aria-label="カードをめくる">
+        <div class="flip-inner">
+          <div class="face front">
+            <div class="face-label" id="frontLabel"></div>
+            <div class="face-main" id="frontText"></div>
+            <div class="face-hint" id="frontHint"></div>
+          </div>
+          <div class="face back">
+            <div class="face-label">答え</div>
+            <div class="face-main" id="backText"></div>
+            <div id="backDetail"></div>
+          </div>
+        </div>
+      </div>
+      <p class="note flip-note" id="flipNote">タップしてめくる</p>
+      <div class="actions" id="cardActions">
+        <button class="danger" id="cardNgBtn">まだ</button>
+        <button id="cardOkBtn">覚えた</button>
+      </div>
+    </div>
+    <button class="secondary block" id="cardQuitBtn">やめて結果を見る</button>
+  </section>
+
+  <!-- 赤シート -->
+  <section id="sheetView" class="hidden">
+    <div class="card">
+      <div class="sheet-head">
+        <span class="note" id="sheetInfo" style="margin:0"></span>
+        <div class="row">
+          <button class="secondary pick-btn" id="sheetShuffleBtn">シャッフル</button>
+          <button class="secondary pick-btn" id="sheetToggleBtn">シートを外す</button>
+        </div>
+      </div>
+      <p class="note" style="margin:0 0 6px">赤い文字が答え。シートのつまみを上下に動かすか、スクロールして確かめよう。項目をタップするとその答えだけ見えます。</p>
+      <ol class="sheet-list" id="sheetList"></ol>
+    </div>
+    <button class="secondary block" id="sheetBackBtn">設定に戻る</button>
+    <div class="red-sheet" id="redSheet"><div class="red-sheet-handle" id="sheetHandle">≡ 赤シート</div></div>
+  </section>
+
   <!-- 結果 -->
   <section id="resultView" class="hidden">
     <div class="card">
@@ -885,7 +1024,7 @@
       <p class="game-only game-result" id="gameResult"></p>
     </div>
     <div class="card" id="wrongCard">
-      <h2>間違えた単語</h2>
+      <h2 id="wrongTitle">間違えた単語</h2>
       <ul class="wrong-list" id="wrongList"></ul>
     </div>
     <div class="row" style="flex-direction:column">
@@ -1025,7 +1164,7 @@ function addMiss(w) {
 
 // ---------- 画面 ----------
 function show(name) {
-  for (const v of ['load', 'setup', 'quiz', 'result']) {
+  for (const v of ['load', 'setup', 'quiz', 'result', 'card', 'sheet']) {
     $(v + 'View').classList.toggle('hidden', v !== name && !(v === 'load' && name === 'setup'));
   }
   $('themeView').classList.toggle('hidden', name !== 'setup' && name !== 'load');
@@ -1130,6 +1269,7 @@ function chip(type, name, value, label, checked) {
 
 const getMode = () => document.querySelector('input[name=mode]:checked').value;
 const getFormat = () => document.querySelector('input[name=format]:checked').value;
+const getStudy = () => document.querySelector('input[name=study]:checked').value;
 
 // 段落で絞った範囲（個別の選択は反映しない）
 function rangePool() {
@@ -1198,6 +1338,12 @@ function updateSetup() {
   $('countInput').disabled = allCount;
   if (allCount) $('countInput').value = pool.length;
   $('startBtn').disabled = pool.length === 0;
+  // 学習方法ごとに使う設定だけ出す
+  const study = getStudy();
+  $('formatCard').classList.toggle('hidden', study !== 'test');
+  $('countCard').classList.toggle('hidden', study === 'sheet');
+  $('startBtn').textContent = { test: 'テスト開始', card: 'カードをめくる', sheet: '赤シートで覚える' }[study];
+  $('startBtn').dataset.game = { test: 'たたかう', card: 'カードを めくる', sheet: 'あかシートを つかう' }[study];
   const miss = loadMiss();
   const weak = Object.values(miss).filter(v => v > 0).length;
   $('weakInfo').textContent = weak
@@ -1205,7 +1351,7 @@ function updateSetup() {
     : 'まだ記録はありません。';
 }
 
-document.querySelectorAll('input[name=mode], input[name=format]').forEach(i => i.addEventListener('change', updateSetup));
+document.querySelectorAll('input[name=mode], input[name=format], input[name=study]').forEach(i => i.addEventListener('change', updateSetup));
 
 // ---------- 出題 ----------
 function shuffle(a) {
@@ -1227,15 +1373,19 @@ function weightedPick(pool, n) {
     .map(x => x.w);
 }
 
-function startSession(mode, format, list) {
-  // 1問ごとの出題モード。ランダムのときは単語ごとに選べるモードから選ぶ
-  const modes = list.map(w => {
+// 1問ごとの出題モード。ランダムのときは単語ごとに選べるモードから選ぶ
+function modesFor(list, mode, format) {
+  return list.map(w => {
     if (mode !== 'mix') return mode;
     const opts = format === 'letters' ? ['j2e'] : ['e2j', 'j2e'];
     if (w.definition) opts.push('d2e');
     return opts[Math.floor(Math.random() * opts.length)];
   });
-  session = { mode, format, queue: list, modes, index: 0, results: [], expGained: 0, levelStart: levelOf(loadExp()) };
+}
+
+function startSession(mode, format, list) {
+  const modes = modesFor(list, mode, format);
+  session = { kind: 'test', mode, format, queue: list, modes, index: 0, results: [], expGained: 0, levelStart: levelOf(loadExp()) };
   sfx('start');
   lastSettings = { mode, format };
   show('quiz');
@@ -1249,7 +1399,10 @@ $('startBtn').addEventListener('click', () => {
   n = Math.min(n, pool.length);
   if (!pool.length) { $('setupErr').textContent = '出題する単語が選ばれていません。'; return; }
   $('setupErr').textContent = '';
-  startSession(getMode(), getFormat(), weightedPick(pool, n));
+  const study = getStudy();
+  if (study === 'sheet') startSheet(pool);
+  else if (study === 'card') startCards(getMode(), weightedPick(pool, n));
+  else startSession(getMode(), getFormat(), weightedPick(pool, n));
 });
 
 const promptOf = (w, mode) => mode === 'e2j' ? w.english : mode === 'j2e' ? w.japanese : w.definition;
@@ -1287,6 +1440,13 @@ function englishMatches(given, english) {
 // 並べ替え用の基本形: [ ] は前の語を採用し、( ) は外して中身を残す
 const primaryForm = s => s.replace(/(\S+)\s*\[[^\]]+\]/g, '$1').replace(/[()]/g, ' ').trim().split(/\s+/);
 
+function questionLabel(w, mode) {
+  const u = subject.unit === '単語' ? '英単語' : '熟語';
+  return isKanji()
+    ? (kanjiType(w) === 'write' ? 'カタカナを漢字に直すと？' : 'この漢字の読みは？')
+    : { e2j: `この${u}の意味は？`, j2e: `この意味の${u}は？`, d2e: `この定義に当てはまる${u}は？` }[mode];
+}
+
 function renderQuestion() {
   renderGameStatus();
   const { format, queue, index } = session;
@@ -1296,10 +1456,7 @@ function renderQuestion() {
   $('progText').textContent = `${index + 1} / ${queue.length} 問`;
   $('scoreText').textContent = `正解 ${correct}`;
   $('progBar').style.width = (index / queue.length * 100) + '%';
-  const u = subject.unit === '単語' ? '英単語' : '熟語';
-  $('promptLabel').textContent = isKanji()
-    ? (kanjiType(w) === 'write' ? 'カタカナを漢字に直すと？' : 'この漢字の読みは？')
-    : { e2j: `この${u}の意味は？`, j2e: `この意味の${u}は？`, d2e: `この定義に当てはまる${u}は？` }[mode];
+  $('promptLabel').textContent = questionLabel(w, mode);
   $('prompt').textContent = promptOf(w, mode);
   $('prompt').classList.toggle('def', mode === 'd2e');
   // 漢字はヒント（同音異義語の区別など）を問題の下に出す
@@ -1598,11 +1755,17 @@ function showResult() {
     st.textContent = rate === 100 ? '大変よく\nできました' : 'よく\nできました';
     scoreCard.appendChild(st);
   }
-  // レトロゲーム: 獲得した経験値とレベルアップ
+  const isCard = session.kind === 'card';
+  // レトロゲーム: 獲得した経験値とレベルアップ（カードめくりは経験値なし）
   const lvNow = levelOf(loadExp());
-  $('gameResult').innerHTML = `＊ けいけんちを ${session.expGained} てにいれた！` +
+  $('gameResult').innerHTML = isCard ? `＊ ${correct} まいの カードを おぼえた！` : `＊ けいけんちを ${session.expGained} てにいれた！` +
     (lvNow > session.levelStart ? `<br><span class="lvup">＊ レベルが ${lvNow} に あがった！</span>` : '');
-  $('resultDetail').textContent = `${total} 問中 ${correct} 問正解（${isKanji() ? '' : MODE_LABEL[session.mode] + '・'}${formatLabel(session.format)}）`;
+  const modeText = isKanji() ? '' : MODE_LABEL[session.mode] + '・';
+  $('resultDetail').textContent = isCard
+    ? `${total} 枚中 ${correct} 枚を覚えた（${modeText}カードめくり）`
+    : `${total} 問中 ${correct} 問正解（${modeText}${formatLabel(session.format)}）`;
+  $('wrongTitle').textContent = isCard ? 'まだのカード' : '間違えた単語';
+  $('retryWrongBtn').textContent = isCard ? 'まだのカードだけもう一度' : '間違えた単語だけ再テスト';
   const wrong = [...new Map(res.filter(r => !r.ok).map(r => [wordKey(r.w), r.w])).values()];
   session.wrong = wrong;
   const ul = $('wrongList');
@@ -1628,8 +1791,150 @@ $('quitBtn').addEventListener('click', () => {
   showResult();
 });
 $('retryWrongBtn').addEventListener('click', () => {
-  startSession(lastSettings.mode, lastSettings.format, shuffle(session.wrong));
+  if (session.kind === 'card') startCards(session.mode, shuffle(session.wrong));
+  else startSession(lastSettings.mode, lastSettings.format, shuffle(session.wrong));
 });
+
+// ---------- カードめくり ----------
+function startCards(mode, list) {
+  session = { kind: 'card', mode, format: 'card', queue: list, modes: modesFor(list, mode, 'card'), index: 0, results: [], expGained: 0, levelStart: levelOf(loadExp()) };
+  sfx('start');
+  show('card');
+  renderCard();
+}
+
+function renderCard() {
+  const { queue, index } = session;
+  const w = queue[index];
+  const mode = session.curMode = session.modes[index];
+  $('cardProg').textContent = `${index + 1} / ${queue.length} 枚`;
+  $('cardScore').textContent = `覚えた ${session.results.filter(r => r.ok).length}`;
+  $('cardBar').style.width = (index / queue.length * 100) + '%';
+  // 次のカードの答えが一瞬見えないよう、表に戻すときはアニメーションしない
+  const flip = $('flip');
+  flip.classList.add('instant');
+  flip.classList.remove('flipped');
+  void flip.offsetWidth;
+  flip.classList.remove('instant');
+  $('frontLabel').textContent = questionLabel(w, mode);
+  $('frontText').textContent = promptOf(w, mode);
+  $('frontText').classList.toggle('def', mode === 'd2e');
+  $('frontHint').textContent = isKanji() && w.definition ? w.definition : '';
+  $('backText').textContent = answerOf(w, mode);
+  $('backDetail').innerHTML = detailHTML(w);
+  $('cardOkBtn').disabled = $('cardNgBtn').disabled = true;
+  $('flipNote').textContent = 'タップしてめくる';
+}
+
+function flipCard() {
+  const flip = $('flip');
+  flip.classList.toggle('flipped');
+  if (flip.classList.contains('flipped')) {
+    $('cardOkBtn').disabled = $('cardNgBtn').disabled = false;
+    $('flipNote').textContent = '覚えていたら「覚えた」、自信がなければ「まだ」';
+  }
+}
+
+function answerCard(ok) {
+  if ($('cardOkBtn').disabled) return;
+  const w = session.queue[session.index];
+  session.results.push({ w, ok });
+  if (!ok) addMiss(w);
+  sfx(ok ? 'ok' : 'ng');
+  session.index++;
+  if (session.index < session.queue.length) renderCard();
+  else showResult();
+}
+
+$('flip').addEventListener('click', flipCard);
+$('flip').addEventListener('keydown', e => {
+  if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); flipCard(); }
+});
+$('cardOkBtn').addEventListener('click', () => answerCard(true));
+$('cardNgBtn').addEventListener('click', () => answerCard(false));
+document.addEventListener('keydown', e => {
+  if ($('cardView').classList.contains('hidden') || e.target.tagName === 'INPUT') return;
+  if (e.key === 'ArrowRight') answerCard(true);
+  else if (e.key === 'ArrowLeft') answerCard(false);
+  else if (e.key === ' ' && e.target === document.body) { e.preventDefault(); flipCard(); }
+});
+$('cardQuitBtn').addEventListener('click', () => {
+  if (session.results.length === 0) { show('setup'); updateSetup(); return; }
+  showResult();
+});
+
+// ---------- 赤シート ----------
+// 赤いシートの上端より下にある答えを隠す。シートは画面に固定で、つまみで上下に動かせる
+let sheet = { list: [], mode: 'e2j', top: 0, on: true };
+
+function startSheet(pool) {
+  sheet.mode = getMode() === 'mix' ? 'e2j' : getMode();
+  sheet.list = pool.slice();
+  sheet.on = true;
+  renderSheet();
+  show('sheet');
+  placeSheet(window.innerHeight * 0.6);
+}
+
+function renderSheet() {
+  const ol = $('sheetList');
+  ol.innerHTML = '';
+  $('sheetInfo').textContent = `${isKanji() ? '' : MODE_LABEL[sheet.mode] + '・'}${sheet.list.length} 個`;
+  for (const w of sheet.list) {
+    const li = document.createElement('li');
+    const no = document.createElement('span'); no.className = 'no';
+    no.textContent = subject.rangeType === 'block' ? `No.${words.indexOf(w) + 1}` : w.paragraph ? `${subject.rangeLabel} ${w.paragraph}` : '';
+    const q = document.createElement('span'); q.className = 'q' + (sheet.mode === 'd2e' ? ' def' : '');
+    q.textContent = promptOf(w, sheet.mode) + (isKanji() && w.definition ? `（${w.definition}）` : '');
+    const a = document.createElement('span'); a.className = 'a';
+    a.textContent = answerOf(w, sheet.mode);
+    li.append(no, q, a);
+    li.addEventListener('click', () => li.classList.toggle('peek'));
+    ol.appendChild(li);
+  }
+  $('redSheet').classList.toggle('off', !sheet.on);
+  $('sheetToggleBtn').textContent = sheet.on ? 'シートを外す' : 'シートをかける';
+  updateCovered();
+}
+
+function placeSheet(y) {
+  sheet.top = Math.max(56, Math.min(window.innerHeight - 24, y));
+  $('redSheet').style.top = sheet.top + 'px';
+  updateCovered();
+}
+
+function updateCovered() {
+  if ($('sheetView').classList.contains('hidden')) return;
+  for (const a of $('sheetList').querySelectorAll('.a')) {
+    const r = a.getBoundingClientRect();
+    a.classList.toggle('covered', sheet.on && r.top + r.height / 2 > sheet.top);
+  }
+}
+
+let coverQueued = false;
+const queueCover = () => {
+  if (coverQueued) return;
+  coverQueued = true;
+  requestAnimationFrame(() => { coverQueued = false; updateCovered(); });
+};
+window.addEventListener('scroll', queueCover, { passive: true });
+window.addEventListener('resize', () => placeSheet(sheet.top));
+
+(() => {
+  const handle = $('sheetHandle');
+  let offset = 0;
+  handle.addEventListener('pointerdown', e => {
+    offset = e.clientY - sheet.top;
+    handle.setPointerCapture(e.pointerId);
+  });
+  handle.addEventListener('pointermove', e => {
+    if (handle.hasPointerCapture(e.pointerId)) placeSheet(e.clientY - offset);
+  });
+})();
+
+$('sheetShuffleBtn').addEventListener('click', () => { sheet.list = shuffle(sheet.list); renderSheet(); });
+$('sheetToggleBtn').addEventListener('click', () => { sheet.on = !sheet.on; renderSheet(); });
+$('sheetBackBtn').addEventListener('click', () => { updateSetup(); show('setup'); });
 $('backBtn').addEventListener('click', () => { updateSetup(); show('setup'); });
 // 誤操作防止: 2回押すとリセット
 let resetTimer = null;
