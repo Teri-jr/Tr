@@ -285,6 +285,7 @@
         <label class="chip"><input type="radio" name="mode" value="e2j" checked><span>英 → 日</span></label>
         <label class="chip"><input type="radio" name="mode" value="j2e"><span>日 → 英</span></label>
         <label class="chip"><input type="radio" name="mode" value="d2e"><span>英英定義 → 英単語</span></label>
+        <label class="chip"><input type="radio" name="mode" value="mix"><span>ランダム</span></label>
       </div>
     </div>
     <div class="card">
@@ -438,7 +439,7 @@
 'use strict';
 
 const STORAGE_KEY = 'vocabTest.missCounts';
-const MODE_LABEL = { e2j: '英 → 日', j2e: '日 → 英', d2e: '英英定義 → 英単語' };
+const MODE_LABEL = { e2j: '英 → 日', j2e: '日 → 英', d2e: '英英定義 → 英単語', mix: 'ランダム' };
 const FORMAT_LABEL = { choice: '4択', input: '記述', letters: '文字選択' };
 
 let words = [];
@@ -637,6 +638,9 @@ function updateSetup() {
   if (mode === 'e2j') note = '文字選択は答えが英単語のモード（日→英・英英→英）で使えます。';
   if (mode === 'e2j' && fmt === 'input') note = '日本語の記述は表記揺れがあるので、正解を見て自分で○×を付けます。';
   if (mode !== 'e2j' && fmt === 'input') note = '英単語の記述は大文字・小文字を区別しません。';
+  if (mode === 'mix') note = fmt === 'letters'
+    ? '日→英と英英定義→英単語をランダムに出します（文字選択では英→日は出ません）。'
+    : '英→日・日→英・英英定義→英単語を1問ごとにランダムに出します。' + (fmt === 'input' ? '英→日の記述は自己採点です。' : '');
   $('formatNote').textContent = note;
 
   const pool = selectedPool();
@@ -673,7 +677,14 @@ function weightedPick(pool, n) {
 }
 
 function startSession(mode, format, list) {
-  session = { mode, format, queue: list, index: 0, results: [] };
+  // 1問ごとの出題モード。ランダムのときは単語ごとに選べるモードから選ぶ
+  const modes = list.map(w => {
+    if (mode !== 'mix') return mode;
+    const opts = format === 'letters' ? ['j2e'] : ['e2j', 'j2e'];
+    if (w.definition) opts.push('d2e');
+    return opts[Math.floor(Math.random() * opts.length)];
+  });
+  session = { mode, format, queue: list, modes, index: 0, results: [] };
   lastSettings = { mode, format };
   show('quiz');
   renderQuestion();
@@ -694,8 +705,9 @@ const answerOf = (w, mode) => mode === 'e2j' ? w.japanese : w.english;
 const normalize = s => s.trim().toLowerCase().replace(/\s+/g, ' ').replace(/[’‘]/g, "'");
 
 function renderQuestion() {
-  const { mode, format, queue, index } = session;
+  const { format, queue, index } = session;
   const w = queue[index];
+  const mode = session.curMode = session.modes[index];
   const correct = session.results.filter(r => r.ok).length;
   $('progText').textContent = `${index + 1} / ${queue.length} 問`;
   $('scoreText').textContent = `正解 ${correct}`;
@@ -712,7 +724,7 @@ function renderQuestion() {
 }
 
 function renderChoice(area, w) {
-  const { mode } = session;
+  const mode = session.curMode;
   const ans = answerOf(w, mode);
   const others = shuffle(words.filter(x => x !== w && normalize(answerOf(x, mode)) !== normalize(ans)));
   const opts = [];
@@ -745,7 +757,7 @@ function renderChoice(area, w) {
 }
 
 function renderInput(area, w) {
-  const { mode } = session;
+  const mode = session.curMode;
   const input = document.createElement('input');
   input.type = 'text';
   input.placeholder = mode === 'e2j' ? '日本語で答えを入力' : '英単語を入力';
