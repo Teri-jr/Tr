@@ -249,6 +249,9 @@
   .savebar #dirtyInfo.dirty { color: var(--accent-2); }
   .savebar button { padding: 11px 14px; font-size: .9rem; letter-spacing: .04em; }
 
+  .pick-btn { padding: 8px 14px; font-size: .85rem; }
+  #wordPick .chip span { padding: 6px 11px; font-size: .88rem; font-family: var(--f-display); letter-spacing: .02em; }
+
   @keyframes blink { 50% { opacity: 0; } }
   @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) {
@@ -296,6 +299,18 @@
     <div class="card">
       <h2>範囲（段落）</h2>
       <div class="row" id="paraGroup"></div>
+    </div>
+    <div class="card">
+      <h2>出題する単語</h2>
+      <div class="row" style="align-items:center">
+        <button class="secondary pick-btn" id="pickAllBtn">全選択</button>
+        <button class="secondary pick-btn" id="pickNoneBtn">全解除</button>
+        <span class="note" id="pickInfo" style="margin:0"></span>
+      </div>
+      <details class="howto" id="pickDetails" style="margin-top:12px">
+        <summary>単語を1つずつ選ぶ</summary>
+        <div class="row" id="wordPick" style="margin-top:10px"></div>
+      </details>
     </div>
     <div class="card">
       <h2>問題数</h2>
@@ -569,7 +584,8 @@ function chip(type, name, value, label, checked) {
 const getMode = () => document.querySelector('input[name=mode]:checked').value;
 const getFormat = () => document.querySelector('input[name=format]:checked').value;
 
-function selectedPool() {
+// 段落で絞った範囲（個別の選択は反映しない）
+function rangePool() {
   const all = document.querySelector('#paraGroup [value="__all__"]').checked;
   const sel = new Set([...document.querySelectorAll('input[name=para]:checked')].map(i => i.value));
   let pool = all ? words : words.filter(w => sel.has(w.paragraph || '(なし)'));
@@ -577,7 +593,39 @@ function selectedPool() {
   return pool;
 }
 
+// 個別に外した単語（新しく追加した単語は最初から選ばれた状態になる）
+const excluded = new Set();
+const selectedPool = () => rangePool().filter(w => !excluded.has(wordKey(w)));
+
+function renderWordPick() {
+  const range = rangePool();
+  const g = $('wordPick');
+  g.innerHTML = '';
+  for (const w of range) {
+    const c = chip('checkbox', 'pickword', wordKey(w), w.english, !excluded.has(wordKey(w)));
+    c.querySelector('input').addEventListener('change', e => {
+      if (e.target.checked) excluded.delete(e.target.value);
+      else excluded.add(e.target.value);
+      updateSetup();
+    });
+    g.appendChild(c);
+  }
+  const n = range.filter(w => !excluded.has(wordKey(w))).length;
+  $('pickInfo').textContent = `${n} / ${range.length} 語を選択中`;
+}
+
+$('pickAllBtn').addEventListener('click', () => {
+  rangePool().forEach(w => excluded.delete(wordKey(w)));
+  updateSetup();
+});
+$('pickNoneBtn').addEventListener('click', () => {
+  rangePool().forEach(w => excluded.add(wordKey(w)));
+  $('pickDetails').open = true;
+  updateSetup();
+});
+
 function updateSetup() {
+  renderWordPick();
   const mode = getMode();
   const lettersInput = document.querySelector('input[name=format][value=letters]');
   lettersInput.disabled = mode === 'e2j';
@@ -636,7 +684,7 @@ $('startBtn').addEventListener('click', () => {
   let n = parseInt($('countInput').value, 10);
   if (!n || n < 1) n = pool.length;
   n = Math.min(n, pool.length);
-  if (!pool.length) { $('setupErr').textContent = '対象の単語がありません。'; return; }
+  if (!pool.length) { $('setupErr').textContent = '出題する単語が選ばれていません。'; return; }
   $('setupErr').textContent = '';
   startSession(getMode(), getFormat(), weightedPick(pool, n));
 });
