@@ -42,14 +42,14 @@
   main { max-width: 640px; margin: 0 auto; padding: 16px 16px 48px; }
   .hud-head { margin: 8px 0 18px; }
   h1 {
-    display: inline-block; font-size: 1.6rem; margin: 0; letter-spacing: .08em; padding: 0 2px;
+    display: inline-block; font-size: clamp(2.3rem, 11vw, 3rem); font-weight: 800; line-height: 1.15; margin: 0; letter-spacing: .08em; padding: 0 4px;
     background: linear-gradient(transparent 62%, rgba(59, 111, 224, .28) 62%) no-repeat left / 0% 100%;
     animation: cl-title .5s ease-out 1.2s both, cl-marker .6s ease-out 1.7s forwards;
   }
   /* 題名の前に: 「覚えられない…」が出て取り消し線で消える → 題名がふわっと出て、マーカーが引かれる */
   .cl-memo {
     position: absolute; left: 2px; top: 50%; transform: translateY(-50%); white-space: nowrap;
-    color: var(--sub); font-size: 1.3rem; letter-spacing: .04em;
+    color: var(--sub); font-size: clamp(1.6rem, 7.5vw, 2rem); letter-spacing: .04em;
     animation: cl-memo 1.2s ease-out both;
   }
   .cl-memo::after {
@@ -913,6 +913,7 @@
 <style>
   /* テーマ共通: そのテーマでだけ出す部品 */
   html:not([data-skin="game"]) .game-only { display: none !important; }
+  .replay-reset, .replay-reset *, .replay-reset *::before, .replay-reset *::after { animation: none !important; }
   html:not([data-skin="paper"]) .hanko { display: none !important; }
   html:not([data-skin="paper"]) .memo { display: none !important; }
   html:not([data-skin="game"]) .enemy, html:not([data-skin="game"]) .battle-msg { display: none !important; }
@@ -1113,7 +1114,7 @@
   }
   .sheet-bar { flex-wrap: wrap; gap: 6px; padding-block: 8px; }
   .sheet-bar .row { flex-wrap: wrap; gap: 6px; width: 100%; }
-  .sheet-bar #sheetMarkOnlyBtn.on { outline: 2px solid currentColor; outline-offset: -2px; }
+  .sheet-bar #sheetMarkOnlyBtn.on, .sheet-bar #sheetShuffleBtn.on { outline: 2px solid currentColor; outline-offset: -2px; }
   .sheet-bar button.pick-btn { padding: 6px 9px; font-size: .8rem; letter-spacing: 0; white-space: nowrap; }
   .sheet-bar #sheetInfo { flex: 1; min-width: 0; font-size: .78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   html { --sheet-bar-bg: rgba(244, 246, 250, .96); }
@@ -2502,7 +2503,7 @@ $('cardQuitBtn').addEventListener('click', () => {
 
 // ---------- 赤シート ----------
 // 赤いシートの上端より下にある答えを隠す。シートは画面に固定で、つまみで上下に動かせる
-let sheet = { list: [], mode: 'e2j', top: 0, on: true, onlyMarked: false };
+let sheet = { list: [], base: [], mode: 'e2j', top: 0, on: true, onlyMarked: false, shuffled: false };
 
 // 線（教材ごとに端末へ保存）。英語・意味・英英定義の欄ごとに別々に引ける
 const marksKey = () => `vocabTest.marks.${subject.id}`;
@@ -2527,7 +2528,9 @@ const hasMark = (m, w) => m[qField(sheet.mode)].has(wordKey(w)) || m[aField(shee
 
 function startSheet(pool) {
   sheet.mode = getMode() === 'mix' ? 'e2j' : getMode();
+  sheet.base = pool.slice();
   sheet.list = pool.slice();
+  sheet.shuffled = false;
   sheet.on = true;
   sheet.onlyMarked = false;
   sfx('start');
@@ -2544,6 +2547,7 @@ function renderSheet() {
   const shown = sheet.onlyMarked ? sheet.list.filter(w => hasMark(marks, w)) : sheet.list;
   $('sheetInfo').textContent = `${isKanji() ? '' : MODE_LABEL[sheet.mode] + '・'}${shown.length} 個` + (markedInList ? `・線 ${markedInList}` : '');
   $('sheetMarkOnlyBtn').classList.toggle('on', sheet.onlyMarked);
+  $('sheetShuffleBtn').classList.toggle('on', sheet.shuffled);
   $('sheetMarkOnlyBtn').textContent = sheet.onlyMarked ? 'すべて表示' : '線だけ';
   if (!shown.length) {
     const li = document.createElement('li');
@@ -2624,7 +2628,12 @@ window.addEventListener('resize', () => placeSheet(sheet.top));
   });
 })();
 
-$('sheetShuffleBtn').addEventListener('click', () => { sheet.list = shuffle(sheet.list); renderSheet(); });
+// シャッフルは押すたびにオン／オフ（オフで元の順番に戻す）
+$('sheetShuffleBtn').addEventListener('click', () => {
+  sheet.shuffled = !sheet.shuffled;
+  sheet.list = sheet.shuffled ? shuffle(sheet.base) : sheet.base.slice();
+  renderSheet();
+});
 $('sheetToggleBtn').addEventListener('click', () => { sheet.on = !sheet.on; renderSheet(); });
 $('sheetMarkOnlyBtn').addEventListener('click', () => { sheet.onlyMarked = !sheet.onlyMarked; renderSheet(); window.scrollTo(0, 0); });
 let clearMarksArmed = null;
@@ -2668,9 +2677,11 @@ $('reloadBtn').addEventListener('click', () => {
 
 // 題名の起動アニメーション（ノイズ・回路の線）を30秒おきに流し直す。ページが見えていないときは流さない
 function replayLogo() {
+  // 一度アニメーションを外してから付け直す（前のテーマの動きを残さないため、再生し直しはしない）
   const head = document.querySelector('.hud-head');
-  if (!head.getAnimations) return;
-  head.getAnimations({ subtree: true }).forEach(a => { a.currentTime = 0; a.play(); });
+  head.classList.add('replay-reset');
+  void head.offsetWidth;
+  head.classList.remove('replay-reset');
 }
 let replayTimer = setInterval(() => { if (!document.hidden) replayLogo(); }, 30000);
 
@@ -2950,7 +2961,7 @@ $('sfxChk').addEventListener('change', e => {
 
 // ---------- バージョン・変更履歴 ----------
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
-const APP_VERSION = '1.17';
+const APP_VERSION = '3.9';
 const versionNum = v => String(v).split('.').map(Number);
 const isNewer = (a, b) => {
   const x = versionNum(a), y = versionNum(b);
