@@ -6,6 +6,10 @@
 <title>記憶回路</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- テーマ選択ボタン用（そのテーマの文字だけ読み込む） -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&text=%E8%BF%91%E6%9C%AA%E6%9D%A5&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&text=%E3%83%AC%E3%83%88%E3%83%AD%E3%82%B2%E3%83%BC%E3%83%A0%E2%96%B6&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@800&text=%E7%B4%99&display=swap">
 <!-- テーマごとのフォントとスタイル。選んだテーマ以外は無効にする -->
 <link rel="stylesheet" data-skin-css="future" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=JetBrains+Mono:wght@400;600&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
 <link rel="stylesheet" data-skin-css="future" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&text=%E8%A8%98%E6%86%B6%E5%9B%9E%E8%B7%AF&display=swap">
@@ -764,6 +768,45 @@
   /* テーマ共通: そのテーマでだけ出す部品 */
   html:not([data-skin="game"]) .game-only { display: none !important; }
   html:not([data-skin="paper"]) .stamp { display: none !important; }
+
+  /* ---------- テーマ選択: 各ボタンをそのテーマの見た目で出す（今のテーマに関係なく同じ） ---------- */
+  #skinGroup { gap: 10px; }
+  #skinGroup .chip span {
+    display: inline-block; padding: 9px 16px; margin: 0; border-radius: 0; box-shadow: none; text-shadow: none; clip-path: none;
+    font-size: 15px; font-weight: 700; letter-spacing: .04em; line-height: 1.4; opacity: 1; transform: none;
+    transition: opacity .15s, transform .15s, box-shadow .15s;
+  }
+  #skinGroup .chip span::before, #skinGroup .chip span::after { content: none; }
+  #skinGroup .chip span:hover { transform: translateY(-1px); }
+  #skinGroup .chip input:checked + span { opacity: 1; transform: translateY(-2px); }
+  #skinGroup .chip input:focus-visible + span { outline: 2px dashed currentColor; outline-offset: 3px; }
+  #skinGroup input[value="normal"] + span {
+    background: #fff; color: #1f2430; border: 1px solid #dde2ec; border-radius: 999px;
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", "Segoe UI", sans-serif; font-weight: 600;
+  }
+  #skinGroup input[value="normal"]:checked + span { background: #3b6fe0; border-color: #3b6fe0; color: #fff; box-shadow: 0 4px 12px rgba(59, 111, 224, .35); }
+  #skinGroup input[value="future"] + span {
+    background: #05080f; color: #00e5ff; border: 1px solid #00e5ff; font-family: "Dela Gothic One", sans-serif; font-weight: 400;
+    clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+    text-shadow: 0 0 6px rgba(0, 229, 255, .45);
+  }
+  #skinGroup input[value="future"]:checked + span {
+    background: linear-gradient(100deg, #00e5ff, #ff2bd6); color: #001218; text-shadow: none;
+  }
+  #skinGroup input[value="game"] + span {
+    background: #000; color: #fcfcfc; border: 3px solid #fcfcfc; border-radius: 6px;
+    font-family: "DotGothic16", monospace; font-weight: 400; font-size: 16px; -webkit-font-smoothing: none;
+  }
+  #skinGroup input[value="game"]:checked + span { color: #f8d878; border-color: #f8d878; }
+  #skinGroup input[value="game"]:checked + span::before { content: "▶ "; animation: skin-blink 1s steps(2) infinite; }
+  #skinGroup input[value="paper"] + span {
+    background: #efe4c8; color: #2b2a33; border: 1px solid #b9a984; border-radius: 2px;
+    font-family: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", serif; font-weight: 800; padding-inline: 20px;
+  }
+  #skinGroup input[value="paper"]:checked + span {
+    color: #c8301e; border: 3px double #c8301e; transform: rotate(-4deg); box-shadow: 1px 2px 0 rgba(60, 40, 10, .15);
+  }
+  @keyframes skin-blink { 50% { opacity: 0; } }
 
   /* ---------- カードめくり ---------- */
   .flip { perspective: 1400px; cursor: pointer; margin: 4px 0 10px; outline: none; -webkit-tap-highlight-color: transparent; }
