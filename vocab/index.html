@@ -126,6 +126,7 @@
     font: inherit; padding: 12px 14px; border: 1px solid var(--line); border-radius: 0;
     background: rgba(0, 0, 0, .35); color: var(--text); width: 100%; caret-color: var(--accent);
   }
+  input[type=number]:disabled { opacity: .5; }
   input[type=number] { width: 110px; font-family: var(--f-mono); font-size: 1.1rem; }
   input[type=text] { font-size: 1.15rem; }
   input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 18px rgba(0, 229, 255, .3); }
@@ -317,7 +318,8 @@
       <h2>問題数</h2>
       <div class="row" style="align-items:center">
         <input type="number" id="countInput" min="1" value="10">
-        <span class="note" id="poolInfo"></span>
+        <label class="chip"><input type="checkbox" id="allCountChk"><span>全問</span></label>
+        <span class="note" id="poolInfo" style="margin:0"></span>
       </div>
     </div>
     <button class="block" id="startBtn">テスト開始</button>
@@ -615,6 +617,7 @@ function renderWordPick() {
   $('pickInfo').textContent = `${n} / ${range.length} 語を選択中`;
 }
 
+$('allCountChk').addEventListener('change', () => updateSetup());
 $('pickAllBtn').addEventListener('click', () => {
   rangePool().forEach(w => excluded.delete(wordKey(w)));
   updateSetup();
@@ -646,6 +649,10 @@ function updateSetup() {
   const pool = selectedPool();
   $('poolInfo').textContent = `対象 ${pool.length} 語`;
   $('countInput').max = pool.length;
+  // 「全問」のときは選んでいる単語数に合わせる
+  const allCount = $('allCountChk').checked;
+  $('countInput').disabled = allCount;
+  if (allCount) $('countInput').value = pool.length;
   $('startBtn').disabled = pool.length === 0;
   const miss = loadMiss();
   const weak = Object.values(miss).filter(v => v > 0).length;
@@ -692,7 +699,7 @@ function startSession(mode, format, list) {
 
 $('startBtn').addEventListener('click', () => {
   const pool = selectedPool();
-  let n = parseInt($('countInput').value, 10);
+  let n = $('allCountChk').checked ? pool.length : parseInt($('countInput').value, 10);
   if (!n || n < 1) n = pool.length;
   n = Math.min(n, pool.length);
   if (!pool.length) { $('setupErr').textContent = '出題する単語が選ばれていません。'; return; }
