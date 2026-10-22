@@ -118,15 +118,15 @@ header.board {
 main {
   display: grid; gap: 12px; padding: 12px 16px 40px;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-areas: "debug" "current" "banner" "form" "settings" "table" "pomo" "data" "reset";
+  grid-template-areas: "debug" "news" "current" "banner" "form" "settings" "table" "pomo" "data" "reset";
   max-width: 760px; margin: 0 auto;
 }
 @media (min-width: 900px) and (orientation: landscape) {
   main {
     max-width: 1400px;
     grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr);
-    grid-template-areas: "debug debug" "table current" "table banner" "table form" "table settings" "table pomo" "table data" "table reset" "table .";
-    grid-template-rows: auto auto auto auto auto auto auto auto 1fr;
+    grid-template-areas: "debug debug" "news news" "table current" "table banner" "table form" "table settings" "table pomo" "table data" "table reset" "table .";
+    grid-template-rows: auto auto auto auto auto auto auto auto auto 1fr;
     align-items: start;
   }
   #tableCard { position: sticky; top: 12px; max-height: calc(100vh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow: auto; }
@@ -137,8 +137,8 @@ main {
   main {
     max-width: none;
     grid-template-columns: minmax(0, 4fr) minmax(0, 3fr) minmax(260px, 2.5fr);
-    grid-template-areas: "debug debug debug" "table now side";
-    grid-template-rows: auto 1fr;
+    grid-template-areas: "debug debug debug" "news news news" "table now side";
+    grid-template-rows: auto auto 1fr;
   }
   /* ページ全体は画面ぴったりの高さにしてスクロールさせず、3つの列それぞれの中だけでスクロールさせる */
   html, body { overscroll-behavior: none; }
@@ -150,7 +150,7 @@ main {
   main {
     flex: 1; min-height: 0; width: 100%;
     padding-bottom: 12px;
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
   }
   .col, #tableCard {
     position: static; align-self: stretch; min-height: 0; max-height: none;
@@ -166,6 +166,30 @@ main {
   .col-side { grid-area: side; }
 }
 #banner { grid-area: banner; }
+#news { grid-area: news; display: grid; gap: 8px; }
+/* ---------- 新しいバージョンのお知らせ・変更履歴 ---------- */
+.update-bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  background: var(--running-bg); border: 2px solid var(--running-line); border-radius: 12px; padding: 8px 8px 8px 14px; font-weight: 700;
+}
+.update-bar[hidden] { display: none; }
+.update-bar span { flex: 1 1 100%; }
+.update-bar #updateBtn { flex: 1; }
+.card.changelog { padding: 0 14px; }
+.changelog > summary {
+  min-height: 44px; display: flex; align-items: center; gap: 8px; cursor: pointer; list-style: none;
+  font-size: 14px; font-weight: 700; color: var(--sub);
+}
+.changelog > summary::-webkit-details-marker { display: none; }
+.changelog > summary::after { content: "開く ▸"; margin-left: auto; font-size: 13px; color: var(--accent); }
+.changelog[open] > summary::after { content: "閉じる ▾"; }
+.changelog .new-badge { background: #e5484d; color: #fff; border-radius: 99px; padding: 1px 8px; font-size: 11px; }
+.changelog .new-badge[hidden] { display: none; }
+.cl-list { max-height: 40vh; overflow: auto; padding-bottom: 12px; }
+.cl-entry + .cl-entry { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); }
+.cl-head { display: flex; gap: 10px; align-items: baseline; font-size: 14px; }
+.cl-head span { color: var(--sub); font-size: 13px; }
+.cl-entry ul { margin: 4px 0 0; padding-left: 1.3em; font-size: 14px; line-height: 1.6; }
 #settingsCard { grid-area: settings; }
 #currentCard { grid-area: current; }
 #tableCard { grid-area: table; }
@@ -383,6 +407,18 @@ button.danger-fill { background: var(--late); color: #fff; border-color: transpa
       <div class="cur-sub num" id="dbgInfo"></div>
     </div>
   </section>
+
+  <div id="news">
+    <div class="update-bar" id="updateBar" hidden>
+      <span>🆕 新しいバージョン <b id="updateVer"></b> があります</span>
+      <button class="primary" id="updateBtn">今すぐ更新</button>
+      <button id="updateLater">あとで</button>
+    </div>
+    <details class="card changelog" id="changelog">
+      <summary>📝 変更履歴 <span class="num" id="appVer"></span><span class="new-badge" id="clNew" hidden>NEW</span></summary>
+      <div class="cl-list" id="clList">読み込み中…</div>
+    </details>
+  </div>
 
   <div class="col col-now">
     <section class="card" id="currentCard"></section>
@@ -1311,6 +1347,51 @@ document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
   if (!$('modal').hidden) closeModal(); else if (focusOpen) closeFocus();
 });
+
+/* ================= バージョン・変更履歴 ================= */
+// 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
+const APP_VERSION = '1.12';
+const versionNum = v => String(v).split('.').map(Number);
+const isNewer = (a, b) => {
+  const x = versionNum(a), y = versionNum(b);
+  for (let i = 0; i < Math.max(x.length, y.length); i++) {
+    if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
+  }
+  return false;
+};
+let updateDismissed = null; // 「あとで」を押したバージョン
+function renderChangelog(list) {
+  const entry = e => `<div class="cl-entry"><div class="cl-head"><b>v${esc(e.version)}</b><span>${esc(e.date)}</span>${isNewer(e.version, APP_VERSION) ? '<span>(未更新)</span>' : ''}</div>` +
+    `<ul>${(e.items || []).map(i => `<li>${esc(i)}</li>`).join('')}</ul></div>`;
+  $('clList').innerHTML = list.map(entry).join('');
+}
+// 更新後に初めて開いたときは「NEW」を付け、変更履歴を開いたら消す
+$('appVer').textContent = 'v' + APP_VERSION;
+if (store.get('seenVersion') === null) store.set('seenVersion', APP_VERSION); // はじめて使うときは印を出さない
+$('clNew').hidden = store.get('seenVersion') === APP_VERSION;
+$('changelog').addEventListener('toggle', () => {
+  if ($('changelog').open) { store.set('seenVersion', APP_VERSION); $('clNew').hidden = true; }
+});
+async function checkVersion() {
+  if (location.protocol === 'file:') { $('clList').textContent = 'ファイルを直接開いているため、変更履歴は表示できません。'; return; }
+  try {
+    const res = await fetch('changelog.json?t=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) return;
+    const list = await res.json();
+    if (!Array.isArray(list) || !list.length) return;
+    renderChangelog(list);
+    const latest = String(list[0].version);
+    const show = isNewer(latest, APP_VERSION) && updateDismissed !== latest;
+    $('updateVer').textContent = 'v' + latest;
+    $('updateBar').hidden = !show;
+    // 別のURL(?v=…)で開き直して、古いページのキャッシュを確実に避ける。?debug は残す
+    $('updateBtn').onclick = () => { location.replace(location.pathname + '?v=' + encodeURIComponent(latest) + (DEBUG ? '&debug' : '')); };
+    $('updateLater').onclick = () => { updateDismissed = latest; $('updateBar').hidden = true; };
+  } catch (e) { /* 通信できないときは何も出さない */ }
+}
+checkVersion();
+setInterval(checkVersion, 15 * 60 * 1000); // 開きっぱなしでも15分ごとに確認
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkVersion(); });
 
 /* ================= reset day ================= */
 // 表示中の日の予定を消す。2回押しで実行し、直後の10秒間だけ「元に戻す」を出す
