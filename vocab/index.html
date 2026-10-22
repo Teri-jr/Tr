@@ -1469,6 +1469,8 @@ function schedule(rec, grade, t) {
   } else if (r.ivl === 0) {
     // 初めて、またはやり直し中に覚えられた
     r.ivl = grade === 3 ? 4 : 1;
+  } else if (elapsed === 0) {
+    // 同じ日の2回目以降: 間隔は伸ばさない
   } else {
     // 覚えていた: 間隔を伸ばす。予定より早く復習したときは、実際にあいた日数をもとにする
     const early = elapsed < r.ivl;
@@ -1485,6 +1487,8 @@ function schedule(rec, grade, t) {
 
 function srsGrade(w, grade) {
   const db = srsDb(), k = wordKey(w);
+  // 同じ日に2回目以降の答えでは「◎ 余裕」を「○ 正解」として扱う（再テストで間隔が伸びすぎないように）
+  if (grade === 3 && db[k] && db[k].last === today()) grade = 2;
   db[k] = schedule(db[k], grade, today());
   saveSrs();
 }
@@ -1952,6 +1956,7 @@ function startTimer(sec) {
 }
 function stopTimer() {
   if (timerState.raf) cancelAnimationFrame(timerState.raf);
+  $('timer').classList.remove('warn');
   timerState.raf = 0;
   if (session) session.onTimeout = null;
 }
@@ -1983,7 +1988,8 @@ function renderChoice(area, w) {
     b.textContent = `${i + 1}. ${c}`;
     b.addEventListener('click', () => {
       // 3秒以内に正解なら ◎ 余裕、それより遅ければ ○ 正解
-      const sec = (performance.now() - session.qStart) / 1000;
+      // 表示する秒数（小数1桁）と判定を合わせる
+      const sec = Math.round((performance.now() - session.qStart) / 100) / 10;
       lockChoices();
       const ok = c === ans;
       if (!ok) b.classList.add('wrong');
@@ -2786,7 +2792,7 @@ $('sfxChk').addEventListener('change', e => {
 
 // ---------- バージョン・変更履歴 ----------
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
-const APP_VERSION = '1.12';
+const APP_VERSION = '1.13';
 const versionNum = v => String(v).split('.').map(Number);
 const isNewer = (a, b) => {
   const x = versionNum(a), y = versionNum(b);
