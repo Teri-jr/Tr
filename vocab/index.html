@@ -2067,6 +2067,12 @@ function applySkin(id) {
   try { localStorage.setItem(SKIN_KEY, id); } catch { /* noop */ }
   renderSkinChips();
   replayLogo();
+  stampTitleSound();
+}
+
+// 紙テーマ: 題名のハンコが押される瞬間に音を鳴らす（30秒おきの押し直しでは鳴らさない）
+function stampTitleSound() {
+  if (currentSkin() === 'paper') sfx('stamp', .5);
 }
 
 function renderSkinChips() {
@@ -2188,7 +2194,7 @@ const SOUNDS = {
     start: notes('sine', .06, [[0, 523, .18], [.09, 784, .3]]),
     ok: notes('sine', .07, [[0, 784, .2], [.1, 1175, .45]]),
     ng: notes('triangle', .07, [[0, 330, .22], [.13, 262, .35]]),
-    flip: [[0, 'n', { d: .12, f: 2500, to: 900, v: .07 }], [.02, 't', { f: 660, d: .06, v: .02 }]],
+    flip: [[0, 'n', { d: .16, f: 1800, to: 700, q: .7, v: .14 }]],
     lvup: notes('sine', .06, [[0, 523, .3], [.08, 659, .3], [.16, 784, .3], [.24, 1047, .6]]),
     good: notes('sine', .06, [[0, 523, .3], [.1, 659, .3], [.2, 784, .3], [.3, 1047, .8]]),
     mid: notes('sine', .06, [[0, 523, .3], [.14, 659, .5]]),
@@ -2200,7 +2206,8 @@ const SOUNDS = {
     start: [[0, 't', { f: 220, to: 880, d: .35, type: 'sawtooth', v: .025 }], [.12, 't', { f: 880, to: 1760, d: .3, v: .04 }]],
     ok: [[0, 't', { f: 880, to: 1760, d: .16, v: .06 }], [.12, 't', { f: 1760, d: .35, type: 'triangle', v: .04 }], [.2, 't', { f: 2637, d: .3, v: .02 }]],
     ng: [[0, 't', { f: 320, to: 70, d: .38, type: 'sawtooth', v: .045 }], [0, 'n', { d: .14, f: 900, q: 6, v: .1 }]],
-    flip: [[0, 'n', { d: .22, f: 500, to: 6000, q: 3, v: .12 }]],
+    // ホログラムが反転するような「シュイン」
+    flip: [[0, 't', { f: 380, to: 1600, d: .18, v: .08 }], [0, 'n', { d: .2, f: 600, to: 7000, q: 2, v: .22 }], [.15, 't', { f: 2093, d: .14, type: 'triangle', v: .05 }]],
     lvup: [[0, 't', { f: 220, to: 1760, d: .5, type: 'sawtooth', v: .025 }], ...notes('sine', .04, [[.3, 1047, .3], [.4, 1319, .3], [.5, 1568, .6]])],
     good: [[0, 't', { f: 659, to: 1319, d: .3, v: .05 }], ...notes('sine', .035, [[.28, 1047, .9], [.28, 1319, .9], [.28, 1568, .9]])],
     mid: [[0, 't', { f: 523, to: 1047, d: .45, v: .05 }]],
@@ -2226,7 +2233,9 @@ const SOUNDS = {
     ok: [[0, 'p', { d: .2, f: 3300, v: .13 }], [.17, 'p', { d: .22, f: 3900, v: .11 }], [.36, 'p', { d: .12, f: 3500, v: .08 }]],
     // レ点: 短く下ろして、長く跳ね上げる
     ng: [[0, 'p', { d: .07, f: 3600, v: .13 }], [.09, 'p', { d: .2, f: 4300, v: .15 }]],
-    flip: [[0, 'n', { d: .2, f: 700, to: 3200, q: .7, v: .22 }]],
+    // 単語カードをめくる「パラッ」: 紙の端がこすれる音 + めくれる風切り
+    flip: [[0, 'n', { d: .07, f: 3800, q: .6, v: .26 }], [.01, 'n', { d: .04, f: 6500, q: 2, v: .12 }],
+      [.05, 'n', { d: .26, f: 2200, to: 500, q: .5, v: .3 }], [.12, 'n', { d: .04, f: 5200, q: 2, v: .1 }]],
     lvup: writing(3, .35),
     good: writing(9, 1.1),
     mid: writing(6, .8),
@@ -2250,7 +2259,8 @@ function sfx(kind, delay = 0) {
 
 // ボタンや選択肢を押したときの小さな音（正解・不正解の音が鳴る場面は除く）
 document.addEventListener('pointerdown', e => {
-  if (e.target.closest('.chip, .tiles button, .pick-btn, button.secondary, #sheetList li')) sfx('tap');
+  if (e.target.closest('#sheetView')) return;
+  if (e.target.closest('.chip, .tiles button, .pick-btn, button.secondary')) sfx('tap');
 });
 
 $('sfxChk').checked = sfxOn();
@@ -2261,6 +2271,7 @@ $('sfxChk').addEventListener('change', e => {
 
 // 起動
 renderSkinChips();
+stampTitleSound();
 applySubject();
 if (location.protocol === 'file:') {
   $('loadStatus').textContent = `ファイルを直接開いているため、${subject.file} を選択してください。`;
