@@ -238,7 +238,7 @@
     font-weight: 500; font-size: .95rem; transition: all .15s;
     clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
   }
-  .chip span:hover { border-color: var(--accent); }
+  @media (hover: hover) { .chip span:hover { border-color: var(--accent); } }
   .chip input:checked + span {
     background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 700;
     box-shadow: 0 0 18px rgba(0, 229, 255, .55);
@@ -254,13 +254,13 @@
     clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
     transition: transform .1s, box-shadow .15s, background .15s;
   }
-  button:hover:not(:disabled) { box-shadow: 0 0 28px rgba(0, 229, 255, .7); }
+  @media (hover: hover) { button:hover:not(:disabled) { box-shadow: 0 0 28px rgba(0, 229, 255, .7); } }
   button:active:not(:disabled) { transform: scale(.98); }
   button:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
   button.secondary { background: transparent; color: var(--accent); box-shadow: none; border-color: var(--line); }
-  button.secondary:hover:not(:disabled) { border-color: var(--accent); box-shadow: inset 0 0 14px rgba(0, 229, 255, .2); }
+  @media (hover: hover) { button.secondary:hover:not(:disabled) { border-color: var(--accent); box-shadow: inset 0 0 14px rgba(0, 229, 255, .2); } }
   button.danger { background: transparent; color: var(--ng); border-color: rgba(255, 59, 107, .5); box-shadow: none; }
-  button.danger:hover:not(:disabled) { box-shadow: inset 0 0 14px rgba(255, 59, 107, .25); }
+  @media (hover: hover) { button.danger:hover:not(:disabled) { box-shadow: inset 0 0 14px rgba(255, 59, 107, .25); } }
   button:disabled { opacity: .35; cursor: not-allowed; box-shadow: none; }
   button.block { width: 100%; }
   #startBtn { font-size: 1.1rem; padding: 16px; letter-spacing: .2em; }
@@ -311,7 +311,7 @@
     font-family: var(--f-body); font-weight: 500; letter-spacing: 0; padding: 14px 16px; box-shadow: none;
     font-size: 1.02rem;
   }
-  .choices button:hover:not(:disabled) { border-color: var(--accent); background: rgba(0, 229, 255, .1); box-shadow: none; }
+  @media (hover: hover) { .choices button:hover:not(:disabled) { border-color: var(--accent); background: rgba(0, 229, 255, .1); box-shadow: none; } }
   .choices button:disabled { opacity: .55; }
   .choices button.correct { opacity: 1; background: rgba(57, 255, 159, .14); border-color: var(--ok); box-shadow: 0 0 16px rgba(57, 255, 159, .35); }
   .choices button.wrong { opacity: 1; background: rgba(255, 59, 107, .14); border-color: var(--ng); box-shadow: 0 0 16px rgba(255, 59, 107, .35); }
@@ -329,7 +329,7 @@
     font-family: var(--f-mono); font-size: 1.35rem; font-weight: 600; padding: 10px 0; box-shadow: none;
     clip-path: none;
   }
-  .tiles button:hover:not(:disabled) { background: var(--accent); color: var(--on-accent); box-shadow: 0 0 14px var(--accent); }
+  @media (hover: hover) { .tiles button:hover:not(:disabled) { background: var(--accent); color: var(--on-accent); box-shadow: 0 0 14px var(--accent); } }
   .tiles button.used { visibility: hidden; }
 
   .feedback { padding: 14px 16px; margin-top: 16px; border: 1px solid; animation: rise .25s ease-out; }
@@ -440,7 +440,7 @@
   .chip input { position: absolute; opacity: 0; pointer-events: none; }
   .chip span { display: inline-block; padding: 4px 2px; cursor: pointer; user-select: none; color: var(--text); }
   .chip span::before { content: "▶"; color: transparent; margin-right: 4px; }
-  .chip span:hover::before { color: var(--sub); }
+  @media (hover: hover) { .chip span:hover::before { color: var(--sub); } }
   .chip input:checked + span { color: var(--accent); }
   .chip input:checked + span::before { color: var(--accent); }
   .chip input:focus-visible + span { outline: 2px dashed var(--accent); outline-offset: 2px; }
@@ -449,19 +449,20 @@
     font: inherit; font-family: var(--f-pixel); letter-spacing: .06em; cursor: pointer;
     background: var(--bg); color: var(--text); border: 3px solid var(--text); border-radius: 6px; padding: 10px 16px;
   }
-  button:hover:not(:disabled), button:focus-visible { background: var(--text); color: var(--bg); outline: none; }
+  button:focus-visible { background: var(--text); color: var(--bg); outline: none; }
+  @media (hover: hover) { button:hover:not(:disabled) { background: var(--text); color: var(--bg); outline: none; } }
   button:active:not(:disabled) { transform: translateY(2px); }
   button.secondary { border-color: var(--sub); color: var(--sub); }
-  button.secondary:hover:not(:disabled) { background: var(--sub); color: var(--bg); }
+  @media (hover: hover) { button.secondary:hover:not(:disabled) { background: var(--sub); color: var(--bg); } }
   button.danger { border-color: var(--ng); color: var(--ng); }
-  button.danger:hover:not(:disabled) { background: var(--ng); color: var(--bg); }
+  @media (hover: hover) { button.danger:hover:not(:disabled) { background: var(--ng); color: var(--bg); } }
   button:disabled { opacity: .35; cursor: not-allowed; }
   button.block { width: 100%; }
   #startBtn { font-size: 1.25rem; padding: 14px; color: var(--accent); border-color: var(--accent); margin-bottom: 4px; }
   #startBtn { font-size: 0; }
   #startBtn::before { content: "▶ "; font-size: 1.25rem; animation: blink 1s steps(2) infinite; }
   #startBtn::after { content: attr(data-game); font-size: 1.25rem; }
-  #startBtn:hover:not(:disabled) { background: var(--accent); color: var(--bg); }
+  @media (hover: hover) { #startBtn:hover:not(:disabled) { background: var(--accent); color: var(--bg); } }
 
   .note { color: var(--sub); font-size: .9rem; margin: 10px 0 0; }
   .note:empty { display: none; }
@@ -499,8 +500,10 @@
     position: relative; font-size: 1.1rem; letter-spacing: .02em;
   }
   .choices button::before { content: "▶"; position: absolute; left: 2px; color: transparent; }
-  .choices button:hover:not(:disabled), .choices button:focus-visible { background: transparent; color: var(--accent); }
-  .choices button:hover:not(:disabled)::before, .choices button:focus-visible::before { color: var(--accent); animation: blink .8s steps(2) infinite; }
+  .choices button:focus-visible { background: transparent; color: var(--accent); }
+  @media (hover: hover) { .choices button:hover:not(:disabled) { background: transparent; color: var(--accent); } }
+  .choices button:focus-visible::before { color: var(--accent); animation: blink .8s steps(2) infinite; }
+  @media (hover: hover) { .choices button:hover:not(:disabled)::before { color: var(--accent); animation: blink .8s steps(2) infinite; } }
   .choices button:disabled { opacity: .45; }
   .choices button.correct { opacity: 1; color: var(--ok); }
   .choices button.correct::before { content: "○"; color: var(--ok); }
@@ -680,7 +683,7 @@
     font: inherit; font-family: var(--f-serif); font-weight: 700; letter-spacing: .1em; cursor: pointer;
     background: transparent; color: var(--ink); border: 2px solid var(--ink); border-radius: 2px; padding: 10px 16px;
   }
-  button:hover:not(:disabled) { background: var(--ink); color: var(--paper); }
+  @media (hover: hover) { button:hover:not(:disabled) { background: var(--ink); color: var(--paper); } }
   button.secondary { border-color: var(--sub); color: var(--sub); border-style: dashed; }
   button.danger { border-color: var(--red); color: var(--red); }
   button:disabled { opacity: .4; cursor: not-allowed; }
@@ -716,7 +719,7 @@
     position: relative; border: none; border-bottom: 1px dotted var(--rule); border-radius: 0; text-align: left;
     padding: 10px 6px 10px 2.4em; font-weight: 500; letter-spacing: .04em; background: transparent; color: var(--ink);
   }
-  .choices button:hover:not(:disabled) { background: rgba(255, 255, 255, .35); color: var(--ink); }
+  @media (hover: hover) { .choices button:hover:not(:disabled) { background: rgba(255, 255, 255, .35); color: var(--ink); } }
   .choices button:disabled { opacity: .7; }
   .choices button.correct { opacity: 1; }
   .choices button.correct::before {
@@ -814,7 +817,7 @@
     transition: opacity .15s, transform .15s, box-shadow .15s;
   }
   #skinGroup .chip span::before, #skinGroup .chip span::after { content: none; }
-  #skinGroup .chip span:hover { transform: translateY(-1px); }
+  @media (hover: hover) { #skinGroup .chip span:hover { transform: translateY(-1px); } }
   #skinGroup .chip input:checked + span { opacity: 1; transform: translateY(-2px); }
   #skinGroup .chip input:focus-visible + span { outline: 2px dashed currentColor; outline-offset: 3px; }
   #skinGroup input[value="normal"] + span {
@@ -879,7 +882,79 @@
   .grade-btns button b { font-weight: inherit; }
   .grade-btns button small { font-size: .68rem; font-weight: 400; opacity: .85; }
   .grade-btns button:disabled { opacity: .3; }
-  html[data-skin="normal"] .grade-btns button.secondary { background: var(--card); border: 1px solid var(--border); }
+  /* 評価ボタンの色: ✕ 赤 / △ オレンジ / ○ 青 / ◎ 緑 */
+  html { --g0: #d64545; --g1: #d9770b; --g2: #3b6fe0; --g3: #1f9d55; --g-on: #fff; }
+  @media (prefers-color-scheme: dark) {
+    html[data-skin="normal"]:not([data-theme="light"]) { --g0: #ff7575; --g1: #ffa94d; --g2: #6f9bff; --g3: #4cc485; --g-on: #14171d; }
+  }
+  html[data-skin="normal"][data-theme="dark"] { --g0: #ff7575; --g1: #ffa94d; --g2: #6f9bff; --g3: #4cc485; --g-on: #14171d; }
+  html[data-skin="future"] { --g0: #ff3b6b; --g1: #ffb020; --g2: #00e5ff; --g3: #39ff9f; --g-on: #001218; }
+  html[data-skin="game"] { --g0: #f83800; --g1: #fca044; --g2: #3cbcfc; --g3: #58d854; --g-on: #000; }
+  html[data-skin="paper"] { --g0: #c8301e; --g1: #b8650a; --g2: #2d4fa1; --g3: #3d7a3a; --g-on: #fffdf6; }
+  .grade-btns button {
+    --gc: var(--g2); color: var(--gc); border: 2px solid var(--gc); box-shadow: none; text-shadow: none;
+    background: transparent; background: color-mix(in srgb, var(--gc) 12%, transparent);
+  }
+  .grade-btns .g0 { --gc: var(--g0); }
+  .grade-btns .g1 { --gc: var(--g1); }
+  .grade-btns .g2 { --gc: var(--g2); }
+  .grade-btns .g3 { --gc: var(--g3); }
+  @media (hover: hover) { .grade-btns button:hover:not(:disabled) { background: var(--gc); color: var(--g-on); } }
+  html[data-skin="future"] .grade-btns button { text-shadow: 0 0 8px var(--gc); }
+  /* 4択の答える速さ（2.1秒・◎ 余裕） */
+  .feedback .speed { margin: -2px 0 6px; font-size: .92rem; font-variant-numeric: tabular-nums; }
+  .feedback .speed[data-g="0"] { color: var(--g0); }
+  .feedback .speed[data-g="2"] { color: var(--g2); }
+  .feedback .speed[data-g="3"] { color: var(--g3); }
+
+  /* ---------- 時間制限のバー ---------- */
+  html { --timer-track: rgba(128, 128, 128, .2); --timer-fill: #3b6fe0; --timer-warn: #d64545; }
+  html[data-skin="future"] { --timer-track: rgba(0, 229, 255, .12); --timer-fill: #00e5ff; --timer-warn: #ff3b6b; }
+  html[data-skin="game"] { --timer-track: transparent; --timer-fill: #58d854; --timer-warn: #f83800; }
+  html[data-skin="paper"] { --timer-track: rgba(120, 100, 60, .2); --timer-fill: #2b2a33; --timer-warn: #c8301e; }
+  .timer { display: flex; align-items: center; gap: 10px; margin: -6px 0 14px; }
+  .timer-bar { flex: 1; height: 6px; border-radius: 3px; overflow: hidden; background: var(--timer-track); }
+  .timer-bar i { display: block; height: 100%; width: 100%; background: var(--timer-fill); }
+  .timer-text { min-width: 3.4em; text-align: right; font-size: .85rem; font-variant-numeric: tabular-nums; }
+  .timer.warn .timer-bar i { background: var(--timer-warn); }
+  .timer.warn .timer-text { color: var(--timer-warn); font-weight: 700; }
+  html[data-skin="future"] .timer-bar { border-radius: 0; box-shadow: 0 0 8px rgba(0, 229, 255, .3); }
+  html[data-skin="future"] .timer.warn { animation: timer-blink .5s steps(2) infinite; }
+  html[data-skin="game"] .timer-bar { height: 14px; border: 2px solid var(--text); border-radius: 0; padding: 1px; }
+  html[data-skin="game"] .timer-bar i { background: repeating-linear-gradient(90deg, var(--timer-fill) 0 8px, transparent 8px 10px); }
+  html[data-skin="game"] .timer.warn .timer-bar i { background: repeating-linear-gradient(90deg, var(--timer-warn) 0 8px, transparent 8px 10px); }
+  html[data-skin="paper"] .timer-bar { height: 3px; border-radius: 0; }
+  @keyframes timer-blink { 50% { opacity: .35; } }
+
+  /* ---------- 新しいバージョンのお知らせ ---------- */
+  /* ページの上に場所をとって表示（題名などに重ならない）。スクロールしても上に残る */
+  .update-banner {
+    position: sticky; top: 0; z-index: 70; display: flex; align-items: center; gap: 10px;
+    padding: calc(10px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px));
+    background: var(--ub-bg); color: var(--ub-fg); box-shadow: 0 4px 14px rgba(0, 0, 0, .2); font-size: .92rem;
+  }
+  .update-banner span { flex: 1; min-width: 0; }
+  .update-banner button {
+    padding: 7px 14px; font-size: .88rem; white-space: nowrap; letter-spacing: .02em;
+    background: var(--ub-fg); color: var(--ub-btn-fg); border: none; border-radius: 6px; box-shadow: none; text-shadow: none; clip-path: none;
+  }
+  .update-banner .close { padding: 7px 10px; background: transparent; color: inherit; }
+  html { --ub-bg: #3b6fe0; --ub-fg: #fff; --ub-btn-fg: #2a56c4; }
+  html[data-skin="future"] { --ub-bg: linear-gradient(90deg, #00b8d4, #c21fa8); --ub-fg: #fff; --ub-btn-fg: #5a1670; }
+  html[data-skin="game"] { --ub-bg: #000; --ub-fg: #f8d878; --ub-btn-fg: #000; }
+  html[data-skin="game"] .update-banner button { border-radius: 0; }
+  html[data-skin="game"] .update-banner { border-bottom: 3px solid #f8d878; }
+  html[data-skin="paper"] { --ub-bg: #c8301e; --ub-fg: #fffdf6; --ub-btn-fg: #a8261a; }
+
+  /* ---------- 変更履歴 ---------- */
+  .changelog { display: grid; gap: 12px; }
+  .cl-head { display: flex; align-items: baseline; gap: 10px; }
+  .cl-head b { font-size: 1rem; }
+  .cl-head span { font-size: .8rem; opacity: .65; }
+  .changelog ul { margin: 4px 0 0; padding-left: 1.3em; font-size: .9rem; line-height: 1.7; }
+  .changelog details summary { cursor: pointer; font-size: .9rem; opacity: .8; }
+  .changelog details[open] summary { margin-bottom: 10px; }
+  .changelog details .cl-entry + .cl-entry { margin-top: 12px; }
 
   /* ---------- 忘却曲線の内訳バー ---------- */
   html { --srs-due: #e8590c; --srs-learn: #3b6fe0; --srs-done: #1f9d55; --srs-new: rgba(128, 128, 128, .28); }
@@ -1006,6 +1081,11 @@
 </script>
 </head>
 <body>
+<div class="update-banner hidden" id="updateBanner" role="status">
+  <span>新しいバージョンがあります</span>
+  <button id="updateBtn">更新する</button>
+  <button class="close" id="updateClose" aria-label="閉じる">✕</button>
+</div>
 <main>
   <header class="hud-head">
     <div class="title-wrap">
@@ -1070,6 +1150,16 @@
       </div>
       <p id="formatNote" class="note"></p>
     </div>
+    <div class="card" id="timerCard">
+      <h2>時間制限（1問ごと）</h2>
+      <div class="row" id="timerGroup">
+        <label class="chip"><input type="radio" name="timer" value="0" checked><span>なし</span></label>
+        <label class="chip"><input type="radio" name="timer" value="10"><span>10秒</span></label>
+        <label class="chip"><input type="radio" name="timer" value="20"><span>20秒</span></label>
+        <label class="chip"><input type="radio" name="timer" value="30"><span>30秒</span></label>
+      </div>
+      <p class="note">時間切れは ✕ になります。漢字の書き問題には付きません。4択は3秒以内に正解すると「◎ 余裕」になります。</p>
+    </div>
     <div class="card">
       <h2 id="rangeTitle">範囲（段落）</h2>
       <div class="row" id="paraGroup"></div>
@@ -1078,7 +1168,7 @@
         <input type="number" id="spanFrom" inputmode="numeric">
         <span class="span-label">〜</span>
         <input type="number" id="spanTo" inputmode="numeric">
-        <button class="secondary pick-btn" id="spanAllBtn">全範囲</button>
+        <label class="chip"><input type="checkbox" id="spanAllChk"><span>全範囲</span></label>
       </div>
     </div>
     <div class="card" id="srsCard">
@@ -1109,6 +1199,11 @@
         <button class="secondary" id="reloadBtn">CSVを読み込み直す</button>
       </div>
     </div>
+    <div class="card hidden" id="changelogCard">
+      <h2>変更履歴</h2>
+      <p class="note" id="versionInfo" style="margin:0 0 10px"></p>
+      <div class="changelog" id="changelog"></div>
+    </div>
   </section>
 
   <!-- 出題 -->
@@ -1116,6 +1211,7 @@
     <div class="card">
       <div class="progress"><span id="progText"></span><span id="scoreText"></span></div>
       <div class="bar"><div id="progBar"></div></div>
+      <div class="timer hidden" id="timer"><div class="timer-bar"><i id="timerFill"></i></div><span class="timer-text" id="timerText"></span></div>
       <div class="game-only game-status" id="gameStatus"></div>
       <div class="prompt-label" id="promptLabel"></div>
       <div class="prompt" id="prompt"></div>
@@ -1405,18 +1501,19 @@ function migrateMiss() {
 
 // 4段階の評価ボタン。showIvl のときは、それぞれの次の復習日の目安も出す
 const GRADES = [
-  { g: 0, mark: '✕', label: '全然', cls: 'danger' },
-  { g: 1, mark: '△', label: '惜しい', cls: 'secondary' },
-  { g: 2, mark: '○', label: '正解', cls: '' },
-  { g: 3, mark: '◎', label: '余裕', cls: 'secondary' },
+  { g: 0, mark: '✕', label: '全然' },
+  { g: 1, mark: '△', label: '惜しい' },
+  { g: 2, mark: '○', label: '正解' },
+  { g: 3, mark: '◎', label: '余裕' },
 ];
+const gradeName = g => `${GRADES[g].mark} ${GRADES[g].label}`;
 function gradeButtons(w, showIvl, onPick) {
   const box = document.createElement('div');
   box.className = 'grade-btns';
   const rec = srsDb()[wordKey(w)], t = today();
   for (const G of GRADES) {
     const b = document.createElement('button');
-    if (G.cls) b.className = G.cls;
+    b.className = 'g' + G.g;
     b.dataset.grade = G.g;
     b.innerHTML = `<b>${G.mark} ${G.label}</b>` + (showIvl ? `<small>${ivlLabel(schedule(rec, G.g, t).ivl)}</small>` : '');
     b.addEventListener('click', () => {
@@ -1451,7 +1548,11 @@ function show(name, keepScroll = false) {
   }
   $('themeView').classList.toggle('hidden', name !== 'setup' && name !== 'load');
   if (!keepScroll) window.scrollTo(0, 0);
+  if (name !== 'quiz') stopTimer();
+  // 新しいバージョンのお知らせは、設定画面にいるときだけ出す
+  $('updateBanner').classList.toggle('hidden', !(updateReady && (name === 'setup' || name === 'load')));
 }
+let updateReady = false;
 
 function sortParagraphs(a, b) {
   const na = parseFloat(a), nb = parseFloat(b);
@@ -1580,14 +1681,31 @@ const selectedPool = () => $('dueOnlyChk').checked ? rangePool().filter(w => srs
 $('allCountChk').addEventListener('change', () => updateSetup());
 $('spanFrom').addEventListener('input', () => updateSetup());
 $('spanTo').addEventListener('input', () => updateSetup());
-$('spanAllBtn').addEventListener('click', () => {
+// 「全範囲」は、番号が最初から最後までのあいだ選ばれた状態で表示する
+const isFullSpan = () => {
+  const nums = numericParas();
+  return !nums.length || (Number($('spanFrom').value) === Math.min(...nums) && Number($('spanTo').value) === Math.max(...nums));
+};
+$('spanAllChk').addEventListener('change', () => {
   const nums = numericParas();
   $('spanFrom').value = nums.length ? Math.min(...nums) : '';
   $('spanTo').value = nums.length ? Math.max(...nums) : '';
   updateSetup();
 });
 
+// 時間制限（端末に覚えておく）
+const getTimer = () => Number(document.querySelector('input[name=timer]:checked').value);
+try {
+  const saved = localStorage.getItem('vocabTest.timer');
+  const el = saved && document.querySelector(`input[name=timer][value="${saved}"]`);
+  if (el) el.checked = true;
+} catch { /* noop */ }
+document.querySelectorAll('input[name=timer]').forEach(i => i.addEventListener('change', () => {
+  try { localStorage.setItem('vocabTest.timer', String(getTimer())); } catch { /* noop */ }
+}));
+
 function updateSetup() {
+  if (subject.rangeType === 'span') $('spanAllChk').checked = isFullSpan();
   // 英英定義が1つもない教材では「英英定義 → 英単語」を選べない
   const d2eInput = document.querySelector('input[name=mode][value=d2e]');
   d2eInput.disabled = !words.some(w => w.definition);
@@ -1627,6 +1745,7 @@ function updateSetup() {
   // 学習方法ごとに使う設定だけ出す
   const study = getStudy();
   $('formatCard').classList.toggle('hidden', study !== 'test');
+  $('timerCard').classList.toggle('hidden', study !== 'test');
   $('countCard').classList.toggle('hidden', study === 'sheet');
   $('startBtn').textContent = { test: 'テスト開始', card: 'カードをめくる', sheet: '赤シートで覚える' }[study];
   $('startBtn').dataset.game = { test: 'たたかう', card: 'カードを めくる', sheet: 'あかシートを つかう' }[study];
@@ -1678,7 +1797,7 @@ function modesFor(list, mode, format) {
 
 function startSession(mode, format, list) {
   const modes = modesFor(list, mode, format);
-  session = { kind: 'test', srs: testSrsOn(), mode, format, queue: list, modes, index: 0, results: [], expGained: 0, levelStart: levelOf(loadExp()) };
+  session = { kind: 'test', srs: testSrsOn(), timer: getTimer(), mode, format, queue: list, modes, index: 0, results: [], expGained: 0, levelStart: levelOf(loadExp()) };
   sfx('start');
   lastSettings = { mode, format };
   show('quiz');
@@ -1759,9 +1878,47 @@ function renderQuestion() {
   $('feedback').innerHTML = '';
   const area = $('answerArea');
   area.innerHTML = '';
+  session.onTimeout = null;
   if (format === 'choice') renderChoice(area, w);
   else if (format === 'input') renderInput(area, w);
   else renderLetters(area, w);
+  // 時間制限（漢字の書き問題には付けない）。4択の速さもここから測る
+  const noTimer = isKanji() && format === 'input' && kanjiType(w) === 'write';
+  if (session.timer && !noTimer) startTimer(session.timer);
+  else { stopTimer(); $('timer').classList.add('hidden'); }
+  session.qStart = performance.now();
+}
+
+// ---------- 時間制限 ----------
+let timerState = { raf: 0, end: 0, total: 0, lastSec: 0 };
+function startTimer(sec) {
+  if (timerState.raf) cancelAnimationFrame(timerState.raf);
+  timerState = { raf: 0, end: performance.now() + sec * 1000, total: sec * 1000, lastSec: sec };
+  $('timer').classList.remove('hidden', 'warn');
+  const step = () => {
+    const left = Math.max(0, timerState.end - performance.now());
+    const s = Math.ceil(left / 1000);
+    $('timerFill').style.width = (left / timerState.total * 100) + '%';
+    $('timerText').textContent = `${s}秒`;
+    const warn = left <= 3000;
+    $('timer').classList.toggle('warn', warn);
+    // 残り3秒からは1秒ごとにチクタク
+    if (warn && s < timerState.lastSec && s > 0) sfx('tick');
+    timerState.lastSec = s;
+    if (left <= 0) {
+      timerState.raf = 0;
+      const onTimeout = session && session.onTimeout;
+      if (onTimeout) { session.onTimeout = null; onTimeout(); }
+      return;
+    }
+    timerState.raf = requestAnimationFrame(step);
+  };
+  step();
+}
+function stopTimer() {
+  if (timerState.raf) cancelAnimationFrame(timerState.raf);
+  timerState.raf = 0;
+  if (session) session.onTimeout = null;
 }
 
 function renderChoice(area, w) {
@@ -1790,16 +1947,20 @@ function renderChoice(area, w) {
     const b = document.createElement('button');
     b.textContent = `${i + 1}. ${c}`;
     b.addEventListener('click', () => {
-      box.querySelectorAll('button').forEach((x, j) => {
-        x.disabled = true;
-        if (choices[j] === ans) x.classList.add('correct');
-      });
+      // 3秒以内に正解なら ◎ 余裕、それより遅ければ ○ 正解
+      const sec = (performance.now() - session.qStart) / 1000;
+      lockChoices();
       const ok = c === ans;
       if (!ok) b.classList.add('wrong');
-      judge(ok, c);
+      judge(ok, c, ok ? (sec <= 3 ? 3 : 2) : 0, { sec });
     });
     box.appendChild(b);
   });
+  const lockChoices = () => box.querySelectorAll('button').forEach((x, j) => {
+    x.disabled = true;
+    if (choices[j] === ans) x.classList.add('correct');
+  });
+  session.onTimeout = () => { lockChoices(); judge(false, '', 0, { timeout: true }); };
   area.appendChild(box);
 }
 
@@ -1822,6 +1983,7 @@ function renderInput(area, w) {
     if (mode === 'e2j') selfJudge(input.value.trim());
     else judge(englishMatches(input.value, w.english), input.value.trim());
   };
+  session.onTimeout = () => { input.disabled = btn.disabled = true; judge(false, input.value.trim(), 0, { timeout: true }); };
   btn.addEventListener('click', submit);
   input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) submit(); });
   area.append(input, btn);
@@ -1851,6 +2013,7 @@ function renderKanjiInput(area, w) {
     input.disabled = btn.disabled = true;
     judge(kana(input.value) === kana(w.japanese), input.value.trim());
   };
+  session.onTimeout = () => { input.disabled = btn.disabled = true; judge(false, input.value.trim(), 0, { timeout: true }); };
   btn.addEventListener('click', submit);
   input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) submit(); });
   area.append(input, btn);
@@ -1909,6 +2072,10 @@ function renderLetters(area, w) {
     const given = picked.map(i => tiles[i]).join('');
     judge(normalize(given) === normalize(target), given);
   });
+  session.onTimeout = () => {
+    [back, clear, ok, ...tileBtns].forEach(b => b.disabled = true);
+    judge(false, picked.map(i => tiles[i]).join(''), 0, { timeout: true });
+  };
   ctrl.append(back, clear, ok);
   refresh();
   area.append(box, grid, ctrl);
@@ -1959,6 +2126,10 @@ function renderWordTiles(area, w) {
     [back, clear, ok, ...tileBtns].forEach(b => b.disabled = true);
     judge(normalize(given()) === normalize(target.join(' ')), given());
   });
+  session.onTimeout = () => {
+    [back, clear, ok, ...tileBtns].forEach(b => b.disabled = true);
+    judge(false, given(), 0, { timeout: true });
+  };
   ctrl.append(back, clear, ok);
   refresh();
   area.append(box, grid, ctrl);
@@ -1976,14 +2147,19 @@ function detailHTML(w) {
   </div>`;
 }
 
-function judge(ok, given, grade = ok ? 2 : 0) {
+function judge(ok, given, grade = ok ? 2 : 0, info = {}) {
+  stopTimer();
   const w = session.queue[session.index];
   session.results.push({ w, ok, given });
   if (session.srs) srsGrade(w, grade);
+  // 4択の速さ・時間切れ
+  const speed = info.timeout ? `<div class="speed" data-g="0">時間切れ・${gradeName(0)}</div>`
+    : info.sec != null ? `<div class="speed" data-g="${grade}">${info.sec.toFixed(1)}秒・${gradeName(grade)}</div>` : '';
   const gameMsg = gainExp(ok);
   const fb = $('feedback');
   fb.innerHTML = `<div class="feedback ${ok ? 'ok' : 'ng'}">
-    <div class="verdict">${ok ? '○ 正解！' : '× 不正解'}</div>
+    <div class="verdict">${ok ? '○ 正解！' : info.timeout ? '× 時間切れ' : '× 不正解'}</div>
+    ${speed}
     <div class="game-only game-msg">${gameMsg}</div>
     ${detailHTML(w)}
   </div>`;
@@ -2003,6 +2179,7 @@ function judge(ok, given, grade = ok ? 2 : 0) {
 }
 
 function selfJudge(given) {
+  stopTimer();
   const w = session.queue[session.index];
   const fb = $('feedback');
   const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -2475,6 +2652,7 @@ const notes = (type, v, list) => list.map(([at, f, d]) => [at, 't', { f, d, type
 const SOUNDS = {
   // クラシック: やわらかいチャイム
   normal: {
+    tick: [[0, 't', { f: 1000, d: .05, v: .04 }]],
     intro: notes('sine', .05, [[0, 523, .5], [.07, 659, .5], [.14, 784, .5], [.21, 1047, .9]]),
     tap: [[0, 't', { f: 880, d: .07, v: .035 }]],
     start: notes('sine', .06, [[0, 523, .18], [.09, 784, .3]]),
@@ -2489,6 +2667,7 @@ const SOUNDS = {
   },
   // 近未来: シンセの上昇音・電子音
   future: {
+    tick: [[0, 't', { f: 1760, d: .06, type: 'triangle', v: .05 }]],
     // 起動音 + 回路の接点が光るタイミング（.5 / .9 / 1.3 / 1.6 秒）に合わせた電子音
     intro: [[0, 't', { f: 45, to: 160, d: 2, type: 'sawtooth', a: .35, v: .05 }], [0, 't', { f: 90, to: 330, d: 1.8, a: .3, v: .035 }],
       [.1, 't', { f: 180, to: 880, d: 1.2, type: 'triangle', a: .25, v: .02 }],
@@ -2507,6 +2686,7 @@ const SOUNDS = {
   },
   // レトロゲーム: 矩形波のピコピコ音
   game: {
+    tick: notes('square', .04, [[0, 1568, .04]]),
     // 題名が落ちて跳ねる（.4 秒で着地）→ 短いジングル
     intro: [[0, 't', { f: 1400, to: 300, d: .38, type: 'square', v: .03 }], ...notes('square', .045, [[.4, 196, .06], [.62, 523, .08], [.7, 659, .08], [.78, 784, .08], [.86, 1047, .22]])],
     tap: notes('square', .03, [[0, 1200, .03]]),
@@ -2521,6 +2701,7 @@ const SOUNDS = {
   },
   // 紙: ペンを走らせる音、紙をパラッ、ハンコでドン
   paper: {
+    tick: [[0, 'p', { d: .03, f: 4400, v: .1 }]],
     tap: [[0, 'p', { d: .045, f: 4200, v: .1 }]],
     start: writing(6, .55),
     // ◯ をくるっと一筆で書く（途中で少し力が変わる）
@@ -2564,6 +2745,48 @@ $('sfxChk').addEventListener('change', e => {
   sfx('ok');
 });
 
+// ---------- バージョン・変更履歴 ----------
+// 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
+const APP_VERSION = '1.10';
+const versionNum = v => String(v).split('.').map(Number);
+const isNewer = (a, b) => {
+  const x = versionNum(a), y = versionNum(b);
+  for (let i = 0; i < Math.max(x.length, y.length); i++) {
+    if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
+  }
+  return false;
+};
+
+function renderChangelog(list) {
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const entry = e => `<div class="cl-entry"><div class="cl-head"><b>v${esc(e.version)}</b><span>${esc(e.date)}</span></div>` +
+    `<ul>${e.items.map(i => `<li>${esc(i)}</li>`).join('')}</ul></div>`;
+  const recent = list.slice(0, 3), older = list.slice(3);
+  $('changelog').innerHTML = recent.map(entry).join('') +
+    (older.length ? `<details><summary>以前の変更（${older.length}件）</summary>${older.map(entry).join('')}</details>` : '');
+  $('versionInfo').textContent = `いまのバージョン: v${APP_VERSION}`;
+  $('changelogCard').classList.remove('hidden');
+}
+
+// アプリを開いたときに最新の変更履歴を読み、新しいバージョンがあればお知らせを出す
+async function checkVersion() {
+  if (location.protocol === 'file:') return;
+  try {
+    const res = await fetch('changelog.json?t=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) return;
+    const list = await res.json();
+    if (!Array.isArray(list) || !list.length) return;
+    renderChangelog(list);
+    const latest = list[0].version;
+    if (isNewer(latest, APP_VERSION)) {
+      updateReady = true;
+      if (!$('setupView').classList.contains('hidden') || !$('loadView').classList.contains('hidden')) $('updateBanner').classList.remove('hidden');
+      $('updateBtn').onclick = () => { location.replace(location.pathname + '?v=' + encodeURIComponent(latest)); };
+    }
+  } catch { /* 読めなければ何も出さない */ }
+}
+$('updateClose').addEventListener('click', () => { updateReady = false; $('updateBanner').classList.add('hidden'); });
+
 // 起動
 renderSkinChips();
 introSound();
@@ -2574,6 +2797,7 @@ if (location.protocol === 'file:') {
 } else {
   tryFetch();
 }
+checkVersion();
 </script>
 </body>
 </html>
