@@ -190,6 +190,16 @@ main {
 
 button.armed { background: var(--late); color: #fff; border-color: transparent; font-weight: 700; }
 #formCard.editing { border: 2px solid var(--running-line); }
+.fold-head {
+  width: 100%; display: flex; align-items: center; justify-content: space-between;
+  background: none; border: none; padding: 0; margin: -6px 0 4px; min-height: 44px;
+  font-size: 14px; font-weight: 700; letter-spacing: 0.06em; color: var(--sub); text-align: left;
+}
+.fold-head .chev::after { content: "閉じる ▾"; font-size: 13px; font-weight: 600; letter-spacing: 0; }
+#formCard.collapsed { padding-top: 6px; padding-bottom: 6px; }
+#formCard.collapsed .fold-head { margin: 0; color: var(--text); }
+#formCard.collapsed .fold-head .chev::after { content: "開く ▸"; color: var(--accent); }
+#formCard.collapsed #taskForm { display: none; }
 .row.editing { box-shadow: inset 4px 0 0 var(--accent); }
 .form-msg { color: var(--late); font-size: 14px; font-weight: 700; min-height: 0; }
 .form-msg:empty { display: none; }
@@ -303,7 +313,7 @@ button.armed { background: var(--late); color: #fff; border-color: transparent; 
   </section>
 
   <section class="card" id="formCard">
-    <h2 id="formTitle">タスクを追加</h2>
+    <button type="button" class="fold-head" id="formToggle" aria-expanded="true" aria-controls="taskForm"><span id="formTitle">タスクを追加</span><span class="chev" aria-hidden="true"></span></button>
     <form id="taskForm" class="form-grid" autocomplete="off">
       <div>
         <label for="fName">タスク名</label>
@@ -911,6 +921,12 @@ $('notifyTest').addEventListener('click', async () => {
 });
 
 /* ================= form ================= */
+// 実行中はTodo追加欄を畳む(見出しをタップで開閉)。編集を押したときは開く
+function setFormCollapsed(on) {
+  $('formCard').classList.toggle('collapsed', on);
+  $('formToggle').setAttribute('aria-expanded', String(!on));
+}
+$('formToggle').addEventListener('click', () => setFormCollapsed(!$('formCard').classList.contains('collapsed')));
 function resetForm() {
   editingId = null;
   $('taskForm').reset();
@@ -959,6 +975,7 @@ function brkMod(t, bi) {
 const actions = {
   start(t) {
     if (!isLive() || data.tasks.some(x => taskState(x) === 'running')) return false;
+    setFormCollapsed(true);
     audio.unlock();
     t.actualStart = nowMs(); t.actualEnd = null; t.adj = 0;
     t.brk = {};
@@ -986,6 +1003,7 @@ const actions = {
   down(t) { move(t, 1); },
   edit(t) {
     editingId = t.id;
+    setFormCollapsed(false);
     $('fName').value = t.name; $('fDur').value = t.dur; $('fMemo').value = t.memo || '';
     $('fPomo').checked = !!t.pomo;
     $('fPomo').disabled = taskState(t) !== 'pending';
@@ -1173,6 +1191,7 @@ if (DEBUG) {
 
 syncSettingsUI();
 syncPomoUI();
+setFormCollapsed(data.tasks.some(t => taskState(t) === 'running')); // 実行中に開き直した場合も畳んだ状態で
 $('fPomo').checked = !!store.get('lastPomo');
 render();
 phaseKeySeen = phaseKeyNow;
