@@ -52,8 +52,7 @@
     font-family: var(--f-mono); font-size: .72rem; letter-spacing: .18em; color: var(--accent);
     display: flex; justify-content: space-between; gap: 8px;
   }
-  .hud-head .sys .blink { color: var(--ok); }
-  .hud-head .sys .blink::before { content: "● "; animation: blink 1.6s steps(2) infinite; }
+  .hud-head .sys #wordCount { color: var(--sub); font-variant-numeric: tabular-nums; }
   h1 {
     font-family: var(--f-display); font-weight: 700; font-size: clamp(1.7rem, 7vw, 2.4rem);
     letter-spacing: .06em; line-height: 1.1; margin: 0; text-wrap: balance;
@@ -263,7 +262,7 @@
 <body>
 <main>
   <header class="hud-head">
-    <div class="sys"><span>ENG-COMM // VOCAB TEST</span><span class="blink">ONLINE</span></div>
+    <div class="sys"><span>ENG-COMM // VOCAB TEST</span><span id="wordCount"></span></div>
     <h1>VOCAB//LINK</h1>
     <div class="jp">英語コミュニケーション 新出単語テスト</div>
   </header>
@@ -557,6 +556,7 @@ function sortParagraphs(a, b) {
 }
 
 function buildParagraphs() {
+  $('wordCount').textContent = `${words.length} WORDS`;
   const paras = [...new Set(words.map(w => w.paragraph || '(なし)'))].sort(sortParagraphs);
   const g = $('paraGroup');
   g.innerHTML = '';
