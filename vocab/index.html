@@ -881,8 +881,9 @@
     position: sticky; top: env(safe-area-inset-top, 0px); z-index: 45; display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
     margin: 0 -16px 12px; padding: 10px 16px; background: var(--sheet-bar-bg); border-bottom: 1px solid rgba(128, 128, 128, .3);
   }
-  .sheet-bar { flex-wrap: nowrap; gap: 6px; padding-block: 8px; }
-  .sheet-bar .row { flex-wrap: nowrap; gap: 6px; margin-left: auto; }
+  .sheet-bar { flex-wrap: wrap; gap: 6px; padding-block: 8px; }
+  .sheet-bar .row { flex-wrap: nowrap; gap: 6px; width: 100%; }
+  .sheet-bar #sheetMarkOnlyBtn.on { outline: 2px solid currentColor; outline-offset: -2px; }
   .sheet-bar button.pick-btn { padding: 6px 9px; font-size: .8rem; letter-spacing: 0; white-space: nowrap; }
   .sheet-bar #sheetInfo { flex: 1; min-width: 0; font-size: .78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   html { --sheet-bar-bg: rgba(244, 246, 250, .96); }
@@ -899,6 +900,15 @@
   .sheet-list li:first-child { border-top: none; }
   .sheet-list .no { grid-column: 1 / -1; font-size: .72rem; opacity: .55; }
   .sheet-list .q { font-weight: 700; overflow-wrap: anywhere; }
+  .sheet-list .qt { -webkit-box-decoration-break: clone; box-decoration-break: clone; padding: 0 2px; border-radius: 2px; transition: background .15s; }
+  /* 線を引いた単語（テーマごとの見た目） */
+  html[data-skin="normal"] .sheet-list li.marked .qt { background: linear-gradient(transparent 50%, #fff176 50%); }
+  @media (prefers-color-scheme: dark) { html[data-skin="normal"]:not([data-theme="light"]) .sheet-list li.marked .qt { background: linear-gradient(transparent 55%, rgba(255, 214, 0, .45) 55%); } }
+  html[data-skin="normal"][data-theme="dark"] .sheet-list li.marked .qt { background: linear-gradient(transparent 55%, rgba(255, 214, 0, .45) 55%); }
+  html[data-skin="future"] .sheet-list li.marked .qt { background: linear-gradient(transparent 62%, rgba(0, 229, 255, .45) 62%); text-shadow: 0 0 8px rgba(0, 229, 255, .8); }
+  html[data-skin="game"] .sheet-list li.marked .qt::before { content: "★"; color: var(--accent); margin-right: 4px; }
+  html[data-skin="paper"] .sheet-list li.marked .qt { background: linear-gradient(transparent 82%, rgba(43, 42, 51, .55) 82%, rgba(43, 42, 51, .55) 92%, transparent 92%); }
+  .sheet-empty { padding: 18px 2px; opacity: .7; }
   .sheet-list .q.def { font-weight: 500; font-size: .9rem; }
   .sheet-list .a { color: var(--sheet-ink); font-weight: 700; overflow-wrap: anywhere; transition: color .12s; }
   .sheet-list .a.covered { color: transparent; }
@@ -1102,10 +1112,12 @@
       <div class="row">
         <button class="secondary pick-btn" id="sheetShuffleBtn">シャッフル</button>
         <button class="secondary pick-btn" id="sheetToggleBtn">シートを外す</button>
+        <button class="secondary pick-btn" id="sheetMarkOnlyBtn">線だけ</button>
+        <button class="secondary pick-btn" id="sheetClearMarksBtn">線を消す</button>
       </div>
     </div>
     <div class="card">
-      <p class="note" style="margin:0 0 6px">赤い文字が答え。シートのつまみを上下に動かすか、スクロールして確かめよう。項目をタップするとその答えだけ見えます。</p>
+      <p class="note" style="margin:0 0 6px">赤い文字が答え。シートのつまみを上下に動かすか、スクロールして確かめよう。シートより上の項目をタップすると線を引けます（もう一度で消える）。シートに隠れた項目をタップすると、その答えだけ見えます。</p>
       <ol class="sheet-list" id="sheetList"></ol>
     </div>
     <div class="red-sheet" id="redSheet"><div class="red-sheet-handle" id="sheetHandle">≡ 赤シート</div></div>
@@ -1216,7 +1228,9 @@ function onLoaded(text, source) {
   $('filePick').classList.add('hidden');
   buildParagraphs();
   updateSetup();
-  show('setup');
+  // 教材を切り替えたときは、スクロール位置をそのままにする
+  show('setup', switchingSubject);
+  switchingSubject = false;
 }
 
 async function tryFetch() {
@@ -1231,6 +1245,7 @@ async function tryFetch() {
   } catch (e) {
     $('loadStatus').textContent = `${file} を自動で読み込めませんでした。`;
     $('filePick').classList.remove('hidden');
+    switchingSubject = false;
     show('load');
   }
 }
@@ -1259,12 +1274,12 @@ function addMiss(w) {
 }
 
 // ---------- 画面 ----------
-function show(name) {
+function show(name, keepScroll = false) {
   for (const v of ['load', 'setup', 'quiz', 'result', 'card', 'sheet']) {
     $(v + 'View').classList.toggle('hidden', v !== name && !(v === 'load' && name === 'setup'));
   }
   $('themeView').classList.toggle('hidden', name !== 'setup' && name !== 'load');
-  window.scrollTo(0, 0);
+  if (!keepScroll) window.scrollTo(0, 0);
 }
 
 function sortParagraphs(a, b) {
@@ -1298,6 +1313,7 @@ function applySubject() {
   $('spanGroup').classList.toggle('hidden', subject.rangeType !== 'span');
 }
 
+let switchingSubject = false;
 function switchSubject(sub) {
   subject = sub;
   try { localStorage.setItem(SUBJECT_KEY, sub.id); } catch { /* noop */ }
@@ -1306,9 +1322,10 @@ function switchSubject(sub) {
   if (location.protocol === 'file:') {
     $('loadStatus').textContent = `${sub.file} を選択してください。`;
     $('filePick').classList.remove('hidden');
-    show('load');
+    show('load', true);
   } else {
-    show('load');
+    // 設定画面は出したまま読み込む（画面の高さが変わってスクロールが飛ばないように）
+    switchingSubject = true;
     tryFetch();
   }
 }
@@ -1963,12 +1980,22 @@ $('cardQuitBtn').addEventListener('click', () => {
 
 // ---------- 赤シート ----------
 // 赤いシートの上端より下にある答えを隠す。シートは画面に固定で、つまみで上下に動かせる
-let sheet = { list: [], mode: 'e2j', top: 0, on: true };
+let sheet = { list: [], mode: 'e2j', top: 0, on: true, onlyMarked: false };
+
+// 線を引いた単語（教材ごとに端末へ保存）
+const marksKey = () => `vocabTest.marks.${subject.id}`;
+function loadMarks() {
+  try { return new Set(JSON.parse(localStorage.getItem(marksKey())) || []); } catch { return new Set(); }
+}
+function saveMarks(set) {
+  try { localStorage.setItem(marksKey(), JSON.stringify([...set])); } catch { /* noop */ }
+}
 
 function startSheet(pool) {
   sheet.mode = getMode() === 'mix' ? 'e2j' : getMode();
   sheet.list = pool.slice();
   sheet.on = true;
+  sheet.onlyMarked = false;
   sfx('start');
   renderSheet();
   show('sheet');
@@ -1978,17 +2005,41 @@ function startSheet(pool) {
 function renderSheet() {
   const ol = $('sheetList');
   ol.innerHTML = '';
-  $('sheetInfo').textContent = `${isKanji() ? '' : MODE_LABEL[sheet.mode] + '・'}${sheet.list.length} 個`;
-  for (const w of sheet.list) {
+  const marks = loadMarks();
+  const markedInList = sheet.list.filter(w => marks.has(wordKey(w))).length;
+  const shown = sheet.onlyMarked ? sheet.list.filter(w => marks.has(wordKey(w))) : sheet.list;
+  $('sheetInfo').textContent = `${isKanji() ? '' : MODE_LABEL[sheet.mode] + '・'}${shown.length} 個` + (markedInList ? `・線 ${markedInList}` : '');
+  $('sheetMarkOnlyBtn').classList.toggle('on', sheet.onlyMarked);
+  $('sheetMarkOnlyBtn').textContent = sheet.onlyMarked ? 'すべて表示' : '線だけ';
+  if (!shown.length) {
+    const li = document.createElement('li');
+    li.className = 'sheet-empty';
+    li.textContent = '線を引いた単語はまだありません。シートより上の項目をタップすると線を引けます。';
+    ol.appendChild(li);
+  }
+  for (const w of shown) {
     const li = document.createElement('li');
     const no = document.createElement('span'); no.className = 'no';
     no.textContent = subject.rangeType === 'block' ? `No.${words.indexOf(w) + 1}` : w.paragraph ? `${subject.rangeLabel} ${w.paragraph}` : '';
     const q = document.createElement('span'); q.className = 'q' + (sheet.mode === 'd2e' ? ' def' : '');
-    q.textContent = promptOf(w, sheet.mode) + (isKanji() && w.definition ? `（${w.definition}）` : '');
+    const qt = document.createElement('span'); qt.className = 'qt';
+    qt.textContent = promptOf(w, sheet.mode) + (isKanji() && w.definition ? `（${w.definition}）` : '');
+    q.appendChild(qt);
     const a = document.createElement('span'); a.className = 'a';
     a.textContent = answerOf(w, sheet.mode);
     li.append(no, q, a);
-    li.addEventListener('click', () => li.classList.toggle('peek'));
+    li.classList.toggle('marked', marks.has(wordKey(w)));
+    // シートに隠れている項目はのぞき見、シートの外に出ている項目は線を引く／消す
+    li.addEventListener('click', () => {
+      if (a.classList.contains('covered')) { li.classList.toggle('peek'); return; }
+      li.classList.remove('peek');
+      const m = loadMarks(), k = wordKey(w);
+      if (m.has(k)) m.delete(k); else m.add(k);
+      saveMarks(m);
+      li.classList.toggle('marked', m.has(k));
+      const n = sheet.list.filter(x => m.has(wordKey(x))).length;
+      $('sheetInfo').textContent = $('sheetInfo').textContent.replace(/・線 \d+$/, '') + (n ? `・線 ${n}` : '');
+    });
     ol.appendChild(li);
   }
   $('redSheet').classList.toggle('off', !sheet.on);
@@ -2035,6 +2086,22 @@ window.addEventListener('resize', () => placeSheet(sheet.top));
 
 $('sheetShuffleBtn').addEventListener('click', () => { sheet.list = shuffle(sheet.list); renderSheet(); });
 $('sheetToggleBtn').addEventListener('click', () => { sheet.on = !sheet.on; renderSheet(); });
+$('sheetMarkOnlyBtn').addEventListener('click', () => { sheet.onlyMarked = !sheet.onlyMarked; renderSheet(); window.scrollTo(0, 0); });
+let clearMarksArmed = null;
+$('sheetClearMarksBtn').addEventListener('click', () => {
+  const btn = $('sheetClearMarksBtn');
+  if (!clearMarksArmed) {
+    btn.textContent = 'もう一度で消す';
+    clearMarksArmed = setTimeout(() => { clearMarksArmed = null; btn.textContent = '線を消す'; }, 3000);
+    return;
+  }
+  clearTimeout(clearMarksArmed);
+  clearMarksArmed = null;
+  btn.textContent = '線を消す';
+  saveMarks(new Set());
+  sheet.onlyMarked = false;
+  renderSheet();
+});
 $('sheetBackBtn').addEventListener('click', () => { updateSetup(); show('setup'); });
 $('backBtn').addEventListener('click', () => { updateSetup(); show('setup'); });
 // 誤操作防止: 2回押すとリセット
