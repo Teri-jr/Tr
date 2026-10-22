@@ -120,8 +120,8 @@
   .feedback .verdict { font-weight: 700; font-size: 1.15rem; margin-bottom: 6px; }
   .feedback.ok .verdict { color: var(--ok); }
   .feedback.ng .verdict { color: var(--ng); }
-  .detail div { margin: 2px 0; }
-  .detail b { display: inline-block; min-width: 4.5em; color: var(--sub); font-weight: 600; font-size: .85rem; }
+  .detail div { margin: 3px 0; display: grid; grid-template-columns: 5.2em 1fr; gap: 8px; align-items: baseline; }
+  .detail b { color: var(--sub); font-weight: 600; font-size: .85rem; }
   .actions { display: flex; gap: 8px; margin-top: 12px; }
   .actions button { flex: 1; }
   .score { font-size: 2.6rem; font-weight: 800; text-align: center; margin: 4px 0; }
@@ -3014,7 +3014,7 @@ $('sfxChk').addEventListener('change', e => {
 
 // ---------- バージョン・変更履歴 ----------
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
-const APP_VERSION = '3.10';
+const APP_VERSION = '3.11';
 const versionNum = v => String(v).split('.').map(Number);
 const isNewer = (a, b) => {
   const x = versionNum(a), y = versionNum(b);
