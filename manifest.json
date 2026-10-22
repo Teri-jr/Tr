@@ -1,6 +1,6 @@
 {
-  "name": "受験勉強 運行表",
-  "short_name": "運行表",
+  "name": "StudyLine 受験勉強の運行表",
+  "short_name": "StudyLine",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

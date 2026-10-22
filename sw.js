@@ -1,4 +1,4 @@
-// 受験勉強 運行表: 通知用の最小 Service Worker
+// StudyLine: 通知用の最小 Service Worker
 // iOS(ホーム画面に追加したWebアプリ)は registration.showNotification() でしか通知を出せないため、そのために置く。
 // オフラインキャッシュはしない(index.html を更新したらすぐ反映されるように)。
 
