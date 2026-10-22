@@ -212,6 +212,43 @@
   .err { color: var(--ng); font-size: .9rem; }
   #resultView > .row { gap: 10px; }
 
+  /* 単語の編集 */
+  .form { display: grid; grid-template-columns: 5.5em 1fr; gap: 10px 12px; align-items: center; }
+  .form label { font-family: var(--f-mono); font-size: .75rem; color: var(--sub); letter-spacing: .06em; }
+  .form textarea { grid-column: 2; }
+  textarea {
+    font: inherit; padding: 10px 12px; border: 1px solid var(--line); border-radius: 0; width: 100%;
+    background: rgba(0, 0, 0, .35); color: var(--text); resize: vertical; caret-color: var(--accent);
+  }
+  textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 18px rgba(0, 229, 255, .3); }
+  #tokenInput { min-width: 0; font-family: var(--f-mono); font-size: .95rem; }
+  #tokenSaveBtn { flex: none; }
+  .ok-text { color: var(--ok); }
+  .howto summary { cursor: pointer; color: var(--accent); font-size: .9rem; }
+  .howto ol { padding-left: 1.3em; margin: 8px 0 0; font-size: .86rem; color: var(--sub); }
+  .howto li { margin: 4px 0; }
+  code { font-family: var(--f-mono); font-size: .85em; color: var(--accent); background: rgba(0, 229, 255, .08); padding: 1px 5px; }
+  .wlist { list-style: none; padding: 0; margin: 0; }
+  .wlist .para-head {
+    font-family: var(--f-mono); font-size: .72rem; color: var(--accent-2); letter-spacing: .14em; padding: 12px 0 4px;
+  }
+  .wlist .item { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; padding: 10px 0; border-top: 1px dashed var(--line); }
+  .wlist .item .en { font-family: var(--f-display); font-weight: 700; font-size: 1.05rem; letter-spacing: .03em; }
+  .wlist .item .ja { font-size: .92rem; }
+  .wlist .item .def { grid-column: 1 / -1; color: var(--sub); font-size: .8rem; line-height: 1.5; }
+  .wlist .item .ops { display: flex; gap: 6px; align-items: start; grid-row: 1 / 3; grid-column: 2; }
+  .wlist .item .ops button { padding: 7px 10px; font-size: .8rem; letter-spacing: .02em; clip-path: none; }
+  .wlist .item.editing { background: rgba(0, 229, 255, .06); }
+  .savebar {
+    position: sticky; bottom: 0; z-index: 20; display: flex; gap: 8px; align-items: center;
+    margin: 0 -16px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+    background: rgba(5, 8, 15, .92); border-top: 1px solid var(--line);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  .savebar #dirtyInfo { flex: 1; min-width: 0; font-family: var(--f-mono); font-size: .75rem; color: var(--sub); }
+  .savebar #dirtyInfo.dirty { color: var(--accent-2); }
+  .savebar button { padding: 11px 14px; font-size: .9rem; letter-spacing: .04em; }
+
   @keyframes blink { 50% { opacity: 0; } }
   @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) {
@@ -276,6 +313,78 @@
         <button class="danger" id="resetBtn">苦手データをリセット</button>
         <button class="secondary" id="reloadBtn">CSVを読み込み直す</button>
       </div>
+    </div>
+    <div class="card">
+      <h2>単語の管理</h2>
+      <p class="note" style="margin:0 0 12px">単語の追加・編集・削除はここから。保存できるのはGitHubトークンを登録した端末だけです。</p>
+      <button class="secondary block" id="openEditBtn">単語を編集する</button>
+    </div>
+  </section>
+
+  <!-- 単語の編集 -->
+  <section id="editView" class="hidden">
+    <div class="card">
+      <h2>GitHub接続</h2>
+      <div id="tokenOff">
+        <p class="note" style="margin:0 0 10px">保存にはGitHubのアクセストークンが必要です。トークンはこの端末のブラウザにだけ保存されます。</p>
+        <details class="howto">
+          <summary>トークンの作り方</summary>
+          <ol>
+            <li>GitHubにログインし、右上のアイコン →「Settings」→ 左メニュー一番下の「Developer settings」</li>
+            <li>「Personal access tokens」→「Fine-grained tokens」→「Generate new token」</li>
+            <li>Token name は自由（例: vocab）。Expiration（有効期限）を選ぶ</li>
+            <li>Repository access で「Only select repositories」→ <code id="repoName"></code> を選ぶ</li>
+            <li>Permissions の「Contents」を「Read and write」にする</li>
+            <li>「Generate token」を押し、表示された <code>github_pat_…</code> をコピーして下に貼る</li>
+          </ol>
+        </details>
+        <div class="row" style="margin-top:10px; flex-wrap:nowrap">
+          <input type="password" id="tokenInput" placeholder="github_pat_…" autocomplete="off">
+          <button id="tokenSaveBtn">登録</button>
+        </div>
+      </div>
+      <div id="tokenOn" class="hidden">
+        <p class="note ok-text" style="margin:0 0 10px">● この端末は接続済みです。保存すると全員の画面に反映されます。</p>
+        <button class="danger" id="tokenClearBtn">この端末の登録を解除</button>
+      </div>
+      <p class="err" id="tokenErr"></p>
+    </div>
+
+    <div class="card" id="wordFormCard">
+      <h2 id="formTitle">単語を追加</h2>
+      <div class="form">
+        <label for="fEnglish">英単語</label>
+        <input type="text" id="fEnglish" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="companion">
+        <label for="fJapanese">意味</label>
+        <input type="text" id="fJapanese" autocomplete="off" placeholder="仲間">
+        <label for="fParagraph">段落</label>
+        <input type="text" id="fParagraph" autocomplete="off" inputmode="numeric" placeholder="1">
+        <label for="fDefinition">英英定義</label>
+        <textarea id="fDefinition" rows="3" spellcheck="false" placeholder="a person or animal that you spend time with"></textarea>
+      </div>
+      <p class="err" id="formErr"></p>
+      <div class="actions">
+        <button class="secondary hidden" id="formCancelBtn">キャンセル</button>
+        <button id="formSubmitBtn">追加</button>
+      </div>
+      <details class="howto" style="margin-top:14px">
+        <summary>まとめて追加（CSV形式で貼り付け）</summary>
+        <p class="note">1行に1単語。<code>英単語,意味,段落,"英英定義"</code> の順。見出し行はあってもなくてもOK。同じ英単語がすでにあれば上書きします。</p>
+        <textarea id="bulkInput" rows="5" spellcheck="false" placeholder='odd,奇妙な,5,"strange or unusual; not common or expected"'></textarea>
+        <button class="secondary block" id="bulkAddBtn" style="margin-top:8px">まとめて追加</button>
+        <p class="note" id="bulkMsg"></p>
+      </details>
+    </div>
+
+    <div class="card">
+      <h2 id="listTitle">単語一覧</h2>
+      <ul class="wlist" id="wordList"></ul>
+    </div>
+
+    <div class="savebar">
+      <span id="dirtyInfo">変更なし</span>
+      <button class="secondary" id="editBackBtn">戻る</button>
+      <button id="ghSaveBtn">GitHubに保存</button>
     </div>
   </section>
 
@@ -417,7 +526,7 @@ function addMiss(w) {
 
 // ---------- 画面 ----------
 function show(name) {
-  for (const v of ['load', 'setup', 'quiz', 'result']) {
+  for (const v of ['load', 'setup', 'quiz', 'result', 'edit']) {
     $(v + 'View').classList.toggle('hidden', v !== name && !(v === 'load' && name === 'setup'));
   }
   window.scrollTo(0, 0);
@@ -781,6 +890,297 @@ $('reloadBtn').addEventListener('click', () => {
   if (location.protocol === 'file:') { $('filePick').classList.remove('hidden'); $('fileInput').click(); }
   else tryFetch();
 });
+
+// ---------- 単語の編集（GitHubに保存） ----------
+const GH = { owner: 'Teri-jr', repo: 'Tr', branch: 'main', path: 'vocab/words.csv' };
+const TOKEN_KEY = 'vocabTest.ghToken';
+let draft = [];        // 編集中の単語リスト
+let editingIndex = -1; // フォームで編集中の行（-1 は新規追加）
+let dirty = 0;         // 未保存の変更数
+
+function getToken() {
+  try { return localStorage.getItem(TOKEN_KEY) || ''; } catch { return ''; }
+}
+function setToken(t) {
+  try { t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY); } catch { /* noop */ }
+}
+
+// CSVに書き出す（カンマ・引用符・改行を含む欄と英英定義はダブルクォートで囲む）
+function toCSV(list) {
+  const q = (s, force) => (force || /[",\r\n]/.test(s)) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  const lines = ['english,japanese,paragraph,definition'];
+  for (const w of list) lines.push([q(w.english), q(w.japanese), q(w.paragraph), q(w.definition, true)].join(','));
+  return lines.join('\n') + '\n';
+}
+
+function utf8ToBase64(s) {
+  const bytes = new TextEncoder().encode(s);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+function base64ToUtf8(b64) {
+  const bin = atob(b64.replace(/\s/g, ''));
+  return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0)));
+}
+
+async function ghRequest(method, body) {
+  const url = `https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}` + (method === 'GET' ? `?ref=${GH.branch}` : '');
+  const res = await fetch(url, {
+    method,
+    cache: 'no-store',
+    headers: {
+      Accept: 'application/vnd.github+json',
+      Authorization: `Bearer ${getToken()}`,
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (res.ok) return res.json();
+  const msg = {
+    401: 'トークンが無効か期限切れです。作り直して登録してください。',
+    403: 'トークンに書き込み権限がありません（Contents を Read and write に）。',
+    404: `リポジトリ ${GH.owner}/${GH.repo} にアクセスできません。トークンの対象リポジトリを確認してください。`,
+    409: 'ほかの場所で同時に更新されました。もう一度保存してください。',
+    422: 'GitHubが保存を受け付けませんでした。もう一度試してください。',
+  }[res.status] || `GitHubとの通信に失敗しました（${res.status}）`;
+  const err = new Error(msg);
+  err.status = res.status;
+  throw err;
+}
+
+// GitHub上の最新の words.csv を読む（公開ページのキャッシュより新しい）
+async function fetchLatestFromGitHub() {
+  const data = await ghRequest('GET');
+  return { list: loadWords(base64ToUtf8(data.content)), sha: data.sha };
+}
+
+function setDirty(n) {
+  dirty = n;
+  const el = $('dirtyInfo');
+  el.textContent = dirty ? `未保存の変更 ${dirty} 件` : '変更なし';
+  el.classList.toggle('dirty', dirty > 0);
+}
+
+function renderTokenState() {
+  const has = !!getToken();
+  $('tokenOff').classList.toggle('hidden', has);
+  $('tokenOn').classList.toggle('hidden', !has);
+  $('ghSaveBtn').disabled = !has;
+  $('repoName').textContent = `${GH.owner}/${GH.repo}`;
+}
+
+async function openEditor() {
+  draft = words.map(w => ({ ...w }));
+  setDirty(0);
+  resetForm();
+  renderTokenState();
+  renderWordList();
+  $('tokenErr').textContent = '';
+  show('edit');
+  if (getToken()) {
+    try {
+      draft = (await fetchLatestFromGitHub()).list;
+      renderWordList();
+    } catch (e) {
+      $('tokenErr').textContent = e.message;
+    }
+  }
+}
+
+function renderWordList() {
+  const ul = $('wordList');
+  ul.innerHTML = '';
+  $('listTitle').textContent = `単語一覧（${draft.length} 語）`;
+  const order = draft.map((w, i) => i).sort((a, b) =>
+    sortParagraphs(draft[a].paragraph || '', draft[b].paragraph || '') || a - b);
+  let lastPara = null;
+  for (const i of order) {
+    const w = draft[i];
+    if (w.paragraph !== lastPara) {
+      lastPara = w.paragraph;
+      const h = document.createElement('li');
+      h.className = 'para-head';
+      h.textContent = w.paragraph ? `PARAGRAPH ${w.paragraph}` : 'NO PARAGRAPH';
+      ul.appendChild(h);
+    }
+    const li = document.createElement('li');
+    li.className = 'item' + (i === editingIndex ? ' editing' : '');
+    const en = document.createElement('div'); en.className = 'en'; en.textContent = w.english;
+    const ja = document.createElement('div'); ja.className = 'ja'; ja.textContent = w.japanese;
+    const def = document.createElement('div'); def.className = 'def'; def.textContent = w.definition;
+    const ops = document.createElement('div'); ops.className = 'ops';
+    const edit = document.createElement('button');
+    edit.className = 'secondary'; edit.textContent = '編集';
+    edit.addEventListener('click', () => startEdit(i));
+    const del = document.createElement('button');
+    del.className = 'danger'; del.textContent = '削除';
+    let armed = null;
+    del.addEventListener('click', () => {
+      if (!armed) {
+        del.textContent = '本当に？';
+        armed = setTimeout(() => { armed = null; del.textContent = '削除'; }, 3000);
+        return;
+      }
+      clearTimeout(armed);
+      draft.splice(i, 1);
+      if (editingIndex === i) resetForm();
+      else if (editingIndex > i) editingIndex--;
+      setDirty(dirty + 1);
+      renderWordList();
+    });
+    ops.append(edit, del);
+    li.append(en, ops, ja);
+    if (w.definition) li.appendChild(def);
+    ul.appendChild(li);
+  }
+}
+
+function startEdit(i) {
+  const w = draft[i];
+  editingIndex = i;
+  $('fEnglish').value = w.english;
+  $('fJapanese').value = w.japanese;
+  $('fParagraph').value = w.paragraph;
+  $('fDefinition').value = w.definition;
+  $('formTitle').textContent = `「${w.english}」を編集`;
+  $('formSubmitBtn').textContent = '更新';
+  $('formCancelBtn').classList.remove('hidden');
+  $('formErr').textContent = '';
+  renderWordList();
+  $('wordFormCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function resetForm() {
+  editingIndex = -1;
+  for (const id of ['fEnglish', 'fJapanese', 'fDefinition']) $(id).value = '';
+  $('formTitle').textContent = '単語を追加';
+  $('formSubmitBtn').textContent = '追加';
+  $('formCancelBtn').classList.add('hidden');
+  $('formErr').textContent = '';
+}
+
+$('formSubmitBtn').addEventListener('click', () => {
+  const w = {
+    english: $('fEnglish').value.trim(),
+    japanese: $('fJapanese').value.trim(),
+    paragraph: $('fParagraph').value.trim(),
+    definition: $('fDefinition').value.trim().replace(/\s*\n\s*/g, ' '),
+  };
+  if (!w.english || !w.japanese) { $('formErr').textContent = '英単語と意味は必須です。'; return; }
+  const dup = draft.findIndex((x, i) => i !== editingIndex && wordKey(x) === wordKey(w));
+  if (dup >= 0) { $('formErr').textContent = `「${draft[dup].english}」はすでにあります。一覧の「編集」から直してください。`; return; }
+  if (editingIndex >= 0) draft[editingIndex] = w;
+  else draft.push(w);
+  const para = w.paragraph;
+  resetForm();
+  $('fParagraph').value = para; // 同じ段落の単語を続けて入れやすくする
+  setDirty(dirty + 1);
+  renderWordList();
+  $('fEnglish').focus();
+});
+$('formCancelBtn').addEventListener('click', () => { resetForm(); renderWordList(); });
+
+$('bulkAddBtn').addEventListener('click', () => {
+  let rows = parseCSV($('bulkInput').value);
+  if (rows.length && rows[0][0].trim().toLowerCase() === 'english') rows = rows.slice(1);
+  let added = 0, updated = 0, skipped = 0;
+  for (const r of rows) {
+    const w = {
+      english: (r[0] || '').trim(), japanese: (r[1] || '').trim(),
+      paragraph: (r[2] || '').trim(), definition: (r[3] || '').trim(),
+    };
+    if (!w.english || !w.japanese) { skipped++; continue; }
+    const i = draft.findIndex(x => wordKey(x) === wordKey(w));
+    if (i >= 0) { draft[i] = w; updated++; } else { draft.push(w); added++; }
+  }
+  $('bulkMsg').textContent = `追加 ${added} 語・上書き ${updated} 語` + (skipped ? `・読み飛ばし ${skipped} 行（英単語か意味が空）` : '');
+  if (added + updated) {
+    $('bulkInput').value = '';
+    setDirty(dirty + added + updated);
+    renderWordList();
+  }
+});
+
+$('tokenSaveBtn').addEventListener('click', async () => {
+  const t = $('tokenInput').value.trim();
+  if (!t) return;
+  setToken(t);
+  $('tokenErr').textContent = '';
+  $('tokenSaveBtn').disabled = true;
+  try {
+    const latest = await fetchLatestFromGitHub();
+    $('tokenInput').value = '';
+    if (!dirty) { draft = latest.list; renderWordList(); }
+    renderTokenState();
+  } catch (e) {
+    setToken('');
+    $('tokenErr').textContent = e.message;
+  } finally {
+    $('tokenSaveBtn').disabled = false;
+  }
+});
+
+let clearArmed = null;
+$('tokenClearBtn').addEventListener('click', () => {
+  const btn = $('tokenClearBtn');
+  if (!clearArmed) {
+    btn.textContent = 'もう一度押すと解除';
+    clearArmed = setTimeout(() => { clearArmed = null; btn.textContent = 'この端末の登録を解除'; }, 3000);
+    return;
+  }
+  clearTimeout(clearArmed);
+  clearArmed = null;
+  btn.textContent = 'この端末の登録を解除';
+  setToken('');
+  renderTokenState();
+});
+
+$('ghSaveBtn').addEventListener('click', async () => {
+  const btn = $('ghSaveBtn');
+  if (!draft.length) { $('tokenErr').textContent = '単語が0語のままでは保存できません。'; return; }
+  btn.disabled = true;
+  btn.textContent = '保存中…';
+  $('tokenErr').textContent = '';
+  try {
+    const { sha } = await ghRequest('GET');
+    await ghRequest('PUT', {
+      message: `Update vocab words (${draft.length} words)`,
+      content: utf8ToBase64(toCSV(draft)),
+      sha,
+      branch: GH.branch,
+    });
+    words = draft.map(w => ({ ...w }));
+    buildParagraphs();
+    updateSetup();
+    $('loadStatus').textContent = `GitHubに保存しました（${words.length} 語）。公開ページへの反映には1〜2分かかります。`;
+    setDirty(0);
+    btn.textContent = '保存しました';
+    setTimeout(() => { btn.textContent = 'GitHubに保存'; }, 2000);
+  } catch (e) {
+    $('tokenErr').textContent = e.message;
+    btn.textContent = 'GitHubに保存';
+  } finally {
+    btn.disabled = !getToken();
+  }
+});
+
+let backArmed = null;
+$('editBackBtn').addEventListener('click', () => {
+  const btn = $('editBackBtn');
+  if (dirty && !backArmed) {
+    btn.textContent = '変更を捨てて戻る';
+    backArmed = setTimeout(() => { backArmed = null; btn.textContent = '戻る'; }, 3000);
+    return;
+  }
+  clearTimeout(backArmed);
+  backArmed = null;
+  btn.textContent = '戻る';
+  setDirty(0);
+  updateSetup();
+  show('setup');
+});
+$('openEditBtn').addEventListener('click', openEditor);
 
 // 起動
 if (location.protocol === 'file:') {
