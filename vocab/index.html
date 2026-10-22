@@ -707,9 +707,9 @@
   .memo-text { display: inline-block; animation: write-in 1s linear .1s both; }
   @keyframes memo-fade { from { opacity: 1; } to { opacity: .28; } }
   .memo::after {
-    content: ""; position: absolute; left: 0; bottom: 4px; width: 36px; height: 88px; pointer-events: none;
-    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 64'%3E%3Cg transform='rotate(28 4 60)'%3E%3Crect x='0' y='2' width='8' height='44' rx='1' fill='%23e8b53a' stroke='%237a5a10'/%3E%3Crect x='0' y='2' width='8' height='7' fill='%23d2d2d2' stroke='%23777'/%3E%3Cpath d='M0 46 L4 60 L8 46 Z' fill='%23f1d3a6' stroke='%237a5a10'/%3E%3Cpath d='M2.6 55 L4 60 L5.4 55 Z' fill='%232b2a33'/%3E%3C/g%3E%3C/svg%3E") no-repeat left bottom / contain;
-    animation: pen-run 1s linear .1s both, pen-wobble .11s ease-in-out .1s 9 alternate, pen-away .35s ease-in 1.12s forwards;
+    content: ""; position: absolute; left: 0; bottom: 4px; width: 55px; height: 88px; pointer-events: none;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 64'%3E%3Cg transform='rotate(28 4 60)'%3E%3Crect x='0' y='2' width='8' height='44' rx='1' fill='%23e8b53a' stroke='%237a5a10'/%3E%3Crect x='0' y='2' width='8' height='7' fill='%23d2d2d2' stroke='%23777'/%3E%3Cpath d='M0 46 L4 60 L8 46 Z' fill='%23f1d3a6' stroke='%237a5a10'/%3E%3Cpath d='M2.6 55 L4 60 L5.4 55 Z' fill='%232b2a33'/%3E%3C/g%3E%3C/svg%3E") no-repeat left bottom / contain;
+    animation: pen-run 1s linear .1s both, pen-wobble .11s ease-in-out .1s 9 alternate both, pen-away .35s ease-in 1.12s forwards;
   }
   @keyframes write-in { from { clip-path: inset(-30% 100% -30% 0); } to { clip-path: inset(-30% 0 -30% 0); } }
   @keyframes pen-run { from { left: 0; } to { left: 100%; } }
@@ -963,6 +963,8 @@
   .grade-btns .g3 { --gc: var(--g3); }
   @media (hover: hover) { .grade-btns button:hover:not(:disabled) { background: var(--gc); color: var(--g-on); } }
   html[data-skin="future"] .grade-btns button { text-shadow: 0 0 8px var(--gc); }
+  html[data-skin="game"] .grade-btns button:focus-visible { background: var(--gc); color: var(--g-on); }
+  html[data-skin="game"] .update-banner button:focus-visible { outline: 3px solid currentColor; outline-offset: 2px; }
   /* 4択の答える速さ（2.1秒・◎ 余裕） */
   .feedback .speed { margin: -2px 0 6px; font-size: .92rem; font-variant-numeric: tabular-nums; }
   .feedback .speed[data-g="0"] { color: var(--g0); }
@@ -1059,7 +1061,7 @@
     margin: 0 -16px 12px; padding: 10px 16px; background: var(--sheet-bar-bg); border-bottom: 1px solid rgba(128, 128, 128, .3);
   }
   .sheet-bar { flex-wrap: wrap; gap: 6px; padding-block: 8px; }
-  .sheet-bar .row { flex-wrap: nowrap; gap: 6px; width: 100%; }
+  .sheet-bar .row { flex-wrap: wrap; gap: 6px; width: 100%; }
   .sheet-bar #sheetMarkOnlyBtn.on { outline: 2px solid currentColor; outline-offset: -2px; }
   .sheet-bar button.pick-btn { padding: 6px 9px; font-size: .8rem; letter-spacing: 0; white-space: nowrap; }
   .sheet-bar #sheetInfo { flex: 1; min-width: 0; font-size: .78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1509,13 +1511,14 @@ function schedule(rec, grade, t) {
   grade = effectiveGrade(rec, grade, t);
   const r = rec ? { ...rec } : { ivl: 0, ease: EASE_START, reps: 0, lapses: 0, due: t, last: null };
   const elapsed = r.last == null ? 0 : Math.max(0, t - r.last);
+  const sameDay = r.last === t;
   if (grade === 0) {
     // 忘れていた: 最初からやり直し（今日もう一度）
-    if (r.ivl > 0) { r.lapses++; r.ease = Math.max(EASE_MIN, r.ease - .2); }
+    if (r.ivl > 0 && !sameDay) { r.lapses++; r.ease = Math.max(EASE_MIN, r.ease - .2); }
     r.ivl = 0;
   } else if (grade === 1) {
     // 惜しい: 1日後にもう一度
-    if (r.ivl > 0) r.ease = Math.max(EASE_MIN, r.ease - .15);
+    if (r.ivl > 0 && !sameDay) r.ease = Math.max(EASE_MIN, r.ease - .15);
     r.ivl = 1;
   } else if (r.ivl === 0) {
     // 初めて、またはやり直し中に覚えられた
@@ -2269,7 +2272,8 @@ function judge(ok, given, grade = ok ? 2 : 0, info = {}) {
   next.addEventListener('click', nextQuestion);
   fb.appendChild(next);
   $('scoreText').textContent = `正解 ${session.results.filter(r => r.ok).length}`;
-  setTimeout(() => next.focus(), 0);
+  // 時間切れのときは、入力中の Enter やスペースで答えを見る前に進まないよう、次へボタンに移さない
+  if (!info.timeout) setTimeout(() => next.focus(), 0);
 }
 
 function selfJudge(given) {
@@ -2518,7 +2522,7 @@ function renderSheet() {
 function placeSheet(y) {
   // シートはつまみが上部バーに隠れない高さまでしか上げない
   const minTop = $('sheetBar').getBoundingClientRect().bottom + 36;
-  sheet.top = Math.max(minTop, Math.min(window.innerHeight - 24, y));
+  sheet.top = Math.min(window.innerHeight - 24, Math.max(minTop, y));
   $('redSheet').style.top = sheet.top + 'px';
   updateCovered();
 }
@@ -2535,7 +2539,7 @@ let coverQueued = false;
 const queueCover = () => {
   if (coverQueued) return;
   coverQueued = true;
-  requestAnimationFrame(() => { coverQueued = false; updateCovered(); });
+  requestAnimationFrame(() => { coverQueued = false; placeSheet(sheet.top); });
 };
 window.addEventListener('scroll', queueCover, { passive: true });
 window.addEventListener('resize', () => placeSheet(sheet.top));
@@ -2600,7 +2604,7 @@ function replayLogo() {
   if (!head.getAnimations) return;
   head.getAnimations({ subtree: true }).forEach(a => { a.currentTime = 0; a.play(); });
 }
-setInterval(() => { if (!document.hidden) replayLogo(); }, 30000);
+let replayTimer = setInterval(() => { if (!document.hidden) replayLogo(); }, 30000);
 
 // ---------- テーマ ----------
 const SKINS = [
@@ -2618,11 +2622,21 @@ function applySkin(id) {
   try { localStorage.setItem(SKIN_KEY, id); } catch { /* noop */ }
   renderSkinChips();
   replayLogo();
+  // 流し直しが始まったばかりの演出に重ならないよう、30秒の数え直し
+  clearInterval(replayTimer);
+  replayTimer = setInterval(() => { if (!document.hidden) replayLogo(); }, 30000);
   introSound();
 }
 
 // 題名のアニメーションに合わせてテーマの音を鳴らす（開いたとき・テーマを切り替えたとき。30秒おきの流し直しでは鳴らさない）
 function introSound() {
+  // 前のテーマの題名の音が残っていたら止める
+  if (introBus && audioCtx) {
+    const old = introBus;
+    try { old.gain.setTargetAtTime(0, audioCtx.currentTime, .02); } catch { /* noop */ }
+    setTimeout(() => { try { old.disconnect(); } catch { /* noop */ } }, 200);
+    introBus = null;
+  }
   sfx('intro');
 }
 
@@ -2687,7 +2701,7 @@ function tone(ac, t, { f, to, d, type = 'sine', v = .06, a = .006 }) {
   gain.gain.setValueAtTime(.0001, t);
   gain.gain.exponentialRampToValueAtTime(v, t + a);
   gain.gain.exponentialRampToValueAtTime(.0001, t + d);
-  osc.connect(gain).connect(ac.destination);
+  osc.connect(gain).connect((sfxOut || ac.destination));
   osc.start(t);
   osc.stop(t + d + .02);
 }
@@ -2707,7 +2721,7 @@ function pen(ac, t, { d, f = 3600, v = .12 }) {
   gain.gain.linearRampToValueAtTime(v, t + .012);
   gain.gain.linearRampToValueAtTime(v * .6, t + d * .8);
   gain.gain.exponentialRampToValueAtTime(.0001, t + d);
-  src.connect(bp).connect(hp).connect(gain).connect(ac.destination);
+  src.connect(bp).connect(hp).connect(gain).connect((sfxOut || ac.destination));
   src.start(t, Math.random() * .5);
   src.stop(t + d + .02);
 }
@@ -2736,7 +2750,7 @@ function noise(ac, t, { d, f = 2000, to, q = 1, v = .15, type = 'bandpass', a = 
     gain.gain.setValueAtTime(v, t);
   }
   gain.gain.exponentialRampToValueAtTime(.0001, t + d);
-  src.connect(flt).connect(gain).connect(ac.destination);
+  src.connect(flt).connect(gain).connect((sfxOut || ac.destination));
   src.start(t);
   src.stop(t + d + .02);
 }
@@ -2825,6 +2839,8 @@ const SOUNDS = {
 };
 
 // 今のテーマの音を鳴らす（効果音がオンのときだけ）
+// 題名の音だけは introBus を通す（テーマを切り替えたら途中で止められるように）
+let sfxOut = null, introBus = null;
 function sfx(kind, delay = 0) {
   if (!sfxOn()) return;
   const seq = (SOUNDS[currentSkin()] || SOUNDS.normal)[kind];
@@ -2833,7 +2849,16 @@ function sfx(kind, delay = 0) {
     audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === 'suspended') audioCtx.resume();
     const t0 = audioCtx.currentTime + .01 + delay;
-    for (const [at, kindOf, opt] of seq) ({ t: tone, n: noise, p: pen })[kindOf](audioCtx, t0 + at, opt);
+    if (kind === 'intro') {
+      introBus = audioCtx.createGain();
+      introBus.connect(audioCtx.destination);
+      sfxOut = introBus;
+    }
+    try {
+      for (const [at, kindOf, opt] of seq) ({ t: tone, n: noise, p: pen })[kindOf](audioCtx, t0 + at, opt);
+    } finally {
+      sfxOut = null;
+    }
   } catch { /* 音が出せない環境 */ }
 }
 
@@ -2851,7 +2876,7 @@ $('sfxChk').addEventListener('change', e => {
 
 // ---------- バージョン・変更履歴 ----------
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
-const APP_VERSION = '1.15';
+const APP_VERSION = '1.16';
 const versionNum = v => String(v).split('.').map(Number);
 const isNewer = (a, b) => {
   const x = versionNum(a), y = versionNum(b);
