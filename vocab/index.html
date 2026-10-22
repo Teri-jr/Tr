@@ -233,10 +233,21 @@
   h1::before { color: var(--accent-2); animation: glitch-a .9s steps(1) 1.3s both; }
   h1::after { color: var(--accent); animation: glitch-b .9s steps(1) 1.3s both; }
   .trace { display: block; width: min(100%, 300px); height: auto; overflow: visible; margin-top: 2px; }
-  .trace path { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 400; stroke-dashoffset: 400;
-    filter: drop-shadow(0 0 4px var(--accent)); animation: draw 1.4s ease-out 1.5s forwards; }
-  .trace circle { fill: var(--bg); stroke: var(--accent); stroke-width: 1.5; opacity: 0; animation: node .3s ease-out forwards; }
-  .trace circle.hot { fill: var(--accent-2); stroke: var(--accent-2); filter: drop-shadow(0 0 5px var(--accent-2)); }
+  /* 回路の線 = 覚えた割合のゲージ。明るい線が定着、薄い線が学習中まで。暗い線は残り */
+  .trace path { fill: none; stroke: var(--accent); stroke-width: 1.5; }
+  .trace path.base { opacity: .18; }
+  .trace path.learn, .trace path.done {
+    stroke-dasharray: 100 100; stroke-dashoffset: calc(100 - var(--p, 0));
+    animation: draw-to 1.4s ease-out 1.5s backwards; transition: stroke-dashoffset .8s ease-out;
+  }
+  .trace path.learn { --p: var(--learn, 0); opacity: .45; }
+  .trace path.done { --p: var(--done, 0); filter: drop-shadow(0 0 4px var(--accent)); }
+  @keyframes draw-to { from { stroke-dashoffset: 100; } }
+  .trace circle { fill: var(--bg); stroke: var(--accent); stroke-width: 1.5; opacity: .3; }
+  .trace circle.on { opacity: 0; fill: var(--accent); animation: node .3s ease-out forwards; }
+  .trace-label { font-family: var(--f-mono); font-size: .72rem; letter-spacing: .1em; color: var(--accent); margin-top: -2px; }
+  .trace-label b { font-weight: 600; color: #fff; }
+  .trace circle.hot.on { fill: var(--accent-2); stroke: var(--accent-2); filter: drop-shadow(0 0 5px var(--accent-2)); }
   .trace circle:nth-of-type(1) { animation-delay: 1.7s; }
   .trace circle:nth-of-type(2) { animation-delay: 2.1s; }
   .trace circle:nth-of-type(3) { animation-delay: 2.5s; }
@@ -426,8 +437,7 @@
   @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
-    .trace path { stroke-dashoffset: 0; }
-    .trace circle { opacity: 1; }
+    .trace circle.on { opacity: 1; }
     .zap { display: none; }
   }
 </style>
@@ -658,6 +668,12 @@
   .game-result .lvup { color: var(--accent); }
   #quizView .card.hit { animation: hit .4s steps(8); }
   #quizView .card.shine { animation: shine .35s steps(3); }
+  #quizView .card.crit { animation: crit .6s steps(6); }
+  @keyframes crit {
+    0%, 33%, 66% { background: var(--accent); transform: translate(-3px, 2px); }
+    16%, 50%, 83% { background: var(--text); transform: translate(3px, -2px); }
+    100% { background: var(--bg); transform: none; }
+  }
   @keyframes hit {
     0%, 100% { transform: none; }
     15% { transform: translate(-8px, 2px); }
@@ -918,7 +934,7 @@
   html:not([data-skin="paper"]) .memo { display: none !important; }
   html:not([data-skin="game"]) .enemy, html:not([data-skin="game"]) .battle-msg { display: none !important; }
   .title-wrap { position: relative; display: inline-block; }
-  html:not([data-skin="future"]) .zap { display: none !important; }
+  html:not([data-skin="future"]) .zap, html:not([data-skin="future"]) .trace-label { display: none !important; }
   html:not([data-skin="normal"]) .cl-memo { display: none !important; }
   html:not([data-skin="paper"]) .stamp { display: none !important; }
 
@@ -1137,7 +1153,14 @@
   @media (prefers-color-scheme: dark) { html[data-skin="normal"]:not([data-theme="light"]) .sheet-list .mk.marked { background: linear-gradient(transparent 55%, rgba(255, 214, 0, .45) 55%); } }
   html[data-skin="normal"][data-theme="dark"] .sheet-list .mk.marked { background: linear-gradient(transparent 55%, rgba(255, 214, 0, .45) 55%); }
   html[data-skin="future"] .sheet-list .mk.marked { background: linear-gradient(transparent 62%, rgba(0, 229, 255, .45) 62%); text-shadow: 0 0 8px rgba(0, 229, 255, .8); }
-  html[data-skin="game"] .sheet-list .mk.marked::before { content: "★"; color: var(--accent); margin-right: 4px; }
+  html[data-skin="game"] .sheet-list .mk.marked::before {
+    content: ""; display: inline-block; width: 1.25em; height: 1.05em; margin-right: 5px; vertical-align: -3px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10' shape-rendering='crispEdges'%3E%3Cpath fill='%233cbcfc' d='M5 0h2v1h1v1h1v1h1v2h1v3h1v2H0V8h1V5h1V3h1V2h1V1h1z'/%3E%3Cpath fill='%231a6fa0' d='M1 9h10v1H1zM2 8h1v1H2zM9 8h1v1H9z'/%3E%3Cpath fill='%23bfe8ff' d='M4 2h1v1H4zM3 3h1v1H3z'/%3E%3Cpath fill='%23fff' d='M3 5h2v2H3zM7 5h2v2H7z'/%3E%3Cpath fill='%23000' d='M4 6h1v1H4zM8 6h1v1H8zM5 8h2v1H5z'/%3E%3C/svg%3E") no-repeat center / contain; image-rendering: pixelated;
+    animation: slime-pop .35s steps(4) both;
+  }
+  html[data-skin="game"] .sheet-list .a .mk.marked::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10' shape-rendering='crispEdges'%3E%3Cpath fill='%23fca044' d='M5 0h2v1h1v1h1v1h1v2h1v3h1v2H0V8h1V5h1V3h1V2h1V1h1z'/%3E%3Cpath fill='%23a85a10' d='M1 9h10v1H1zM2 8h1v1H2zM9 8h1v1H9z'/%3E%3Cpath fill='%23ffe0b0' d='M4 2h1v1H4zM3 3h1v1H3z'/%3E%3Cpath fill='%23fff' d='M3 5h2v2H3zM7 5h2v2H7z'/%3E%3Cpath fill='%23000' d='M4 6h1v1H4zM8 6h1v1H8zM5 8h2v1H5z'/%3E%3C/svg%3E"); }
+  @keyframes slime-pop { 0% { transform: translateY(6px) scale(.4); opacity: 0; } 60% { transform: translateY(-4px) scale(1.1); opacity: 1; } 100% { transform: none; } }
+  @media (prefers-reduced-motion: reduce) { html[data-skin="game"] .sheet-list .mk.marked::before { animation: none; } }
   html[data-skin="paper"] .sheet-list .mk.marked { background: linear-gradient(transparent 82%, rgba(43, 42, 51, .55) 82%, rgba(43, 42, 51, .55) 92%, transparent 92%); }
   /* シートに隠れている答えの線は見せない（線の長さで答えが分からないように） */
   .sheet-list li:not(.peek) .a.covered .mk.marked { background: none !important; text-shadow: none !important; }
@@ -1221,12 +1244,15 @@
       <h1 data-text="記憶回路">記憶回路</h1>
     </div>
     <svg class="trace" viewBox="0 0 300 22" aria-hidden="true">
-      <path d="M2 16 H84 L96 6 H176 L186 16 H262 L270 10 H296"/>
+      <path class="base" pathLength="100" d="M2 16 H84 L96 6 H176 L186 16 H262 L270 10 H296"/>
+      <path class="learn" pathLength="100" d="M2 16 H84 L96 6 H176 L186 16 H262 L270 10 H296"/>
+      <path class="done" pathLength="100" d="M2 16 H84 L96 6 H176 L186 16 H262 L270 10 H296"/>
       <circle cx="2" cy="16" r="2.5"/>
       <circle cx="96" cy="6" r="2.5"/>
       <circle cx="186" cy="16" r="2.5"/>
       <circle class="hot" cx="296" cy="10" r="3"/>
     </svg>
+    <div class="trace-label" id="traceLabel"></div>
     <div class="jp"><span class="jp-text" id="subjectName">英語コミュニケーション 新出単語テスト</span></div>
   </header>
 
@@ -1678,6 +1704,25 @@ $('testSrsChk').addEventListener('change', e => {
 $('dueOnlyChk').addEventListener('change', () => updateSetup());
 $('weakOnlyChk').addEventListener('change', () => updateSetup());
 
+// 近未来の回路の線: 教材全体で、定着した割合と学習中＋定着の割合
+// 接点は線の上の位置（0 / 32 / 63 / 100%）に線が届いたら点灯する
+const TRACE_NODES = [0, 32, 63, 100];
+function renderTrace() {
+  const t = today(), n = words.length || 1;
+  let learn = 0, done = 0;
+  for (const w of words) {
+    const st = srsStatus(w, t);
+    if (st === 'done') done++;
+    if (st !== 'new' && !(st === 'due' && (srsDb()[wordKey(w)] || {}).ivl === 0)) learn++;
+  }
+  const lp = Math.round(learn / n * 100), dp = Math.round(done / n * 100);
+  const svg = document.querySelector('.trace');
+  svg.style.setProperty('--learn', lp);
+  svg.style.setProperty('--done', dp);
+  svg.querySelectorAll('circle').forEach((c, i) => c.classList.toggle('on', lp > 0 && lp >= TRACE_NODES[i]));
+  $('traceLabel').innerHTML = `記憶率 <b>${lp}%</b>　定着 <b>${dp}%</b>`;
+}
+
 function renderSrs(range) {
   const t = today(), c = { due: 0, learn: 0, done: 0, new: 0 };
   for (const w of range) c[srsStatus(w, t)]++;
@@ -1892,6 +1937,7 @@ function updateSetup() {
   $('formatNote').textContent = note;
 
   renderSrs(rangePool());
+  renderTrace();
   const pool = selectedPool();
   $('poolInfo').textContent = `対象 ${pool.length} 語`;
   $('countInput').max = pool.length;
@@ -2321,7 +2367,8 @@ function judge(ok, given, grade = ok ? 2 : 0, info = {}) {
   // 4択の速さ・時間切れ
   const speed = info.timeout ? `<div class="speed" data-g="0">時間切れ・${gradeName(0)}</div>`
     : info.sec != null ? `<div class="speed" data-g="${grade}">${info.sec.toFixed(1)}秒・${gradeName(grade)}</div>` : '';
-  const gameMsg = gainExp(ok);
+  const crit = ok && grade === 3;
+  const gameMsg = gainExp(ok, crit);
   const fb = $('feedback');
   fb.innerHTML = `<div class="feedback ${ok ? 'ok' : 'ng'}">
     <div class="verdict">${ok ? '○ 正解！' : info.timeout ? '× 時間切れ' : '× 不正解'}</div>
@@ -2331,9 +2378,9 @@ function judge(ok, given, grade = ok ? 2 : 0, info = {}) {
   </div>`;
   // レトロゲームでは正解でピカッ、不正解で揺れる（ほかのテーマでは何も起きない）
   const card = document.querySelector('#quizView .card');
-  card.classList.remove('hit', 'shine');
+  card.classList.remove('hit', 'shine', 'crit');
   void card.offsetWidth;
-  card.classList.add(ok ? 'shine' : 'hit');
+  card.classList.add(!ok ? 'hit' : crit ? 'crit' : 'shine');
   const next = document.createElement('button');
   next.className = 'block';
   next.style.marginTop = '12px';
@@ -2388,6 +2435,7 @@ function showResult() {
   // レトロゲーム: 獲得した経験値とレベルアップ（カードめくりは経験値なし）
   const lvNow = levelOf(loadExp());
   $('gameResult').innerHTML = isCard ? `＊ ${correct} まいの カードを おぼえた！` : `＊ けいけんちを ${session.expGained} てにいれた！` +
+    (session.crits ? `<br>（かいしんの いちげき ×${session.crits}）` : '') +
     (lvNow > session.levelStart ? `<br><span class="lvup">＊ レベルが ${lvNow} に あがった！</span>` : '');
   const modeText = isKanji() ? '' : MODE_LABEL[session.mode] + '・';
   $('resultDetail').textContent = isCard
@@ -2755,15 +2803,18 @@ function renderGameStatus() {
 }
 
 // 正解なら経験値を足して、ゲーム風のメッセージを返す
-function gainExp(ok) {
+// ◎ 余裕（4択を3秒以内に正解など）は「かいしんの いちげき」で経験値2倍
+function gainExp(ok, crit = false) {
   if (!ok) { sfx('ng'); return '＊ ざんねん！<br>こうげきは はずれた……'; }
-  const before = loadExp(), after = before + EXP_PER_CORRECT;
+  const gain = EXP_PER_CORRECT * (crit ? 2 : 1);
+  const before = loadExp(), after = before + gain;
   saveExp(after);
-  session.expGained += EXP_PER_CORRECT;
+  session.expGained += gain;
+  if (crit) session.crits = (session.crits || 0) + 1;
   renderGameStatus();
   const up = levelOf(after) > levelOf(before);
-  sfx(up ? 'lvup' : 'ok');
-  return `＊ せいかい！<br>けいけんちを ${EXP_PER_CORRECT} かくとく！` +
+  sfx(up ? 'lvup' : crit && currentSkin() === 'game' ? 'crit' : 'ok');
+  return (crit ? `＊ かいしんの いちげき！<br>けいけんちを ${gain} かくとく！` : `＊ せいかい！<br>けいけんちを ${gain} かくとく！`) +
     (up ? `<span class="lvup">＊ レベルが あがった！ Lv.${levelOf(after)} に なった！</span>` : '');
 }
 
@@ -2897,6 +2948,8 @@ const SOUNDS = {
     ng: notes('square', .05, [[0, 220, .1], [.1, 156, .24]]),
     flip: notes('square', .055, [[0, 1319, .07]]),
     lvup: notes('square', .05, [[0, 523, .07], [.07, 659, .07], [.14, 784, .07], [.21, 1047, .28]]),
+    // かいしんの いちげき: ズバッ＋高く跳ねる音
+    crit: [[0, 'n', { d: .08, f: 3000, type: 'highpass', v: .3 }], ...notes('square', .05, [[0, 1568, .05], [.05, 2093, .05], [.1, 1568, .05], [.15, 2637, .18]])],
     good: notes('square', .05, [[0, 784, .12], [.13, 784, .06], [.2, 784, .06], [.27, 1047, .45]]),
     mid: notes('square', .05, [[0, 659, .1], [.1, 784, .2]]),
     bad: notes('square', .05, [[0, 392, .15], [.16, 370, .15], [.32, 349, .15], [.48, 330, .45]]),
@@ -2961,7 +3014,7 @@ $('sfxChk').addEventListener('change', e => {
 
 // ---------- バージョン・変更履歴 ----------
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
-const APP_VERSION = '3.9';
+const APP_VERSION = '3.10';
 const versionNum = v => String(v).split('.').map(Number);
 const isNewer = (a, b) => {
   const x = versionNum(a), y = versionNum(b);
