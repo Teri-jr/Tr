@@ -41,7 +41,29 @@
   }
   main { max-width: 640px; margin: 0 auto; padding: 16px 16px 48px; }
   .hud-head { margin: 8px 0 18px; }
-  h1 { font-size: 1.6rem; margin: 0; letter-spacing: .08em; }
+  h1 {
+    display: inline-block; font-size: 1.6rem; margin: 0; letter-spacing: .08em; padding: 0 2px;
+    background: linear-gradient(transparent 62%, rgba(59, 111, 224, .28) 62%) no-repeat left / 0% 100%;
+    animation: cl-title .5s ease-out 1.2s both, cl-marker .6s ease-out 1.7s forwards;
+  }
+  /* 題名の前に: 「覚えられない…」が出て取り消し線で消える → 題名がふわっと出て、マーカーが引かれる */
+  .cl-memo {
+    position: absolute; left: 2px; top: 50%; transform: translateY(-50%); white-space: nowrap;
+    color: var(--sub); font-size: 1.3rem; letter-spacing: .04em;
+    animation: cl-memo 1.2s ease-out both;
+  }
+  .cl-memo::after {
+    content: ""; position: absolute; left: -2px; top: 55%; height: 2px; width: 0; background: var(--ng);
+    animation: cl-strike .3s ease-out .55s forwards;
+  }
+  @keyframes cl-memo { 0% { opacity: 0; } 20%, 70% { opacity: 1; transform: translateY(-50%); } 100% { opacity: 0; transform: translateY(-120%); } }
+  @keyframes cl-strike { to { width: calc(100% + 4px); } }
+  @keyframes cl-title { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @keyframes cl-marker { to { background-size: 100% 100%; } }
+  @media (prefers-reduced-motion: reduce) {
+    h1 { animation: none; background-size: 100% 100%; }
+    .cl-memo { display: none; }
+  }
   .hud-head .jp { color: var(--sub); font-size: .9rem; }
   .trace { display: none; }
   h2 { font-size: 1rem; margin: 0 0 10px; color: var(--sub); font-weight: 600; }
@@ -167,7 +189,7 @@
   }
   main { max-width: 640px; margin: 0 auto; padding: 20px 16px 56px; }
 
-  .hud-head { display: flex; flex-direction: column; gap: 4px; margin: 8px 0 22px; }
+  .hud-head { display: flex; flex-direction: column; gap: 4px; margin: 64px 0 22px; }
   /* 題名: 極太の文字にグラデーションと発光。開いた瞬間に一度だけノイズのように揺れる */
   h1 {
     position: relative; display: inline-block; align-self: flex-start; margin: 0;
@@ -176,23 +198,49 @@
     background: linear-gradient(100deg, #fff 0%, #bff8ff 30%, var(--accent) 60%, var(--accent-2) 100%);
     -webkit-background-clip: text; background-clip: text; color: transparent;
     filter: drop-shadow(0 0 10px rgba(0, 229, 255, .55)) drop-shadow(0 0 28px rgba(0, 229, 255, .25));
-    animation: logo-in .9s steps(1) both;
+    animation: logo-in .9s steps(1) 1.2s both;
   }
+  .title-wrap { align-self: flex-start; }
+  /* 題名の前に: ノイズまじりの「覚えられない」に稲妻が落ちて砕ける（約1.2秒）→ いつもの題名の演出 */
+  .zap { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+  .zap-text {
+    position: absolute; left: 0; top: 50%; transform: translateY(-50%); white-space: nowrap;
+    font-family: var(--f-body); font-weight: 700; font-size: clamp(1.6rem, 8vw, 2.2rem); letter-spacing: .08em;
+    color: rgba(223, 246, 255, .6); text-shadow: 2px 0 var(--accent-2), -2px 0 var(--accent);
+    animation: zap-jitter .16s steps(2) 6, zap-break .35s ease-in .95s forwards;
+  }
+  .bolt {
+    position: absolute; left: 34%; bottom: 38%; width: 64px; height: 130px; overflow: visible; opacity: 0;
+    animation: bolt-strike .4s steps(4) .8s both;
+  }
+  .bolt polyline {
+    fill: none; stroke: #fff; stroke-width: 7; stroke-linejoin: miter;
+    filter: drop-shadow(0 0 6px var(--accent)) drop-shadow(0 0 14px var(--accent));
+  }
+  .zap-flash { position: fixed; inset: 0; z-index: 60; background: #dff6ff; opacity: 0; animation: zap-flash .3s ease-out .88s both; }
+  @keyframes zap-jitter { 50% { transform: translate(3px, -50%) skewX(-8deg); clip-path: inset(15% 0 40% 0); } }
+  @keyframes zap-break {
+    0% { opacity: 1; filter: none; transform: translateY(-50%); }
+    30% { opacity: 1; color: #fff; filter: blur(1px) brightness(2); }
+    100% { opacity: 0; filter: blur(8px); transform: translateY(-50%) scale(1.25, .6); letter-spacing: .5em; }
+  }
+  @keyframes bolt-strike { 0% { opacity: 0; transform: translateY(-40px); } 25% { opacity: 1; transform: none; } 50% { opacity: .3; } 75% { opacity: 1; } 100% { opacity: 0; } }
+  @keyframes zap-flash { 0% { opacity: 0; } 20% { opacity: .55; } 100% { opacity: 0; } }
   h1::before, h1::after {
     content: attr(data-text); position: absolute; inset: 0; pointer-events: none; opacity: 0;
     -webkit-text-fill-color: currentColor;
   }
-  h1::before { color: var(--accent-2); animation: glitch-a .9s steps(1) .1s both; }
-  h1::after { color: var(--accent); animation: glitch-b .9s steps(1) .1s both; }
+  h1::before { color: var(--accent-2); animation: glitch-a .9s steps(1) 1.3s both; }
+  h1::after { color: var(--accent); animation: glitch-b .9s steps(1) 1.3s both; }
   .trace { display: block; width: min(100%, 300px); height: auto; overflow: visible; margin-top: 2px; }
   .trace path { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 400; stroke-dashoffset: 400;
-    filter: drop-shadow(0 0 4px var(--accent)); animation: draw 1.4s ease-out .3s forwards; }
+    filter: drop-shadow(0 0 4px var(--accent)); animation: draw 1.4s ease-out 1.5s forwards; }
   .trace circle { fill: var(--bg); stroke: var(--accent); stroke-width: 1.5; opacity: 0; animation: node .3s ease-out forwards; }
   .trace circle.hot { fill: var(--accent-2); stroke: var(--accent-2); filter: drop-shadow(0 0 5px var(--accent-2)); }
-  .trace circle:nth-of-type(1) { animation-delay: .5s; }
-  .trace circle:nth-of-type(2) { animation-delay: .9s; }
-  .trace circle:nth-of-type(3) { animation-delay: 1.3s; }
-  .trace circle:nth-of-type(4) { animation-delay: 1.6s; }
+  .trace circle:nth-of-type(1) { animation-delay: 1.7s; }
+  .trace circle:nth-of-type(2) { animation-delay: 2.1s; }
+  .trace circle:nth-of-type(3) { animation-delay: 2.5s; }
+  .trace circle:nth-of-type(4) { animation-delay: 2.8s; }
   @keyframes logo-in { 0% { opacity: 0; } 10% { opacity: 1; } 18% { opacity: .3; } 26% { opacity: 1; } }
   @keyframes glitch-a {
     0% { opacity: .9; transform: translate(-4px, 1px); clip-path: inset(10% 0 55% 0); }
@@ -380,6 +428,7 @@
     *, *::before, *::after { animation: none !important; transition: none !important; }
     .trace path { stroke-dashoffset: 0; }
     .trace circle { opacity: 1; }
+    .zap { display: none; }
   }
 </style>
 <style data-skin-css="game">
@@ -867,7 +916,9 @@
   html:not([data-skin="paper"]) .hanko { display: none !important; }
   html:not([data-skin="paper"]) .memo { display: none !important; }
   html:not([data-skin="game"]) .enemy, html:not([data-skin="game"]) .battle-msg { display: none !important; }
-  html:not([data-skin="paper"]):not([data-skin="game"]) .title-wrap { display: contents; }
+  .title-wrap { position: relative; display: inline-block; }
+  html:not([data-skin="future"]) .zap { display: none !important; }
+  html:not([data-skin="normal"]) .cl-memo { display: none !important; }
   html:not([data-skin="paper"]) .stamp { display: none !important; }
 
   /* ---------- テーマ選択: 各ボタンをそのテーマの見た目で出す（今のテーマに関係なく同じ） ---------- */
@@ -1160,6 +1211,12 @@
       <div class="enemy" aria-hidden="true"><i></i><span>覚えられない</span></div>
       <div class="battle-msg" aria-hidden="true">＊ おぼえられないを たおした！</div>
       <div class="hanko" aria-hidden="true"><i class="hanko-grip"></i><i class="hanko-body"></i></div>
+      <div class="zap" aria-hidden="true">
+        <span class="zap-text">覚えられない</span>
+        <svg class="bolt" viewBox="0 0 60 200" preserveAspectRatio="none"><polyline points="34,0 22,62 38,70 18,128 34,134 26,200"/></svg>
+        <i class="zap-flash"></i>
+      </div>
+      <div class="cl-memo" aria-hidden="true">覚えられない…</div>
       <h1 data-text="記憶回路">記憶回路</h1>
     </div>
     <svg class="trace" viewBox="0 0 300 22" aria-hidden="true">
@@ -1251,6 +1308,7 @@
       <div class="srs-legend" id="srsLegend"></div>
       <div class="row" style="margin-top:12px">
         <label class="chip"><input type="checkbox" id="dueOnlyChk"><span>今日の復習だけ</span></label>
+        <label class="chip"><input type="checkbox" id="weakOnlyChk"><span id="weakOnlyLabel">苦手だけ</span></label>
         <label class="chip" id="testSrsChip"><input type="checkbox" id="testSrsChk"><span>テストでも使う</span></label>
       </div>
       <p class="note" id="srsNote"></p>
@@ -1546,6 +1604,10 @@ function srsGrade(w, grade) {
 }
 
 // due: 今日の復習 / learn: 学習中 / done: 定着 / new: 未学習
+// 苦手: 一度覚えたのに忘れた / 何度か間違えて伸び率が下がった / 今やり直し中
+const isWeakRec = r => !!r && (r.lapses > 0 || r.ease < EASE_START || (r.ivl === 0 && r.reps > 0));
+const isWeak = w => isWeakRec(srsDb()[wordKey(w)]);
+
 function srsStatus(w, t = today()) {
   const r = srsDb()[wordKey(w)];
   if (!r) return 'new';
@@ -1613,6 +1675,7 @@ $('testSrsChk').addEventListener('change', e => {
   updateSetup();
 });
 $('dueOnlyChk').addEventListener('change', () => updateSetup());
+$('weakOnlyChk').addEventListener('change', () => updateSetup());
 
 function renderSrs(range) {
   const t = today(), c = { due: 0, learn: 0, done: 0, new: 0 };
@@ -1757,7 +1820,10 @@ function rangePool() {
 }
 
 // 「今日の復習だけ」のときは、範囲の中で復習日が来た単語だけにする
-const selectedPool = () => $('dueOnlyChk').checked ? rangePool().filter(w => srsStatus(w) === 'due') : rangePool();
+// 「苦手だけ」のときは苦手な単語だけ（両方選ぶと両方に当てはまる単語だけ）
+const selectedPool = () => rangePool()
+  .filter(w => !$('dueOnlyChk').checked || srsStatus(w) === 'due')
+  .filter(w => !$('weakOnlyChk').checked || isWeak(w));
 
 $('allCountChk').addEventListener('change', () => updateSetup());
 $('spanFrom').addEventListener('input', () => updateSetup());
@@ -1846,7 +1912,9 @@ function updateSetup() {
     card: 'カードめくりの結果は記録して、復習日が来た単語から出します。',
     sheet: '赤シートは記録しません。',
   }[study];
-  if ($('dueOnlyChk').checked && !pool.length) srsNote = 'この範囲に今日の復習はありません。';
+  $('weakOnlyLabel').textContent = `苦手だけ（${rangePool().filter(isWeak).length}）`;
+  if (!pool.length && $('weakOnlyChk').checked) srsNote = $('dueOnlyChk').checked ? 'この範囲に、今日の復習で苦手な単語はありません。' : 'この範囲に苦手な単語はありません。';
+  else if (!pool.length && $('dueOnlyChk').checked) srsNote = 'この範囲に今日の復習はありません。';
   $('srsNote').textContent = srsNote;
   const db = srsDb(), t = today(), keys = Object.keys(db);
   $('weakInfo').textContent = keys.length
@@ -1900,7 +1968,7 @@ $('startBtn').addEventListener('click', () => {
   let n = $('allCountChk').checked ? pool.length : parseInt($('countInput').value, 10);
   if (!n || n < 1) n = pool.length;
   n = Math.min(n, pool.length);
-  if (!pool.length) { $('setupErr').textContent = $('dueOnlyChk').checked ? '今日の復習はありません。' : '出題する単語が選ばれていません。'; return; }
+  if (!pool.length) { $('setupErr').textContent = $('weakOnlyChk').checked ? '苦手な単語はありません。' : $('dueOnlyChk').checked ? '今日の復習はありません。' : '出題する単語が選ばれていません。'; return; }
   $('setupErr').textContent = '';
   const study = getStudy();
   if (study === 'sheet') startSheet(pool);
@@ -2764,7 +2832,9 @@ const SOUNDS = {
   // クラシック: やわらかいチャイム
   normal: {
     tick: [[0, 't', { f: 1000, d: .05, v: .04 }]],
-    intro: notes('sine', .05, [[0, 523, .5], [.07, 659, .5], [.14, 784, .5], [.21, 1047, .9]]),
+    // 「覚えられない…」が出る → 取り消し線のシュッ → 題名が出てチャイム
+    intro: [[0, 't', { f: 392, d: .3, v: .03 }], [.55, 'n', { d: .25, f: 1800, to: 4200, q: .8, a: .05, v: .1 }],
+      ...notes('sine', .05, [[1.2, 523, .5], [1.27, 659, .5], [1.34, 784, .5], [1.41, 1047, .9]])],
     tap: [[0, 't', { f: 880, d: .07, v: .035 }]],
     start: notes('sine', .06, [[0, 523, .18], [.09, 784, .3]]),
     ok: notes('sine', .07, [[0, 784, .2], [.1, 1175, .45]]),
@@ -2780,9 +2850,13 @@ const SOUNDS = {
   future: {
     tick: [[0, 't', { f: 1760, d: .06, type: 'triangle', v: .05 }]],
     // 起動音 + 回路の接点が光るタイミング（.5 / .9 / 1.3 / 1.6 秒）に合わせた電子音
-    intro: [[0, 't', { f: 45, to: 160, d: 2, type: 'sawtooth', a: .35, v: .05 }], [0, 't', { f: 90, to: 330, d: 1.8, a: .3, v: .035 }],
-      [.1, 't', { f: 180, to: 880, d: 1.2, type: 'triangle', a: .25, v: .02 }],
-      ...notes('sine', .04, [[.5, 1568, .08], [.9, 1760, .08], [1.3, 1976, .08], [1.6, 2637, .35]])],
+    // ノイズのジジッ → 雷（バリッ＋ゴロゴロ）→ いつもの起動音と、回路の接点（1.7 / 2.1 / 2.5 / 2.8 秒）の電子音
+    intro: [[0, 'n', { d: .8, f: 3000, q: 4, a: .1, v: .05 }],
+      [.85, 'n', { d: .12, f: 4000, type: 'highpass', v: .45 }], [.88, 'n', { d: 1.1, f: 300, to: 80, type: 'lowpass', a: .03, v: .6 }],
+      [.85, 't', { f: 90, to: 40, d: .5, type: 'sawtooth', v: .07 }],
+      [1.2, 't', { f: 45, to: 160, d: 2, type: 'sawtooth', a: .35, v: .05 }], [1.2, 't', { f: 90, to: 330, d: 1.8, a: .3, v: .035 }],
+      [1.3, 't', { f: 180, to: 880, d: 1.2, type: 'triangle', a: .25, v: .02 }],
+      ...notes('sine', .04, [[1.7, 1568, .08], [2.1, 1760, .08], [2.5, 1976, .08], [2.8, 2637, .35]])],
     tap: [[0, 't', { f: 1500, to: 2200, d: .05, v: .03 }]],
     start: [[0, 't', { f: 220, to: 880, d: .35, type: 'sawtooth', v: .025 }], [.12, 't', { f: 880, to: 1760, d: .3, v: .04 }]],
     ok: [[0, 't', { f: 880, to: 1760, d: .16, v: .06 }], [.12, 't', { f: 1760, d: .35, type: 'triangle', v: .04 }], [.2, 't', { f: 2637, d: .3, v: .02 }]],
@@ -2876,7 +2950,7 @@ $('sfxChk').addEventListener('change', e => {
 
 // ---------- バージョン・変更履歴 ----------
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
-const APP_VERSION = '1.16';
+const APP_VERSION = '1.17';
 const versionNum = v => String(v).split('.').map(Number);
 const isNewer = (a, b) => {
   const x = versionNum(a), y = versionNum(b);
