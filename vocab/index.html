@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>新出単語テスト</title>
+<style>
+  :root {
+    --bg: #f4f6fa; --card: #fff; --text: #1f2430; --sub: #687083;
+    --accent: #3b6fe0; --accent-weak: #e6edfc; --ok: #1f9d55; --ok-weak: #e3f6ec;
+    --ng: #d64545; --ng-weak: #fbe8e8; --border: #dde2ec;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14171d; --card: #1e222b; --text: #e8ebf2; --sub: #9aa3b5;
+      --accent: #6f9bff; --accent-weak: #263457; --ok: #4cc485; --ok-weak: #1d3a2b;
+      --ng: #ff7575; --ng-weak: #432526; --border: #343a47; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14171d; --card: #1e222b; --text: #e8ebf2; --sub: #9aa3b5;
+    --accent: #6f9bff; --accent-weak: #263457; --ok: #4cc485; --ok-weak: #1d3a2b;
+    --ng: #ff7575; --ng-weak: #432526; --border: #343a47; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", "Segoe UI", sans-serif;
+    line-height: 1.6; -webkit-text-size-adjust: 100%;
+  }
+  main { max-width: 640px; margin: 0 auto; padding: 16px 16px 48px; }
+  h1 { font-size: 1.3rem; margin: 8px 0 16px; }
+  h2 { font-size: 1rem; margin: 0 0 10px; color: var(--sub); font-weight: 600; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+  .hidden { display: none !important; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip input { display: none; }
+  .chip span {
+    display: inline-block; padding: 8px 14px; border: 1px solid var(--border); border-radius: 999px;
+    cursor: pointer; user-select: none; background: var(--card);
+  }
+  .chip input:checked + span { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .chip input:disabled + span { opacity: .4; cursor: not-allowed; }
+  button {
+    font: inherit; border: none; border-radius: 10px; padding: 12px 18px; cursor: pointer;
+    background: var(--accent); color: #fff; font-weight: 600;
+  }
+  button.secondary { background: var(--accent-weak); color: var(--accent); }
+  button.danger { background: var(--ng-weak); color: var(--ng); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.block { width: 100%; }
+  .note { color: var(--sub); font-size: .88rem; }
+  input[type=number], input[type=text] {
+    font: inherit; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px;
+    background: var(--bg); color: var(--text); width: 100%;
+  }
+  input[type=number] { width: 100px; }
+  .progress { display: flex; justify-content: space-between; color: var(--sub); font-size: .9rem; margin-bottom: 8px; }
+  .bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-bottom: 14px; }
+  .bar > div { height: 100%; background: var(--accent); transition: width .2s; }
+  .prompt-label { color: var(--sub); font-size: .85rem; }
+  .prompt { font-size: 1.6rem; font-weight: 700; margin: 4px 0 16px; word-break: break-word; }
+  .prompt.def { font-size: 1.1rem; font-weight: 500; }
+  .choices { display: grid; gap: 10px; }
+  .choices button {
+    background: var(--card); color: var(--text); border: 1px solid var(--border); text-align: left;
+    font-weight: 500; padding: 14px 16px;
+  }
+  .choices button.correct { background: var(--ok-weak); border-color: var(--ok); }
+  .choices button.wrong { background: var(--ng-weak); border-color: var(--ng); }
+  .answer-box {
+    min-height: 52px; border: 2px dashed var(--border); border-radius: 10px; padding: 8px 12px;
+    font-size: 1.5rem; font-weight: 700; letter-spacing: 2px; margin-bottom: 12px; word-break: break-all;
+  }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)); gap: 8px; margin-bottom: 12px; }
+  .tiles button {
+    background: var(--accent-weak); color: var(--accent); font-size: 1.3rem; padding: 10px 0;
+  }
+  .tiles button.used { visibility: hidden; }
+  .feedback { border-radius: 12px; padding: 14px; margin-top: 14px; }
+  .feedback.ok { background: var(--ok-weak); }
+  .feedback.ng { background: var(--ng-weak); }
+  .feedback.self { background: var(--accent-weak); }
+  .feedback .verdict { font-weight: 700; font-size: 1.15rem; margin-bottom: 6px; }
+  .feedback.ok .verdict { color: var(--ok); }
+  .feedback.ng .verdict { color: var(--ng); }
+  .detail div { margin: 2px 0; }
+  .detail b { display: inline-block; min-width: 4.5em; color: var(--sub); font-weight: 600; font-size: .85rem; }
+  .actions { display: flex; gap: 8px; margin-top: 12px; }
+  .actions button { flex: 1; }
+  .score { font-size: 2.6rem; font-weight: 800; text-align: center; margin: 4px 0; }
+  .wrong-list { list-style: none; padding: 0; margin: 0; }
+  .wrong-list li { border-top: 1px solid var(--border); padding: 10px 0; }
+  .wrong-list li:first-child { border-top: none; }
+  .wrong-list .en { font-weight: 700; }
+  .wrong-list .def { color: var(--sub); font-size: .88rem; }
+  .err { color: var(--ng); font-size: .9rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>英語コミュニケーション 新出単語テスト</h1>
+
+  <!-- CSV読み込み -->
+  <section id="loadView" class="card">
+    <h2>単語データ</h2>
+    <p id="loadStatus" class="note">words.csv を読み込み中…</p>
+    <div id="filePick" class="hidden">
+      <p class="note">ブラウザで直接開いた場合は words.csv を自動で読めません。下のボタンから words.csv を選んでください。</p>
+      <input type="file" id="fileInput" accept=".csv,text/csv">
+    </div>
+  </section>
+
+  <!-- 設定 -->
+  <section id="setupView" class="hidden">
+    <div class="card">
+      <h2>出題モード</h2>
+      <div class="row" id="modeGroup">
+        <label class="chip"><input type="radio" name="mode" value="e2j" checked><span>英 → 日</span></label>
+        <label class="chip"><input type="radio" name="mode" value="j2e"><span>日 → 英</span></label>
+        <label class="chip"><input type="radio" name="mode" value="d2e"><span>英英定義 → 英単語</span></label>
+      </div>
+    </div>
+    <div class="card">
+      <h2>出題形式</h2>
+      <div class="row" id="formatGroup">
+        <label class="chip"><input type="radio" name="format" value="choice" checked><span>4択</span></label>
+        <label class="chip"><input type="radio" name="format" value="input"><span>記述</span></label>
+        <label class="chip"><input type="radio" name="format" value="letters"><span>文字選択</span></label>
+      </div>
+      <p id="formatNote" class="note"></p>
+    </div>
+    <div class="card">
+      <h2>範囲（段落）</h2>
+      <div class="row" id="paraGroup"></div>
+    </div>
+    <div class="card">
+      <h2>問題数</h2>
+      <div class="row" style="align-items:center">
+        <input type="number" id="countInput" min="1" value="10">
+        <span class="note" id="poolInfo"></span>
+      </div>
+    </div>
+    <button class="block" id="startBtn">テスト開始</button>
+    <p id="setupErr" class="err"></p>
+    <div class="card" style="margin-top:14px">
+      <h2>苦手データ</h2>
+      <p class="note" id="weakInfo"></p>
+      <div class="row">
+        <button class="danger" id="resetBtn">苦手データをリセット</button>
+        <button class="secondary" id="reloadBtn">CSVを読み込み直す</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 出題 -->
+  <section id="quizView" class="hidden">
+    <div class="card">
+      <div class="progress"><span id="progText"></span><span id="scoreText"></span></div>
+      <div class="bar"><div id="progBar"></div></div>
+      <div class="prompt-label" id="promptLabel"></div>
+      <div class="prompt" id="prompt"></div>
+      <div id="answerArea"></div>
+      <div id="feedback"></div>
+    </div>
+    <button class="secondary block" id="quitBtn">中断して結果を見る</button>
+  </section>
+
+  <!-- 結果 -->
+  <section id="resultView" class="hidden">
+    <div class="card">
+      <h2>結果</h2>
+      <div class="score" id="resultScore"></div>
+      <p class="note" style="text-align:center" id="resultDetail"></p>
+    </div>
+    <div class="card" id="wrongCard">
+      <h2>間違えた単語</h2>
+      <ul class="wrong-list" id="wrongList"></ul>
+    </div>
+    <div class="row" style="flex-direction:column">
+      <button class="block" id="retryWrongBtn">間違えた単語だけ再テスト</button>
+      <button class="secondary block" id="backBtn">設定に戻る</button>
+    </div>
+  </section>
+</main>
+
+<script>
+'use strict';
+
+const STORAGE_KEY = 'vocabTest.missCounts';
+const MODE_LABEL = { e2j: '英 → 日', j2e: '日 → 英', d2e: '英英定義 → 英単語' };
+const FORMAT_LABEL = { choice: '4択', input: '記述', letters: '文字選択' };
+
+let words = [];
+let session = null;   // { mode, format, queue, index, results }
+let lastSettings = null;
+
+const $ = id => document.getElementById(id);
+
+// ---------- CSV ----------
+// 1文字ずつ読むパーサ（"..." 内のカンマ・改行・"" エスケープに対応）
+function parseCSV(text) {
+  text = text.replace(/^﻿/, '');
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else inQuotes = false;
+      } else field += c;
+    } else if (c === '"') inQuotes = true;
+    else if (c === ',') { row.push(field); field = ''; }
+    else if (c === '\r') { /* skip */ }
+    else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+    else field += c;
+  }
+  if (field !== '' || row.length) { row.push(field); rows.push(row); }
+  return rows.filter(r => r.some(v => v.trim() !== ''));
+}
+
+function loadWords(text) {
+  const rows = parseCSV(text);
+  if (rows.length < 2) throw new Error('データ行がありません');
+  const header = rows[0].map(h => h.trim().toLowerCase());
+  const idx = name => header.indexOf(name);
+  const need = ['english', 'japanese', 'paragraph', 'definition'];
+  const missing = need.filter(n => idx(n) < 0);
+  if (missing.length) throw new Error('列が見つかりません: ' + missing.join(', '));
+  const list = rows.slice(1).map(r => ({
+    english: (r[idx('english')] || '').trim(),
+    japanese: (r[idx('japanese')] || '').trim(),
+    paragraph: (r[idx('paragraph')] || '').trim(),
+    definition: (r[idx('definition')] || '').trim(),
+  })).filter(w => w.english && w.japanese);
+  if (!list.length) throw new Error('有効な単語がありません');
+  return list;
+}
+
+function onLoaded(text, source) {
+  try {
+    words = loadWords(text);
+  } catch (e) {
+    $('loadStatus').textContent = 'CSVの読み込みに失敗しました: ' + e.message;
+    $('filePick').classList.remove('hidden');
+    return;
+  }
+  $('loadStatus').textContent = `${source} から ${words.length} 語を読み込みました。`;
+  $('filePick').classList.add('hidden');
+  buildParagraphs();
+  updateSetup();
+  show('setup');
+}
+
+async function tryFetch() {
+  $('loadStatus').textContent = 'words.csv を読み込み中…';
+  try {
+    const res = await fetch('words.csv?t=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) throw new Error(res.status);
+    onLoaded(await res.text(), 'words.csv');
+  } catch (e) {
+    $('loadStatus').textContent = 'words.csv を自動で読み込めませんでした。';
+    $('filePick').classList.remove('hidden');
+    show('load');
+  }
+}
+
+$('fileInput').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => onLoaded(reader.result, file.name);
+  reader.readAsText(file, 'UTF-8');
+  e.target.value = '';
+});
+
+// ---------- 苦手データ ----------
+function loadMiss() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch { return {}; }
+}
+function saveMiss(m) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(m)); } catch { /* 保存不可の環境 */ }
+}
+const wordKey = w => w.english.toLowerCase();
+function addMiss(w) {
+  const m = loadMiss();
+  m[wordKey(w)] = (m[wordKey(w)] || 0) + 1;
+  saveMiss(m);
+}
+
+// ---------- 画面 ----------
+function show(name) {
+  for (const v of ['load', 'setup', 'quiz', 'result']) {
+    $(v + 'View').classList.toggle('hidden', v !== name && !(v === 'load' && name === 'setup'));
+  }
+  window.scrollTo(0, 0);
+}
+
+function sortParagraphs(a, b) {
+  const na = parseFloat(a), nb = parseFloat(b);
+  if (!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb;
+  return a.localeCompare(b, 'ja', { numeric: true });
+}
+
+function buildParagraphs() {
+  const paras = [...new Set(words.map(w => w.paragraph || '(なし)'))].sort(sortParagraphs);
+  const g = $('paraGroup');
+  g.innerHTML = '';
+  g.appendChild(chip('checkbox', 'para-all', '__all__', '全範囲', true));
+  for (const p of paras) g.appendChild(chip('checkbox', 'para', p, /^\d+$/.test(p) ? `段落 ${p}` : p, false));
+  g.querySelector('[value="__all__"]').addEventListener('change', e => {
+    if (e.target.checked) g.querySelectorAll('input[name=para]').forEach(i => i.checked = false);
+    updateSetup();
+  });
+  g.querySelectorAll('input[name=para]').forEach(i => i.addEventListener('change', () => {
+    const any = [...g.querySelectorAll('input[name=para]')].some(x => x.checked);
+    g.querySelector('[value="__all__"]').checked = !any;
+    updateSetup();
+  }));
+}
+
+function chip(type, name, value, label, checked) {
+  const l = document.createElement('label');
+  l.className = 'chip';
+  const i = document.createElement('input');
+  i.type = type; i.name = name; i.value = value; i.checked = checked;
+  const s = document.createElement('span');
+  s.textContent = label;
+  l.append(i, s);
+  return l;
+}
+
+const getMode = () => document.querySelector('input[name=mode]:checked').value;
+const getFormat = () => document.querySelector('input[name=format]:checked').value;
+
+function selectedPool() {
+  const all = document.querySelector('#paraGroup [value="__all__"]').checked;
+  const sel = new Set([...document.querySelectorAll('input[name=para]:checked')].map(i => i.value));
+  let pool = all ? words : words.filter(w => sel.has(w.paragraph || '(なし)'));
+  if (getMode() === 'd2e') pool = pool.filter(w => w.definition);
+  return pool;
+}
+
+function updateSetup() {
+  const mode = getMode();
+  const lettersInput = document.querySelector('input[name=format][value=letters]');
+  lettersInput.disabled = mode === 'e2j';
+  if (lettersInput.disabled && lettersInput.checked) {
+    document.querySelector('input[name=format][value=choice]').checked = true;
+  }
+  const fmt = getFormat();
+  let note = '';
+  if (mode === 'e2j') note = '文字選択は答えが英単語のモード（日→英・英英→英）で使えます。';
+  if (mode === 'e2j' && fmt === 'input') note = '日本語の記述は表記揺れがあるので、正解を見て自分で○×を付けます。';
+  if (mode !== 'e2j' && fmt === 'input') note = '英単語の記述は大文字・小文字を区別しません。';
+  $('formatNote').textContent = note;
+
+  const pool = selectedPool();
+  $('poolInfo').textContent = `対象 ${pool.length} 語`;
+  $('countInput').max = pool.length;
+  $('startBtn').disabled = pool.length === 0;
+  const miss = loadMiss();
+  const weak = Object.values(miss).filter(v => v > 0).length;
+  $('weakInfo').textContent = weak
+    ? `間違えた記録のある単語: ${weak} 語（苦手な単語ほど出やすくなります）`
+    : 'まだ記録はありません。';
+}
+
+document.querySelectorAll('input[name=mode], input[name=format]').forEach(i => i.addEventListener('change', updateSetup));
+
+// ---------- 出題 ----------
+function shuffle(a) {
+  a = a.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// 苦手度で重み付けした非復元抽出（重みが大きいほど先に選ばれやすい）
+function weightedPick(pool, n) {
+  const miss = loadMiss();
+  return pool
+    .map(w => ({ w, k: Math.pow(Math.random(), 1 / (1 + 2 * (miss[wordKey(w)] || 0))) }))
+    .sort((a, b) => b.k - a.k)
+    .slice(0, n)
+    .map(x => x.w);
+}
+
+function startSession(mode, format, list) {
+  session = { mode, format, queue: list, index: 0, results: [] };
+  lastSettings = { mode, format };
+  show('quiz');
+  renderQuestion();
+}
+
+$('startBtn').addEventListener('click', () => {
+  const pool = selectedPool();
+  let n = parseInt($('countInput').value, 10);
+  if (!n || n < 1) n = pool.length;
+  n = Math.min(n, pool.length);
+  if (!pool.length) { $('setupErr').textContent = '対象の単語がありません。'; return; }
+  $('setupErr').textContent = '';
+  startSession(getMode(), getFormat(), weightedPick(pool, n));
+});
+
+const promptOf = (w, mode) => mode === 'e2j' ? w.english : mode === 'j2e' ? w.japanese : w.definition;
+const answerOf = (w, mode) => mode === 'e2j' ? w.japanese : w.english;
+const normalize = s => s.trim().toLowerCase().replace(/\s+/g, ' ').replace(/[’‘]/g, "'");
+
+function renderQuestion() {
+  const { mode, format, queue, index } = session;
+  const w = queue[index];
+  const correct = session.results.filter(r => r.ok).length;
+  $('progText').textContent = `${index + 1} / ${queue.length} 問`;
+  $('scoreText').textContent = `正解 ${correct}`;
+  $('progBar').style.width = (index / queue.length * 100) + '%';
+  $('promptLabel').textContent = { e2j: 'この英単語の意味は？', j2e: 'この意味の英単語は？', d2e: 'この定義に当てはまる英単語は？' }[mode];
+  $('prompt').textContent = promptOf(w, mode);
+  $('prompt').classList.toggle('def', mode === 'd2e');
+  $('feedback').innerHTML = '';
+  const area = $('answerArea');
+  area.innerHTML = '';
+  if (format === 'choice') renderChoice(area, w);
+  else if (format === 'input') renderInput(area, w);
+  else renderLetters(area, w);
+}
+
+function renderChoice(area, w) {
+  const { mode } = session;
+  const ans = answerOf(w, mode);
+  const others = shuffle(words.filter(x => x !== w && normalize(answerOf(x, mode)) !== normalize(ans)));
+  const opts = [];
+  const seen = new Set([normalize(ans)]);
+  for (const o of others) {
+    const a = answerOf(o, mode);
+    if (seen.has(normalize(a))) continue;
+    seen.add(normalize(a));
+    opts.push(a);
+    if (opts.length === 3) break;
+  }
+  const choices = shuffle([ans, ...opts]);
+  const box = document.createElement('div');
+  box.className = 'choices';
+  choices.forEach((c, i) => {
+    const b = document.createElement('button');
+    b.textContent = `${i + 1}. ${c}`;
+    b.addEventListener('click', () => {
+      box.querySelectorAll('button').forEach((x, j) => {
+        x.disabled = true;
+        if (choices[j] === ans) x.classList.add('correct');
+      });
+      const ok = c === ans;
+      if (!ok) b.classList.add('wrong');
+      judge(ok, c);
+    });
+    box.appendChild(b);
+  });
+  area.appendChild(box);
+}
+
+function renderInput(area, w) {
+  const { mode } = session;
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.placeholder = mode === 'e2j' ? '日本語で答えを入力' : '英単語を入力';
+  input.autocomplete = 'off';
+  input.autocapitalize = 'off';
+  input.spellcheck = false;
+  const btn = document.createElement('button');
+  btn.className = 'block';
+  btn.style.marginTop = '10px';
+  btn.textContent = mode === 'e2j' ? '答えを見る' : '答え合わせ';
+  const submit = () => {
+    if (btn.disabled) return;
+    input.disabled = btn.disabled = true;
+    if (mode === 'e2j') selfJudge(input.value.trim());
+    else judge(normalize(input.value) === normalize(w.english), input.value.trim());
+  };
+  btn.addEventListener('click', submit);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) submit(); });
+  area.append(input, btn);
+  setTimeout(() => input.focus(), 0);
+}
+
+function renderLetters(area, w) {
+  const target = w.english;
+  const chars = [...target];
+  const lettersInWord = new Set(chars.map(c => c.toLowerCase()));
+  const pool = 'abcdefghijklmnopqrstuvwxyz'.split('').filter(c => !lettersInWord.has(c));
+  const total = Math.max(10, chars.length + 3);
+  const extras = shuffle(pool).slice(0, Math.max(0, total - chars.length));
+  const tiles = shuffle([...chars.map(c => c.toLowerCase()), ...extras]);
+  const picked = []; // tile index の列
+
+  const box = document.createElement('div');
+  box.className = 'answer-box';
+  const grid = document.createElement('div');
+  grid.className = 'tiles';
+  const tileBtns = tiles.map((t, i) => {
+    const b = document.createElement('button');
+    b.textContent = t === ' ' ? '␣' : t;
+    b.addEventListener('click', () => {
+      picked.push(i);
+      b.classList.add('used');
+      refresh();
+    });
+    grid.appendChild(b);
+    return b;
+  });
+  const refresh = () => {
+    box.textContent = picked.map(i => tiles[i]).join('') || ' ';
+  };
+  const ctrl = document.createElement('div');
+  ctrl.className = 'actions';
+  const back = document.createElement('button');
+  back.className = 'secondary'; back.textContent = '1文字消す';
+  back.addEventListener('click', () => {
+    const i = picked.pop();
+    if (i !== undefined) tileBtns[i].classList.remove('used');
+    refresh();
+  });
+  const clear = document.createElement('button');
+  clear.className = 'secondary'; clear.textContent = 'クリア';
+  clear.addEventListener('click', () => {
+    picked.length = 0;
+    tileBtns.forEach(b => b.classList.remove('used'));
+    refresh();
+  });
+  const ok = document.createElement('button');
+  ok.textContent = '答え合わせ';
+  ok.addEventListener('click', () => {
+    [back, clear, ok, ...tileBtns].forEach(b => b.disabled = true);
+    const given = picked.map(i => tiles[i]).join('');
+    judge(normalize(given) === normalize(target), given);
+  });
+  ctrl.append(back, clear, ok);
+  refresh();
+  area.append(box, grid, ctrl);
+}
+
+function detailHTML(w) {
+  const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  return `<div class="detail">
+    <div><b>英単語</b>${esc(w.english)}</div>
+    <div><b>意味</b>${esc(w.japanese)}</div>
+    ${w.definition ? `<div><b>英英定義</b>${esc(w.definition)}</div>` : ''}
+    ${w.paragraph ? `<div><b>段落</b>${esc(w.paragraph)}</div>` : ''}
+  </div>`;
+}
+
+function judge(ok, given) {
+  const w = session.queue[session.index];
+  session.results.push({ w, ok, given });
+  if (!ok) addMiss(w);
+  const fb = $('feedback');
+  fb.innerHTML = `<div class="feedback ${ok ? 'ok' : 'ng'}">
+    <div class="verdict">${ok ? '○ 正解！' : '× 不正解'}</div>
+    ${detailHTML(w)}
+  </div>`;
+  const next = document.createElement('button');
+  next.className = 'block';
+  next.style.marginTop = '12px';
+  next.textContent = session.index + 1 < session.queue.length ? '次の問題へ' : '結果を見る';
+  next.addEventListener('click', nextQuestion);
+  fb.appendChild(next);
+  $('scoreText').textContent = `正解 ${session.results.filter(r => r.ok).length}`;
+  setTimeout(() => next.focus(), 0);
+}
+
+function selfJudge(given) {
+  const w = session.queue[session.index];
+  const fb = $('feedback');
+  const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  fb.innerHTML = `<div class="feedback self">
+    <div class="verdict">自己採点</div>
+    <div class="detail"><div><b>あなた</b>${esc(given) || '（未入力）'}</div></div>
+    ${detailHTML(w)}
+  </div>`;
+  const acts = document.createElement('div');
+  acts.className = 'actions';
+  const o = document.createElement('button');
+  o.textContent = '○ 正解';
+  o.style.background = 'var(--ok)';
+  const x = document.createElement('button');
+  x.textContent = '× 不正解';
+  x.style.background = 'var(--ng)';
+  o.addEventListener('click', () => judge(true, given));
+  x.addEventListener('click', () => judge(false, given));
+  acts.append(o, x);
+  fb.querySelector('.feedback').appendChild(acts);
+}
+
+function nextQuestion() {
+  session.index++;
+  if (session.index < session.queue.length) renderQuestion();
+  else showResult();
+}
+
+// ---------- 結果 ----------
+function showResult() {
+  const res = session.results;
+  const total = res.length;
+  const correct = res.filter(r => r.ok).length;
+  const rate = total ? Math.round(correct / total * 100) : 0;
+  $('resultScore').textContent = `${rate}%`;
+  $('resultDetail').textContent = `${total} 問中 ${correct} 問正解（${MODE_LABEL[session.mode]}・${FORMAT_LABEL[session.format]}）`;
+  const wrong = [...new Map(res.filter(r => !r.ok).map(r => [wordKey(r.w), r.w])).values()];
+  session.wrong = wrong;
+  const ul = $('wrongList');
+  ul.innerHTML = '';
+  for (const w of wrong) {
+    const li = document.createElement('li');
+    const en = document.createElement('div'); en.className = 'en'; en.textContent = w.english;
+    const ja = document.createElement('div'); ja.textContent = w.japanese;
+    li.append(en, ja);
+    if (w.definition) {
+      const d = document.createElement('div'); d.className = 'def'; d.textContent = w.definition;
+      li.appendChild(d);
+    }
+    ul.appendChild(li);
+  }
+  $('wrongCard').classList.toggle('hidden', wrong.length === 0);
+  $('retryWrongBtn').classList.toggle('hidden', wrong.length === 0);
+  show('result');
+}
+
+$('quitBtn').addEventListener('click', () => {
+  if (session.results.length === 0) { show('setup'); updateSetup(); return; }
+  showResult();
+});
+$('retryWrongBtn').addEventListener('click', () => {
+  startSession(lastSettings.mode, lastSettings.format, shuffle(session.wrong));
+});
+$('backBtn').addEventListener('click', () => { updateSetup(); show('setup'); });
+// 誤操作防止: 2回押すとリセット
+let resetTimer = null;
+$('resetBtn').addEventListener('click', () => {
+  const btn = $('resetBtn');
+  if (!resetTimer) {
+    btn.textContent = 'もう一度押すとリセット';
+    resetTimer = setTimeout(() => { resetTimer = null; btn.textContent = '苦手データをリセット'; }, 3000);
+    return;
+  }
+  clearTimeout(resetTimer);
+  resetTimer = null;
+  try { localStorage.removeItem(STORAGE_KEY); } catch { /* noop */ }
+  btn.textContent = 'リセットしました';
+  setTimeout(() => { btn.textContent = '苦手データをリセット'; }, 1500);
+  updateSetup();
+});
+$('reloadBtn').addEventListener('click', () => {
+  if (location.protocol === 'file:') { $('filePick').classList.remove('hidden'); $('fileInput').click(); }
+  else tryFetch();
+});
+
+// 起動
+if (location.protocol === 'file:') {
+  $('loadStatus').textContent = 'ファイルを直接開いているため、words.csv を選択してください。';
+  $('filePick').classList.remove('hidden');
+} else {
+  tryFetch();
+}
+</script>
+</body>
+</html>
