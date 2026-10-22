@@ -158,6 +158,9 @@ main {
   }
   .col > * { flex: none; }
   .col .btnrow button:not(.big) { padding: 0 6px; font-size: 14px; white-space: nowrap; min-width: 0; }
+  /* 右の細い列は、ボタンを縦に並べ、開始時刻・就寝期限も縦に積む */
+  .col-side .btnrow { flex-direction: column; }
+  .col-side .settings-grid { grid-template-columns: 1fr; }
   .col { display: flex; flex-direction: column; gap: 12px; }
   .col-now { grid-area: now; }
   .col-side { grid-area: side; }
@@ -246,6 +249,9 @@ button.armed { background: var(--late); color: #fff; border-color: transparent; 
 .pill.brk { background: var(--break-line); color: #fff; }
 .pill.work { background: #e5484d; color: #fff; }
 #currentCard.in-break { background: var(--break-bg); border-color: var(--break-line); }
+#currentCard.paused { background: var(--panel-2); border-style: dashed; }
+#currentCard.paused .cur-remain { color: var(--sub); }
+.pill.paused { background: #6b7280; color: #fff; }
 .note { font-size: 13px; color: var(--sub); margin: 10px 0 0; }
 .toggle { display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 16px; color: var(--text); margin: 0; cursor: pointer; }
 .toggle input { width: 26px; height: 26px; min-height: 0; margin: 0; accent-color: #e5484d; }
@@ -280,6 +286,8 @@ button.armed { background: var(--late); color: #fff; border-color: transparent; 
 #focus[hidden] { display: none; }
 #focus.brk { background: #0c3530; }
 #focus.over { background: #3a0f0c; }
+#focus.paused { background: #2a2f37; }
+#focus.paused .focus-timer { color: #b8c0cc; }
 .focus-label { font-size: 20px; font-weight: 700; }
 .focus-label .pill { font-size: 18px; padding: 4px 14px; }
 .focus-name { font-size: clamp(20px, 4vw, 36px); font-weight: 800; max-width: 90vw; word-break: break-word; }
@@ -546,13 +554,35 @@ function buildPhases(t, start, work, n0, withMods) {
       const long = n % c.every === 0;
       const m = withMods && t.brk && t.brk[bi];
       let be = cur + (long ? c.long : c.brk) + (m && m.ext || 0);
-      if (m && m.skip != null) be = Math.min(be, Math.max(cur, msToMin(m.skip)));
+      if (m && m.skip != null) be = Math.min(be, Math.max(cur, toActive(t, msToMin(m.skip))));
       if (be > cur + 1e-9) phases.push({ k: 'b', s: cur, e: be, i: phases.length, long, bi });
       cur = Math.max(cur, be); bi++;
     }
   }
   return { phases, end: cur, n };
 }
+// 一時停止: t.pauses = [{ s: ms, e: ms|null }]。区切りは「止めていない時間」で数え、止めていた分だけ後ろへずらす
+const isPaused = t => !!(t.pauses && t.pauses.some(p => p.e == null));
+const pauseList = t => (t.pauses || []).map(p => ({ s: msToMin(p.s), e: p.e != null ? msToMin(p.e) : nowMin() }));
+// 実時刻(分) → 止めていた時間を除いた時刻(分)
+const toActive = (t, wall) => wall - pauseList(t).reduce((a, p) => a + Math.max(0, Math.min(p.e, wall) - p.s), 0);
+// フェーズと終了時刻を、一時停止の分だけずらす(停止中のフェーズは伸びる)。古い順に適用する
+function applyPauses(t, ph) {
+  let end = ph.end;
+  for (const pz of pauseList(t).sort((a, b) => a.s - b.s)) {
+    const len = pz.e - pz.s;
+    for (const p of ph.phases) {
+      if (p.s >= pz.s - 1e-9) p.s += len;
+      if (p.e > pz.s + 1e-9) p.e += len;
+    }
+    if (end > pz.s + 1e-9) end += len;
+  }
+  ph.end = end;
+  return ph;
+}
+// 今の一時停止が始まってからの分
+const pauseElapsed = t => { const p = (t.pauses || []).find(x => x.e == null); return p ? (nowMs() - p.s) / 60000 : 0; };
+const pausedMin = t => pauseList(t).reduce((a, p) => a + p.e - p.s, 0);
 const countFull = (phases, limit) => phases.filter(p => p.k === 'w' && p.full && p.e <= limit + 1e-9).length;
 
 // 予定(plan)は設定開始時刻 + 元の所要時間(と標準の休憩)の積み上げ。見込み(exp)は実績・現在時刻・休憩の延長を反映。
@@ -569,14 +599,14 @@ function computeSchedule() {
     let s, e, ph, target, curPh = null;
     if (st === 'done') {
       s = msToMin(t.actualStart); e = msToMin(t.actualEnd);
-      ph = buildPhases(t, s, effDur(t), nExp, true);
+      ph = applyPauses(t, buildPhases(t, s, effDur(t), nExp, true));
       pomoDone += countFull(ph.phases, e);
       ph.phases = ph.phases.filter(p => p.s < e - 1e-9).map(p => ({ ...p, e: Math.min(p.e, e) }));
       nExp += ph.phases.filter(p => p.k === 'w').length;
       target = ph.end;
     } else if (st === 'running') {
       s = msToMin(t.actualStart);
-      ph = buildPhases(t, s, effDur(t), nExp, true);
+      ph = applyPauses(t, buildPhases(t, s, effDur(t), nExp, true));
       nExp = ph.n; target = ph.end;
       e = now !== null ? Math.max(target, now) : target;
       if (now !== null) {
@@ -826,15 +856,23 @@ function renderCurrent(sc) {
       }
     }
     const over = ph === 'over';
+    const paused = isPaused(t);
+    if (paused) { pill = '<span class="pill paused">⏸ 一時停止中</span>'; extraBtns = ''; }
+    const pm = Math.round(pausedMin(t));
     h += `${pill}
       <div class="cur-name">${esc(t.name)}</div>
       <div class="cur-remain num ${over ? 'over' : ''}" id="curTimer"></div>
+      ${paused ? '<div class="cur-sub num" id="curPause"></div>' : pm ? `<div class="cur-sub num">一時停止 合計${pm}分(後ろの時刻に反映済み)</div>` : ''}
       ${phaseLine ? `<div class="cur-sub num">${phaseLine}</div>` : ''}
       <div class="cur-sub num">開始 ${fmt(running.s)} ・ 終了見込み ${fmt(running.target)} ・ ${t.pomo ? '作業' : '所要'} ${effDur(t)}分${adj ? `(${adj > 0 ? '+' : ''}${adj})` : ''}</div>
       ${extraBtns}
       <div class="btnrow">
-        <button class="primary big grow" data-act="finish" data-id="${t.id}">終了</button>
-        <button class="big" data-act="focus" data-id="${t.id}">⛶ 全画面</button>
+        ${paused
+          ? `<button class="primary big grow" data-act="resume" data-id="${t.id}">▶ 再開</button>
+             <button class="big" data-act="finish" data-id="${t.id}">終了</button>`
+          : `<button class="primary big grow" data-act="finish" data-id="${t.id}">終了</button>
+             ${over ? '' : `<button class="big" data-act="pause" data-id="${t.id}">⏸ 一時停止</button>`}`}
+        <button class="big" data-act="focus" data-id="${t.id}" aria-label="全画面">⛶</button>
       </div>
       <div class="btnrow">
         <button class="grow" data-act="adj" data-v="-5" data-id="${t.id}" ${effDur(t) <= 5 ? 'disabled' : ''}>${t.pomo ? '作業 ' : ''}−5分</button>
@@ -858,8 +896,10 @@ function renderCurrent(sc) {
     h += `<div class="cur-sub">タスクを追加すると時刻表ができます。</div>`;
   }
   setHTML('currentCard', h);
-  $('currentCard').classList.toggle('in-break', inBreak);
+  $('currentCard').classList.toggle('in-break', inBreak && !(running && isPaused(running.t)));
+  $('currentCard').classList.toggle('paused', !!(running && isPaused(running.t)));
   if (running && running.curPh && sc.now !== null) setText('curTimer', timerText(running, sc.now));
+  if (running && isPaused(running.t)) setText('curPause', `停止して ${fmtSec(pauseElapsed(running.t))}(この分だけ後ろがずれます)`);
 }
 
 function segRows(r, now) {
@@ -882,7 +922,7 @@ function renderTable(sc) {
     const prevPending = i > 0 && sc.rows[i - 1].st === 'pending';
     const nextPending = i < n - 1 && sc.rows[i + 1].st === 'pending';
     const canMove = r.st === 'pending';
-    const label = r.st === 'done' ? '実績' : r.st === 'running' ? '実行中' : '';
+    const label = r.st === 'done' ? '実績' : r.st === 'running' ? (isPaused(t) ? '⏸ 一時停止中' : '実行中') : '';
     const brkMin = Math.round(r.phases.filter(p => p.k === 'b').reduce((a, p) => a + p.e - p.s, 0));
     const pomoInfo = t.pomo ? `<span>🍅×${r.phases.filter(p => p.k === 'w').length}${brkMin ? ` +休憩${brkMin}分` : ''}</span>` : '';
     return `<li class="row ${r.st} ${editingId === t.id ? 'editing' : ''}">
@@ -1046,13 +1086,27 @@ const actions = {
     setFormCollapsed(true);
     audio.unlock();
     t.actualStart = nowMs(); t.actualEnd = null; t.adj = 0;
-    t.brk = {};
+    t.brk = {}; t.pauses = [];
     if (t.pomo) t.cfg = { ...pomoCfg }; else delete t.cfg;
   },
-  finish(t) { if (taskState(t) === 'running') t.actualEnd = nowMs(); },
+  finish(t) {
+    if (taskState(t) !== 'running') return false;
+    const now = nowMs();
+    (t.pauses || []).forEach(p => { if (p.e == null) p.e = now; }); // 停止中に終了したら停止もそこで終わり
+    t.actualEnd = now;
+  },
+  pause(t) {
+    if (taskState(t) !== 'running' || isPaused(t)) return false;
+    (t.pauses = t.pauses || []).push({ s: nowMs(), e: null });
+  },
+  resume(t) {
+    const p = (t.pauses || []).find(x => x.e == null);
+    if (!p) return false;
+    p.e = nowMs();
+  },
   unstart(t) {
     if (!confirmTap('unstart', t)) return false;
-    t.actualStart = null; t.adj = 0; delete t.cfg; delete t.brk;
+    t.actualStart = null; t.adj = 0; delete t.cfg; delete t.brk; delete t.pauses;
   },
   unfinish(t) {
     if (data.tasks.some(x => taskState(x) === 'running')) return false;
@@ -1152,7 +1206,15 @@ function renderFocus(sc) {
   } else if (over) {
     label = '<span class="pill" style="background:#ff8a7e">⏰ 時間です</span>';
   }
-  $('focus').className = over ? 'over' : brk ? 'brk' : '';
+  const paused = isPaused(t);
+  if (paused) {
+    label = '<span class="pill paused">⏸ 一時停止中</span>';
+    sub = `<span id="focusPause"></span>`;
+    btns = `<button class="primary" data-act="resume" data-id="${t.id}">▶ 再開</button>`;
+  } else if (!over) {
+    btns += `<button data-act="pause" data-id="${t.id}">⏸ 一時停止</button>`;
+  }
+  $('focus').className = paused ? 'paused' : over ? 'over' : brk ? 'brk' : '';
   setHTML('focus', `<div class="focus-clock num" id="focusClock"></div>
     <button id="focusClose" aria-label="全画面を閉じる">✕ 閉じる</button>
     <div class="focus-label">${label}</div>
@@ -1160,7 +1222,8 @@ function renderFocus(sc) {
     <div class="focus-caption">${over ? '超過' : 'あと'}</div>
     <div class="focus-timer num" id="focusTimer"></div>
     <div class="focus-sub num">${sub}</div>
-    <div class="focus-btns">${btns}<button class="primary" data-act="finish" data-id="${t.id}">終了</button></div>`);
+    <div class="focus-btns">${btns}<button class="${paused ? '' : 'primary'}" data-act="finish" data-id="${t.id}">終了</button></div>`);
+  if (paused) setText('focusPause', `停止して ${fmtSec(pauseElapsed(t))}`);
   // 1秒ごとに変わる部分は文字だけ書き換える(ボタンを作り直さない)
   setText('focusTimer', over ? `+${fmtSec(now - r.target)}` : fmtSec((t.pomo ? ph.e : r.target) - now));
   setText('focusClock', fmt(now));
