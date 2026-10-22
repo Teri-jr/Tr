@@ -118,14 +118,14 @@ header.board {
 main {
   display: grid; gap: 12px; padding: 12px 16px 40px;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-areas: "debug" "banner" "form" "settings" "current" "table" "pomo" "data" "reset";
+  grid-template-areas: "debug" "current" "banner" "form" "settings" "table" "pomo" "data" "reset";
   max-width: 760px; margin: 0 auto;
 }
 @media (min-width: 900px) and (orientation: landscape) {
   main {
     max-width: 1400px;
     grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr);
-    grid-template-areas: "debug debug" "banner banner" "table form" "table settings" "table current" "table pomo" "table data" "table reset" "table .";
+    grid-template-areas: "debug debug" "table current" "table banner" "table form" "table settings" "table pomo" "table data" "table reset" "table .";
     grid-template-rows: auto auto auto auto auto auto auto auto 1fr;
     align-items: start;
   }
