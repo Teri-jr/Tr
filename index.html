@@ -295,15 +295,30 @@ button.armed { background: var(--late); color: #fff; border-color: transparent; 
 .focus-timer { font-size: min(24vw, 32vh); font-weight: 800; line-height: 1; color: var(--board-text); letter-spacing: 0.02em; }
 .focus-now { display: flex; align-items: baseline; gap: 14px; }
 .focus-now-label { font-size: 18px; font-weight: 700; opacity: 0.7; }
-.focus-now-time { font-size: min(12vw, 15vh); font-weight: 800; line-height: 1; color: #e8ecf2; letter-spacing: 0.02em; }
+.focus-now-time { font-size: min(calc(min(12vw, 15vh) * var(--clock-scale, 1)), 30vw); font-weight: 800; line-height: 1; color: #e8ecf2; letter-spacing: 0.02em; }
+.focus-zoom { position: absolute; top: calc(10px + env(safe-area-inset-top)); left: calc(10px + env(safe-area-inset-left)); display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; opacity: 0.85; }
+.focus-zoom button { background: transparent; color: #e8ecf2; border-color: #3a4452; font-size: 20px; padding: 0; }
 #focus.brk .focus-timer { color: #7ff0de; }
 #focus.over .focus-timer { color: #ff8a7e; }
 .focus-sub { font-size: 16px; opacity: 0.8; }
 .focus-btns { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
 .focus-btns button { min-height: 56px; font-size: 18px; padding: 0 22px; background: #1f2630; color: #e8ecf2; border-color: #2b3440; }
 .focus-btns button.primary { background: var(--accent); color: var(--accent-text); border-color: transparent; min-width: 160px; }
-.pause-warn { margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: var(--late-bg); color: var(--late); border: 1px solid var(--late); font-weight: 700; font-size: 14px; }
-.focus-warn { max-width: 560px; font-size: 16px; }
+/* ---------- 確認ポップアップ ---------- */
+#modal {
+  position: fixed; inset: 0; z-index: 95; background: rgba(0, 0, 0, 0.55);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+#modal[hidden] { display: none; }
+.modal-box {
+  background: var(--panel); color: var(--text); border-radius: 16px; border: 2px solid var(--late);
+  width: min(440px, 100%); padding: 20px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+}
+.modal-title { font-size: 20px; font-weight: 800; color: var(--late); margin-bottom: 8px; }
+.modal-body { font-size: 16px; margin-bottom: 18px; word-break: break-word; }
+.modal-btns { display: flex; gap: 10px; }
+.modal-btns button { flex: 1; min-height: 52px; font-size: 16px; font-weight: 700; }
+button.danger-fill { background: var(--late); color: #fff; border-color: transparent; }
 #focus { overflow-y: auto; }
 /* スマホ横向きなど高さが足りないとき: 見出しを省いて数字を優先 */
 @media (max-height: 520px) {
@@ -311,7 +326,8 @@ button.armed { background: var(--late); color: #fff; border-color: transparent; 
   .focus-label, .focus-caption { display: none; }
   .focus-name { font-size: 18px; margin-right: 90px; }
   .focus-timer { font-size: min(22vw, 34vh); }
-  .focus-now-time { font-size: min(10vw, 15vh); }
+  .focus-now-time { font-size: min(calc(min(10vw, 15vh) * var(--clock-scale, 1)), 30vw); }
+  .focus-name { margin-left: 130px; }
   .focus-btns button { min-height: 44px; }
 }
 #currentCard .btnrow button { white-space: nowrap; }
@@ -480,6 +496,7 @@ button.armed { background: var(--late); color: #fff; border-color: transparent; 
 </main>
 
 <div id="focus" hidden role="dialog" aria-label="全画面タイマー"></div>
+<div id="modal" hidden role="alertdialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-box"><div class="modal-title" id="modalTitle"></div><div class="modal-body" id="modalBody"></div><div class="modal-btns"><button id="modalCancel"></button><button class="danger-fill" id="modalOk"></button></div></div></div>
 <div id="flash" hidden></div>
 
 <script>
@@ -878,7 +895,6 @@ function renderCurrent(sc) {
     h += `${pill}
       <div class="cur-name">${esc(t.name)}</div>
       <div class="cur-remain num ${over ? 'over' : ''}" id="curTimer"></div>
-      ${isArmed(armKey('pause', t.id)) ? `<div class="pause-warn">⚠ 本当に一時停止しますか? 止めている間は、後ろの予定がどんどんずれていきます。止めるなら4秒以内にもう一度押してください。</div>` : ''}
       ${paused ? '<div class="cur-sub num" id="curPause"></div>' : pm ? `<div class="cur-sub num">一時停止 合計${pm}分(後ろの時刻に反映済み)</div>` : ''}
       ${phaseLine ? `<div class="cur-sub num">${phaseLine}</div>` : ''}
       <div class="cur-sub num">開始 ${fmt(running.s)} ・ 終了見込み ${fmt(running.target)} ・ ${t.pomo ? '作業' : '所要'} ${effDur(t)}分${adj ? `(${adj > 0 ? '+' : ''}${adj})` : ''}</div>
@@ -888,7 +904,7 @@ function renderCurrent(sc) {
           ? `<button class="primary big grow" data-act="resume" data-id="${t.id}">▶ 再開</button>
              <button class="big" data-act="finish" data-id="${t.id}">終了</button>`
           : `<button class="primary big grow" data-act="finish" data-id="${t.id}">終了</button>
-             ${over ? '' : armBtn('pause', t.id, '⏸ 一時停止', 'big', '本当に止める?')}`}
+             ${over ? '' : `<button class="big" data-act="pause" data-id="${t.id}">⏸ 一時停止</button>`}`}
         <button class="big" data-act="focus" data-id="${t.id}" aria-label="全画面">⛶</button>
       </div>
       <div class="btnrow">
@@ -1114,8 +1130,18 @@ const actions = {
   },
   pause(t) {
     if (taskState(t) !== 'running' || isPaused(t)) return false;
-    if (!confirmTap('pause', t)) return false;
-    (t.pauses = t.pauses || []).push({ s: nowMs(), e: null });
+    // わざと一手間: 確認のポップアップで「一時停止する」を押したときだけ止める
+    openModal({
+      title: '⚠ 本当に一時停止しますか?',
+      body: `「${esc(t.name)}」を止めます。止めている間は、後ろの予定がどんどんずれていきます。`,
+      ok: '⏸ 一時停止する', cancel: 'やめる(続ける)',
+      onOk: () => {
+        if (taskState(t) !== 'running' || isPaused(t)) return;
+        (t.pauses = t.pauses || []).push({ s: nowMs(), e: null });
+        saveDay(); render(); phaseKeySeen = phaseKeyNow;
+      }
+    });
+    return false;
   },
   resume(t) {
     const p = (t.pauses || []).find(x => x.e == null);
@@ -1230,26 +1256,61 @@ function renderFocus(sc) {
     sub = `<span id="focusPause"></span>`;
     btns = `<button class="primary" data-act="resume" data-id="${t.id}">▶ 再開</button>`;
   } else if (!over) {
-    btns += armBtn('pause', t.id, '⏸ 一時停止', '', '本当に止める?(もう一度押す)');
+    btns += `<button data-act="pause" data-id="${t.id}">⏸ 一時停止</button>`;
   }
   $('focus').className = paused ? 'paused' : over ? 'over' : brk ? 'brk' : '';
-  const pauseArmed = isArmed(armKey('pause', t.id));
+  const ci = clockScaleIdx();
   setHTML('focus', `<button id="focusClose" aria-label="全画面を閉じる">✕ 閉じる</button>
+    <div class="focus-zoom"><span>時計</span>
+      <button data-clock="-1" aria-label="時計を小さく" ${ci <= 0 ? 'disabled' : ''}>−</button>
+      <button data-clock="1" aria-label="時計を大きく" ${ci >= CLOCK_SCALES.length - 1 ? 'disabled' : ''}>＋</button></div>
     <div class="focus-label">${label}</div>
     <div class="focus-name">${esc(t.name)}</div>
     <div class="focus-caption">${over ? '超過' : 'あと'}</div>
     <div class="focus-timer num" id="focusTimer"></div>
     <div class="focus-now"><span class="focus-now-label">現在時刻</span><span class="focus-now-time num" id="focusClock"></span></div>
     <div class="focus-sub num">${sub}</div>
-    ${pauseArmed ? `<div class="pause-warn focus-warn">⚠ 本当に一時停止しますか? 止めている間は、後ろの予定がどんどんずれていきます。止めるなら4秒以内にもう一度押してください。</div>` : ''}
     <div class="focus-btns">${btns}<button class="${paused ? '' : 'primary'}" data-act="finish" data-id="${t.id}">終了</button></div>`);
   if (paused) setText('focusPause', `停止して ${fmtSec(pauseElapsed(t))}`);
   // 1秒ごとに変わる部分は文字だけ書き換える(ボタンを作り直さない)
   setText('focusTimer', over ? `+${fmtSec(now - r.target)}` : fmtSec((t.pomo ? ph.e : r.target) - now));
-  setText('focusClock', `${fmt(now)}:${pad(Math.floor((now * 60 + 1e-6) % 60))}`);
+  setText('focusClock', fmt(now));
 }
-$('focus').addEventListener('click', e => { if (e.target.closest('#focusClose')) closeFocus(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && focusOpen) closeFocus(); });
+/* ================= 確認ポップアップ ================= */
+// confirm() は埋め込み表示などで出ないことがあるので、自前のポップアップを使う
+let modalOk = null;
+function openModal({ title, body, ok, cancel, onOk }) {
+  $('modalTitle').textContent = title;
+  $('modalBody').innerHTML = body;
+  $('modalOk').textContent = ok;
+  $('modalCancel').textContent = cancel;
+  modalOk = onOk;
+  $('modal').hidden = false;
+  $('modalCancel').focus();
+}
+function closeModal() { $('modal').hidden = true; modalOk = null; }
+$('modalCancel').addEventListener('click', closeModal);
+$('modalOk').addEventListener('click', () => { const fn = modalOk; closeModal(); if (fn) fn(); });
+$('modal').addEventListener('click', e => { if (e.target === $('modal')) closeModal(); }); // 外側タップでキャンセル
+
+/* ---------- 全画面の時計サイズ ---------- */
+const CLOCK_SCALES = [0.5, 0.7, 1, 1.3, 1.6, 2];
+const clockScaleIdx = () => { const i = store.get('clockSize'); return Number.isInteger(i) && i >= 0 && i < CLOCK_SCALES.length ? i : 2; };
+function applyClockScale() { $('focus').style.setProperty('--clock-scale', CLOCK_SCALES[clockScaleIdx()]); }
+applyClockScale();
+
+$('focus').addEventListener('click', e => {
+  if (e.target.closest('#focusClose')) closeFocus();
+  const z = e.target.closest('[data-clock]');
+  if (z) {
+    store.set('clockSize', Math.max(0, Math.min(CLOCK_SCALES.length - 1, clockScaleIdx() + +z.dataset.clock)));
+    applyClockScale(); render();
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (!$('modal').hidden) closeModal(); else if (focusOpen) closeFocus();
+});
 
 /* ================= reset day ================= */
 // 表示中の日の予定を消す。2回押しで実行し、直後の10秒間だけ「元に戻す」を出す
