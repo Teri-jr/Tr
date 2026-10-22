@@ -719,10 +719,12 @@ function updateSetup() {
   // 英英定義が1つもない教材では「英英定義 → 英単語」を選べない
   const d2eInput = document.querySelector('input[name=mode][value=d2e]');
   d2eInput.disabled = !words.some(w => w.definition);
+  d2eInput.closest('.chip').classList.toggle('hidden', d2eInput.disabled);
   if (d2eInput.disabled && d2eInput.checked) document.querySelector('input[name=mode][value=e2j]').checked = true;
   const mode = getMode();
   const lettersInput = document.querySelector('input[name=format][value=letters]');
   lettersInput.disabled = mode === 'e2j';
+  lettersInput.closest('.chip').classList.toggle('hidden', lettersInput.disabled);
   if (lettersInput.disabled && lettersInput.checked) {
     document.querySelector('input[name=format][value=choice]').checked = true;
   }
