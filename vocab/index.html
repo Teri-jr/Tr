@@ -725,12 +725,13 @@
   /* 点数: 右上に赤ペンで書き込み */
   .score { font-family: var(--f-pen); color: var(--red); font-size: clamp(3.4rem, 18vw, 4.8rem); text-align: center; line-height: 1.1; transform: rotate(-4deg); animation: pen-check .7s ease-out .2s both; }
   .stamp {
-    position: absolute; right: 2px; top: 8px; width: 84px; height: 84px; display: flex; align-items: center; justify-content: center;
+    position: absolute; right: 2px; top: 8px; width: 90px; height: 90px; display: flex; align-items: center; justify-content: center;
     border: 3px solid var(--red); border-radius: 50%; color: var(--red); text-align: center; white-space: pre-line;
     font-family: var(--f-serif); font-weight: 800; font-size: .82rem; line-height: 1.35; opacity: .9;
     box-shadow: inset 0 0 0 2px var(--paper), inset 0 0 0 3px var(--red);
     animation: stamp .45s cubic-bezier(.3, 1.6, .5, 1) 1s both;
   }
+  .stamp.low { --ink: #2d4fa1; color: var(--ink); border-color: var(--ink); box-shadow: inset 0 0 0 2px var(--paper), inset 0 0 0 3px var(--ink); font-size: .74rem; line-height: 1.3; }
   .score::after { content: "点"; font-size: .45em; margin-left: .1em; }
   #resultDetail { text-align: center; }
   .wrong-list { list-style: none; padding: 0; margin: 0; }
@@ -923,7 +924,7 @@
   <section id="themeView" class="card">
     <h2>テーマ</h2>
     <div class="row" id="skinGroup"></div>
-    <div class="row game-only" style="margin-top:10px">
+    <div class="row" style="margin-top:10px">
       <label class="chip"><input type="checkbox" id="sfxChk"><span>効果音</span></label>
     </div>
   </section>
@@ -1789,15 +1790,16 @@ function showResult() {
   const correct = res.filter(r => r.ok).length;
   const rate = total ? Math.round(correct / total * 100) : 0;
   $('resultScore').textContent = `${rate}`;
-  // 紙テーマ: 80点以上でハンコを押す
+  // 紙テーマ: 点数に合わせたハンコを押す（低いときは青いインク）
   const scoreCard = $('resultScore').parentElement;
   scoreCard.querySelector('.stamp')?.remove();
-  if (rate >= 80) {
-    const st = document.createElement('div');
-    st.className = 'stamp';
-    st.textContent = rate === 100 ? '大変よく\nできました' : 'よく\nできました';
-    scoreCard.appendChild(st);
-  }
+  const st = document.createElement('div');
+  st.className = 'stamp' + (rate < 50 ? ' low' : '');
+  st.textContent = rate === 100 ? '大変よく\nできました' : rate >= 80 ? 'よく\nできました'
+    : rate >= 50 ? 'がんばり\nました' : 'もうすこし\nがんばり\nましょう';
+  scoreCard.appendChild(st);
+  sfx(rate >= 80 ? 'good' : rate >= 50 ? 'mid' : 'bad');
+  sfx('stamp', 1);
   const isCard = session.kind === 'card';
   // レトロゲーム: 獲得した経験値とレベルアップ（カードめくりは経験値なし）
   const lvNow = levelOf(loadExp());
@@ -1872,6 +1874,7 @@ function renderCard() {
 function flipCard() {
   const flip = $('flip');
   flip.classList.toggle('flipped');
+  sfx('flip');
   if (flip.classList.contains('flipped')) {
     $('cardOkBtn').disabled = $('cardNgBtn').disabled = false;
     $('flipNote').textContent = '覚えていたら「覚えた」、自信がなければ「まだ」';
@@ -1914,6 +1917,7 @@ function startSheet(pool) {
   sheet.mode = getMode() === 'mix' ? 'e2j' : getMode();
   sheet.list = pool.slice();
   sheet.on = true;
+  sfx('start');
   renderSheet();
   show('sheet');
   placeSheet(window.innerHeight * 0.6);
@@ -2076,31 +2080,111 @@ function gainExp(ok) {
 
 const sfxOn = () => { try { return localStorage.getItem(SFX_KEY) === '1'; } catch { return false; } };
 let audioCtx = null;
-// 8ビット風の矩形波で短い音を鳴らす
-function sfx(kind) {
-  if (currentSkin() !== 'game' || !sfxOn()) return;
-  const notes = {
-    start: [[659, .06], [880, .1]],
-    ok: [[988, .07], [1319, .14]],
-    ng: [[220, .1], [156, .24]],
-    lvup: [[523, .07], [659, .07], [784, .07], [1047, .28]],
-  }[kind];
+let noiseBuf = null;
+
+// 音の部品。tone は発振器の音、noise はノイズを絞った音（紙・ペンの音など）
+function tone(ac, t, { f, to, d, type = 'sine', v = .06 }) {
+  const osc = ac.createOscillator(), gain = ac.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(f, t);
+  if (to) osc.frequency.exponentialRampToValueAtTime(to, t + d);
+  gain.gain.setValueAtTime(.0001, t);
+  gain.gain.exponentialRampToValueAtTime(v, t + .006);
+  gain.gain.exponentialRampToValueAtTime(.0001, t + d);
+  osc.connect(gain).connect(ac.destination);
+  osc.start(t);
+  osc.stop(t + d + .02);
+}
+function noise(ac, t, { d, f = 2000, to, q = 1, v = .15, type = 'bandpass' }) {
+  if (!noiseBuf) {
+    noiseBuf = ac.createBuffer(1, ac.sampleRate, ac.sampleRate);
+    const ch = noiseBuf.getChannelData(0);
+    for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
+  }
+  const src = ac.createBufferSource(), flt = ac.createBiquadFilter(), gain = ac.createGain();
+  src.buffer = noiseBuf;
+  flt.type = type;
+  flt.frequency.setValueAtTime(f, t);
+  if (to) flt.frequency.exponentialRampToValueAtTime(to, t + d);
+  flt.Q.value = q;
+  gain.gain.setValueAtTime(v, t);
+  gain.gain.exponentialRampToValueAtTime(.0001, t + d);
+  src.connect(flt).connect(gain).connect(ac.destination);
+  src.start(t);
+  src.stop(t + d + .02);
+}
+
+// 音の並び: [開始までの秒, 't'(tone) か 'n'(noise), 設定]
+const notes = (type, v, list) => list.map(([at, f, d]) => [at, 't', { f, d, type, v }]);
+const SOUNDS = {
+  // クラシック: やわらかいチャイム
+  normal: {
+    tap: [[0, 't', { f: 880, d: .07, v: .035 }]],
+    start: notes('sine', .06, [[0, 523, .18], [.09, 784, .3]]),
+    ok: notes('sine', .07, [[0, 784, .2], [.1, 1175, .45]]),
+    ng: notes('triangle', .07, [[0, 330, .22], [.13, 262, .35]]),
+    flip: [[0, 'n', { d: .12, f: 2500, to: 900, v: .07 }], [.02, 't', { f: 660, d: .06, v: .02 }]],
+    lvup: notes('sine', .06, [[0, 523, .3], [.08, 659, .3], [.16, 784, .3], [.24, 1047, .6]]),
+    good: notes('sine', .06, [[0, 523, .3], [.1, 659, .3], [.2, 784, .3], [.3, 1047, .8]]),
+    mid: notes('sine', .06, [[0, 523, .3], [.14, 659, .5]]),
+    bad: notes('triangle', .06, [[0, 392, .3], [.2, 330, .3], [.4, 262, .6]]),
+  },
+  // 近未来: シンセの上昇音・電子音
+  future: {
+    tap: [[0, 't', { f: 1500, to: 2200, d: .05, v: .03 }]],
+    start: [[0, 't', { f: 220, to: 880, d: .35, type: 'sawtooth', v: .025 }], [.12, 't', { f: 880, to: 1760, d: .3, v: .04 }]],
+    ok: [[0, 't', { f: 880, to: 1760, d: .16, v: .06 }], [.12, 't', { f: 1760, d: .35, type: 'triangle', v: .04 }], [.2, 't', { f: 2637, d: .3, v: .02 }]],
+    ng: [[0, 't', { f: 320, to: 70, d: .38, type: 'sawtooth', v: .045 }], [0, 'n', { d: .14, f: 900, q: 6, v: .1 }]],
+    flip: [[0, 'n', { d: .22, f: 500, to: 6000, q: 3, v: .12 }]],
+    lvup: [[0, 't', { f: 220, to: 1760, d: .5, type: 'sawtooth', v: .025 }], ...notes('sine', .04, [[.3, 1047, .3], [.4, 1319, .3], [.5, 1568, .6]])],
+    good: [[0, 't', { f: 659, to: 1319, d: .3, v: .05 }], ...notes('sine', .035, [[.28, 1047, .9], [.28, 1319, .9], [.28, 1568, .9]])],
+    mid: [[0, 't', { f: 523, to: 1047, d: .45, v: .05 }]],
+    bad: [[0, 't', { f: 440, to: 110, d: .7, type: 'sawtooth', v: .04 }]],
+  },
+  // レトロゲーム: 矩形波のピコピコ音
+  game: {
+    tap: notes('square', .03, [[0, 1200, .03]]),
+    start: notes('square', .05, [[0, 659, .06], [.06, 880, .1]]),
+    ok: notes('square', .05, [[0, 988, .07], [.07, 1319, .14]]),
+    ng: notes('square', .05, [[0, 220, .1], [.1, 156, .24]]),
+    flip: [[0, 't', { f: 600, to: 1200, d: .06, type: 'square', v: .03 }]],
+    lvup: notes('square', .05, [[0, 523, .07], [.07, 659, .07], [.14, 784, .07], [.21, 1047, .28]]),
+    good: notes('square', .05, [[0, 784, .12], [.13, 784, .06], [.2, 784, .06], [.27, 1047, .45]]),
+    mid: notes('square', .05, [[0, 659, .1], [.1, 784, .2]]),
+    bad: notes('square', .05, [[0, 392, .15], [.16, 370, .15], [.32, 349, .15], [.48, 330, .45]]),
+  },
+  // 紙: ペンでシュッ、紙をパラッ、ハンコでドン
+  paper: {
+    tap: [[0, 'n', { d: .035, f: 4200, q: 3, v: .12 }]],
+    start: [[0, 'n', { d: .3, f: 1200, to: 4000, q: .8, v: .14 }]],
+    ok: [[0, 'n', { d: .22, f: 2000, to: 3600, q: 4, v: .13 }], [.2, 'n', { d: .25, f: 3600, to: 1800, q: 4, v: .13 }]],
+    ng: [[0, 'n', { d: .07, f: 3000, q: 4, v: .12 }], [.08, 'n', { d: .18, f: 2000, to: 4800, q: 4, v: .15 }]],
+    flip: [[0, 'n', { d: .2, f: 700, to: 3200, q: .7, v: .22 }]],
+    lvup: [[0, 'n', { d: .22, f: 2000, to: 3600, q: 4, v: .13 }]],
+    good: [0, .12, .24, .36].map(at => [at, 'n', { d: .09, f: 2600 + at * 2000, q: 4, v: .12 }]),
+    mid: [0, .14].map(at => [at, 'n', { d: .1, f: 2600, q: 4, v: .12 }]),
+    bad: [[0, 'n', { d: .4, f: 1600, to: 900, q: 2, v: .1 }]],
+    stamp: [[0, 't', { f: 130, to: 55, d: .2, v: .3 }], [0, 'n', { d: .08, f: 500, type: 'lowpass', v: .35 }]],
+  },
+};
+
+// 今のテーマの音を鳴らす（効果音がオンのときだけ）
+function sfx(kind, delay = 0) {
+  if (!sfxOn()) return;
+  const seq = (SOUNDS[currentSkin()] || SOUNDS.normal)[kind];
+  if (!seq) return;
   try {
     audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-    let t = audioCtx.currentTime;
-    for (const [freq, dur] of notes) {
-      const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
-      osc.type = 'square';
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(.05, t);
-      gain.gain.exponentialRampToValueAtTime(.001, t + dur);
-      osc.connect(gain).connect(audioCtx.destination);
-      osc.start(t);
-      osc.stop(t + dur);
-      t += dur;
-    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const t0 = audioCtx.currentTime + .01 + delay;
+    for (const [at, kindOf, opt] of seq) (kindOf === 't' ? tone : noise)(audioCtx, t0 + at, opt);
   } catch { /* 音が出せない環境 */ }
 }
+
+// ボタンや選択肢を押したときの小さな音（正解・不正解の音が鳴る場面は除く）
+document.addEventListener('pointerdown', e => {
+  if (e.target.closest('.chip, .tiles button, .pick-btn, button.secondary, #sheetList li')) sfx('tap');
+});
 
 $('sfxChk').checked = sfxOn();
 $('sfxChk').addEventListener('change', e => {
