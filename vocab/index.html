@@ -251,6 +251,11 @@
 
   .pick-btn { padding: 8px 14px; font-size: .85rem; }
   #spanGroup input[type=number] { width: 96px; }
+  .feedback .reveal {
+    font-family: var(--f-display); font-size: clamp(2rem, 9vw, 2.8rem); font-weight: 700; color: #fff;
+    margin: 0 0 10px; text-shadow: 0 0 20px rgba(0, 229, 255, .5);
+  }
+  .prompt-hint { margin: -10px 0 16px; font-size: .9rem; color: var(--accent-2); }
   .span-label { font-family: var(--f-mono); color: var(--sub); font-size: .85rem; }
   .tiles.words { display: flex; flex-wrap: wrap; }
   .tiles.words button { padding: 10px 14px; font-size: 1.05rem; font-family: var(--f-display); }
@@ -285,7 +290,7 @@
 
   <!-- 設定 -->
   <section id="setupView" class="hidden">
-    <div class="card">
+    <div class="card" id="modeCard">
       <h2>出題モード</h2>
       <div class="row" id="modeGroup">
         <label class="chip"><input type="radio" name="mode" value="e2j" checked><span>英 → 日</span></label>
@@ -298,8 +303,8 @@
       <h2>出題形式</h2>
       <div class="row" id="formatGroup">
         <label class="chip"><input type="radio" name="format" value="choice" checked><span>4択</span></label>
-        <label class="chip"><input type="radio" name="format" value="input"><span>記述</span></label>
-        <label class="chip"><input type="radio" name="format" value="letters"><span id="lettersLabel">文字選択</span></label>
+        <label class="chip"><input type="radio" name="format" value="input"><span id="inputLabel">記述</span></label>
+        <label class="chip" id="lettersChip"><input type="radio" name="format" value="letters"><span id="lettersLabel">文字選択</span></label>
       </div>
       <p id="formatNote" class="note"></p>
     </div>
@@ -383,13 +388,13 @@
     <div class="card" id="wordFormCard">
       <h2 id="formTitle">単語を追加</h2>
       <div class="form">
-        <label for="fEnglish">英語</label>
+        <label for="fEnglish" id="fEnglishLabel">英語</label>
         <input type="text" id="fEnglish" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="companion">
-        <label for="fJapanese">意味</label>
+        <label for="fJapanese" id="fJapaneseLabel">意味</label>
         <input type="text" id="fJapanese" autocomplete="off" placeholder="仲間">
         <label for="fParagraph" id="fParagraphLabel">段落</label>
         <input type="text" id="fParagraph" autocomplete="off" inputmode="numeric" placeholder="1">
-        <label for="fDefinition">英英定義</label>
+        <label for="fDefinition" id="fDefinitionLabel">英英定義</label>
         <textarea id="fDefinition" rows="3" spellcheck="false" placeholder="a person or animal that you spend time with"></textarea>
       </div>
       <p class="err" id="formErr"></p>
@@ -425,6 +430,7 @@
       <div class="bar"><div id="progBar"></div></div>
       <div class="prompt-label" id="promptLabel"></div>
       <div class="prompt" id="prompt"></div>
+      <div class="prompt-hint hidden" id="promptHint"></div>
       <div id="answerArea"></div>
       <div id="feedback"></div>
     </div>
@@ -458,13 +464,23 @@ const SUBJECTS = [
     rangeLabel: '段落', rangeType: 'chips', missKey: 'vocabTest.missCounts' },
   { id: 'jukugo', name: '速読英熟語', tag: 'SOKUJUKU', file: 'jukugo.csv', unit: '熟語',
     rangeLabel: '番号', rangeType: 'span', missKey: 'vocabTest.missCounts.jukugo' },
+  // 漢字: english 列が問題（カタカナ＝書き / 漢字＝読み）、japanese 列が答え、definition 列がヒント。
+  // CSVの並び順で25問ずつ区切って範囲にする
+  { id: 'kanji', name: '漢字', tag: 'KANJI', file: 'kanji.csv', unit: '漢字',
+    rangeLabel: '番号', rangeType: 'block', blockSize: 25, missKey: 'vocabTest.missCounts.kanji',
+    labels: { q: '問題', a: '答え', def: 'ヒント' } },
 ];
+const isKanji = () => subject.id === 'kanji';
+const fieldLabels = () => subject.labels || { q: '英語', a: '意味', def: '英英定義' };
+// 漢字の書き問題（問題がカタカナ）か読み問題か
+const kanjiType = w => /[ァ-ヺ]/.test(w.english) ? 'write' : 'read';
+const toHiragana = s => s.replace(/[ァ-ヶ]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60));
 const SUBJECT_KEY = 'vocabTest.subject';
 let subject = SUBJECTS[0];
 try { subject = SUBJECTS.find(x => x.id === localStorage.getItem(SUBJECT_KEY)) || SUBJECTS[0]; } catch { /* noop */ }
 
 const MODE_LABEL = { e2j: '英 → 日', j2e: '日 → 英', d2e: '英英定義 → 英単語', mix: 'ランダム' };
-const formatLabel = f => ({ choice: '4択', input: '記述', letters: subject.rangeType === 'span' ? '並べ替え' : '文字選択' }[f]);
+const formatLabel = f => ({ choice: '4択', input: isKanji() ? '筆記' : '記述', letters: subject.rangeType === 'span' ? '並べ替え' : '文字選択' }[f]);
 
 let words = [];
 let session = null;   // { mode, format, queue, index, results }
@@ -560,7 +576,7 @@ function loadMiss() {
 function saveMiss(m) {
   try { localStorage.setItem(subject.missKey, JSON.stringify(m)); } catch { /* 保存不可の環境 */ }
 }
-const wordKey = w => w.english.toLowerCase();
+const wordKey = w => (isKanji() ? `${w.english}|${w.japanese}` : w.english).toLowerCase();
 function addMiss(w) {
   const m = loadMiss();
   m[wordKey(w)] = (m[wordKey(w)] || 0) + 1;
@@ -597,8 +613,20 @@ function applySubject() {
   $('pickTitle').textContent = `出題する${subject.unit}`;
   $('pickSummary').textContent = `${subject.unit}を1つずつ選ぶ`;
   $('lettersLabel').textContent = formatLabel('letters');
+  $('inputLabel').textContent = formatLabel('input');
   $('fParagraphLabel').textContent = subject.rangeLabel;
-  $('paraGroup').classList.toggle('hidden', subject.rangeType !== 'chips');
+  const L = fieldLabels();
+  $('fEnglishLabel').textContent = L.q;
+  $('fJapaneseLabel').textContent = L.a;
+  $('fDefinitionLabel').textContent = L.def;
+  // 漢字は出題の向きが決まっているのでモード選択と文字選択を出さない
+  $('modeCard').classList.toggle('hidden', isKanji());
+  $('lettersChip').classList.toggle('hidden', isKanji());
+  if (isKanji()) {
+    document.querySelector('input[name=mode][value=e2j]').checked = true;
+    if (getFormat() === 'letters') document.querySelector('input[name=format][value=choice]').checked = true;
+  }
+  $('paraGroup').classList.toggle('hidden', subject.rangeType === 'span');
   $('spanGroup').classList.toggle('hidden', subject.rangeType !== 'span');
 }
 
@@ -618,21 +646,35 @@ function switchSubject(sub) {
   }
 }
 
+// 範囲ボタンの単位: block は25問ずつの区切り、chips は paragraph の値
+const rangeKeyOf = w => subject.rangeType === 'block' ? String(w.block) : (w.paragraph || '(なし)');
+function blockLabel(b) {
+  const size = subject.blockSize, start = b * size;
+  const items = words.slice(start, start + size);
+  const type = items.length && items.every(w => kanjiType(w) === 'read') ? '読み' : '書き';
+  return `${type} ${start + 1}〜${start + items.length}`;
+}
+function rangeChipLabel(p) {
+  if (subject.rangeType === 'block') return blockLabel(Number(p));
+  return /^\d+$/.test(p) ? `${subject.rangeLabel} ${p}` : p;
+}
+
 const numericParas = () => words.map(w => parseFloat(w.paragraph)).filter(n => !isNaN(n));
 
 function buildParagraphs() {
-  $('wordCount').textContent = `${words.length} ${subject.unit === '単語' ? 'WORDS' : 'PHRASES'}`;
+  $('wordCount').textContent = `${words.length} ${{ comm: 'WORDS', jukugo: 'PHRASES', kanji: 'ITEMS' }[subject.id]}`;
+  if (subject.rangeType === 'block') words.forEach((w, i) => { w.block = Math.floor(i / subject.blockSize); });
   if (subject.rangeType === 'span') {
     const nums = numericParas();
     $('spanFrom').value = nums.length ? Math.min(...nums) : '';
     $('spanTo').value = nums.length ? Math.max(...nums) : '';
   }
-  const paras = [...new Set(words.map(w => w.paragraph || '(なし)'))].sort(sortParagraphs);
+  const paras = [...new Set(words.map(rangeKeyOf))].sort(sortParagraphs);
   const g = $('paraGroup');
   g.innerHTML = '';
   g.appendChild(chip('checkbox', 'para-all', '__all__', '全範囲', true));
-  if (subject.rangeType !== 'chips') return;
-  for (const p of paras) g.appendChild(chip('checkbox', 'para', p, /^\d+$/.test(p) ? `${subject.rangeLabel} ${p}` : p, false));
+  if (subject.rangeType === 'span') return;
+  for (const p of paras) g.appendChild(chip('checkbox', 'para', p, rangeChipLabel(p), false));
   g.querySelector('[value="__all__"]').addEventListener('change', e => {
     if (e.target.checked) g.querySelectorAll('input[name=para]').forEach(i => i.checked = false);
     updateSetup();
@@ -671,7 +713,7 @@ function rangePool() {
   } else {
     const all = document.querySelector('#paraGroup [value="__all__"]').checked;
     const sel = new Set([...document.querySelectorAll('input[name=para]:checked')].map(i => i.value));
-    pool = all ? words : words.filter(w => sel.has(w.paragraph || '(なし)'));
+    pool = all ? words : words.filter(w => sel.has(rangeKeyOf(w)));
   }
   if (getMode() === 'd2e') pool = pool.filter(w => w.definition);
   return pool;
@@ -682,11 +724,12 @@ const excluded = new Set();
 const selectedPool = () => rangePool().filter(w => !excluded.has(wordKey(w)));
 
 function renderWordPick() {
-  const range = rangePool().slice().sort((a, b) => sortParagraphs(a.paragraph || '', b.paragraph || ''));
+  const range = subject.rangeType === 'block' ? rangePool()
+    : rangePool().slice().sort((a, b) => sortParagraphs(a.paragraph || '', b.paragraph || ''));
   const g = $('wordPick');
   g.innerHTML = '';
   for (const w of range) {
-    const c = chip('checkbox', 'pickword', wordKey(w), w.english, !excluded.has(wordKey(w)));
+    const c = chip('checkbox', 'pickword', wordKey(w), isKanji() ? `${w.english}・${w.japanese}` : w.english, !excluded.has(wordKey(w)));
     c.querySelector('input').addEventListener('change', e => {
       if (e.target.checked) excluded.delete(e.target.value);
       else excluded.add(e.target.value);
@@ -739,6 +782,9 @@ function updateSetup() {
   if (mode === 'mix') note = fmt === 'letters'
     ? `答えが英語になる問題だけをランダムに出します（${formatLabel('letters')}では英→日は出ません）。`
     : '英→日・日→英・英英定義→英単語を1問ごとにランダムに出します。' + (fmt === 'input' ? '英→日の記述は自己採点です。' : '');
+  if (isKanji()) note = fmt === 'input'
+    ? '書き問題は紙などに書いてから「答えを見る」で自己採点。読み問題はひらがなで入力すると自動で採点します。'
+    : '';
   $('formatNote').textContent = note;
 
   const pool = selectedPool();
@@ -846,9 +892,15 @@ function renderQuestion() {
   $('scoreText').textContent = `正解 ${correct}`;
   $('progBar').style.width = (index / queue.length * 100) + '%';
   const u = subject.unit === '単語' ? '英単語' : '熟語';
-  $('promptLabel').textContent = { e2j: `この${u}の意味は？`, j2e: `この意味の${u}は？`, d2e: `この定義に当てはまる${u}は？` }[mode];
+  $('promptLabel').textContent = isKanji()
+    ? (kanjiType(w) === 'write' ? 'カタカナを漢字に直すと？' : 'この漢字の読みは？')
+    : { e2j: `この${u}の意味は？`, j2e: `この意味の${u}は？`, d2e: `この定義に当てはまる${u}は？` }[mode];
   $('prompt').textContent = promptOf(w, mode);
   $('prompt').classList.toggle('def', mode === 'd2e');
+  // 漢字はヒント（同音異義語の区別など）を問題の下に出す
+  const hint = isKanji() && w.definition;
+  $('promptHint').textContent = hint || '';
+  $('promptHint').classList.toggle('hidden', !hint);
   $('feedback').innerHTML = '';
   const area = $('answerArea');
   area.innerHTML = '';
@@ -860,7 +912,13 @@ function renderQuestion() {
 function renderChoice(area, w) {
   const mode = session.curMode;
   const ans = answerOf(w, mode);
-  const others = shuffle(words.filter(x => x !== w && normalize(answerOf(x, mode)) !== normalize(ans)));
+  let others = shuffle(words.filter(x => x !== w && normalize(answerOf(x, mode)) !== normalize(ans)));
+  if (isKanji()) {
+    // 同じ種類（書き/読み）から選び、同じ読みの問題は外し、答えと字数が近いものを優先する
+    others = others
+      .filter(x => kanjiType(x) === kanjiType(w) && x.english !== w.english)
+      .sort((a, b) => Math.abs(a.japanese.length - ans.length) - Math.abs(b.japanese.length - ans.length));
+  }
   const opts = [];
   const seen = new Set([normalize(ans)]);
   for (const o of others) {
@@ -892,6 +950,7 @@ function renderChoice(area, w) {
 
 function renderInput(area, w) {
   const mode = session.curMode;
+  if (isKanji()) return renderKanjiInput(area, w);
   const input = document.createElement('input');
   input.type = 'text';
   input.placeholder = mode === 'e2j' ? '日本語で答えを入力' : '英語で入力';
@@ -907,6 +966,35 @@ function renderInput(area, w) {
     input.disabled = btn.disabled = true;
     if (mode === 'e2j') selfJudge(input.value.trim());
     else judge(englishMatches(input.value, w.english), input.value.trim());
+  };
+  btn.addEventListener('click', submit);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) submit(); });
+  area.append(input, btn);
+  setTimeout(() => input.focus(), 0);
+}
+
+// 漢字の筆記: 書きは紙に書いてから自己採点、読みはひらがな入力で自動採点
+function renderKanjiInput(area, w) {
+  const btn = document.createElement('button');
+  btn.className = 'block';
+  if (kanjiType(w) === 'write') {
+    btn.textContent = '答えを見る';
+    btn.addEventListener('click', () => { btn.remove(); selfJudge(null); });
+    area.append(btn);
+    setTimeout(() => btn.focus(), 0);
+    return;
+  }
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.placeholder = 'ひらがなで入力';
+  input.autocomplete = 'off';
+  btn.style.marginTop = '10px';
+  btn.textContent = '答え合わせ';
+  const kana = s => toHiragana(s).replace(/\s/g, '');
+  const submit = () => {
+    if (btn.disabled) return;
+    input.disabled = btn.disabled = true;
+    judge(kana(input.value) === kana(w.japanese), input.value.trim());
   };
   btn.addEventListener('click', submit);
   input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) submit(); });
@@ -1022,12 +1110,14 @@ function renderWordTiles(area, w) {
 }
 
 function detailHTML(w) {
+  const L = fieldLabels();
+  const range = subject.rangeType === 'block' ? `${words.indexOf(w) + 1}（${blockLabel(w.block)}）` : w.paragraph;
   const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   return `<div class="detail">
-    <div><b>英語</b>${esc(w.english)}</div>
-    <div><b>意味</b>${esc(w.japanese)}</div>
-    ${w.definition ? `<div><b>英英定義</b>${esc(w.definition)}</div>` : ''}
-    ${w.paragraph ? `<div><b>${subject.rangeLabel}</b>${esc(w.paragraph)}</div>` : ''}
+    <div><b>${L.q}</b>${esc(w.english)}</div>
+    <div><b>${L.a}</b>${esc(w.japanese)}</div>
+    ${w.definition ? `<div><b>${L.def}</b>${esc(w.definition)}</div>` : ''}
+    ${range ? `<div><b>${subject.rangeLabel}</b>${esc(range)}</div>` : ''}
   </div>`;
 }
 
@@ -1055,20 +1145,21 @@ function selfJudge(given) {
   const fb = $('feedback');
   const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   fb.innerHTML = `<div class="feedback self">
-    <div class="verdict">自己採点</div>
-    <div class="detail"><div><b>あなた</b>${esc(given) || '（未入力）'}</div></div>
+    <div class="verdict">${given === null ? '合ってましたか？' : '自己採点'}</div>
+    ${given === null ? `<div class="reveal">${esc(w.japanese)}</div>` : ''}
+    ${given === null ? '' : `<div class="detail"><div><b>あなた</b>${esc(given) || '（未入力）'}</div></div>`}
     ${detailHTML(w)}
   </div>`;
   const acts = document.createElement('div');
   acts.className = 'actions';
   const o = document.createElement('button');
-  o.textContent = '○ 正解';
+  o.textContent = given === null ? '○ 合ってた' : '○ 正解';
   o.style.background = 'var(--ok)';
   const x = document.createElement('button');
-  x.textContent = '× 不正解';
+  x.textContent = given === null ? '× 間違えた' : '× 不正解';
   x.style.background = 'var(--ng)';
-  o.addEventListener('click', () => judge(true, given));
-  x.addEventListener('click', () => judge(false, given));
+  o.addEventListener('click', () => judge(true, given ?? ''));
+  x.addEventListener('click', () => judge(false, given ?? ''));
   acts.append(o, x);
   fb.querySelector('.feedback').appendChild(acts);
 }
@@ -1086,7 +1177,7 @@ function showResult() {
   const correct = res.filter(r => r.ok).length;
   const rate = total ? Math.round(correct / total * 100) : 0;
   $('resultScore').textContent = `${rate}%`;
-  $('resultDetail').textContent = `${total} 問中 ${correct} 問正解（${MODE_LABEL[session.mode]}・${formatLabel(session.format)}）`;
+  $('resultDetail').textContent = `${total} 問中 ${correct} 問正解（${isKanji() ? '' : MODE_LABEL[session.mode] + '・'}${formatLabel(session.format)}）`;
   const wrong = [...new Map(res.filter(r => !r.ok).map(r => [wordKey(r.w), r.w])).values()];
   session.wrong = wrong;
   const ul = $('wrongList');
@@ -1238,16 +1329,20 @@ function renderWordList() {
   const ul = $('wordList');
   ul.innerHTML = '';
   $('listTitle').textContent = `${subject.unit}一覧（${draft.length} 個）`;
-  const order = draft.map((w, i) => i).sort((a, b) =>
+  const order = draft.map((w, i) => i);
+  if (subject.rangeType !== 'block') order.sort((a, b) =>
     sortParagraphs(draft[a].paragraph || '', draft[b].paragraph || '') || a - b);
   let lastPara = null;
   for (const i of order) {
     const w = draft[i];
-    if (subject.rangeType === 'chips' && w.paragraph !== lastPara) {
-      lastPara = w.paragraph;
+    const head = subject.rangeType === 'block'
+      ? `No.${i - i % subject.blockSize + 1}〜`
+      : subject.rangeType === 'chips' ? (w.paragraph ? `PARAGRAPH ${w.paragraph}` : 'NO PARAGRAPH') : null;
+    if (head && head !== lastPara) {
+      lastPara = head;
       const h = document.createElement('li');
       h.className = 'para-head';
-      h.textContent = w.paragraph ? `PARAGRAPH ${w.paragraph}` : 'NO PARAGRAPH';
+      h.textContent = head;
       ul.appendChild(h);
     }
     const li = document.createElement('li');
