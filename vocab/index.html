@@ -250,6 +250,11 @@
   .savebar button { padding: 11px 14px; font-size: .9rem; letter-spacing: .04em; }
 
   .pick-btn { padding: 8px 14px; font-size: .85rem; }
+  #spanGroup input[type=number] { width: 96px; }
+  .span-label { font-family: var(--f-mono); color: var(--sub); font-size: .85rem; }
+  .tiles.words { display: flex; flex-wrap: wrap; }
+  .tiles.words button { padding: 10px 14px; font-size: 1.05rem; font-family: var(--f-display); }
+  .answer-box.words { font-family: var(--f-display); font-size: 1.25rem; letter-spacing: .02em; word-break: normal; }
   #wordPick .chip span { padding: 6px 11px; font-size: .88rem; font-family: var(--f-display); letter-spacing: .02em; }
 
   @keyframes blink { 50% { opacity: 0; } }
@@ -262,17 +267,18 @@
 <body>
 <main>
   <header class="hud-head">
-    <div class="sys"><span>ENG-COMM // VOCAB TEST</span><span id="wordCount"></span></div>
+    <div class="sys"><span id="subjectTag">ENG-COMM // VOCAB TEST</span><span id="wordCount"></span></div>
     <h1>VOCAB//LINK</h1>
-    <div class="jp">英語コミュニケーション 新出単語テスト</div>
+    <div class="jp" id="subjectName">英語コミュニケーション 新出単語テスト</div>
   </header>
 
   <!-- CSV読み込み -->
   <section id="loadView" class="card">
-    <h2>単語データ</h2>
-    <p id="loadStatus" class="note">words.csv を読み込み中…</p>
+    <h2>教材</h2>
+    <div class="row" id="subjectGroup" style="margin-bottom:12px"></div>
+    <p id="loadStatus" class="note">読み込み中…</p>
     <div id="filePick" class="hidden">
-      <p class="note">ブラウザで直接開いた場合は words.csv を自動で読めません。下のボタンから words.csv を選んでください。</p>
+      <p class="note">ブラウザで直接開いた場合はCSVを自動で読めません。下のボタンから <span id="fileHint">words.csv</span> を選んでください。</p>
       <input type="file" id="fileInput" accept=".csv,text/csv">
     </div>
   </section>
@@ -293,23 +299,30 @@
       <div class="row" id="formatGroup">
         <label class="chip"><input type="radio" name="format" value="choice" checked><span>4択</span></label>
         <label class="chip"><input type="radio" name="format" value="input"><span>記述</span></label>
-        <label class="chip"><input type="radio" name="format" value="letters"><span>文字選択</span></label>
+        <label class="chip"><input type="radio" name="format" value="letters"><span id="lettersLabel">文字選択</span></label>
       </div>
       <p id="formatNote" class="note"></p>
     </div>
     <div class="card">
-      <h2>範囲（段落）</h2>
+      <h2 id="rangeTitle">範囲（段落）</h2>
       <div class="row" id="paraGroup"></div>
+      <div class="row hidden" id="spanGroup" style="align-items:center">
+        <span class="span-label">No.</span>
+        <input type="number" id="spanFrom" inputmode="numeric">
+        <span class="span-label">〜</span>
+        <input type="number" id="spanTo" inputmode="numeric">
+        <button class="secondary pick-btn" id="spanAllBtn">全範囲</button>
+      </div>
     </div>
     <div class="card">
-      <h2>出題する単語</h2>
+      <h2 id="pickTitle">出題する単語</h2>
       <div class="row" style="align-items:center">
         <button class="secondary pick-btn" id="pickAllBtn">全選択</button>
         <button class="secondary pick-btn" id="pickNoneBtn">全解除</button>
         <span class="note" id="pickInfo" style="margin:0"></span>
       </div>
       <details class="howto" id="pickDetails" style="margin-top:12px">
-        <summary>単語を1つずつ選ぶ</summary>
+        <summary id="pickSummary">単語を1つずつ選ぶ</summary>
         <div class="row" id="wordPick" style="margin-top:10px"></div>
       </details>
     </div>
@@ -370,11 +383,11 @@
     <div class="card" id="wordFormCard">
       <h2 id="formTitle">単語を追加</h2>
       <div class="form">
-        <label for="fEnglish">英単語</label>
+        <label for="fEnglish">英語</label>
         <input type="text" id="fEnglish" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="companion">
         <label for="fJapanese">意味</label>
         <input type="text" id="fJapanese" autocomplete="off" placeholder="仲間">
-        <label for="fParagraph">段落</label>
+        <label for="fParagraph" id="fParagraphLabel">段落</label>
         <input type="text" id="fParagraph" autocomplete="off" inputmode="numeric" placeholder="1">
         <label for="fDefinition">英英定義</label>
         <textarea id="fDefinition" rows="3" spellcheck="false" placeholder="a person or animal that you spend time with"></textarea>
@@ -386,7 +399,7 @@
       </div>
       <details class="howto" style="margin-top:14px">
         <summary>まとめて追加（CSV形式で貼り付け）</summary>
-        <p class="note">1行に1単語。<code>英単語,意味,段落,"英英定義"</code> の順。見出し行はあってもなくてもOK。同じ英単語がすでにあれば上書きします。</p>
+        <p class="note">1行に1つ。<code>英語,意味,段落(番号),"英英定義"</code> の順（英英定義はなくてもOK）。見出し行はあってもなくてもOK。同じ英語がすでにあれば上書きします。</p>
         <textarea id="bulkInput" rows="5" spellcheck="false" placeholder='odd,奇妙な,5,"strange or unusual; not common or expected"'></textarea>
         <button class="secondary block" id="bulkAddBtn" style="margin-top:8px">まとめて追加</button>
         <p class="note" id="bulkMsg"></p>
@@ -439,9 +452,19 @@
 <script>
 'use strict';
 
-const STORAGE_KEY = 'vocabTest.missCounts';
+// 教材ごとの設定。rangeType: chips = 段落をボタンで選ぶ / span = 番号を「〜」で指定
+const SUBJECTS = [
+  { id: 'comm', name: '英語コミュニケーション', tag: 'ENG-COMM', file: 'words.csv', unit: '単語',
+    rangeLabel: '段落', rangeType: 'chips', missKey: 'vocabTest.missCounts' },
+  { id: 'jukugo', name: '速読英熟語', tag: 'SOKUJUKU', file: 'jukugo.csv', unit: '熟語',
+    rangeLabel: '番号', rangeType: 'span', missKey: 'vocabTest.missCounts.jukugo' },
+];
+const SUBJECT_KEY = 'vocabTest.subject';
+let subject = SUBJECTS[0];
+try { subject = SUBJECTS.find(x => x.id === localStorage.getItem(SUBJECT_KEY)) || SUBJECTS[0]; } catch { /* noop */ }
+
 const MODE_LABEL = { e2j: '英 → 日', j2e: '日 → 英', d2e: '英英定義 → 英単語', mix: 'ランダム' };
-const FORMAT_LABEL = { choice: '4択', input: '記述', letters: '文字選択' };
+const formatLabel = f => ({ choice: '4択', input: '記述', letters: subject.rangeType === 'span' ? '並べ替え' : '文字選択' }[f]);
 
 let words = [];
 let session = null;   // { mode, format, queue, index, results }
@@ -498,7 +521,7 @@ function onLoaded(text, source) {
     $('filePick').classList.remove('hidden');
     return;
   }
-  $('loadStatus').textContent = `${source} から ${words.length} 語を読み込みました。`;
+  $('loadStatus').textContent = `${source} から ${words.length} ${subject.unit === '単語' ? '語' : '個'}を読み込みました。`;
   $('filePick').classList.add('hidden');
   buildParagraphs();
   updateSetup();
@@ -506,13 +529,16 @@ function onLoaded(text, source) {
 }
 
 async function tryFetch() {
-  $('loadStatus').textContent = 'words.csv を読み込み中…';
+  const file = subject.file;
+  $('loadStatus').textContent = `${file} を読み込み中…`;
   try {
-    const res = await fetch('words.csv?t=' + Date.now(), { cache: 'no-store' });
+    const res = await fetch(file + '?t=' + Date.now(), { cache: 'no-store' });
     if (!res.ok) throw new Error(res.status);
-    onLoaded(await res.text(), 'words.csv');
+    const text = await res.text();
+    if (file !== subject.file) return; // 読み込み中に教材が切り替わった
+    onLoaded(text, file);
   } catch (e) {
-    $('loadStatus').textContent = 'words.csv を自動で読み込めませんでした。';
+    $('loadStatus').textContent = `${file} を自動で読み込めませんでした。`;
     $('filePick').classList.remove('hidden');
     show('load');
   }
@@ -529,10 +555,10 @@ $('fileInput').addEventListener('change', e => {
 
 // ---------- 苦手データ ----------
 function loadMiss() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch { return {}; }
+  try { return JSON.parse(localStorage.getItem(subject.missKey)) || {}; } catch { return {}; }
 }
 function saveMiss(m) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(m)); } catch { /* 保存不可の環境 */ }
+  try { localStorage.setItem(subject.missKey, JSON.stringify(m)); } catch { /* 保存不可の環境 */ }
 }
 const wordKey = w => w.english.toLowerCase();
 function addMiss(w) {
@@ -555,13 +581,58 @@ function sortParagraphs(a, b) {
   return a.localeCompare(b, 'ja', { numeric: true });
 }
 
+// ---------- 教材 ----------
+function applySubject() {
+  const g = $('subjectGroup');
+  g.innerHTML = '';
+  for (const sub of SUBJECTS) {
+    const c = chip('radio', 'subject', sub.id, sub.name, sub === subject);
+    c.querySelector('input').addEventListener('change', () => switchSubject(sub));
+    g.appendChild(c);
+  }
+  $('subjectTag').textContent = `${subject.tag} // VOCAB TEST`;
+  $('subjectName').textContent = subject.id === 'comm' ? '英語コミュニケーション 新出単語テスト' : `${subject.name} テスト`;
+  $('fileHint').textContent = subject.file;
+  $('rangeTitle').textContent = `範囲（${subject.rangeLabel}）`;
+  $('pickTitle').textContent = `出題する${subject.unit}`;
+  $('pickSummary').textContent = `${subject.unit}を1つずつ選ぶ`;
+  $('lettersLabel').textContent = formatLabel('letters');
+  $('fParagraphLabel').textContent = subject.rangeLabel;
+  $('paraGroup').classList.toggle('hidden', subject.rangeType !== 'chips');
+  $('spanGroup').classList.toggle('hidden', subject.rangeType !== 'span');
+}
+
+function switchSubject(sub) {
+  subject = sub;
+  try { localStorage.setItem(SUBJECT_KEY, sub.id); } catch { /* noop */ }
+  excluded.clear();
+  words = [];
+  applySubject();
+  if (location.protocol === 'file:') {
+    $('loadStatus').textContent = `${sub.file} を選択してください。`;
+    $('filePick').classList.remove('hidden');
+    show('load');
+  } else {
+    show('load');
+    tryFetch();
+  }
+}
+
+const numericParas = () => words.map(w => parseFloat(w.paragraph)).filter(n => !isNaN(n));
+
 function buildParagraphs() {
-  $('wordCount').textContent = `${words.length} WORDS`;
+  $('wordCount').textContent = `${words.length} ${subject.unit === '単語' ? 'WORDS' : 'PHRASES'}`;
+  if (subject.rangeType === 'span') {
+    const nums = numericParas();
+    $('spanFrom').value = nums.length ? Math.min(...nums) : '';
+    $('spanTo').value = nums.length ? Math.max(...nums) : '';
+  }
   const paras = [...new Set(words.map(w => w.paragraph || '(なし)'))].sort(sortParagraphs);
   const g = $('paraGroup');
   g.innerHTML = '';
   g.appendChild(chip('checkbox', 'para-all', '__all__', '全範囲', true));
-  for (const p of paras) g.appendChild(chip('checkbox', 'para', p, /^\d+$/.test(p) ? `段落 ${p}` : p, false));
+  if (subject.rangeType !== 'chips') return;
+  for (const p of paras) g.appendChild(chip('checkbox', 'para', p, /^\d+$/.test(p) ? `${subject.rangeLabel} ${p}` : p, false));
   g.querySelector('[value="__all__"]').addEventListener('change', e => {
     if (e.target.checked) g.querySelectorAll('input[name=para]').forEach(i => i.checked = false);
     updateSetup();
@@ -589,9 +660,19 @@ const getFormat = () => document.querySelector('input[name=format]:checked').val
 
 // 段落で絞った範囲（個別の選択は反映しない）
 function rangePool() {
-  const all = document.querySelector('#paraGroup [value="__all__"]').checked;
-  const sel = new Set([...document.querySelectorAll('input[name=para]:checked')].map(i => i.value));
-  let pool = all ? words : words.filter(w => sel.has(w.paragraph || '(なし)'));
+  let pool;
+  if (subject.rangeType === 'span') {
+    const from = parseFloat($('spanFrom').value), to = parseFloat($('spanTo').value);
+    pool = words.filter(w => {
+      const n = parseFloat(w.paragraph);
+      if (isNaN(n)) return isNaN(from) && isNaN(to);
+      return (isNaN(from) || n >= from) && (isNaN(to) || n <= to);
+    });
+  } else {
+    const all = document.querySelector('#paraGroup [value="__all__"]').checked;
+    const sel = new Set([...document.querySelectorAll('input[name=para]:checked')].map(i => i.value));
+    pool = all ? words : words.filter(w => sel.has(w.paragraph || '(なし)'));
+  }
   if (getMode() === 'd2e') pool = pool.filter(w => w.definition);
   return pool;
 }
@@ -601,7 +682,7 @@ const excluded = new Set();
 const selectedPool = () => rangePool().filter(w => !excluded.has(wordKey(w)));
 
 function renderWordPick() {
-  const range = rangePool();
+  const range = rangePool().slice().sort((a, b) => sortParagraphs(a.paragraph || '', b.paragraph || ''));
   const g = $('wordPick');
   g.innerHTML = '';
   for (const w of range) {
@@ -614,10 +695,18 @@ function renderWordPick() {
     g.appendChild(c);
   }
   const n = range.filter(w => !excluded.has(wordKey(w))).length;
-  $('pickInfo').textContent = `${n} / ${range.length} 語を選択中`;
+  $('pickInfo').textContent = `${n} / ${range.length} ${subject.unit === '単語' ? '語' : '個'}を選択中`;
 }
 
 $('allCountChk').addEventListener('change', () => updateSetup());
+$('spanFrom').addEventListener('input', () => updateSetup());
+$('spanTo').addEventListener('input', () => updateSetup());
+$('spanAllBtn').addEventListener('click', () => {
+  const nums = numericParas();
+  $('spanFrom').value = nums.length ? Math.min(...nums) : '';
+  $('spanTo').value = nums.length ? Math.max(...nums) : '';
+  updateSetup();
+});
 $('pickAllBtn').addEventListener('click', () => {
   rangePool().forEach(w => excluded.delete(wordKey(w)));
   updateSetup();
@@ -629,6 +718,10 @@ $('pickNoneBtn').addEventListener('click', () => {
 });
 
 function updateSetup() {
+  // 英英定義が1つもない教材では「英英定義 → 英単語」を選べない
+  const d2eInput = document.querySelector('input[name=mode][value=d2e]');
+  d2eInput.disabled = !words.some(w => w.definition);
+  if (d2eInput.disabled && d2eInput.checked) document.querySelector('input[name=mode][value=e2j]').checked = true;
   renderWordPick();
   const mode = getMode();
   const lettersInput = document.querySelector('input[name=format][value=letters]');
@@ -638,11 +731,13 @@ function updateSetup() {
   }
   const fmt = getFormat();
   let note = '';
-  if (mode === 'e2j') note = '文字選択は答えが英単語のモード（日→英・英英→英）で使えます。';
+  if (mode === 'e2j') note = `${formatLabel('letters')}は答えが英語のモード（日→英など）で使えます。`;
   if (mode === 'e2j' && fmt === 'input') note = '日本語の記述は表記揺れがあるので、正解を見て自分で○×を付けます。';
-  if (mode !== 'e2j' && fmt === 'input') note = '英単語の記述は大文字・小文字を区別しません。';
+  if (mode !== 'e2j' && fmt === 'input') note = subject.rangeType === 'span'
+    ? '大文字・小文字は区別しません。～・A・B などの記号は省略可、( ) 内は書いても書かなくてもOK、[ ] はどちらか一方でOK。'
+    : '英単語の記述は大文字・小文字を区別しません。';
   if (mode === 'mix') note = fmt === 'letters'
-    ? '日→英と英英定義→英単語をランダムに出します（文字選択では英→日は出ません）。'
+    ? `答えが英語になる問題だけをランダムに出します（${formatLabel('letters')}では英→日は出ません）。`
     : '英→日・日→英・英英定義→英単語を1問ごとにランダムに出します。' + (fmt === 'input' ? '英→日の記述は自己採点です。' : '');
   $('formatNote').textContent = note;
 
@@ -711,6 +806,37 @@ const promptOf = (w, mode) => mode === 'e2j' ? w.english : mode === 'j2e' ? w.ja
 const answerOf = (w, mode) => mode === 'e2j' ? w.japanese : w.english;
 const normalize = s => s.trim().toLowerCase().replace(/\s+/g, ' ').replace(/[’‘]/g, "'");
 
+// 熟語の表記ゆれを吸収した照合用キー
+//  X [Y] → X か Y / ( ) 内は省略可 / ～ … と、答えに出てくる A・B・S などの1文字の記号は無視
+const PLACEHOLDER = /^(～|〜|~|…+|\.{2,})$/;
+function phraseVariants(s) {
+  let vs = [s.replace(/[’‘]/g, "'")];
+  for (let guard = 0; guard < 8; guard++) {
+    let changed = false;
+    vs = vs.flatMap(v => {
+      const br = v.match(/(\S+)\s*\[([^\]]+)\]/);
+      if (br) { changed = true; return [v.replace(br[0], br[1]), v.replace(br[0], br[2])]; }
+      const pa = v.match(/\(([^()]*)\)/);
+      if (pa) { changed = true; return [v.replace(pa[0], pa[1]), v.replace(pa[0], ' ')]; }
+      return [v];
+    });
+    if (!changed) break;
+  }
+  return vs;
+}
+function phraseKey(s, letters) {
+  return s.trim().split(/\s+/)
+    .filter(t => t && !PLACEHOLDER.test(t) && !letters.has(t.toLowerCase()))
+    .join(' ').toLowerCase();
+}
+function englishMatches(given, english) {
+  const letters = new Set((english.match(/(^|\s|\()[A-Z](?=$|\s|\))/g) || []).map(t => t.replace(/[\s(]/g, '').toLowerCase()));
+  const g = phraseKey(given.replace(/[’‘]/g, "'"), letters);
+  return phraseVariants(english).some(v => phraseKey(v, letters) === g);
+}
+// 並べ替え用の基本形: [ ] は前の語を採用し、( ) は外して中身を残す
+const primaryForm = s => s.replace(/(\S+)\s*\[[^\]]+\]/g, '$1').replace(/[()]/g, ' ').trim().split(/\s+/);
+
 function renderQuestion() {
   const { format, queue, index } = session;
   const w = queue[index];
@@ -719,7 +845,8 @@ function renderQuestion() {
   $('progText').textContent = `${index + 1} / ${queue.length} 問`;
   $('scoreText').textContent = `正解 ${correct}`;
   $('progBar').style.width = (index / queue.length * 100) + '%';
-  $('promptLabel').textContent = { e2j: 'この英単語の意味は？', j2e: 'この意味の英単語は？', d2e: 'この定義に当てはまる英単語は？' }[mode];
+  const u = subject.unit === '単語' ? '英単語' : '熟語';
+  $('promptLabel').textContent = { e2j: `この${u}の意味は？`, j2e: `この意味の${u}は？`, d2e: `この定義に当てはまる${u}は？` }[mode];
   $('prompt').textContent = promptOf(w, mode);
   $('prompt').classList.toggle('def', mode === 'd2e');
   $('feedback').innerHTML = '';
@@ -767,7 +894,7 @@ function renderInput(area, w) {
   const mode = session.curMode;
   const input = document.createElement('input');
   input.type = 'text';
-  input.placeholder = mode === 'e2j' ? '日本語で答えを入力' : '英単語を入力';
+  input.placeholder = mode === 'e2j' ? '日本語で答えを入力' : '英語で入力';
   input.autocomplete = 'off';
   input.autocapitalize = 'off';
   input.spellcheck = false;
@@ -779,7 +906,7 @@ function renderInput(area, w) {
     if (btn.disabled) return;
     input.disabled = btn.disabled = true;
     if (mode === 'e2j') selfJudge(input.value.trim());
-    else judge(normalize(input.value) === normalize(w.english), input.value.trim());
+    else judge(englishMatches(input.value, w.english), input.value.trim());
   };
   btn.addEventListener('click', submit);
   input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) submit(); });
@@ -788,6 +915,7 @@ function renderInput(area, w) {
 }
 
 function renderLetters(area, w) {
+  if (/\s/.test(w.english.trim())) return renderWordTiles(area, w);
   const target = w.english;
   const chars = [...target];
   const lettersInWord = new Set(chars.map(c => c.toLowerCase()));
@@ -843,13 +971,63 @@ function renderLetters(area, w) {
   area.append(box, grid, ctrl);
 }
 
+// 熟語は語句のボタンを順に並べる
+function renderWordTiles(area, w) {
+  const target = primaryForm(w.english);
+  const inTarget = new Set(target.map(t => t.toLowerCase()));
+  const pool = [...new Set(words.filter(x => x !== w).flatMap(x => primaryForm(x.english)))]
+    .filter(t => !inTarget.has(t.toLowerCase()) && !PLACEHOLDER.test(t) && !/^[A-Z]$/.test(t));
+  const total = Math.max(8, target.length + 3);
+  const tiles = shuffle([...target, ...shuffle(pool).slice(0, total - target.length)]);
+  const picked = [];
+
+  const box = document.createElement('div');
+  box.className = 'answer-box words';
+  const grid = document.createElement('div');
+  grid.className = 'tiles words';
+  const tileBtns = tiles.map((t, i) => {
+    const b = document.createElement('button');
+    b.textContent = t;
+    b.addEventListener('click', () => { picked.push(i); b.classList.add('used'); refresh(); });
+    grid.appendChild(b);
+    return b;
+  });
+  const given = () => picked.map(i => tiles[i]).join(' ');
+  const refresh = () => { box.textContent = given() || '\u00a0'; };
+  const ctrl = document.createElement('div');
+  ctrl.className = 'actions';
+  const back = document.createElement('button');
+  back.className = 'secondary'; back.textContent = '1つ戻す';
+  back.addEventListener('click', () => {
+    const i = picked.pop();
+    if (i !== undefined) tileBtns[i].classList.remove('used');
+    refresh();
+  });
+  const clear = document.createElement('button');
+  clear.className = 'secondary'; clear.textContent = 'クリア';
+  clear.addEventListener('click', () => {
+    picked.length = 0;
+    tileBtns.forEach(b => b.classList.remove('used'));
+    refresh();
+  });
+  const ok = document.createElement('button');
+  ok.textContent = '答え合わせ';
+  ok.addEventListener('click', () => {
+    [back, clear, ok, ...tileBtns].forEach(b => b.disabled = true);
+    judge(normalize(given()) === normalize(target.join(' ')), given());
+  });
+  ctrl.append(back, clear, ok);
+  refresh();
+  area.append(box, grid, ctrl);
+}
+
 function detailHTML(w) {
   const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   return `<div class="detail">
-    <div><b>英単語</b>${esc(w.english)}</div>
+    <div><b>英語</b>${esc(w.english)}</div>
     <div><b>意味</b>${esc(w.japanese)}</div>
     ${w.definition ? `<div><b>英英定義</b>${esc(w.definition)}</div>` : ''}
-    ${w.paragraph ? `<div><b>段落</b>${esc(w.paragraph)}</div>` : ''}
+    ${w.paragraph ? `<div><b>${subject.rangeLabel}</b>${esc(w.paragraph)}</div>` : ''}
   </div>`;
 }
 
@@ -908,7 +1086,7 @@ function showResult() {
   const correct = res.filter(r => r.ok).length;
   const rate = total ? Math.round(correct / total * 100) : 0;
   $('resultScore').textContent = `${rate}%`;
-  $('resultDetail').textContent = `${total} 問中 ${correct} 問正解（${MODE_LABEL[session.mode]}・${FORMAT_LABEL[session.format]}）`;
+  $('resultDetail').textContent = `${total} 問中 ${correct} 問正解（${MODE_LABEL[session.mode]}・${formatLabel(session.format)}）`;
   const wrong = [...new Map(res.filter(r => !r.ok).map(r => [wordKey(r.w), r.w])).values()];
   session.wrong = wrong;
   const ul = $('wrongList');
@@ -948,7 +1126,7 @@ $('resetBtn').addEventListener('click', () => {
   }
   clearTimeout(resetTimer);
   resetTimer = null;
-  try { localStorage.removeItem(STORAGE_KEY); } catch { /* noop */ }
+  try { localStorage.removeItem(subject.missKey); } catch { /* noop */ }
   btn.textContent = 'リセットしました';
   setTimeout(() => { btn.textContent = '苦手データをリセット'; }, 1500);
   updateSetup();
@@ -959,7 +1137,8 @@ $('reloadBtn').addEventListener('click', () => {
 });
 
 // ---------- 単語の編集（GitHubに保存） ----------
-const GH = { owner: 'Teri-jr', repo: 'Tr', branch: 'main', path: 'vocab/words.csv' };
+const GH = { owner: 'Teri-jr', repo: 'Tr', branch: 'main' };
+const ghPath = () => `vocab/${subject.file}`;
 const TOKEN_KEY = 'vocabTest.ghToken';
 let draft = [];        // 編集中の単語リスト
 let editingIndex = -1; // フォームで編集中の行（-1 は新規追加）
@@ -976,7 +1155,7 @@ function setToken(t) {
 function toCSV(list) {
   const q = (s, force) => (force || /[",\r\n]/.test(s)) ? '"' + s.replace(/"/g, '""') + '"' : s;
   const lines = ['english,japanese,paragraph,definition'];
-  for (const w of list) lines.push([q(w.english), q(w.japanese), q(w.paragraph), q(w.definition, true)].join(','));
+  for (const w of list) lines.push([q(w.english), q(w.japanese), q(w.paragraph), q(w.definition, !!w.definition)].join(','));
   return lines.join('\n') + '\n';
 }
 
@@ -992,7 +1171,7 @@ function base64ToUtf8(b64) {
 }
 
 async function ghRequest(method, body) {
-  const url = `https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${GH.path}` + (method === 'GET' ? `?ref=${GH.branch}` : '');
+  const url = `https://api.github.com/repos/${GH.owner}/${GH.repo}/contents/${ghPath()}` + (method === 'GET' ? `?ref=${GH.branch}` : '');
   const res = await fetch(url, {
     method,
     cache: 'no-store',
@@ -1058,13 +1237,13 @@ async function openEditor() {
 function renderWordList() {
   const ul = $('wordList');
   ul.innerHTML = '';
-  $('listTitle').textContent = `単語一覧（${draft.length} 語）`;
+  $('listTitle').textContent = `${subject.unit}一覧（${draft.length} 個）`;
   const order = draft.map((w, i) => i).sort((a, b) =>
     sortParagraphs(draft[a].paragraph || '', draft[b].paragraph || '') || a - b);
   let lastPara = null;
   for (const i of order) {
     const w = draft[i];
-    if (w.paragraph !== lastPara) {
+    if (subject.rangeType === 'chips' && w.paragraph !== lastPara) {
       lastPara = w.paragraph;
       const h = document.createElement('li');
       h.className = 'para-head';
@@ -1074,7 +1253,8 @@ function renderWordList() {
     const li = document.createElement('li');
     li.className = 'item' + (i === editingIndex ? ' editing' : '');
     const en = document.createElement('div'); en.className = 'en'; en.textContent = w.english;
-    const ja = document.createElement('div'); ja.className = 'ja'; ja.textContent = w.japanese;
+    const ja = document.createElement('div'); ja.className = 'ja';
+    ja.textContent = (subject.rangeType === 'span' && w.paragraph ? `No.${w.paragraph}  ` : '') + w.japanese;
     const def = document.createElement('div'); def.className = 'def'; def.textContent = w.definition;
     const ops = document.createElement('div'); ops.className = 'ops';
     const edit = document.createElement('button');
@@ -1134,7 +1314,7 @@ $('formSubmitBtn').addEventListener('click', () => {
     paragraph: $('fParagraph').value.trim(),
     definition: $('fDefinition').value.trim().replace(/\s*\n\s*/g, ' '),
   };
-  if (!w.english || !w.japanese) { $('formErr').textContent = '英単語と意味は必須です。'; return; }
+  if (!w.english || !w.japanese) { $('formErr').textContent = '英語と意味は必須です。'; return; }
   const dup = draft.findIndex((x, i) => i !== editingIndex && wordKey(x) === wordKey(w));
   if (dup >= 0) { $('formErr').textContent = `「${draft[dup].english}」はすでにあります。一覧の「編集」から直してください。`; return; }
   if (editingIndex >= 0) draft[editingIndex] = w;
@@ -1212,7 +1392,7 @@ $('ghSaveBtn').addEventListener('click', async () => {
   try {
     const { sha } = await ghRequest('GET');
     await ghRequest('PUT', {
-      message: `Update vocab words (${draft.length} words)`,
+      message: `Update ${subject.file} (${draft.length} entries)`,
       content: utf8ToBase64(toCSV(draft)),
       sha,
       branch: GH.branch,
@@ -1250,8 +1430,9 @@ $('editBackBtn').addEventListener('click', () => {
 $('openEditBtn').addEventListener('click', openEditor);
 
 // 起動
+applySubject();
 if (location.protocol === 'file:') {
-  $('loadStatus').textContent = 'ファイルを直接開いているため、words.csv を選択してください。';
+  $('loadStatus').textContent = `ファイルを直接開いているため、${subject.file} を選択してください。`;
   $('filePick').classList.remove('hidden');
 } else {
   tryFetch();
