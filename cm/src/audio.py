@@ -10,8 +10,13 @@ fc.append("".join(f"[n{i}]" for i in range(len(tl['scenes'])))+f"amix=inputs={le
 subprocess.run(["ffmpeg","-loglevel","error","-y",*sum([["-i",f] for f in FILES],[]),"-filter_complex",";".join(fc),"-map","[v]","voice.wav"],check=True)
 out=subprocess.run(["ffmpeg","-hide_banner","-i","voice.wav","-af","ebur128","-f","null","-"],capture_output=True,text=True).stderr
 gain=TARGET-float(re.findall(r"I:\s+(-?[0-9.]+) LUFS",out)[-1])
-fade=min(DUR,42.77)-1.6
+# BGM は 120BPM。尺が足りない分は 4小節(8秒)単位で中盤をくり返して延ばす
+X=34.0; reps=0; bgm_len=42.77
+while bgm_len+reps*8-0.3*reps < DUR: reps+=1
+bg="[1:a]asplit=2[b0][b1];[b0]atrim=0:%s[p0];[b1]atrim=%s,asetpts=PTS-STARTPTS[p1];[p0][p1]acrossfade=d=0.3[bg]"%(X,X-8) if reps else "[1:a]anull[bg]"
+assert reps<=1
+fade=min(DUR,bgm_len+reps*7.7)-1.6
 subprocess.run(["ffmpeg","-loglevel","error","-y","-i","voice.wav","-i",BGM,"-filter_complex",
-  f"[0:a]volume={gain:.2f}dB[v];[1:a]afade=t=out:st={fade}:d=1.6,apad,atrim=0:{DUR}[m];[v][m]amix=inputs=2:normalize=0:duration=longest,alimiter=limit=0.95,atrim=0:{DUR}[a]",
+  bg+f";[0:a]volume={gain:.2f}dB[v];[bg]afade=t=out:st={fade}:d=1.6,apad,atrim=0:{DUR}[m];[v][m]amix=inputs=2:normalize=0:duration=longest,alimiter=limit=0.95,atrim=0:{DUR}[a]",
   "-map","[a]","-ar","48000","mix.wav"],check=True)
 print("gain",round(gain,2))
