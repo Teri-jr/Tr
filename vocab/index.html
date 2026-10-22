@@ -552,7 +552,44 @@
   .span-label { color: var(--sub); }
 
   /* ゲーム感: 題名が跳ねて登場、メッセージ窓の ▼、経験値、正解でピカッ・不正解で揺れる */
-  h1 { animation: title-drop .9s steps(9) both; }
+  /* 題名の登場: 「覚えられない」スライムが降ってくる → 題名が降ってきて踏みつぶす → たおした！ */
+  .hud-head { margin-top: 40px; }
+  .title-wrap { position: relative; display: inline-block; }
+  .title-wrap h1 { position: relative; z-index: 1; }
+  h1 { animation: title-stomp .5s steps(6) 1.05s both; }
+  @keyframes title-stomp {
+    0% { opacity: 0; transform: translateY(-150px); }
+    12% { opacity: 1; }
+    80% { transform: translateY(8px); }
+    100% { transform: none; }
+  }
+  .enemy {
+    position: absolute; left: 50%; top: 50%; z-index: 0; display: flex; align-items: center; gap: 8px; white-space: nowrap;
+    color: var(--text); font-size: 1.05rem; transform: translate(-50%, -50%);
+    animation: enemy-fall .55s steps(6) .1s both, enemy-hit .6s steps(6) 1.5s forwards;
+  }
+  .enemy i {
+    display: block; width: 48px; height: 40px; image-rendering: pixelated;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10' shape-rendering='crispEdges'%3E%3Cpath fill='%233cbcfc' d='M5 0h2v1h1v1h1v1h1v2h1v3h1v2H0V8h1V5h1V3h1V2h1V1h1z'/%3E%3Cpath fill='%231a6fa0' d='M1 9h10v1H1zM2 8h1v1H2zM9 8h1v1H9z'/%3E%3Cpath fill='%23bfe8ff' d='M4 2h1v1H4zM3 3h1v1H3z'/%3E%3Cpath fill='%23fff' d='M3 5h2v2H3zM7 5h2v2H7z'/%3E%3Cpath fill='%23000' d='M4 6h1v1H4zM8 6h1v1H8zM5 8h2v1H5z'/%3E%3C/svg%3E") no-repeat center / contain;
+    animation: enemy-bob .3s steps(2) .7s 3 alternate;
+  }
+  @keyframes enemy-fall {
+    0% { opacity: 0; transform: translate(-50%, -260%); }
+    15% { opacity: 1; }
+    75% { transform: translate(-50%, -35%); }
+    100% { transform: translate(-50%, -50%); }
+  }
+  @keyframes enemy-bob { to { transform: translateY(-4px) scaleY(1.06); } }
+  @keyframes enemy-hit {
+    0% { opacity: 1; transform: translate(-50%, -30%) scaleY(.45); }
+    20% { opacity: 0; } 40% { opacity: 1; } 60% { opacity: 0; } 80% { opacity: .7; }
+    100% { opacity: 0; transform: translate(-50%, -20%) scaleY(.3); }
+  }
+  .battle-msg {
+    position: absolute; left: 50%; bottom: 100%; margin-bottom: 4px; transform: translateX(-50%); white-space: nowrap;
+    color: var(--accent); font-size: .92rem; animation: battle-msg 3s linear 1.75s both;
+  }
+  @keyframes battle-msg { 0% { opacity: 0; } 1%, 80% { opacity: 1; } 100% { opacity: 0; } }
   @keyframes title-drop {
     0% { opacity: 0; transform: translateY(-48px); }
     45% { opacity: 1; transform: translateY(6px); }
@@ -585,6 +622,7 @@
   @keyframes type { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
+    .enemy, .battle-msg { display: none; }
   }
 </style>
 <style data-skin-css="paper">
@@ -820,6 +858,7 @@
     .stamp { transform: rotate(-16deg); }
     .hanko { display: none; }
     .memo::after { display: none; }
+    .memo { opacity: .28; }
   }
 </style>
 <style>
@@ -827,7 +866,8 @@
   html:not([data-skin="game"]) .game-only { display: none !important; }
   html:not([data-skin="paper"]) .hanko { display: none !important; }
   html:not([data-skin="paper"]) .memo { display: none !important; }
-  html:not([data-skin="paper"]) .title-wrap { display: contents; }
+  html:not([data-skin="game"]) .enemy, html:not([data-skin="game"]) .battle-msg { display: none !important; }
+  html:not([data-skin="paper"]):not([data-skin="game"]) .title-wrap { display: contents; }
   html:not([data-skin="paper"]) .stamp { display: none !important; }
 
   /* ---------- テーマ選択: 各ボタンをそのテーマの見た目で出す（今のテーマに関係なく同じ） ---------- */
@@ -901,6 +941,7 @@
     min-width: 0; padding: 9px 2px; font-size: .9rem; letter-spacing: 0; white-space: nowrap; line-height: 1.25;
   }
   .grade-btns button b { font-weight: inherit; }
+  .grade-btns button .gm { font-size: 1.05rem; line-height: 1.1; }
   .grade-btns button small { font-size: .68rem; font-weight: 400; opacity: .85; }
   .grade-btns button:disabled { opacity: .3; }
   /* 評価ボタンの色: ✕ 赤 / △ オレンジ / ○ 青 / ◎ 緑 */
@@ -1114,6 +1155,8 @@
   <header class="hud-head">
     <div class="title-wrap">
       <div class="memo" aria-hidden="true"><span class="memo-text">覚えられない…</span></div>
+      <div class="enemy" aria-hidden="true"><i></i><span>覚えられない</span></div>
+      <div class="battle-msg" aria-hidden="true">＊ おぼえられないを たおした！</div>
       <div class="hanko" aria-hidden="true"><i class="hanko-grip"></i><i class="hanko-body"></i></div>
       <h1 data-text="記憶回路">記憶回路</h1>
     </div>
@@ -1183,7 +1226,7 @@
         <label class="chip"><input type="radio" name="timer" value="20"><span>20秒</span></label>
         <label class="chip"><input type="radio" name="timer" value="30"><span>30秒</span></label>
       </div>
-      <p class="note">時間切れは ✕ になります。漢字の書き問題には付きません。4択は3秒以内に正解すると「◎ 余裕」になります。</p>
+      <p class="note">時間切れは ✕ になります。漢字の書き問題（筆記）には付きません。4択は3秒以内に正解すると「◎ 余裕」になります。</p>
     </div>
     <div class="card">
       <h2 id="rangeTitle">範囲（段落）</h2>
@@ -1459,7 +1502,11 @@ function today() {
 
 const EASE_START = 2.5, EASE_MIN = 1.3, IVL_MAX = 365, MATURE_IVL = 21;
 // 記録 rec に grade をつけたあとの記録を返す（ivl: 次の復習までの日数、ease: 間隔の伸び率）
+// 同じ日に2回目以降の答えでは「◎ 余裕」を「○ 正解」として扱う（再テストで間隔が伸びすぎないように）
+const effectiveGrade = (rec, grade, t) => grade === 3 && rec && rec.last === t ? 2 : grade;
+
 function schedule(rec, grade, t) {
+  grade = effectiveGrade(rec, grade, t);
   const r = rec ? { ...rec } : { ivl: 0, ease: EASE_START, reps: 0, lapses: 0, due: t, last: null };
   const elapsed = r.last == null ? 0 : Math.max(0, t - r.last);
   if (grade === 0) {
@@ -1491,8 +1538,6 @@ function schedule(rec, grade, t) {
 
 function srsGrade(w, grade) {
   const db = srsDb(), k = wordKey(w);
-  // 同じ日に2回目以降の答えでは「◎ 余裕」を「○ 正解」として扱う（再テストで間隔が伸びすぎないように）
-  if (grade === 3 && db[k] && db[k].last === today()) grade = 2;
   db[k] = schedule(db[k], grade, today());
   saveSrs();
 }
@@ -1548,7 +1593,7 @@ function gradeButtons(w, showIvl, onPick) {
     const b = document.createElement('button');
     b.className = 'g' + G.g;
     b.dataset.grade = G.g;
-    b.innerHTML = `<b>${G.mark} ${G.label}</b>` + (showIvl ? `<small>${ivlLabel(schedule(rec, G.g, t).ivl)}</small>` : '');
+    b.innerHTML = `<span class="gm">${G.mark}</span><b>${G.label}</b>` + (showIvl ? `<small>${ivlLabel(schedule(rec, G.g, t).ivl)}</small>` : '');
     b.addEventListener('click', () => {
       box.querySelectorAll('button').forEach(x => { x.disabled = true; });
       onPick(G.g);
@@ -2196,7 +2241,11 @@ function judge(ok, given, grade = ok ? 2 : 0, info = {}) {
   stopTimer();
   const w = session.queue[session.index];
   session.results.push({ w, ok, given });
-  if (session.srs) srsGrade(w, grade);
+  // 記録するときは、同じ日の ◎ を ○ として扱う（表示もそれに合わせる）
+  if (session.srs) {
+    grade = effectiveGrade(srsDb()[wordKey(w)], grade, today());
+    srsGrade(w, grade);
+  }
   // 4択の速さ・時間切れ
   const speed = info.timeout ? `<div class="speed" data-g="0">時間切れ・${gradeName(0)}</div>`
     : info.sec != null ? `<div class="speed" data-g="${grade}">${info.sec.toFixed(1)}秒・${gradeName(grade)}</div>` : '';
@@ -2736,7 +2785,13 @@ const SOUNDS = {
   game: {
     tick: notes('square', .04, [[0, 1568, .04]]),
     // 題名が落ちて跳ねる（.4 秒で着地）→ 短いジングル
-    intro: [[0, 't', { f: 1400, to: 300, d: .38, type: 'square', v: .03 }], ...notes('square', .045, [[.4, 196, .06], [.62, 523, .08], [.7, 659, .08], [.78, 784, .08], [.86, 1047, .22]])],
+    intro: [
+      [.1, 't', { f: 900, to: 260, d: .45, type: 'square', v: .03 }], ...notes('square', .05, [[.62, 110, .07]]),
+      [1.05, 't', { f: 1400, to: 300, d: .42, type: 'square', v: .035 }],
+      [1.5, 'n', { d: .14, f: 900, type: 'lowpass', v: .35 }], ...notes('square', .06, [[1.5, 98, .1], [1.52, 196, .08]]),
+      ...notes('square', .035, [[1.65, 1200, .03], [1.77, 1200, .03], [1.89, 1200, .03]]),
+      ...notes('square', .05, [[2.05, 523, .08], [2.13, 659, .08], [2.21, 784, .08], [2.29, 1047, .3]]),
+    ],
     tap: notes('square', .03, [[0, 1200, .03]]),
     start: notes('square', .05, [[0, 659, .06], [.06, 880, .1]]),
     ok: notes('square', .05, [[0, 988, .07], [.07, 1319, .14]]),
@@ -2796,7 +2851,7 @@ $('sfxChk').addEventListener('change', e => {
 
 // ---------- バージョン・変更履歴 ----------
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
-const APP_VERSION = '1.14';
+const APP_VERSION = '1.15';
 const versionNum = v => String(v).split('.').map(Number);
 const isNewer = (a, b) => {
   const x = versionNum(a), y = versionNum(b);
