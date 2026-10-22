@@ -1106,6 +1106,14 @@ $('reloadBtn').addEventListener('click', () => {
   else tryFetch();
 });
 
+// 題名の起動アニメーション（ノイズ・回路の線）を30秒おきに流し直す。ページが見えていないときは流さない
+function replayLogo() {
+  const head = document.querySelector('.hud-head');
+  if (!head.getAnimations) return;
+  head.getAnimations({ subtree: true }).forEach(a => { a.currentTime = 0; a.play(); });
+}
+setInterval(() => { if (!document.hidden) replayLogo(); }, 30000);
+
 // 起動
 applySubject();
 if (location.protocol === 'file:') {
