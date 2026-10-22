@@ -1,29 +1,26 @@
-# 受験勉強 運行表 CM（1920x1080・約43秒）— Gemini ナレーション版
+# StudyLine CM（1920x1080・42.6秒）
 
-- `unkouhyo_cm_gemini.mp4` … 元CM（`unkouhyo_cm.mp4`）の映像・BGM はそのままに、ナレーションだけ Gemini TTS に差し替えたもの
-- `narration_gemini.mp3` … 差し替えたナレーションのみ（元ナレーションと同じタイミングで配置済み）
+- `studyline_cm.mp4` … 完成動画（元CM `unkouhyo_cm.mp4` のデザイン・BGM を踏襲し、アプリ名を StudyLine に更新）
+- `narration_gemini.mp3` … ナレーションのみ（Gemini TTS `gemini-3.8-flash-lite-tts` / ボイス `Kore`）
 
-声: `gemini-3.1-flash-tts-preview` / ボイス `Kore`（明るく明瞭な女性ナレーター）
+## 構成（各機能シーンは「今までは → これは」の2段構成）
 
-## 台本と配置（元CMの焼き込み字幕と同じ文言）
-
-| 開始 | ナレーション |
-|------|--------------|
-| 0:00.6 | 勉強の1日を、電車のダイヤのように。 |
-| 0:04.0 | 受験勉強、運行表。 |
-| 0:07.0 | やることと時間を入れるだけ。時刻表が、自動で完成します。 |
-| 0:12.7 | 始めた時間、終わった時間から、予定とのズレを、リアルタイムで計算。 |
-| 0:19.8 | 寝る時間を超えそうなら、すぐに、お知らせ。 |
-| 0:24.3 | ポモドーロタイマー内蔵。集中と休憩を、自動で切りかえます。 |
-| 0:30.3 | ホーム画面に追加すれば、アプリのように使えます。 |
-| 0:35.8 | 今日の勉強を、最後まで走り切ろう。受験勉強、運行表。 |
+| 開始 | シーン | ナレーション |
+|------|--------|--------------|
+| 0:00 | タイトル | 勉強の1日を、電車のダイヤのように。スタディライン。 |
+| 0:05.3 | FEATURE 01 | 今までは、計画を立てるだけでひと苦労。これは、入れるだけで時刻表が完成。 |
+| 0:12.1 | FEATURE 02 | 今までは、遅れに気づかないまま。これは、予定とのズレがひと目でわかる。 |
+| 0:17.7 | FEATURE 03 | 今までは、気づけば夜ふかし。これは、寝る時間を超えそうなら、すぐにお知らせ。 |
+| 0:24.0 | FEATURE 04 | 今までは、タイマーと行ったり来たり。これは、ポモドーロタイマー内蔵。 |
+| 0:29.7 | FEATURE 05 | 今までは、机の上の計画表だけ。これは、スマホでもパソコンでも、どこでも使える。 |
+| 0:36.0 | エンド | 今日の勉強を、最後まで走り切ろう。スタディライン。 |
 
 ## 作り直し手順（`src/`）
 
-1. 元CMの音声から BGM だけを取り出す（元ナレーションを除去）
-   `ffmpeg -i unkouhyo_cm.mp4 -vn -ar 44100 orig44.wav`
-   `python -m demucs --two-stems=vocals -n htdemucs -o sepout orig44.wav` → `sepout/htdemucs/orig44/no_vocals.wav`
-2. `GEMINI_API_KEY=... python3 tts_full.py gemini-3.1-flash-tts-preview Kore full31.wav` … 8行を1回で生成（声のトーンをそろえるため）
-3. `python3 mix.py` … 各行を元ナレーションの開始秒に配置し、元と同じ音量（-13 LUFS）で BGM と合成して映像に戻す
-
-生成し直したときは、`mix.py` の `segs`（各行の切り出し秒）を新しい音声の無音位置に合わせて調整してください。
+1. `GEMINI_API_KEY=... python3 tts.py gemini-3.8-flash-lite-tts Kore lite2.wav` … ナレーション生成
+   - lite モデルは英語の演出指示まで読み上げることがあるため、本編の開始位置を確認して `timeline.py` の `LINES`（各行の開始・終了・「これは」の開始秒）を合わせる
+2. `python3 timeline.py` … シーン尺とナレーション配置を `timeline.json` に出力
+3. `python3 shots.py` … サンプルデータ入りのアプリ画面を4状態撮影（Playwright）
+4. `python3 frames.py` … `cm.html` を 30fps でコマ書き出し（`frames.py 7.5 20` のように秒を渡すとプレビューのみ）
+5. `python3 audio.py` … ナレーションを配置し、元CMのBGM（demucs でナレーション除去済み）と合成
+6. `ffmpeg -framerate 30 -i fr/%05d.jpg -i mix.wav -c:v libx264 -crf 18 -pix_fmt yuv420p -c:a aac -shortest studyline_cm.mp4`

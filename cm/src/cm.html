@@ -1,0 +1,165 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><style>
+@font-face{font-family:N;src:url('file:///root/.fonts/NotoSansJP-400.woff2');font-weight:400}
+@font-face{font-family:N;src:url('file:///root/.fonts/NotoSansJP-700.woff2');font-weight:700}
+@font-face{font-family:N;src:url('file:///root/.fonts/NotoSansJP-900.woff2');font-weight:900}
+*{box-sizing:border-box;margin:0}
+html,body{width:1920px;height:1080px;overflow:hidden;background:#0a0e12}
+body{font-family:N,"Noto Color Emoji",sans-serif;color:#f2f4f7;position:relative}
+#bg{position:absolute;inset:0}
+.rail{position:absolute;left:0;right:0;top:978px;height:8px}
+.rail i{position:absolute;top:0;width:60px;height:8px;background:#2fb57f;opacity:.75;border-radius:2px}
+.scene{position:absolute;inset:0;opacity:0}
+.L{position:absolute;left:140px;top:250px;width:1000px}
+.tag{display:inline-block;font:700 26px N;letter-spacing:.12em;padding:4px 18px;border-radius:999px;background:#2fb57f;color:#06140e;font-family:"DejaVu Sans Mono",N}
+.tag.before{background:#3a414b;color:#c9d1dc;font-family:N;letter-spacing:.2em}
+h1{font-weight:900;font-size:104px;line-height:1.22;margin-top:26px;letter-spacing:.02em}
+h1 em{font-style:normal;color:#f5b301}
+.bf h1{color:#7d8794}
+.bf h1 s{text-decoration:none;background:linear-gradient(transparent 58%,#d92d2066 58%,#d92d2066 80%,transparent 80%)}
+.sub{margin-top:34px;font-size:36px;line-height:1.6;color:#aab4c2;font-weight:700}
+.phone{position:absolute;left:1330px;top:22px;width:520px;height:1036px;border-radius:70px;padding:18px;background:#1b2027;box-shadow:0 40px 100px #000c,inset 0 0 0 3px #3a414b}
+.scr{width:484px;height:1000px;overflow:hidden;border-radius:54px;position:relative;background:#0e1013}
+.scr img{position:absolute;left:0;width:484px}
+.ring{position:absolute;border:6px solid #f5b301;border-radius:20px;box-shadow:0 0 40px #f5b301aa}
+.cap{position:absolute;left:140px;top:905px;padding:8px 20px;background:#000a;border-radius:6px;font:700 34px N;letter-spacing:.04em;white-space:nowrap}
+.card{position:absolute;left:1290px;top:190px;width:560px;height:700px;border-radius:28px;background:#d9d4c7;color:#4b4a46;box-shadow:0 40px 90px #000c;padding:56px 54px;filter:grayscale(.3) brightness(.62);font:700 40px N;line-height:2}
+.card .ln{border-bottom:3px solid #b9b2a2}
+.card .x{color:#a0412f;text-decoration:line-through}
+.big{font-size:150px;line-height:1.1;text-align:center}
+.center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.center .catch{font:900 92px N;line-height:1.3}
+.center .catch em{font-style:normal;color:#f5b301}
+.logo{display:flex;align-items:center;gap:40px;margin-top:64px}
+.logo img{width:170px;height:170px;border-radius:38px;box-shadow:0 20px 50px #000a}
+.logo b{display:block;font:900 150px/1 N;letter-spacing:.01em;text-align:left;font-family:"Noto Sans JP",N}
+.logo small{display:block;font:700 40px N;color:#aab4c2;letter-spacing:.3em;margin-top:18px;text-align:left}
+.foot{font:700 34px N;color:#aab4c2;margin-top:56px;letter-spacing:.08em}
+.laptop{position:absolute;left:900px;top:250px;width:780px}
+.laptop .s{border:18px solid #1b2027;border-bottom-width:24px;border-radius:24px 24px 0 0;overflow:hidden;box-shadow:0 40px 90px #000c}
+.laptop .s img{width:100%;display:block}
+.laptop .b{height:30px;background:linear-gradient(#3a414b,#1b2027);border-radius:0 0 30px 30px;margin:0 -50px}
+.mini{position:absolute;left:1560px;top:300px;width:330px;height:640px;border-radius:50px;padding:13px;background:#1b2027;box-shadow:0 30px 70px #000c,inset 0 0 0 3px #3a414b}
+.mini .scr{width:304px;height:614px;border-radius:38px}.mini .scr img{width:304px}
+.apps{display:flex;gap:40px;align-items:center;justify-content:center;margin-top:40px}
+.app{width:200px;height:200px;border-radius:44px;background:#3d434c;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:96px;line-height:1}
+.app span{font:700 30px N;color:#d0d3d8;margin-top:14px}
+</style></head><body>
+<canvas id="bg" width="1920" height="1080"></canvas>
+<div class="rail" id="rail"></div>
+<div id="root"></div>
+<script>
+const TL = __TIMELINE__;
+const S = TL.scenes;
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const ease=x=>{x=clamp(x);return 1-Math.pow(1-x,3)};
+const p=(t,t0,d=0.5)=>ease((t-t0)/d);
+const $=id=>document.getElementById(id);
+
+// --- 背景:緑のグロー + 走るレール ---
+const ctx=$('bg').getContext('2d');
+function bg(t){
+  ctx.fillStyle='#090c10';ctx.fillRect(0,0,1920,1080);
+  const x=960+Math.sin(t*0.25)*220, y=470+Math.cos(t*0.2)*60;
+  const g=ctx.createRadialGradient(x,y,0,x,y,900);
+  g.addColorStop(0,'rgba(22,110,78,0.55)');g.addColorStop(0.5,'rgba(14,60,46,0.25)');g.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=g;ctx.fillRect(0,0,1920,1080);
+  const g2=ctx.createRadialGradient(1800,1000,0,1800,1000,700);
+  g2.addColorStop(0,'rgba(30,50,110,0.28)');g2.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=g2;ctx.fillRect(0,0,1920,1080);
+}
+let rail='';for(let i=0;i<22;i++)rail+=`<i style="left:${i*110}px"></i>`;$('rail').innerHTML=rail;
+function railMove(t){const off=(t*160)%110;[...$('rail').children].forEach((e,i)=>e.style.left=(i*110-off)+'px');}
+
+// --- シーン定義 ---
+const FEAT=[
+ {tag:'FEATURE 01',bh:'計画を立てるだけで<br><s>ひと苦労</s>',ah:'入れるだけで<br><em>時刻表</em>が完成',sub:'タスクと所要時間を入れると<br>発車・到着時刻を自動で計算',
+  bcap:'今までは、計画を立てるだけでひと苦労。',acap:'これは、入れるだけで時刻表が完成。',
+  before:`<div class="card"><div class="ln">19:00 英単語 …?</div><div class="ln x">20:00 数学</div><div class="ln x">21:00 英語長文</div><div class="ln">… 何時に終わる？</div><div class="ln">&nbsp;</div><div class="ln">&nbsp;</div></div>`,
+  img:'s_plan.png',y0:150,y1:1150,ring:null},
+ {tag:'FEATURE 02',bh:'遅れに<br><s>気づかないまま</s>',ah:'予定との<em>ズレ</em>が<br>ひと目でわかる',sub:'実際の開始・終了から<br>残りの予定をリアルタイムに再計算',
+  bcap:'今までは、遅れに気づかないまま。',acap:'これは、予定とのズレがひと目でわかる。',
+  before:`<div class="card"><div class="big">⏰</div><div class="ln" style="text-align:center">予定 20:40 終了</div><div class="ln" style="text-align:center">いま … 何分遅れ？</div></div>`,
+  img:'s_delay.png',y0:1180,y1:1250,ring:{x:8,y:1270,w:468,h:230,from:0.6}},
+ {tag:'FEATURE 03',bh:'気づけば<br><s>夜ふかし</s>',ah:'<em>就寝時間</em>を<br>守れる',sub:'寝る時間を超えそうなら<br>何分オーバーするかを警告',
+  bcap:'今までは、気づけば夜ふかし。',acap:'これは、寝る時間を超えそうなら、すぐにお知らせ。',
+  before:`<div class="card" style="background:#2a3140;color:#c9d1dc;filter:brightness(.8)"><div class="big">🌙</div><div style="text-align:center;font:900 120px N;color:#ff8a7a;letter-spacing:.05em">1:30</div><div style="text-align:center">まだ終わらない…</div></div>`,
+  img:'s_bed.png',y0:0,y1:0,ring:{x:16,y:128,w:452,h:104,from:0.5}},
+ {tag:'FEATURE 04',bh:'タイマーと<br><s>行ったり来たり</s>',ah:'<em>ポモドーロ</em><br>タイマー内蔵',sub:'作業25分 → 休憩5分を<br>自動で切りかえ・音と通知でお知らせ',
+  bcap:'今までは、タイマーと行ったり来たり。',acap:'これは、ポモドーロタイマー内蔵。',
+  before:`<div class="card" style="background:#2a3140;color:#c9d1dc;filter:brightness(.85);padding-top:150px"><div class="apps"><div class="app">⏱️<span>タイマー</span></div><div style="font:900 80px N;color:#8a93a0">⇄</div><div class="app">📝<span>計画表</span></div></div></div>`,
+  img:'s_pomo.png',y0:820,y1:860,ring:{x:8,y:880,w:468,h:250,from:0.5}},
+ {tag:'FEATURE 05',bh:'机の上の<br><s>計画表だけ</s>',ah:'<em>どこでも</em><br>使える',sub:'スマホでもパソコンでも。<br>ホーム画面に追加してアプリのように',
+  bcap:'今までは、机の上の計画表だけ。',acap:'これは、スマホでもパソコンでも、どこでも使える。',
+  before:`<div class="card"><div class="big">📒</div><div class="ln" style="text-align:center">家の机でしか見られない</div><div class="ln">&nbsp;</div></div>`,
+  img:null},
+];
+
+let html='';
+// 1: タイトル
+html+=`<div class="scene" id="s0"><div class="center"><div class="catch" id="t0a">勉強の1日を、<br><em>電車のダイヤ</em>のように。</div>
+<div class="logo" id="t0b"><img src="icon-512.png"><div><b>StudyLine</b><small>受験勉強の運行表</small></div></div></div>
+<div class="cap" id="c0">勉強の1日を、電車のダイヤのように。StudyLine。</div></div>`;
+FEAT.forEach((f,i)=>{const n=i+1;
+ html+=`<div class="scene" id="s${n}">
+ <div class="bf" id="b${n}"><div class="L"><span class="tag before">今までは</span><h1>${f.bh}</h1></div>${f.before}</div>
+ <div id="a${n}"><div class="L"><span class="tag">${f.tag}</span><h1>${f.ah}</h1><div class="sub">${f.sub}</div></div>
+ ${f.img?`<div class="phone" id="ph${n}"><div class="scr"><img id="im${n}" src="${f.img}">${f.ring?`<div class="ring" id="rg${n}"></div>`:''}</div></div>`:
+ `<div class="laptop" id="lp${n}"><div class="s"><img src="desktop.png"></div><div class="b"></div></div>
+  <div class="mini" id="ph${n}"><div class="scr"><img src="s_delay.png" style="top:-${820*304/390}px"></div></div>`}</div>
+ <div class="cap" id="c${n}"></div></div>`;});
+// 7: エンド
+html+=`<div class="scene" id="s6"><div class="center"><div class="catch" id="t6a">今日の勉強を、<em>最後まで走り切ろう。</em></div>
+<div class="logo" id="t6b"><img src="icon-512.png"><div><b>StudyLine</b><small>受験勉強の運行表</small></div></div>
+<div class="foot" id="t6c">ホーム画面に追加して、今日から使えます</div></div>
+<div class="cap" id="c6">今日の勉強を、最後まで走り切ろう。StudyLine。</div></div>`;
+$('root').innerHTML=html;
+
+const XF=0.35; // シーン間クロスフェード
+function sceneAlpha(t,sc,i){
+  const inA = i===0 ? clamp(t/0.4) : clamp((t-sc.start+XF/2)/XF);
+  const outA = i===S.length-1 ? clamp((TL.total-t)/0.5) : clamp((sc.end+XF/2-t)/XF);
+  return Math.min(inA,outA);
+}
+const st=(id,o)=>{const e=$(id);if(!e)return;for(const k in o)e.style[k]=o[k];};
+
+window.renderAt=function(t){
+  bg(t);railMove(t);
+  S.forEach((sc,i)=>{
+    const a=sceneAlpha(t,sc,i); st('s'+i,{opacity:a,display:a>0?'block':'none'}); if(a<=0)return;
+    const lt=t-sc.start, k=Math.min(1,0.97+0.03*lt/(sc.end-sc.start));
+    if(i===0){
+      const q=p(t,0.15,0.8); st('t0a',{opacity:q,transform:`translateY(${(1-q)*30}px)`});
+      const r=p(t,sc.split-0.15,0.6); st('t0b',{opacity:r,transform:`scale(${0.9+0.1*r})`});
+      st('c0',{opacity:p(t,sc.vo,0.3)});
+      return;
+    }
+    if(i===S.length-1){
+      const q=p(t,sc.start+0.2,0.8); st('t6a',{opacity:q,transform:`translateY(${(1-q)*30}px)`});
+      const r=p(t,sc.split-0.15,0.6); st('t6b',{opacity:r,transform:`scale(${0.9+0.1*r})`});
+      st('t6c',{opacity:p(t,sc.split+0.6,0.6)}); st('c6',{opacity:p(t,sc.vo,0.3)});
+      return;
+    }
+    const f=FEAT[i-1], sp=sc.split;
+    // 今までは → これは
+    const bi=p(t,sc.start,0.5), bo=p(t,sp-0.2,0.35);
+    st('b'+i,{opacity:bi*(1-bo),transform:`translateX(${-60*bo}px)`});
+    const ai=p(t,sp-0.05,0.5);
+    st('a'+i,{opacity:ai});
+    const L=$('a'+i).querySelector('.L'); L.style.transform=`translateX(${(1-ai)*50}px)`;
+    const ph=$('ph'+i), pin=p(t,sp-0.05,0.6);
+    if(f.img){
+      ph.style.transform=`translateY(${(1-pin)*500}px)`;
+      const sc2=p(t,sp+0.3,Math.max(0.5,sc.end-sp-0.6));
+      const y=f.y0+(f.y1-f.y0)*sc2, s=484/390;
+      $('im'+i).style.top=(-y*s)+'px';
+      if(f.ring){const rg=$('rg'+i),rr=f.ring,ro=p(t,sp+rr.from,0.35),pulse=0.75+0.25*Math.sin((t-sp)*6);
+        Object.assign(rg.style,{left:rr.x+'px',top:((rr.y-y)*s)+'px',width:rr.w+'px',height:(rr.h*s)+'px',opacity:ro*pulse});}
+    }else{
+      st('lp'+i,{opacity:pin,transform:`translateY(${(1-pin)*80}px)`});
+      const m=p(t,sp+0.35,0.6); ph.style.transform=`translateY(${(1-m)*600}px)`;
+    }
+    const c=$('c'+i); const after=t>=sp-0.1; c.textContent=after?f.acap:f.bcap;
+    st('c'+i,{opacity:p(t,sc.vo,0.3)});
+  });
+};
+window.renderAt(0);
+</script></body></html>
