@@ -1130,7 +1130,10 @@
   }
   .sheet-bar { flex-wrap: wrap; gap: 6px; padding-block: 8px; }
   .sheet-bar .row { flex-wrap: wrap; gap: 6px; width: 100%; }
-  .sheet-bar #sheetMarkOnlyBtn.on, .sheet-bar #sheetShuffleBtn.on { outline: 2px solid currentColor; outline-offset: -2px; }
+  .sheet-bar .sheet-order { align-items: center; gap: 6px; }
+  .sheet-bar .sheet-order-label { font-size: .78rem; opacity: .75; }
+  .sheet-bar .chip span { font-size: .8rem; padding-block: 4px; }
+  .sheet-bar #sheetMarkOnlyBtn.on { outline: 2px solid currentColor; outline-offset: -2px; }
   .sheet-bar button.pick-btn { padding: 6px 9px; font-size: .8rem; letter-spacing: 0; white-space: nowrap; }
   .sheet-bar #sheetInfo { flex: 1; min-width: 0; font-size: .78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   html { --sheet-bar-bg: rgba(244, 246, 250, .96); }
@@ -1412,8 +1415,12 @@
     <div class="sheet-bar" id="sheetBar">
       <button class="secondary pick-btn" id="sheetBackBtn">← 戻る</button>
       <span class="note" id="sheetInfo" style="margin:0"></span>
+      <div class="row sheet-order" id="sheetOrder">
+        <span class="sheet-order-label">順番</span>
+        <label class="chip"><input type="radio" name="sheetOrder" value="orig" checked><span>元の順</span></label>
+        <label class="chip"><input type="radio" name="sheetOrder" value="shuffle"><span>シャッフル</span></label>
+      </div>
       <div class="row">
-        <button class="secondary pick-btn" id="sheetShuffleBtn">シャッフル</button>
         <button class="secondary pick-btn" id="sheetToggleBtn">シートを外す</button>
         <button class="secondary pick-btn" id="sheetMarkOnlyBtn">線だけ</button>
         <button class="secondary pick-btn" id="sheetClearMarksBtn">線を消す</button>
@@ -2595,7 +2602,7 @@ function renderSheet() {
   const shown = sheet.onlyMarked ? sheet.list.filter(w => hasMark(marks, w)) : sheet.list;
   $('sheetInfo').textContent = `${isKanji() ? '' : MODE_LABEL[sheet.mode] + '・'}${shown.length} 個` + (markedInList ? `・線 ${markedInList}` : '');
   $('sheetMarkOnlyBtn').classList.toggle('on', sheet.onlyMarked);
-  $('sheetShuffleBtn').classList.toggle('on', sheet.shuffled);
+  document.querySelector(`input[name="sheetOrder"][value="${sheet.shuffled ? 'shuffle' : 'orig'}"]`).checked = true;
   $('sheetMarkOnlyBtn').textContent = sheet.onlyMarked ? 'すべて表示' : '線だけ';
   if (!shown.length) {
     const li = document.createElement('li');
@@ -2676,9 +2683,12 @@ window.addEventListener('resize', () => placeSheet(sheet.top));
   });
 })();
 
-// シャッフルは押すたびにオン／オフ（オフで元の順番に戻す）
-$('sheetShuffleBtn').addEventListener('click', () => {
-  sheet.shuffled = !sheet.shuffled;
+// 順番: 元の順／シャッフル（シャッフル中にもう一度押すと並べ直す）
+$('sheetOrder').addEventListener('click', e => {
+  // ラベルを押すと input にも click が届くので、input の方だけ扱う
+  const input = e.target;
+  if (input.name !== 'sheetOrder') return;
+  sheet.shuffled = input.value === 'shuffle';
   sheet.list = sheet.shuffled ? shuffle(sheet.base) : sheet.base.slice();
   renderSheet();
 });
@@ -3014,7 +3024,7 @@ $('sfxChk').addEventListener('change', e => {
 
 // ---------- バージョン・変更履歴 ----------
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
-const APP_VERSION = '3.11';
+const APP_VERSION = '3.12';
 const versionNum = v => String(v).split('.').map(Number);
 const isNewer = (a, b) => {
   const x = versionNum(a), y = versionNum(b);
