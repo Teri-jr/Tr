@@ -862,7 +862,44 @@
   .face .detail { margin-top: 6px; font-size: .92rem; }
   .flip:focus-visible .face { outline: 2px dashed currentColor; outline-offset: -6px; }
   .flip-note { text-align: center; }
-  #cardActions button:disabled { opacity: .3; }
+  .face { position: relative; }
+  .face-tag {
+    position: absolute; top: 10px; right: 12px; padding: 0 8px; border: 1px solid currentColor; border-radius: 999px;
+    font-size: .7rem; line-height: 1.6; opacity: .7;
+  }
+  .face-tag[data-s="due"] { color: var(--srs-due); opacity: 1; }
+  .face-tag[data-s="new"] { color: var(--srs-learn); opacity: 1; }
+
+  /* ---------- 4段階の自己評価（✕ 全然 / △ 惜しい / ○ 正解 / ◎ 余裕） ---------- */
+  .grade-btns { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 12px; }
+  .grade-btns button {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+    min-width: 0; padding: 9px 2px; font-size: .9rem; letter-spacing: 0; white-space: nowrap; line-height: 1.25;
+  }
+  .grade-btns button b { font-weight: inherit; }
+  .grade-btns button small { font-size: .68rem; font-weight: 400; opacity: .85; }
+  .grade-btns button:disabled { opacity: .3; }
+  html[data-skin="normal"] .grade-btns button.secondary { background: var(--card); border: 1px solid var(--border); }
+
+  /* ---------- 忘却曲線の内訳バー ---------- */
+  html { --srs-due: #e8590c; --srs-learn: #3b6fe0; --srs-done: #1f9d55; --srs-new: rgba(128, 128, 128, .28); }
+  html[data-skin="future"] { --srs-due: #ff2bd6; --srs-learn: #00e5ff; --srs-done: #39ff9f; --srs-new: rgba(0, 229, 255, .14); }
+  html[data-skin="game"] { --srs-due: #f83800; --srs-learn: #3cbcfc; --srs-done: #58d854; --srs-new: #3a3a3a; }
+  html[data-skin="paper"] { --srs-due: #c8301e; --srs-learn: #2d4fa1; --srs-done: #3d7a3a; --srs-new: rgba(120, 100, 60, .22); }
+  .srs-bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--srs-new); }
+  .srs-bar i { display: block; height: 100%; transition: width .3s; }
+  .srs-bar .due, .srs-legend .due { background: var(--srs-due); }
+  .srs-bar .learn, .srs-legend .learn { background: var(--srs-learn); }
+  .srs-bar .done, .srs-legend .done { background: var(--srs-done); }
+  .srs-legend .new { background: var(--srs-new); }
+  .srs-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 8px; font-size: .85rem; font-variant-numeric: tabular-nums; }
+  .srs-legend span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .srs-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+  html[data-skin="future"] .srs-bar { border-radius: 0; box-shadow: 0 0 10px rgba(0, 229, 255, .25); }
+  html[data-skin="game"] .srs-bar { height: 16px; border: 2px solid var(--text); border-radius: 0; padding: 2px; gap: 2px; }
+  html[data-skin="game"] .srs-legend i { border-radius: 0; }
+  html[data-skin="paper"] .srs-bar { border-radius: 0; border: 1px solid var(--ink); }
+  html[data-skin="paper"] .srs-legend i { border-radius: 0; }
 
   /* ---------- 赤シート ---------- */
   html {
@@ -900,14 +937,17 @@
   .sheet-list li:first-child { border-top: none; }
   .sheet-list .no { grid-column: 1 / -1; font-size: .72rem; opacity: .55; }
   .sheet-list .q { font-weight: 700; overflow-wrap: anywhere; }
-  .sheet-list .qt { -webkit-box-decoration-break: clone; box-decoration-break: clone; padding: 0 2px; border-radius: 2px; transition: background .15s; }
-  /* 線を引いた単語（テーマごとの見た目） */
-  html[data-skin="normal"] .sheet-list li.marked .qt { background: linear-gradient(transparent 50%, #fff176 50%); }
-  @media (prefers-color-scheme: dark) { html[data-skin="normal"]:not([data-theme="light"]) .sheet-list li.marked .qt { background: linear-gradient(transparent 55%, rgba(255, 214, 0, .45) 55%); } }
-  html[data-skin="normal"][data-theme="dark"] .sheet-list li.marked .qt { background: linear-gradient(transparent 55%, rgba(255, 214, 0, .45) 55%); }
-  html[data-skin="future"] .sheet-list li.marked .qt { background: linear-gradient(transparent 62%, rgba(0, 229, 255, .45) 62%); text-shadow: 0 0 8px rgba(0, 229, 255, .8); }
-  html[data-skin="game"] .sheet-list li.marked .qt::before { content: "★"; color: var(--accent); margin-right: 4px; }
-  html[data-skin="paper"] .sheet-list li.marked .qt { background: linear-gradient(transparent 82%, rgba(43, 42, 51, .55) 82%, rgba(43, 42, 51, .55) 92%, transparent 92%); }
+  .sheet-list .mk { -webkit-box-decoration-break: clone; box-decoration-break: clone; padding: 0 2px; border-radius: 2px; transition: background .15s; }
+  /* 線（問題・答えそれぞれ。テーマごとの見た目） */
+  html[data-skin="normal"] .sheet-list .mk.marked { background: linear-gradient(transparent 50%, #fff176 50%); }
+  @media (prefers-color-scheme: dark) { html[data-skin="normal"]:not([data-theme="light"]) .sheet-list .mk.marked { background: linear-gradient(transparent 55%, rgba(255, 214, 0, .45) 55%); } }
+  html[data-skin="normal"][data-theme="dark"] .sheet-list .mk.marked { background: linear-gradient(transparent 55%, rgba(255, 214, 0, .45) 55%); }
+  html[data-skin="future"] .sheet-list .mk.marked { background: linear-gradient(transparent 62%, rgba(0, 229, 255, .45) 62%); text-shadow: 0 0 8px rgba(0, 229, 255, .8); }
+  html[data-skin="game"] .sheet-list .mk.marked::before { content: "★"; color: var(--accent); margin-right: 4px; }
+  html[data-skin="paper"] .sheet-list .mk.marked { background: linear-gradient(transparent 82%, rgba(43, 42, 51, .55) 82%, rgba(43, 42, 51, .55) 92%, transparent 92%); }
+  /* シートに隠れている答えの線は見せない（線の長さで答えが分からないように） */
+  .sheet-list li:not(.peek) .a.covered .mk.marked { background: none !important; text-shadow: none !important; }
+  .sheet-list li:not(.peek) .a.covered .mk.marked::before { visibility: hidden; }
   .sheet-empty { padding: 18px 2px; opacity: .7; }
   .sheet-list .q.def { font-weight: 500; font-size: .9rem; }
   .sheet-list .a { color: var(--sheet-ink); font-weight: 700; overflow-wrap: anywhere; transition: color .12s; }
@@ -1041,6 +1081,16 @@
         <button class="secondary pick-btn" id="spanAllBtn">全範囲</button>
       </div>
     </div>
+    <div class="card" id="srsCard">
+      <h2>復習（忘却曲線）</h2>
+      <div class="srs-bar" id="srsBar"><i class="due"></i><i class="learn"></i><i class="done"></i></div>
+      <div class="srs-legend" id="srsLegend"></div>
+      <div class="row" style="margin-top:12px">
+        <label class="chip"><input type="checkbox" id="dueOnlyChk"><span>今日の復習だけ</span></label>
+        <label class="chip" id="testSrsChip"><input type="checkbox" id="testSrsChk"><span>テストでも使う</span></label>
+      </div>
+      <p class="note" id="srsNote"></p>
+    </div>
     <div class="card" id="countCard">
       <h2>問題数</h2>
       <div class="row" style="align-items:center">
@@ -1052,10 +1102,10 @@
     <button class="block" id="startBtn" data-game="たたかう">テスト開始</button>
     <p id="setupErr" class="err"></p>
     <div class="card" style="margin-top:14px">
-      <h2>苦手データ</h2>
+      <h2>学習記録</h2>
       <p class="note" id="weakInfo"></p>
       <div class="row">
-        <button class="danger" id="resetBtn">苦手データをリセット</button>
+        <button class="danger" id="resetBtn">学習記録をリセット</button>
         <button class="secondary" id="reloadBtn">CSVを読み込み直す</button>
       </div>
     </div>
@@ -1084,6 +1134,7 @@
       <div class="flip" id="flip" tabindex="0" role="button" aria-label="カードをめくる">
         <div class="flip-inner">
           <div class="face front">
+            <div class="face-tag" id="frontTag"></div>
             <div class="face-label" id="frontLabel"></div>
             <div class="face-main" id="frontText"></div>
             <div class="face-hint" id="frontHint"></div>
@@ -1096,10 +1147,7 @@
         </div>
       </div>
       <p class="note flip-note" id="flipNote">タップしてめくる</p>
-      <div class="actions" id="cardActions">
-        <button class="danger" id="cardNgBtn">まだ</button>
-        <button id="cardOkBtn">覚えた</button>
-      </div>
+      <div id="cardGrades"></div>
     </div>
     <button class="secondary block" id="cardQuitBtn">やめて結果を見る</button>
   </section>
@@ -1117,7 +1165,7 @@
       </div>
     </div>
     <div class="card">
-      <p class="note" style="margin:0 0 6px">赤い文字が答え。シートのつまみを上下に動かすか、スクロールして確かめよう。シートより上の項目をタップすると線を引けます（もう一度で消える）。シートに隠れた項目をタップすると、その答えだけ見えます。</p>
+      <p class="note" style="margin:0 0 6px">赤い文字が答え。シートのつまみを上下に動かすか、スクロールして確かめよう。シートより上の項目は、タップした方（問題か答え）に線を引けます（もう一度で消える）。シートに隠れた項目をタップすると、その答えだけ見えます。</p>
       <ol class="sheet-list" id="sheetList"></ol>
     </div>
     <div class="red-sheet" id="redSheet"><div class="red-sheet-handle" id="sheetHandle">≡ 赤シート</div></div>
@@ -1226,6 +1274,7 @@ function onLoaded(text, source) {
   }
   $('loadStatus').textContent = `${source} から ${words.length} ${subject.unit === '単語' ? '語' : '個'}を読み込みました。`;
   $('filePick').classList.add('hidden');
+  migrateMiss();
   buildParagraphs();
   updateSetup();
   // 教材を切り替えたときは、スクロール位置をそのままにする
@@ -1259,18 +1308,140 @@ $('fileInput').addEventListener('change', e => {
   e.target.value = '';
 });
 
-// ---------- 苦手データ ----------
-function loadMiss() {
-  try { return JSON.parse(localStorage.getItem(subject.missKey)) || {}; } catch { return {}; }
-}
-function saveMiss(m) {
-  try { localStorage.setItem(subject.missKey, JSON.stringify(m)); } catch { /* 保存不可の環境 */ }
-}
+// ---------- 忘却曲線（間隔反復） ----------
+// 単語ごとに「次に復習する日」を記録し、答えの手応えに合わせて間隔を伸ばしたり戻したりする。
+// grade: 0 = ✕ 全然 / 1 = △ 惜しい / 2 = ○ 正解 / 3 = ◎ 余裕
 const wordKey = w => (isKanji() ? `${w.english}|${w.japanese}` : w.english).toLowerCase();
-function addMiss(w) {
-  const m = loadMiss();
-  m[wordKey(w)] = (m[wordKey(w)] || 0) + 1;
-  saveMiss(m);
+const srsKey = () => `vocabTest.srs.${subject.id}`;
+let srsMem = { id: null, db: {} };
+function srsDb() {
+  if (srsMem.id !== subject.id) {
+    let db = {};
+    try { db = JSON.parse(localStorage.getItem(srsKey())) || {}; } catch { /* 読めなければ空から */ }
+    srsMem = { id: subject.id, db };
+  }
+  return srsMem.db;
+}
+function saveSrs() {
+  try { localStorage.setItem(srsKey(), JSON.stringify(srsMem.db)); } catch { /* 保存不可の環境 */ }
+}
+
+// 日付は朝4時で切り替える（夜ふかしして0時を過ぎても、同じ日として数える）
+function today() {
+  const d = new Date();
+  return Math.floor((d.getTime() - d.getTimezoneOffset() * 60000 - 4 * 3600000) / 86400000);
+}
+
+const EASE_START = 2.5, EASE_MIN = 1.3, IVL_MAX = 365, MATURE_IVL = 21;
+// 記録 rec に grade をつけたあとの記録を返す（ivl: 次の復習までの日数、ease: 間隔の伸び率）
+function schedule(rec, grade, t) {
+  const r = rec ? { ...rec } : { ivl: 0, ease: EASE_START, reps: 0, lapses: 0, due: t, last: null };
+  const elapsed = r.last == null ? 0 : Math.max(0, t - r.last);
+  if (grade === 0) {
+    // 忘れていた: 最初からやり直し（今日もう一度）
+    if (r.ivl > 0) { r.lapses++; r.ease = Math.max(EASE_MIN, r.ease - .2); }
+    r.ivl = 0;
+  } else if (grade === 1) {
+    // 惜しい: 1日後にもう一度
+    if (r.ivl > 0) r.ease = Math.max(EASE_MIN, r.ease - .15);
+    r.ivl = 1;
+  } else if (r.ivl === 0) {
+    // 初めて、またはやり直し中に覚えられた
+    r.ivl = grade === 3 ? 4 : 1;
+  } else {
+    // 覚えていた: 間隔を伸ばす。予定より早く復習したときは、実際にあいた日数をもとにする
+    const early = elapsed < r.ivl;
+    const base = Math.max(1, early ? elapsed : r.ivl + (elapsed - r.ivl) / 2);
+    const next = Math.round(base * r.ease * (grade === 3 ? 1.8 : 1));
+    r.ivl = Math.min(IVL_MAX, Math.max(next, early ? r.ivl : r.ivl + (grade === 3 ? 2 : 1)));
+  }
+  if (grade === 3) r.ease += .15;
+  r.reps++;
+  r.last = t;
+  r.due = t + r.ivl;
+  return r;
+}
+
+function srsGrade(w, grade) {
+  const db = srsDb(), k = wordKey(w);
+  db[k] = schedule(db[k], grade, today());
+  saveSrs();
+}
+
+// due: 今日の復習 / learn: 学習中 / done: 定着 / new: 未学習
+function srsStatus(w, t = today()) {
+  const r = srsDb()[wordKey(w)];
+  if (!r) return 'new';
+  if (r.due <= t) return 'due';
+  return r.ivl >= MATURE_IVL ? 'done' : 'learn';
+}
+
+const ivlLabel = d => d <= 0 ? 'もう一度' : d < 30 ? `${d}日後` : d < 365 ? `約${Math.round(d / 30)}か月後` : '約1年後';
+
+// 復習日が来たもの（期限が古い順）→ 未学習 → まだ復習日でないもの（近い順）の順に n 個選ぶ
+function srsPick(pool, n) {
+  const db = srsDb(), t = today();
+  const ranked = shuffle(pool).map(w => {
+    const r = db[wordKey(w)];
+    return { w, group: !r ? 1 : r.due <= t ? 0 : 2, due: r ? r.due : 0 };
+  });
+  ranked.sort((a, b) => a.group - b.group || a.due - b.due);
+  return shuffle(ranked.slice(0, n).map(x => x.w));
+}
+
+// 以前の「間違えた回数」を引き継ぐ。回数が多い単語ほど、今日の復習の先頭に来る
+function migrateMiss() {
+  let old = null;
+  try { old = JSON.parse(localStorage.getItem(subject.missKey)); } catch { /* 読めなければ何もしない */ }
+  if (!old || typeof old !== 'object') return;
+  const db = srsDb(), t = today();
+  for (const [k, n] of Object.entries(old)) {
+    if (!n || db[k]) continue;
+    db[k] = { ivl: 0, ease: Math.max(EASE_MIN, EASE_START - .1 * n), reps: 0, lapses: n, due: t - Math.min(n, 30), last: null };
+  }
+  saveSrs();
+  try { localStorage.removeItem(subject.missKey); } catch { /* noop */ }
+}
+
+// 4段階の評価ボタン。showIvl のときは、それぞれの次の復習日の目安も出す
+const GRADES = [
+  { g: 0, mark: '✕', label: '全然', cls: 'danger' },
+  { g: 1, mark: '△', label: '惜しい', cls: 'secondary' },
+  { g: 2, mark: '○', label: '正解', cls: '' },
+  { g: 3, mark: '◎', label: '余裕', cls: 'secondary' },
+];
+function gradeButtons(w, showIvl, onPick) {
+  const box = document.createElement('div');
+  box.className = 'grade-btns';
+  const rec = srsDb()[wordKey(w)], t = today();
+  for (const G of GRADES) {
+    const b = document.createElement('button');
+    if (G.cls) b.className = G.cls;
+    b.dataset.grade = G.g;
+    b.innerHTML = `<b>${G.mark} ${G.label}</b>` + (showIvl ? `<small>${ivlLabel(schedule(rec, G.g, t).ivl)}</small>` : '');
+    b.addEventListener('click', () => {
+      box.querySelectorAll('button').forEach(x => { x.disabled = true; });
+      onPick(G.g);
+    });
+    box.appendChild(b);
+  }
+  return box;
+}
+
+const testSrsOn = () => $('testSrsChk').checked;
+try { $('testSrsChk').checked = localStorage.getItem('vocabTest.testSrs') !== '0'; } catch { $('testSrsChk').checked = true; }
+$('testSrsChk').addEventListener('change', e => {
+  try { localStorage.setItem('vocabTest.testSrs', e.target.checked ? '1' : '0'); } catch { /* noop */ }
+  updateSetup();
+});
+$('dueOnlyChk').addEventListener('change', () => updateSetup());
+
+function renderSrs(range) {
+  const t = today(), c = { due: 0, learn: 0, done: 0, new: 0 };
+  for (const w of range) c[srsStatus(w, t)]++;
+  for (const k of ['due', 'learn', 'done']) $('srsBar').querySelector('.' + k).style.width = (range.length ? c[k] / range.length * 100 : 0) + '%';
+  $('srsLegend').innerHTML = [['due', '今日の復習'], ['learn', '学習中'], ['done', '定着'], ['new', '未学習']]
+    .map(([k, label]) => `<span><i class="${k}"></i>${label} ${c[k]}</span>`).join('');
 }
 
 // ---------- 画面 ----------
@@ -1403,7 +1574,8 @@ function rangePool() {
   return pool;
 }
 
-const selectedPool = rangePool;
+// 「今日の復習だけ」のときは、範囲の中で復習日が来た単語だけにする
+const selectedPool = () => $('dueOnlyChk').checked ? rangePool().filter(w => srsStatus(w) === 'due') : rangePool();
 
 $('allCountChk').addEventListener('change', () => updateSetup());
 $('spanFrom').addEventListener('input', () => updateSetup());
@@ -1431,7 +1603,7 @@ function updateSetup() {
   const fmt = getFormat();
   let note = '';
   if (mode === 'e2j') note = `${formatLabel('letters')}は答えが英語のモード（日→英など）で使えます。`;
-  if (mode === 'e2j' && fmt === 'input') note = '日本語の記述は表記揺れがあるので、正解を見て自分で○×を付けます。';
+  if (mode === 'e2j' && fmt === 'input') note = '日本語の記述は表記揺れがあるので、正解を見て自分で4段階で採点します。';
   if (mode !== 'e2j' && fmt === 'input') note = subject.rangeType === 'span'
     ? '大文字・小文字は区別しません。～・A・B などの記号は省略可、( ) 内は書いても書かなくてもOK、[ ] はどちらか一方でOK。'
     : '英単語の記述は大文字・小文字を区別しません。';
@@ -1443,6 +1615,7 @@ function updateSetup() {
     : '';
   $('formatNote').textContent = note;
 
+  renderSrs(rangePool());
   const pool = selectedPool();
   $('poolInfo').textContent = `対象 ${pool.length} 語`;
   $('countInput').max = pool.length;
@@ -1457,10 +1630,17 @@ function updateSetup() {
   $('countCard').classList.toggle('hidden', study === 'sheet');
   $('startBtn').textContent = { test: 'テスト開始', card: 'カードをめくる', sheet: '赤シートで覚える' }[study];
   $('startBtn').dataset.game = { test: 'たたかう', card: 'カードを めくる', sheet: 'あかシートを つかう' }[study];
-  const miss = loadMiss();
-  const weak = Object.values(miss).filter(v => v > 0).length;
-  $('weakInfo').textContent = weak
-    ? `間違えた記録のある単語: ${weak} 語（苦手な単語ほど出やすくなります）`
+  $('testSrsChip').classList.toggle('hidden', study !== 'test');
+  let srsNote = {
+    test: testSrsOn() ? 'テストの正解・不正解も記録して、復習日が来た単語から出します。' : 'テストは記録せず、ランダムに出します（よく忘れる単語は少し出やすくなります）。',
+    card: 'カードめくりの結果は記録して、復習日が来た単語から出します。',
+    sheet: '赤シートは記録しません。',
+  }[study];
+  if ($('dueOnlyChk').checked && !pool.length) srsNote = 'この範囲に今日の復習はありません。';
+  $('srsNote').textContent = srsNote;
+  const db = srsDb(), t = today(), keys = Object.keys(db);
+  $('weakInfo').textContent = keys.length
+    ? `この教材で記録のある${subject.unit}: ${keys.length}（今日の復習 ${keys.filter(k => db[k].due <= t).length}）`
     : 'まだ記録はありません。';
 }
 
@@ -1476,11 +1656,11 @@ function shuffle(a) {
   return a;
 }
 
-// 苦手度で重み付けした非復元抽出（重みが大きいほど先に選ばれやすい）
+// 忘却曲線を使わないテスト用: ランダムに選ぶが、忘れた回数が多い単語ほど少し出やすくする
 function weightedPick(pool, n) {
-  const miss = loadMiss();
+  const db = srsDb();
   return pool
-    .map(w => ({ w, k: Math.pow(Math.random(), 1 / (1 + 2 * (miss[wordKey(w)] || 0))) }))
+    .map(w => ({ w, k: Math.pow(Math.random(), 1 / (1 + 2 * ((db[wordKey(w)] || {}).lapses || 0))) }))
     .sort((a, b) => b.k - a.k)
     .slice(0, n)
     .map(x => x.w);
@@ -1498,7 +1678,7 @@ function modesFor(list, mode, format) {
 
 function startSession(mode, format, list) {
   const modes = modesFor(list, mode, format);
-  session = { kind: 'test', mode, format, queue: list, modes, index: 0, results: [], expGained: 0, levelStart: levelOf(loadExp()) };
+  session = { kind: 'test', srs: testSrsOn(), mode, format, queue: list, modes, index: 0, results: [], expGained: 0, levelStart: levelOf(loadExp()) };
   sfx('start');
   lastSettings = { mode, format };
   show('quiz');
@@ -1510,12 +1690,12 @@ $('startBtn').addEventListener('click', () => {
   let n = $('allCountChk').checked ? pool.length : parseInt($('countInput').value, 10);
   if (!n || n < 1) n = pool.length;
   n = Math.min(n, pool.length);
-  if (!pool.length) { $('setupErr').textContent = '出題する単語が選ばれていません。'; return; }
+  if (!pool.length) { $('setupErr').textContent = $('dueOnlyChk').checked ? '今日の復習はありません。' : '出題する単語が選ばれていません。'; return; }
   $('setupErr').textContent = '';
   const study = getStudy();
   if (study === 'sheet') startSheet(pool);
-  else if (study === 'card') startCards(getMode(), weightedPick(pool, n));
-  else startSession(getMode(), getFormat(), weightedPick(pool, n));
+  else if (study === 'card') startCards(getMode(), srsPick(pool, n));
+  else startSession(getMode(), getFormat(), testSrsOn() ? srsPick(pool, n) : weightedPick(pool, n));
 });
 
 const promptOf = (w, mode) => mode === 'e2j' ? w.english : mode === 'j2e' ? w.japanese : w.definition;
@@ -1796,10 +1976,10 @@ function detailHTML(w) {
   </div>`;
 }
 
-function judge(ok, given) {
+function judge(ok, given, grade = ok ? 2 : 0) {
   const w = session.queue[session.index];
   session.results.push({ w, ok, given });
-  if (!ok) addMiss(w);
+  if (session.srs) srsGrade(w, grade);
   const gameMsg = gainExp(ok);
   const fb = $('feedback');
   fb.innerHTML = `<div class="feedback ${ok ? 'ok' : 'ng'}">
@@ -1832,18 +2012,8 @@ function selfJudge(given) {
     ${given === null ? '' : `<div class="detail"><div><b>あなた</b>${esc(given) || '（未入力）'}</div></div>`}
     ${detailHTML(w)}
   </div>`;
-  const acts = document.createElement('div');
-  acts.className = 'actions';
-  const o = document.createElement('button');
-  o.textContent = given === null ? '○ 合ってた' : '○ 正解';
-  o.style.background = 'var(--ok)';
-  const x = document.createElement('button');
-  x.textContent = given === null ? '× 間違えた' : '× 不正解';
-  x.style.background = 'var(--ng)';
-  o.addEventListener('click', () => judge(true, given ?? ''));
-  x.addEventListener('click', () => judge(false, given ?? ''));
-  acts.append(o, x);
-  fb.querySelector('.feedback').appendChild(acts);
+  // 4段階で自己採点。△ 惜しい（漢字の1文字違いなど）は点数では × として数える
+  fb.querySelector('.feedback').appendChild(gradeButtons(w, session.srs, g => judge(g >= 2, given ?? '', g)));
 }
 
 function nextQuestion() {
@@ -1854,7 +2024,9 @@ function nextQuestion() {
 
 // ---------- 結果 ----------
 function showResult() {
-  const res = session.results;
+  const isCard = session.kind === 'card';
+  // カードめくりは同じカードが何度か出るので、最後に答えた結果で数える
+  const res = isCard ? [...new Map(session.results.map(r => [wordKey(r.w), r])).values()] : session.results;
   const total = res.length;
   const correct = res.filter(r => r.ok).length;
   const rate = total ? Math.round(correct / total * 100) : 0;
@@ -1869,7 +2041,6 @@ function showResult() {
   scoreCard.appendChild(st);
   sfx(rate >= 80 ? 'good' : rate >= 50 ? 'mid' : 'bad');
   sfx('stamp', 1);
-  const isCard = session.kind === 'card';
   // レトロゲーム: 獲得した経験値とレベルアップ（カードめくりは経験値なし）
   const lvNow = levelOf(loadExp());
   $('gameResult').innerHTML = isCard ? `＊ ${correct} まいの カードを おぼえた！` : `＊ けいけんちを ${session.expGained} てにいれた！` +
@@ -1911,7 +2082,7 @@ $('retryWrongBtn').addEventListener('click', () => {
 
 // ---------- カードめくり ----------
 function startCards(mode, list) {
-  session = { kind: 'card', mode, format: 'card', queue: list, modes: modesFor(list, mode, 'card'), index: 0, results: [], expGained: 0, levelStart: levelOf(loadExp()) };
+  session = { kind: 'card', srs: true, mode, format: 'card', queue: list.slice(), modes: modesFor(list, mode, 'card'), index: 0, results: [], expGained: 0, levelStart: levelOf(loadExp()) };
   sfx('start');
   show('card');
   renderCard();
@@ -1922,7 +2093,11 @@ function renderCard() {
   const w = queue[index];
   const mode = session.curMode = session.modes[index];
   $('cardProg').textContent = `${index + 1} / ${queue.length} 枚`;
-  $('cardScore').textContent = `覚えた ${session.results.filter(r => r.ok).length}`;
+  const remembered = [...new Map(session.results.map(r => [wordKey(r.w), r.ok])).values()].filter(Boolean).length;
+  $('cardScore').textContent = `覚えた ${remembered}`;
+  const status = srsStatus(w);
+  $('frontTag').textContent = { due: '復習', learn: '学習中', done: '定着', new: 'はじめて' }[status];
+  $('frontTag').dataset.s = status;
   $('cardBar').style.width = (index / queue.length * 100) + '%';
   // 次のカードの答えが一瞬見えないよう、表に戻すときはアニメーションしない
   const flip = $('flip');
@@ -1936,7 +2111,10 @@ function renderCard() {
   $('frontHint').textContent = isKanji() && w.definition ? w.definition : '';
   $('backText').textContent = answerOf(w, mode);
   $('backDetail').innerHTML = detailHTML(w);
-  $('cardOkBtn').disabled = $('cardNgBtn').disabled = true;
+  const grades = gradeButtons(w, true, g => answerCard(g));
+  grades.id = 'cardGrades';
+  grades.querySelectorAll('button').forEach(b => { b.disabled = true; });
+  $('cardGrades').replaceWith(grades);
   $('flipNote').textContent = 'タップしてめくる';
 }
 
@@ -1945,17 +2123,19 @@ function flipCard() {
   flip.classList.toggle('flipped');
   sfx('flip');
   if (flip.classList.contains('flipped')) {
-    $('cardOkBtn').disabled = $('cardNgBtn').disabled = false;
-    $('flipNote').textContent = '覚えていたら「覚えた」、自信がなければ「まだ」';
+    $('cardGrades').querySelectorAll('button').forEach(b => { b.disabled = false; });
+    $('flipNote').textContent = 'どのくらい覚えていたか選んでね（✕ はこのあともう一度出ます）';
   }
 }
 
-function answerCard(ok) {
-  if ($('cardOkBtn').disabled) return;
+function answerCard(grade) {
+  if (!$('flip').classList.contains('flipped')) return;
   const w = session.queue[session.index];
-  session.results.push({ w, ok });
-  if (!ok) addMiss(w);
-  sfx(ok ? 'ok' : 'ng');
+  srsGrade(w, grade);
+  session.results.push({ w, ok: grade >= 2, grade });
+  sfx(grade >= 2 ? 'ok' : 'ng');
+  // ✕ のカードは、このあともう一度出す
+  if (grade === 0) { session.queue.push(w); session.modes.push(session.curMode); }
   session.index++;
   if (session.index < session.queue.length) renderCard();
   else showResult();
@@ -1965,12 +2145,11 @@ $('flip').addEventListener('click', flipCard);
 $('flip').addEventListener('keydown', e => {
   if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); flipCard(); }
 });
-$('cardOkBtn').addEventListener('click', () => answerCard(true));
-$('cardNgBtn').addEventListener('click', () => answerCard(false));
+// キーボード: スペースでめくる、1〜4 で評価（← は ✕、→ は ○）
 document.addEventListener('keydown', e => {
   if ($('cardView').classList.contains('hidden') || e.target.tagName === 'INPUT') return;
-  if (e.key === 'ArrowRight') answerCard(true);
-  else if (e.key === 'ArrowLeft') answerCard(false);
+  const g = { 1: 0, 2: 1, 3: 2, 4: 3, ArrowLeft: 0, ArrowRight: 2 }[e.key];
+  if (g !== undefined) answerCard(g);
   else if (e.key === ' ' && e.target === document.body) { e.preventDefault(); flipCard(); }
 });
 $('cardQuitBtn').addEventListener('click', () => {
@@ -1982,14 +2161,26 @@ $('cardQuitBtn').addEventListener('click', () => {
 // 赤いシートの上端より下にある答えを隠す。シートは画面に固定で、つまみで上下に動かせる
 let sheet = { list: [], mode: 'e2j', top: 0, on: true, onlyMarked: false };
 
-// 線を引いた単語（教材ごとに端末へ保存）
+// 線（教材ごとに端末へ保存）。英語・意味・英英定義の欄ごとに別々に引ける
 const marksKey = () => `vocabTest.marks.${subject.id}`;
+const MARK_FIELDS = ['english', 'japanese', 'definition'];
 function loadMarks() {
-  try { return new Set(JSON.parse(localStorage.getItem(marksKey())) || []); } catch { return new Set(); }
+  let raw = null;
+  try { raw = JSON.parse(localStorage.getItem(marksKey())); } catch { /* 読めなければ空 */ }
+  if (Array.isArray(raw)) raw = { english: raw }; // 以前の形式（問題側の線だけ）
+  const m = {};
+  for (const f of MARK_FIELDS) m[f] = new Set((raw && raw[f]) || []);
+  return m;
 }
-function saveMarks(set) {
-  try { localStorage.setItem(marksKey(), JSON.stringify([...set])); } catch { /* noop */ }
+function saveMarks(m) {
+  const out = {};
+  for (const f of MARK_FIELDS) out[f] = [...m[f]];
+  try { localStorage.setItem(marksKey(), JSON.stringify(out)); } catch { /* noop */ }
 }
+// 今のモードで、問題・答えに出ている欄
+const qField = mode => mode === 'e2j' ? 'english' : mode === 'j2e' ? 'japanese' : 'definition';
+const aField = mode => mode === 'e2j' ? 'japanese' : 'english';
+const hasMark = (m, w) => m[qField(sheet.mode)].has(wordKey(w)) || m[aField(sheet.mode)].has(wordKey(w));
 
 function startSheet(pool) {
   sheet.mode = getMode() === 'mix' ? 'e2j' : getMode();
@@ -2006,8 +2197,8 @@ function renderSheet() {
   const ol = $('sheetList');
   ol.innerHTML = '';
   const marks = loadMarks();
-  const markedInList = sheet.list.filter(w => marks.has(wordKey(w))).length;
-  const shown = sheet.onlyMarked ? sheet.list.filter(w => marks.has(wordKey(w))) : sheet.list;
+  const markedInList = sheet.list.filter(w => hasMark(marks, w)).length;
+  const shown = sheet.onlyMarked ? sheet.list.filter(w => hasMark(marks, w)) : sheet.list;
   $('sheetInfo').textContent = `${isKanji() ? '' : MODE_LABEL[sheet.mode] + '・'}${shown.length} 個` + (markedInList ? `・線 ${markedInList}` : '');
   $('sheetMarkOnlyBtn').classList.toggle('on', sheet.onlyMarked);
   $('sheetMarkOnlyBtn').textContent = sheet.onlyMarked ? 'すべて表示' : '線だけ';
@@ -2022,22 +2213,28 @@ function renderSheet() {
     const no = document.createElement('span'); no.className = 'no';
     no.textContent = subject.rangeType === 'block' ? `No.${words.indexOf(w) + 1}` : w.paragraph ? `${subject.rangeLabel} ${w.paragraph}` : '';
     const q = document.createElement('span'); q.className = 'q' + (sheet.mode === 'd2e' ? ' def' : '');
-    const qt = document.createElement('span'); qt.className = 'qt';
+    const qt = document.createElement('span'); qt.className = 'mk';
     qt.textContent = promptOf(w, sheet.mode) + (isKanji() && w.definition ? `（${w.definition}）` : '');
     q.appendChild(qt);
     const a = document.createElement('span'); a.className = 'a';
-    a.textContent = answerOf(w, sheet.mode);
+    const at = document.createElement('span'); at.className = 'mk';
+    at.textContent = answerOf(w, sheet.mode);
+    a.appendChild(at);
     li.append(no, q, a);
-    li.classList.toggle('marked', marks.has(wordKey(w)));
-    // シートに隠れている項目はのぞき見、シートの外に出ている項目は線を引く／消す
-    li.addEventListener('click', () => {
+    const k = wordKey(w), qf = qField(sheet.mode), af = aField(sheet.mode);
+    qt.classList.toggle('marked', marks[qf].has(k));
+    at.classList.toggle('marked', marks[af].has(k));
+    // シートに隠れている項目はのぞき見。シートの外に出ている項目は、タップした側（問題か答え）に線を引く／消す
+    li.addEventListener('click', e => {
       if (a.classList.contains('covered')) { li.classList.toggle('peek'); return; }
       li.classList.remove('peek');
-      const m = loadMarks(), k = wordKey(w);
-      if (m.has(k)) m.delete(k); else m.add(k);
+      const onAnswer = !!e.target.closest('.a') || e.clientX >= a.getBoundingClientRect().left - 7;
+      const f = onAnswer ? af : qf;
+      const m = loadMarks();
+      if (m[f].has(k)) m[f].delete(k); else m[f].add(k);
       saveMarks(m);
-      li.classList.toggle('marked', m.has(k));
-      const n = sheet.list.filter(x => m.has(wordKey(x))).length;
+      (onAnswer ? at : qt).classList.toggle('marked', m[f].has(k));
+      const n = sheet.list.filter(x => hasMark(m, x)).length;
       $('sheetInfo').textContent = $('sheetInfo').textContent.replace(/・線 \d+$/, '') + (n ? `・線 ${n}` : '');
     });
     ol.appendChild(li);
@@ -2098,7 +2295,7 @@ $('sheetClearMarksBtn').addEventListener('click', () => {
   clearTimeout(clearMarksArmed);
   clearMarksArmed = null;
   btn.textContent = '線を消す';
-  saveMarks(new Set());
+  try { localStorage.removeItem(marksKey()); } catch { /* noop */ }
   sheet.onlyMarked = false;
   renderSheet();
 });
@@ -2110,14 +2307,15 @@ $('resetBtn').addEventListener('click', () => {
   const btn = $('resetBtn');
   if (!resetTimer) {
     btn.textContent = 'もう一度押すとリセット';
-    resetTimer = setTimeout(() => { resetTimer = null; btn.textContent = '苦手データをリセット'; }, 3000);
+    resetTimer = setTimeout(() => { resetTimer = null; btn.textContent = '学習記録をリセット'; }, 3000);
     return;
   }
   clearTimeout(resetTimer);
   resetTimer = null;
-  try { localStorage.removeItem(subject.missKey); } catch { /* noop */ }
+  try { localStorage.removeItem(srsKey()); localStorage.removeItem(subject.missKey); } catch { /* noop */ }
+  srsMem.id = null;
   btn.textContent = 'リセットしました';
-  setTimeout(() => { btn.textContent = '苦手データをリセット'; }, 1500);
+  setTimeout(() => { btn.textContent = '学習記録をリセット'; }, 1500);
   updateSetup();
 });
 $('reloadBtn').addEventListener('click', () => {
