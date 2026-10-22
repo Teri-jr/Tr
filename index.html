@@ -140,12 +140,24 @@ main {
     grid-template-areas: "debug debug debug" "table now side";
     grid-template-rows: auto 1fr;
   }
-  /* 列ごとに画面内に固定して、それぞれの中だけでスクロール(時刻表を動かしてもタイマーが隠れない) */
-  .col, #tableCard {
-    position: sticky; top: 12px; align-self: start;
-    max-height: calc(100vh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
-    overflow: auto; -webkit-overflow-scrolling: touch;
+  /* ページ全体は画面ぴったりの高さにしてスクロールさせず、3つの列それぞれの中だけでスクロールさせる */
+  html, body { overscroll-behavior: none; }
+  body {
+    height: 100vh; height: 100dvh; min-height: 0;
+    display: flex; flex-direction: column; overflow: hidden;
   }
+  header.board { flex: none; }
+  main {
+    flex: 1; min-height: 0; width: 100%;
+    padding-bottom: 12px;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .col, #tableCard {
+    position: static; align-self: stretch; min-height: 0; max-height: none;
+    overflow: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  }
+  .col > * { flex: none; }
+  .col .btnrow button:not(.big) { padding: 0 6px; font-size: 14px; white-space: nowrap; min-width: 0; }
   .col { display: flex; flex-direction: column; gap: 12px; }
   .col-now { grid-area: now; }
   .col-side { grid-area: side; }
@@ -420,14 +432,14 @@ button.armed { background: var(--late); color: #fff; border-color: transparent; 
     <section class="card" id="dataCard">
       <h2>データの書き出し・読み込み</h2>
       <div class="btnrow" style="margin-top:0">
-        <button id="exportBtn" class="grow">書き出す(JSON)</button>
+        <button id="exportBtn" class="grow">書き出す</button>
         <button id="shareBtn" class="grow" hidden>共有で送る</button>
         <button id="importBtn" class="grow">読み込む</button>
       </div>
       <input type="file" id="importFile" hidden>
       <div id="importConfirm"></div>
       <div class="msg" id="dataMsg" role="status"></div>
-      <p class="note">全日付のタスク・実績・設定を1つのファイルにします。読み込むと、ファイルに含まれる日付のデータで上書きされます(含まれない日付はそのまま)。</p>
+      <p class="note">全日付のタスク・実績・設定を1つのファイル(JSON)にします。読み込むと、ファイルに含まれる日付のデータで上書きされます(含まれない日付はそのまま)。</p>
     </section>
 
     <section class="card" id="resetCard">
