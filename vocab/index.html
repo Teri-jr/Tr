@@ -260,7 +260,6 @@
   .tiles.words { display: flex; flex-wrap: wrap; }
   .tiles.words button { padding: 10px 14px; font-size: 1.05rem; font-family: var(--f-display); }
   .answer-box.words { font-family: var(--f-display); font-size: 1.25rem; letter-spacing: .02em; word-break: normal; }
-  #wordPick .chip span { padding: 6px 11px; font-size: .88rem; font-family: var(--f-display); letter-spacing: .02em; }
 
   @keyframes blink { 50% { opacity: 0; } }
   @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
@@ -318,18 +317,6 @@
         <input type="number" id="spanTo" inputmode="numeric">
         <button class="secondary pick-btn" id="spanAllBtn">全範囲</button>
       </div>
-    </div>
-    <div class="card">
-      <h2 id="pickTitle">出題する単語</h2>
-      <div class="row" style="align-items:center">
-        <button class="secondary pick-btn" id="pickAllBtn">全選択</button>
-        <button class="secondary pick-btn" id="pickNoneBtn">全解除</button>
-        <span class="note" id="pickInfo" style="margin:0"></span>
-      </div>
-      <details class="howto" id="pickDetails" style="margin-top:12px">
-        <summary id="pickSummary">単語を1つずつ選ぶ</summary>
-        <div class="row" id="wordPick" style="margin-top:10px"></div>
-      </details>
     </div>
     <div class="card">
       <h2>問題数</h2>
@@ -610,8 +597,6 @@ function applySubject() {
   $('subjectName').textContent = subject.id === 'comm' ? '英語コミュニケーション 新出単語テスト' : `${subject.name} テスト`;
   $('fileHint').textContent = subject.file;
   $('rangeTitle').textContent = `範囲（${subject.rangeLabel}）`;
-  $('pickTitle').textContent = `出題する${subject.unit}`;
-  $('pickSummary').textContent = `${subject.unit}を1つずつ選ぶ`;
   $('lettersLabel').textContent = formatLabel('letters');
   $('inputLabel').textContent = formatLabel('input');
   $('fParagraphLabel').textContent = subject.rangeLabel;
@@ -633,7 +618,6 @@ function applySubject() {
 function switchSubject(sub) {
   subject = sub;
   try { localStorage.setItem(SUBJECT_KEY, sub.id); } catch { /* noop */ }
-  excluded.clear();
   words = [];
   applySubject();
   if (location.protocol === 'file:') {
@@ -719,27 +703,7 @@ function rangePool() {
   return pool;
 }
 
-// 個別に外した単語（新しく追加した単語は最初から選ばれた状態になる）
-const excluded = new Set();
-const selectedPool = () => rangePool().filter(w => !excluded.has(wordKey(w)));
-
-function renderWordPick() {
-  const range = subject.rangeType === 'block' ? rangePool()
-    : rangePool().slice().sort((a, b) => sortParagraphs(a.paragraph || '', b.paragraph || ''));
-  const g = $('wordPick');
-  g.innerHTML = '';
-  for (const w of range) {
-    const c = chip('checkbox', 'pickword', wordKey(w), isKanji() ? `${w.english}・${w.japanese}` : w.english, !excluded.has(wordKey(w)));
-    c.querySelector('input').addEventListener('change', e => {
-      if (e.target.checked) excluded.delete(e.target.value);
-      else excluded.add(e.target.value);
-      updateSetup();
-    });
-    g.appendChild(c);
-  }
-  const n = range.filter(w => !excluded.has(wordKey(w))).length;
-  $('pickInfo').textContent = `${n} / ${range.length} ${subject.unit === '単語' ? '語' : '個'}を選択中`;
-}
+const selectedPool = rangePool;
 
 $('allCountChk').addEventListener('change', () => updateSetup());
 $('spanFrom').addEventListener('input', () => updateSetup());
@@ -750,22 +714,12 @@ $('spanAllBtn').addEventListener('click', () => {
   $('spanTo').value = nums.length ? Math.max(...nums) : '';
   updateSetup();
 });
-$('pickAllBtn').addEventListener('click', () => {
-  rangePool().forEach(w => excluded.delete(wordKey(w)));
-  updateSetup();
-});
-$('pickNoneBtn').addEventListener('click', () => {
-  rangePool().forEach(w => excluded.add(wordKey(w)));
-  $('pickDetails').open = true;
-  updateSetup();
-});
 
 function updateSetup() {
   // 英英定義が1つもない教材では「英英定義 → 英単語」を選べない
   const d2eInput = document.querySelector('input[name=mode][value=d2e]');
   d2eInput.disabled = !words.some(w => w.definition);
   if (d2eInput.disabled && d2eInput.checked) document.querySelector('input[name=mode][value=e2j]').checked = true;
-  renderWordPick();
   const mode = getMode();
   const lettersInput = document.querySelector('input[name=format][value=letters]');
   lettersInput.disabled = mode === 'e2j';
