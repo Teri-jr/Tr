@@ -615,7 +615,7 @@
   }
   main { max-width: 600px; margin: 0 auto; padding: 28px 16px 56px; }
 
-  .hud-head { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 34px 0 30px; text-align: center; }
+  .hud-head { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 72px 0 30px; text-align: center; }
   h1 {
     margin: 0; padding: 6px 18px 4px; font-family: var(--f-serif); font-weight: 800;
     font-size: clamp(2.4rem, 12vw, 3.2rem); letter-spacing: .2em; line-height: 1.2; color: var(--red);
@@ -659,11 +659,15 @@
   }
   .hud-head .jp { font-size: .95rem; letter-spacing: .15em; color: var(--ink); border-bottom: 1px solid var(--ink); padding: 0 4px; }
   /* 「覚えられない…」と鉛筆で書く（左から書き出し、鉛筆が先を走る）→ 書き終わったら「記憶回路」のハンコ */
+  /* 題名の位置に書いて、その上からハンコを押す。押したあとはうっすら透けて残る */
   .memo {
-    position: relative; align-self: flex-start; margin: 0 0 4px 6px; transform: rotate(-4deg);
-    font-family: var(--f-pen); font-weight: 600; font-size: 1.25rem; letter-spacing: .08em; color: #4a4a55;
+    position: absolute; left: 50%; top: 50%; z-index: 0; white-space: nowrap; transform: translate(-50%, -50%) rotate(-3deg);
+    font-family: var(--f-pen); font-weight: 600; font-size: clamp(1.5rem, 7vw, 1.9rem); letter-spacing: .06em; color: #4a4a55;
+    animation: memo-fade .4s ease-out 1.75s both;
   }
+  .title-wrap h1 { position: relative; z-index: 1; }
   .memo-text { display: inline-block; animation: write-in 1s linear .1s both; }
+  @keyframes memo-fade { from { opacity: 1; } to { opacity: .28; } }
   .memo::after {
     content: ""; position: absolute; left: 0; bottom: 4px; width: 36px; height: 88px; pointer-events: none;
     background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 64'%3E%3Cg transform='rotate(28 4 60)'%3E%3Crect x='0' y='2' width='8' height='44' rx='1' fill='%23e8b53a' stroke='%237a5a10'/%3E%3Crect x='0' y='2' width='8' height='7' fill='%23d2d2d2' stroke='%23777'/%3E%3Cpath d='M0 46 L4 60 L8 46 Z' fill='%23f1d3a6' stroke='%237a5a10'/%3E%3Cpath d='M2.6 55 L4 60 L5.4 55 Z' fill='%232b2a33'/%3E%3C/g%3E%3C/svg%3E") no-repeat left bottom / contain;
@@ -1108,8 +1112,8 @@
 </div>
 <main>
   <header class="hud-head">
-    <div class="memo" aria-hidden="true"><span class="memo-text">覚えられない…</span></div>
     <div class="title-wrap">
+      <div class="memo" aria-hidden="true"><span class="memo-text">覚えられない…</span></div>
       <div class="hanko" aria-hidden="true"><i class="hanko-grip"></i><i class="hanko-body"></i></div>
       <h1 data-text="記憶回路">記憶回路</h1>
     </div>
@@ -2792,7 +2796,7 @@ $('sfxChk').addEventListener('change', e => {
 
 // ---------- バージョン・変更履歴 ----------
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
-const APP_VERSION = '1.13';
+const APP_VERSION = '1.14';
 const versionNum = v => String(v).split('.').map(Number);
 const isNewer = (a, b) => {
   const x = versionNum(a), y = versionNum(b);
