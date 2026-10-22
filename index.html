@@ -292,14 +292,30 @@ button.armed { background: var(--late); color: #fff; border-color: transparent; 
 .focus-label .pill { font-size: 18px; padding: 4px 14px; }
 .focus-name { font-size: clamp(20px, 4vw, 36px); font-weight: 800; max-width: 90vw; word-break: break-word; }
 .focus-caption { font-size: 22px; font-weight: 700; opacity: 0.8; margin-bottom: -2vh; }
-.focus-timer { font-size: min(26vw, 40vh); font-weight: 800; line-height: 1; color: var(--board-text); letter-spacing: 0.02em; }
+.focus-timer { font-size: min(24vw, 32vh); font-weight: 800; line-height: 1; color: var(--board-text); letter-spacing: 0.02em; }
+.focus-now { display: flex; align-items: baseline; gap: 14px; }
+.focus-now-label { font-size: 18px; font-weight: 700; opacity: 0.7; }
+.focus-now-time { font-size: min(12vw, 15vh); font-weight: 800; line-height: 1; color: #e8ecf2; letter-spacing: 0.02em; }
 #focus.brk .focus-timer { color: #7ff0de; }
 #focus.over .focus-timer { color: #ff8a7e; }
 .focus-sub { font-size: 16px; opacity: 0.8; }
 .focus-btns { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
 .focus-btns button { min-height: 56px; font-size: 18px; padding: 0 22px; background: #1f2630; color: #e8ecf2; border-color: #2b3440; }
 .focus-btns button.primary { background: var(--accent); color: var(--accent-text); border-color: transparent; min-width: 160px; }
-.focus-clock { position: absolute; top: calc(18px + env(safe-area-inset-top)); left: calc(16px + env(safe-area-inset-left)); font-size: 20px; font-weight: 700; color: var(--board-text); }
+.pause-warn { margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: var(--late-bg); color: var(--late); border: 1px solid var(--late); font-weight: 700; font-size: 14px; }
+.focus-warn { max-width: 560px; font-size: 16px; }
+#focus { overflow-y: auto; }
+/* スマホ横向きなど高さが足りないとき: 見出しを省いて数字を優先 */
+@media (max-height: 520px) {
+  #focus { gap: 1vh; justify-content: flex-start; padding-top: calc(8px + env(safe-area-inset-top)); }
+  .focus-label, .focus-caption { display: none; }
+  .focus-name { font-size: 18px; margin-right: 90px; }
+  .focus-timer { font-size: min(22vw, 34vh); }
+  .focus-now-time { font-size: min(10vw, 15vh); }
+  .focus-btns button { min-height: 44px; }
+}
+#currentCard .btnrow button { white-space: nowrap; }
+#currentCard .btnrow button:not(.big) { padding: 0 8px; }
 #focusClose { position: absolute; top: calc(10px + env(safe-area-inset-top)); right: calc(10px + env(safe-area-inset-right)); background: transparent; color: #e8ecf2; border-color: #3a4452; }
 
 /* ---------- debug ---------- */
@@ -760,9 +776,9 @@ const ARM_MS = 4000;
 let armed = null; // { key, until }
 const armKey = (act, id) => act + ':' + id;
 const isArmed = key => armed && armed.key === key && nowMs() < armed.until;
-function armBtn(act, id, label, cls = '') {
+function armBtn(act, id, label, cls = '', armedLabel = 'もう一度押して確定') {
   const on = isArmed(armKey(act, id));
-  return `<button class="${cls} ${on ? 'armed' : ''}" data-act="${act}" data-id="${id}">${on ? 'もう一度押して確定' : label}</button>`;
+  return `<button class="${cls} ${on ? 'armed' : ''}" data-act="${act}" data-id="${id}">${on ? armedLabel : label}</button>`;
 }
 // 1回目は待機状態にしてfalse、4秒以内の2回目でtrue
 function confirmTap(act, t) {
@@ -862,6 +878,7 @@ function renderCurrent(sc) {
     h += `${pill}
       <div class="cur-name">${esc(t.name)}</div>
       <div class="cur-remain num ${over ? 'over' : ''}" id="curTimer"></div>
+      ${isArmed(armKey('pause', t.id)) ? `<div class="pause-warn">⚠ 本当に一時停止しますか? 止めている間は、後ろの予定がどんどんずれていきます。止めるなら4秒以内にもう一度押してください。</div>` : ''}
       ${paused ? '<div class="cur-sub num" id="curPause"></div>' : pm ? `<div class="cur-sub num">一時停止 合計${pm}分(後ろの時刻に反映済み)</div>` : ''}
       ${phaseLine ? `<div class="cur-sub num">${phaseLine}</div>` : ''}
       <div class="cur-sub num">開始 ${fmt(running.s)} ・ 終了見込み ${fmt(running.target)} ・ ${t.pomo ? '作業' : '所要'} ${effDur(t)}分${adj ? `(${adj > 0 ? '+' : ''}${adj})` : ''}</div>
@@ -871,7 +888,7 @@ function renderCurrent(sc) {
           ? `<button class="primary big grow" data-act="resume" data-id="${t.id}">▶ 再開</button>
              <button class="big" data-act="finish" data-id="${t.id}">終了</button>`
           : `<button class="primary big grow" data-act="finish" data-id="${t.id}">終了</button>
-             ${over ? '' : `<button class="big" data-act="pause" data-id="${t.id}">⏸ 一時停止</button>`}`}
+             ${over ? '' : armBtn('pause', t.id, '⏸ 一時停止', 'big', '本当に止める?')}`}
         <button class="big" data-act="focus" data-id="${t.id}" aria-label="全画面">⛶</button>
       </div>
       <div class="btnrow">
@@ -1097,6 +1114,7 @@ const actions = {
   },
   pause(t) {
     if (taskState(t) !== 'running' || isPaused(t)) return false;
+    if (!confirmTap('pause', t)) return false;
     (t.pauses = t.pauses || []).push({ s: nowMs(), e: null });
   },
   resume(t) {
@@ -1212,21 +1230,23 @@ function renderFocus(sc) {
     sub = `<span id="focusPause"></span>`;
     btns = `<button class="primary" data-act="resume" data-id="${t.id}">▶ 再開</button>`;
   } else if (!over) {
-    btns += `<button data-act="pause" data-id="${t.id}">⏸ 一時停止</button>`;
+    btns += armBtn('pause', t.id, '⏸ 一時停止', '', '本当に止める?(もう一度押す)');
   }
   $('focus').className = paused ? 'paused' : over ? 'over' : brk ? 'brk' : '';
-  setHTML('focus', `<div class="focus-clock num" id="focusClock"></div>
-    <button id="focusClose" aria-label="全画面を閉じる">✕ 閉じる</button>
+  const pauseArmed = isArmed(armKey('pause', t.id));
+  setHTML('focus', `<button id="focusClose" aria-label="全画面を閉じる">✕ 閉じる</button>
     <div class="focus-label">${label}</div>
     <div class="focus-name">${esc(t.name)}</div>
     <div class="focus-caption">${over ? '超過' : 'あと'}</div>
     <div class="focus-timer num" id="focusTimer"></div>
+    <div class="focus-now"><span class="focus-now-label">現在時刻</span><span class="focus-now-time num" id="focusClock"></span></div>
     <div class="focus-sub num">${sub}</div>
+    ${pauseArmed ? `<div class="pause-warn focus-warn">⚠ 本当に一時停止しますか? 止めている間は、後ろの予定がどんどんずれていきます。止めるなら4秒以内にもう一度押してください。</div>` : ''}
     <div class="focus-btns">${btns}<button class="${paused ? '' : 'primary'}" data-act="finish" data-id="${t.id}">終了</button></div>`);
   if (paused) setText('focusPause', `停止して ${fmtSec(pauseElapsed(t))}`);
   // 1秒ごとに変わる部分は文字だけ書き換える(ボタンを作り直さない)
   setText('focusTimer', over ? `+${fmtSec(now - r.target)}` : fmtSec((t.pomo ? ph.e : r.target) - now));
-  setText('focusClock', fmt(now));
+  setText('focusClock', `${fmt(now)}:${pad(Math.floor((now * 60 + 1e-6) % 60))}`);
 }
 $('focus').addEventListener('click', e => { if (e.target.closest('#focusClose')) closeFocus(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && focusOpen) closeFocus(); });
