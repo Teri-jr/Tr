@@ -768,9 +768,9 @@
 <script>
   // 描画前に保存済みのテーマを当てる（ちらつき防止）
   (function () {
-    var skin = 'future';
+    var skin = 'normal';
     try { skin = localStorage.getItem('vocabTest.skin') || skin; } catch (e) {}
-    if (!/^(normal|future|game|paper)$/.test(skin)) skin = 'future';
+    if (!/^(normal|future|game|paper)$/.test(skin)) skin = 'normal';
     document.documentElement.dataset.skin = skin;
     document.querySelectorAll('[data-skin-css]').forEach(function (el) { el.disabled = el.dataset.skinCss !== skin; });
   })();
@@ -789,6 +789,15 @@
     </svg>
     <div class="jp" id="subjectName">英語コミュニケーション 新出単語テスト</div>
   </header>
+
+  <!-- テーマ（設定画面のいちばん上） -->
+  <section id="themeView" class="card">
+    <h2>テーマ</h2>
+    <div class="row" id="skinGroup"></div>
+    <div class="row game-only" style="margin-top:10px">
+      <label class="chip"><input type="checkbox" id="sfxChk"><span>効果音</span></label>
+    </div>
+  </section>
 
   <!-- CSV読み込み -->
   <section id="loadView" class="card">
@@ -848,13 +857,6 @@
       <div class="row">
         <button class="danger" id="resetBtn">苦手データをリセット</button>
         <button class="secondary" id="reloadBtn">CSVを読み込み直す</button>
-      </div>
-    </div>
-    <div class="card">
-      <h2>テーマ</h2>
-      <div class="row" id="skinGroup"></div>
-      <div class="row game-only" style="margin-top:10px">
-        <label class="chip"><input type="checkbox" id="sfxChk"><span>効果音</span></label>
       </div>
     </div>
   </section>
@@ -1026,6 +1028,7 @@ function show(name) {
   for (const v of ['load', 'setup', 'quiz', 'result']) {
     $(v + 'View').classList.toggle('hidden', v !== name && !(v === 'load' && name === 'setup'));
   }
+  $('themeView').classList.toggle('hidden', name !== 'setup' && name !== 'load');
   window.scrollTo(0, 0);
 }
 
@@ -1659,13 +1662,13 @@ setInterval(() => { if (!document.hidden) replayLogo(); }, 30000);
 
 // ---------- テーマ ----------
 const SKINS = [
-  { id: 'normal', name: '通常' },
+  { id: 'normal', name: 'クラシック' },
   { id: 'future', name: '近未来' },
   { id: 'game', name: 'レトロゲーム' },
   { id: 'paper', name: '紙' },
 ];
 const SKIN_KEY = 'vocabTest.skin';
-const currentSkin = () => document.documentElement.dataset.skin || 'future';
+const currentSkin = () => document.documentElement.dataset.skin || 'normal';
 
 function applySkin(id) {
   document.documentElement.dataset.skin = id;
