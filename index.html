@@ -358,6 +358,24 @@ button.danger-fill { background: var(--late); color: #fff; border-color: transpa
 #currentCard .btnrow button:not(.big) { padding: 0 8px; }
 #focusClose { position: absolute; top: calc(10px + env(safe-area-inset-top)); right: calc(10px + env(safe-area-inset-right)); background: transparent; color: #e8ecf2; border-color: #3a4452; }
 
+/* ---------- 区切りの音 ---------- */
+.sub-h { margin: 14px 0 6px; font-size: 13px; color: var(--sub); letter-spacing: 0.06em; }
+.snd-row { padding: 8px 0; border-top: 1px dashed var(--line); }
+.snd-row > label { font-size: 14px; font-weight: 700; color: var(--text); }
+.snd-line { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
+.snd-line select { flex: 1; min-width: 0; }
+.snd-name { font-size: 13px; color: var(--sub); word-break: break-all; }
+.snd-file .snd-line { flex-wrap: wrap; }
+.snd-pick { white-space: nowrap; }
+.snd-file { margin-top: 6px; }
+.snd-file[hidden], .snd-trim[hidden] { display: none; }
+.snd-trim { display: grid; gap: 8px; margin-top: 8px; }
+.snd-wave { width: 100%; height: 70px; border-radius: 10px; background: var(--panel-2); display: block; cursor: pointer; }
+.trim-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.trim-grid label { display: grid; gap: 2px; font-size: 13px; }
+.trim-grid b { color: var(--text); font-size: 15px; }
+.trim-grid input { width: 100%; min-width: 0; min-height: 36px; padding: 0; border: none; background: none; accent-color: var(--accent); }
+
 /* ---------- debug ---------- */
 #debugCard { grid-area: debug; border-style: dashed; border-color: var(--late); }
 #debugCard[hidden] { display: none; }
@@ -496,6 +514,10 @@ button.danger-fill { background: var(--late); color: #fff; border-color: transpa
         <button id="soundToggle" class="grow"></button>
       </div>
       <div class="cur-sub" id="soundState"></div>
+      <h3 class="sub-h">区切りの音</h3>
+      <div id="soundRows"></div>
+      <input type="file" id="soundFile" accept="audio/*,.mp3,.m4a,.wav,.aac,.ogg" hidden>
+      <p class="note">「🎵 自分のファイル」はこの端末の中にだけ保存されます(送信しません・「書き出す」のファイルにも入りません)。波形をタップするとそこから使います。長さは最大10秒です。</p>
       <div class="btnrow">
         <button id="notifyBtn" class="grow" hidden>🔔 通知を有効にする</button>
         <button id="notifyToggle" class="grow" hidden></button>
@@ -709,7 +731,7 @@ const audio = {
     } catch (e) {}
   },
   get ready() { return !!this.ctx && this.ctx.state === 'running'; },
-  // 区切りの音。OFFのときは鳴らさない(テストボタンだけは force で鳴らす)
+  // (旧)周波数の列を鳴らす。今は playKind() を使う
   play(freqs, force) {
     if (!this.ctx || (!force && !soundOn())) return;
     try {
@@ -731,6 +753,131 @@ const audio = {
 function vibrate(pattern) {
   try { if (typeof navigator.vibrate === 'function') navigator.vibrate(pattern); } catch (e) {}
 }
+/* ---------- 区切りの音(3つの場面ごとに選べる) ---------- */
+// 1音: f=周波数, t=開始(秒), d=長さ, type=波形, v=音量, partials=倍音 [倍率, 音量]
+let liveNodes = [];
+function tone({ f, t, d, type = 'sine', v = 0.35, attack = 0.01, partials = [[1, 1]] }) {
+  const c = audio.ctx; if (!c) return;
+  const st = c.currentTime + 0.05 + t;
+  for (const [mul, pv] of partials) {
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = type; o.frequency.value = f * mul;
+    g.gain.setValueAtTime(0.0001, st);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0002, v * pv), st + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, st + d);
+    o.connect(g); g.connect(c.destination);
+    o.start(st); o.stop(st + d + 0.05);
+    liveNodes.push(o);
+  }
+}
+function stopSounds() { for (const n of liveNodes) { try { n.stop(); } catch (e) {} } liveNodes = []; }
+const BEEP = (f, t, d, v = 0.14, type = 'square') => tone({ f, t, d, type, v, attack: 0.004 });
+const BELL = [[1, 1], [2.76, 0.45], [5.4, 0.25], [8.9, 0.12]];
+const SOFT = [[1, 1], [2, 0.3], [3, 0.12]];
+const NT = { C5: 523.25, D5: 587.33, E5: 659.25, G5: 783.99, A5: 880, B5: 987.77, C6: 1046.5, E6: 1318.5, G4: 392 };
+// 番号はお試しページ(sound-test.html)と同じ。1〜8 はタイマー系
+const SOUND_LIB = [
+  { name: 'キッチンタイマー', play: () => { for (let r = 0; r < 3; r++) for (let i = 0; i < 4; i++) BEEP(2400, r * 0.85 + i * 0.1, 0.07); } },
+  { name: 'デジタル腕時計', play: () => { for (let r = 0; r < 4; r++) { BEEP(4000, r * 0.5, 0.05, 0.1); BEEP(4000, r * 0.5 + 0.09, 0.05, 0.1); } } },
+  { name: '時報', play: () => { [0, 1, 2].forEach(i => tone({ f: 440, t: i, d: 0.15, v: 0.4 })); tone({ f: 880, t: 3, d: 1.0, v: 0.4 }); } },
+  { name: '試験終了ブザー', play: () => { tone({ f: 220, t: 0, d: 1.5, type: 'sawtooth', v: 0.16, attack: 0.02 }); tone({ f: 223, t: 0, d: 1.5, type: 'square', v: 0.08, attack: 0.02 }); } },
+  { name: '電子レンジ風', play: () => [0, 0.7, 1.4].forEach(t => BEEP(1600, t, 0.45, 0.12)) },
+  { name: 'ストップウォッチ', play: () => { [0, 0.3, 0.6, 0.9].forEach(t => BEEP(3000, t, 0.06, 0.12)); BEEP(3000, 1.2, 0.8, 0.12); } },
+  { name: 'アラーム(連続)', play: () => { for (let r = 0; r < 4; r++) for (let i = 0; i < 6; i++) BEEP(2600, r * 0.8 + i * 0.075, 0.05, 0.13); } },
+  { name: 'カウントダウン', play: () => { for (let i = 0; i < 5; i++) BEEP(1000, i, 0.12, 0.13, 'sine'); BEEP(1000, 5, 1.2, 0.13, 'sine'); } },
+  { name: '上昇4音(これまでの作業再開)', play: () => [NT.C5, NT.E5, NT.G5, NT.C6].forEach((f, i) => tone({ f, t: i * 0.3, d: 0.26, v: 0.4 })) },
+  { name: '高低4音(これまでの休憩)', play: () => [880, 660, 880, 660].forEach((f, i) => tone({ f, t: i * 0.3, d: 0.26, v: 0.4 })) },
+  { name: '発車ベル', play: () => { for (let i = 0; i < 40; i++) tone({ f: 2100 + (i % 2) * 90, t: i * 0.05, d: 0.06, type: 'square', v: 0.12, attack: 0.003 }); } },
+  { name: '発車メロディ風', play: () => [[NT.E5, 0], [NT.G5, 0.2], [NT.C6, 0.4], [NT.B5, 0.7], [NT.G5, 0.9], [NT.A5, 1.1], [NT.C6, 1.4]].forEach(([f, t]) => tone({ f, t, d: 0.6, v: 0.3, partials: SOFT })) },
+  { name: '車内チャイム', play: () => [NT.G5, NT.C6, NT.E6].forEach((f, i) => tone({ f, t: i * 0.32, d: 1.0, v: 0.3, partials: BELL })) },
+  { name: '学校チャイム', play: () => [NT.E5, NT.C5, NT.D5, NT.G4, NT.G4, NT.D5, NT.E5, NT.C5].forEach((f, i) => tone({ f, t: i * 0.42, d: 0.9, v: 0.28, partials: BELL })) },
+  { name: 'ピンポン', play: () => { tone({ f: NT.E5, t: 0, d: 1.0, v: 0.35, partials: SOFT }); tone({ f: NT.C5, t: 0.45, d: 1.2, v: 0.35, partials: SOFT }); } },
+  { name: '電子アラーム', play: () => { for (let r = 0; r < 2; r++) for (let i = 0; i < 4; i++) BEEP(2000, r * 0.8 + i * 0.12, 0.08, 0.12); } },
+  { name: '目覚まし', play: () => { for (let i = 0; i < 16; i++) tone({ f: i % 2 ? 1400 : 1800, t: i * 0.11, d: 0.1, type: 'triangle', v: 0.3, attack: 0.003 }); } },
+  { name: '木琴', play: () => [NT.C5, NT.E5, NT.G5, NT.C6, NT.E6].forEach((f, i) => tone({ f, t: i * 0.09, d: 0.7, type: 'triangle', v: 0.35, attack: 0.004 })) },
+  { name: 'ソフトベル', play: () => tone({ f: NT.A5, t: 0, d: 2.5, v: 0.35, partials: BELL }) },
+  { name: 'ファンファーレ', play: () => [[NT.C5, 0, 0.15], [NT.C5, 0.17, 0.15], [NT.C5, 0.34, 0.15], [NT.G5, 0.55, 0.9]].forEach(([f, t, d]) => { tone({ f, t, d: d + 0.2, type: 'sawtooth', v: 0.12 }); tone({ f: f * 1.5, t, d: d + 0.2, type: 'sawtooth', v: 0.06 }); }) }
+];
+const SOUND_KINDS = [['brk', '☕ 休憩に入るとき'], ['work', '🍅 作業再開'], ['over', '⏰ 時間切れ']];
+const DEFAULT_SOUNDS = { brk: 9, work: 8, over: 0 }; // 0始まりの番号。'file' は自分のファイル
+const soundChoice = kind => { const c = (store.get('sounds') || {})[kind]; return c === 'file' || (Number.isInteger(c) && c >= 0 && c < SOUND_LIB.length) ? c : DEFAULT_SOUNDS[kind]; };
+function setSoundChoice(kind, v) { const all = { ...(store.get('sounds') || {}) }; all[kind] = v; store.set('sounds', all); }
+
+/* ---------- 自分の音声ファイル(端末の中の IndexedDB に保存。送信しない) ---------- */
+const MAX_CLIP = 10; // 秒
+const idb = {
+  p: null,
+  open() {
+    if (!this.p) this.p = new Promise((res, rej) => {
+      const r = indexedDB.open('studyline', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('sounds');
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+    });
+    return this.p;
+  },
+  async req(mode, fn) {
+    const db = await this.open();
+    return new Promise((res, rej) => { const tx = db.transaction('sounds', mode); const q = fn(tx.objectStore('sounds')); tx.oncomplete = () => res(q && q.result); tx.onerror = () => rej(tx.error); });
+  },
+  get(k) { return this.req('readonly', s => s.get(k)); },
+  put(k, v) { return this.req('readwrite', s => s.put(v, k)); }
+};
+const customSounds = {}; // kind -> { name, data(ArrayBuffer), start, len, buf(AudioBuffer), peaks }
+function ensureCtx() {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!audio.ctx && AC) audio.ctx = new AC();
+  return audio.ctx;
+}
+function decodeAudio(arr) {
+  const c = ensureCtx();
+  return new Promise((res, rej) => { const pr = c.decodeAudioData(arr.slice(0), res, rej); if (pr && pr.then) pr.then(res, rej); });
+}
+function makePeaks(buf) {
+  const ch = buf.getChannelData(0), n = 240, step = Math.max(1, Math.floor(ch.length / n));
+  const peaks = new Float32Array(n); let mx = 0;
+  for (let i = 0; i < n; i++) { let m = 0; for (let j = i * step; j < Math.min(ch.length, (i + 1) * step); j += 16) m = Math.max(m, Math.abs(ch[j])); peaks[i] = m; mx = Math.max(mx, m); }
+  if (mx > 0) for (let i = 0; i < n; i++) peaks[i] /= mx;
+  return peaks;
+}
+function clipRange(cs) {
+  const len = Math.min(cs.len, MAX_CLIP, cs.buf.duration);
+  return { start: Math.max(0, Math.min(cs.start, cs.buf.duration - len)), len };
+}
+function playClip(cs) {
+  const c = audio.ctx; if (!c || !cs || !cs.buf) return false;
+  const { start, len } = clipRange(cs);
+  const src = c.createBufferSource(), g = c.createGain(), t0 = c.currentTime + 0.03;
+  src.buffer = cs.buf; src.connect(g); g.connect(c.destination);
+  // 切り口で「プツッ」と鳴らないよう、最初と最後を少しだけフェード
+  g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(1, t0 + 0.03);
+  g.gain.setValueAtTime(1, t0 + Math.max(0.05, len - 0.08)); g.gain.linearRampToValueAtTime(0, t0 + len);
+  src.start(t0, start, len);
+  liveNodes.push(src);
+  return true;
+}
+// 場面の音を鳴らす。自分のファイルが読めないときは標準の音にする
+function playKind(kind, force) {
+  if (!audio.ctx || (!force && !soundOn())) return;
+  try {
+    if (audio.ctx.state !== 'running') audio.ctx.resume();
+    const ch = soundChoice(kind);
+    if (ch === 'file' && playClip(customSounds[kind])) return;
+    SOUND_LIB[ch === 'file' ? DEFAULT_SOUNDS[kind] : ch].play();
+  } catch (e) {}
+}
+async function loadCustomSounds() {
+  if (!('indexedDB' in window)) return;
+  for (const [kind] of SOUND_KINDS) {
+    try {
+      const rec = await idb.get(kind);
+      if (!rec || !rec.data) continue;
+      const buf = await decodeAudio(rec.data);
+      customSounds[kind] = { ...rec, buf, peaks: makePeaks(buf) };
+      renderSoundRow(kind);
+    } catch (e) { /* 読めなければ標準の音 */ }
+  }
+}
+
 const SIGNALS = {
   brk:  { title: '☕ 休憩', sub: 'おつかれさま。休憩に入りましょう', tones: [880, 660, 880, 660], vib: [300, 150, 300] },
   work: { title: '🍅 作業再開', sub: '次のポモドーロを始めます', tones: [523, 659, 784, 1047], vib: [150, 100, 150, 100, 150] },
@@ -774,7 +921,7 @@ let flashTimer = null;
 function signal(kind, body) {
   const sg = SIGNALS[kind];
   notifyPhase(kind, body || sg.sub);
-  audio.play(sg.tones);
+  playKind(kind);
   vibrate(sg.vib);
   const f = $('flash');
   f.className = kind === 'work' ? '' : kind;
@@ -1085,7 +1232,126 @@ for (const [id, [k, min, max]] of Object.entries(POMO_FIELDS)) {
     syncPomoUI(); render();
   });
 }
-$('soundTest').addEventListener('click', () => { audio.unlock(); audio.play(SIGNALS.work.tones, true); vibrate(100); render(); });
+$('soundTest').addEventListener('click', () => { audio.unlock(); stopSounds(); playKind('work', true); vibrate(100); render(); });
+/* ---------- 区切りの音の設定画面 ---------- */
+const fmtClip = x => `${Math.floor(x / 60)}:${(x % 60).toFixed(1).padStart(4, '0')}`;
+function buildSoundRows() {
+  const opts = sel => `<optgroup label="⏱ タイマー系">${SOUND_LIB.slice(0, 8).map((s, i) => `<option value="${i}">${i + 1}. ${s.name}</option>`).join('')}</optgroup>
+    <optgroup label="その他">${SOUND_LIB.slice(8).map((s, i) => `<option value="${i + 8}">${i + 9}. ${s.name}</option>`).join('')}</optgroup>
+    <option value="file">🎵 自分のファイル</option>`;
+  $('soundRows').innerHTML = SOUND_KINDS.map(([kind, label]) => `
+    <div class="snd-row" data-kind="${kind}">
+      <label for="snd-${kind}">${label}</label>
+      <div class="snd-line"><select id="snd-${kind}" class="snd-sel">${opts()}</select><button class="snd-play" aria-label="${label}の音を試す">▶</button></div>
+      <div class="snd-file" hidden>
+        <div class="snd-line"><button class="snd-pick">🎵 ファイルを選ぶ</button><span class="snd-name"></span></div>
+        <div class="snd-trim" hidden>
+          <canvas class="snd-wave" aria-label="波形。タップした場所から使う"></canvas>
+          <div class="trim-grid">
+            <label>使い始め <b class="num snd-start-t"></b><input type="range" class="snd-start" min="0" step="0.1"></label>
+            <label>長さ <b class="num snd-len-t"></b><input type="range" class="snd-len" min="1" max="10" step="0.5"></label>
+          </div>
+          <div class="cur-sub num snd-range"></div>
+        </div>
+      </div>
+    </div>`).join('');
+  for (const [kind] of SOUND_KINDS) renderSoundRow(kind);
+}
+const soundRow = kind => document.querySelector(`.snd-row[data-kind="${kind}"]`);
+function renderSoundRow(kind) {
+  const row = soundRow(kind); if (!row) return;
+  const ch = soundChoice(kind), cs = customSounds[kind];
+  row.querySelector('.snd-sel').value = String(ch);
+  row.querySelector('.snd-file').hidden = ch !== 'file';
+  row.querySelector('.snd-name').textContent = cs ? cs.name : 'まだ選んでいません(選ぶまでは標準の音が鳴ります)';
+  const trim = row.querySelector('.snd-trim');
+  trim.hidden = !(ch === 'file' && cs && cs.buf);
+  if (trim.hidden) return;
+  const { start, len } = clipRange(cs), dur = cs.buf.duration;
+  const sR = row.querySelector('.snd-start'), lR = row.querySelector('.snd-len');
+  sR.max = Math.max(0, dur - 1).toFixed(1); sR.value = start;
+  lR.max = Math.min(MAX_CLIP, Math.max(1, Math.floor(dur * 2) / 2)); lR.value = len;
+  row.querySelector('.snd-start-t').textContent = fmtClip(start);
+  row.querySelector('.snd-len-t').textContent = len.toFixed(1) + ' 秒';
+  row.querySelector('.snd-range').textContent = `使う範囲: ${fmtClip(start)} 〜 ${fmtClip(start + len)}`;
+  drawClipWave(row.querySelector('.snd-wave'), cs);
+}
+function drawClipWave(cv, cs) {
+  const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+  if (!w) return;
+  cv.width = w * dpr; cv.height = h * dpr;
+  const g = cv.getContext('2d'); g.scale(dpr, dpr); g.clearRect(0, 0, w, h);
+  const { start, len } = clipRange(cs), dur = cs.buf.duration, css = getComputedStyle(document.documentElement);
+  g.fillStyle = css.getPropertyValue('--running-line'); g.globalAlpha = 0.3;
+  g.fillRect(start / dur * w, 0, len / dur * w, h); g.globalAlpha = 1;
+  g.fillStyle = css.getPropertyValue('--sub');
+  const n = cs.peaks.length;
+  for (let i = 0; i < n; i++) { const ph = Math.max(1, cs.peaks[i] * (h - 8)); g.fillRect(i / n * w, (h - ph) / 2, Math.max(1, w / n - 0.5), ph); }
+  g.fillStyle = css.getPropertyValue('--accent');
+  g.fillRect(start / dur * w - 1, 0, 3, h); g.fillRect((start + len) / dur * w - 1, 0, 3, h);
+}
+let saveClipTimer = null;
+function saveClip(kind) {
+  clearTimeout(saveClipTimer);
+  saveClipTimer = setTimeout(() => {
+    const cs = customSounds[kind]; if (!cs) return;
+    idb.put(kind, { name: cs.name, data: cs.data, start: cs.start, len: cs.len }).catch(() => {});
+  }, 400);
+}
+let pickKind = null;
+$('soundRows').addEventListener('change', e => {
+  const row = e.target.closest('.snd-row'); if (!row) return;
+  const kind = row.dataset.kind;
+  if (e.target.classList.contains('snd-sel')) {
+    const v = e.target.value === 'file' ? 'file' : +e.target.value;
+    setSoundChoice(kind, v);
+    renderSoundRow(kind);
+    audio.unlock(); stopSounds(); playKind(kind, true); // 選んだ音をその場で試す
+  }
+});
+$('soundRows').addEventListener('input', e => {
+  const row = e.target.closest('.snd-row'); if (!row) return;
+  const kind = row.dataset.kind, cs = customSounds[kind]; if (!cs) return;
+  if (e.target.classList.contains('snd-start')) cs.start = +e.target.value;
+  else if (e.target.classList.contains('snd-len')) cs.len = +e.target.value;
+  else return;
+  renderSoundRow(kind); saveClip(kind);
+});
+$('soundRows').addEventListener('click', e => {
+  const row = e.target.closest('.snd-row'); if (!row) return;
+  const kind = row.dataset.kind;
+  if (e.target.closest('.snd-play')) { audio.unlock(); stopSounds(); playKind(kind, true); }
+  else if (e.target.closest('.snd-pick')) { pickKind = kind; $('soundFile').value = ''; $('soundFile').click(); }
+  else if (e.target.closest('.snd-wave')) {
+    const cs = customSounds[kind]; if (!cs || !cs.buf) return;
+    const r = e.target.getBoundingClientRect();
+    cs.start = Math.round((e.clientX - r.left) / r.width * cs.buf.duration * 10) / 10;
+    renderSoundRow(kind); saveClip(kind);
+    audio.unlock(); stopSounds(); playClip(cs);
+  }
+});
+$('soundFile').addEventListener('change', async () => {
+  const f = $('soundFile').files[0], kind = pickKind;
+  if (!f || !kind) return;
+  const row = soundRow(kind);
+  if (f.size > 30 * 1024 * 1024) { row.querySelector('.snd-name').textContent = 'ファイルが大きすぎます(30MBまで)'; return; }
+  row.querySelector('.snd-name').textContent = `${f.name} を読み込み中…`;
+  try {
+    audio.unlock();
+    const data = await f.arrayBuffer();
+    const buf = await decodeAudio(data);
+    customSounds[kind] = { name: f.name, data, start: 0, len: Math.min(5, MAX_CLIP, buf.duration), buf, peaks: makePeaks(buf) };
+    await idb.put(kind, { name: f.name, data, start: 0, len: customSounds[kind].len });
+    renderSoundRow(kind);
+    stopSounds(); playClip(customSounds[kind]);
+  } catch (e) {
+    row.querySelector('.snd-name').textContent = `${f.name}: この端末では読み込めない形式でした`;
+  }
+});
+window.addEventListener('resize', () => { for (const [kind] of SOUND_KINDS) if (customSounds[kind]) renderSoundRow(kind); });
+buildSoundRows();
+loadCustomSounds();
+
 $('soundToggle').addEventListener('click', () => { store.set('sound', !soundOn()); if (soundOn()) audio.unlock(); render(); });
 $('notifyBtn').addEventListener('click', async () => {
   audio.unlock();
@@ -1364,7 +1630,7 @@ document.addEventListener('keydown', e => {
 /* ================= バージョン・変更履歴 ================= */
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は小数として比べる: 新機能は 0.1 ずつ(2.1→2.2)、不具合修正は 0.01 ずつ(2.5→2.51)。大きな変更で 3.0 へ
-const APP_VERSION = '2.52';
+const APP_VERSION = '2.6';
 const isNewer = (a, b) => parseFloat(a) > parseFloat(b) + 1e-9;
 let updateDismissed = null; // 「あとで」を押したバージョン
 function renderChangelog(list) {
