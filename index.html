@@ -1363,15 +1363,9 @@ document.addEventListener('keydown', e => {
 
 /* ================= バージョン・変更履歴 ================= */
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
-const APP_VERSION = '1.13';
-const versionNum = v => String(v).split('.').map(Number);
-const isNewer = (a, b) => {
-  const x = versionNum(a), y = versionNum(b);
-  for (let i = 0; i < Math.max(x.length, y.length); i++) {
-    if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
-  }
-  return false;
-};
+// 番号は小数として比べる: 新機能は 0.1 ずつ(2.1→2.2)、不具合修正は 0.01 ずつ(2.5→2.51)。大きな変更で 3.0 へ
+const APP_VERSION = '2.52';
+const isNewer = (a, b) => parseFloat(a) > parseFloat(b) + 1e-9;
 let updateDismissed = null; // 「あとで」を押したバージョン
 function renderChangelog(list) {
   const entry = e => `<div class="cl-entry"><div class="cl-head"><b>v${esc(e.version)}</b><span>${esc(e.date)}</span>${isNewer(e.version, APP_VERSION) ? '<span>(未更新)</span>' : ''}</div>` +
