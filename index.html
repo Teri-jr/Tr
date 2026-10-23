@@ -100,6 +100,7 @@ label { display: block; font-size: 13px; color: var(--sub); margin-bottom: 4px; 
 
 /* ---------- header (departure board) ---------- */
 header.board {
+  position: relative;
   background: var(--board); color: #e8ecf2;
   padding: calc(10px + env(safe-area-inset-top)) 16px 10px;
   margin: 0 calc(-1 * env(safe-area-inset-right)) 0 calc(-1 * env(safe-area-inset-left));
@@ -110,6 +111,46 @@ header.board {
 .board .clock { font-size: 26px; font-weight: 700; color: var(--board-text); letter-spacing: 0.04em; margin-left: auto; }
 .board .pomo-badge { font-size: 14px; font-weight: 700; color: #ffd0c8; background: #2a1d1f; border-radius: 99px; padding: 3px 10px; }
 .datenav { display: flex; align-items: center; gap: 6px; width: 100%; }
+/* ---------- ロゴのアニメーション(ヘッダー上段に重ねて流し、終わったら消す) ---------- */
+#logoAnim {
+  position: absolute; z-index: 2; overflow: hidden; background: var(--board);
+  left: calc(16px + env(safe-area-inset-left)); right: calc(110px + env(safe-area-inset-right));
+  top: calc(2px + env(safe-area-inset-top)); height: 46px;
+  display: flex; align-items: center; transition: opacity 0.4s;
+}
+#logoAnim[hidden] { display: none; }
+#logoAnim.fade { opacity: 0; }
+/* A 発車案内板 */
+.la-flap { display: flex; gap: 2px; }
+.la-tile { width: 17px; height: 26px; background: #1f2630; border-radius: 3px; overflow: hidden; position: relative; box-shadow: inset 0 -1px 0 #0b0e12; }
+.la-tile::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: #0b0e12; }
+.la-col { display: flex; flex-direction: column; animation: la-flip 0.5s steps(5, end) both; }
+.la-col span { height: 26px; line-height: 26px; text-align: center; color: #e8ecf2; font-weight: 800; font-size: 16px; }
+@keyframes la-flip { from { transform: translateY(0); } to { transform: translateY(-130px); } }
+/* B 電車が走り抜ける */
+.la-rail { position: absolute; left: 0; right: 0; bottom: 6px; height: 2px; background: #2b3440; }
+.la-train { position: absolute; bottom: 3px; left: -70px; width: 56px; height: 12px; background: #0b7a53; border-radius: 6px 3px 3px 6px; animation: la-run 1.6s cubic-bezier(.45, 0, .3, 1) both; }
+.la-train::before { content: ""; position: absolute; left: 8px; top: 3px; width: 36px; height: 4px; background: repeating-linear-gradient(90deg, #cfe9df 0 7px, transparent 7px 10px); }
+.la-reveal { color: #e8ecf2; font-weight: 800; font-size: 20px; letter-spacing: 0.08em; margin-top: -10px; clip-path: inset(0 100% 0 0); animation: la-wipe 1.6s cubic-bezier(.45, 0, .3, 1) both; }
+@keyframes la-run { from { left: -70px; } to { left: 110%; } }
+@keyframes la-wipe { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+/* C LED電光掲示板 */
+.la-led { position: relative; width: 200px; max-width: 100%; height: 34px; background: #0a0c0f; border-radius: 4px; overflow: hidden; }
+.la-led b { position: absolute; top: 2px; left: 0; white-space: nowrap; color: #ffb21e; font: 900 26px/30px "Courier New", monospace; letter-spacing: 0.06em; text-shadow: 0 0 6px #ff9a00; animation: la-scroll 1.8s linear both, la-blink 0.5s steps(2) 1.8s 2; }
+.la-led::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle, transparent 45%, #0a0c0f 55%) 0 0 / 3px 3px; }
+@keyframes la-scroll { from { left: 210px; } to { left: 8px; } }
+@keyframes la-blink { 50% { opacity: 0.15; } }
+/* D 路線図 */
+.la-route { position: relative; width: 220px; height: 46px; }
+.la-line { position: absolute; left: 4px; top: 32px; height: 4px; width: 200px; background: #2fb57f; border-radius: 2px; transform-origin: left; animation: la-draw 1.2s ease-out both; }
+.la-st { position: absolute; top: 27px; width: 14px; height: 14px; border-radius: 50%; background: var(--board); border: 3px solid #2fb57f; box-sizing: border-box; transform: scale(0); animation: la-pop 0.25s ease-out both; }
+.la-lt { position: absolute; top: 2px; width: 14px; text-align: center; color: #e8ecf2; font-weight: 800; font-size: 18px; opacity: 0; transform: translateY(6px); animation: la-up 0.3s ease-out both; }
+@keyframes la-draw { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes la-pop { 70% { transform: scale(1.3); } to { transform: scale(1); } }
+@keyframes la-up { to { opacity: 1; transform: none; } }
+.logo-opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+.logo-opts label { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 10px; border: 1px solid var(--line); border-radius: 10px; color: var(--text); font-size: 15px; margin: 0; cursor: pointer; }
+.logo-opts input { width: 20px; height: 20px; min-height: 0; margin: 0; accent-color: var(--accent); }
 .datenav button { background: #1f2630; color: #e8ecf2; border-color: #2b3440; }
 .datenav .date { flex: 1; text-align: center; font-weight: 700; }
 .datenav .date small { display: block; font-weight: 400; color: #9aa6b4; font-size: 12px; }
@@ -118,15 +159,15 @@ header.board {
 main {
   display: grid; gap: 12px; padding: 12px 16px 40px;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-areas: "debug" "news" "current" "banner" "form" "settings" "table" "pomo" "data" "reset";
+  grid-template-areas: "debug" "news" "current" "banner" "form" "settings" "table" "pomo" "data" "reset" "logo";
   max-width: 760px; margin: 0 auto;
 }
 @media (min-width: 900px) and (orientation: landscape) {
   main {
     max-width: 1400px;
     grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr);
-    grid-template-areas: "debug debug" "news news" "table current" "table banner" "table form" "table settings" "table pomo" "table data" "table reset" "table .";
-    grid-template-rows: auto auto auto auto auto auto auto auto auto 1fr;
+    grid-template-areas: "debug debug" "news news" "table current" "table banner" "table form" "table settings" "table pomo" "table data" "table reset" "table logo" "table .";
+    grid-template-rows: auto auto auto auto auto auto auto auto auto auto 1fr;
     align-items: start;
   }
   #tableCard { position: sticky; top: 12px; max-height: calc(100vh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow: auto; }
@@ -197,6 +238,7 @@ main {
 #pomoCard { grid-area: pomo; }
 #dataCard { grid-area: data; }
 #resetCard { grid-area: reset; }
+#logoCard { grid-area: logo; }
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
 .card h2 { margin: 0 0 10px; font-size: 14px; color: var(--sub); letter-spacing: 0.06em; font-weight: 700; }
 
@@ -392,6 +434,7 @@ button.danger-fill { background: var(--late); color: #fff; border-color: transpa
 <body>
 <header class="board">
   <span class="title">StudyLine</span>
+  <div id="logoAnim" aria-hidden="true" hidden></div>
   <span class="pomo-badge num" id="pomoBadge">今日の🍅 0個</span>
   <span class="clock num" id="clock">--:--</span>
   <div class="datenav">
@@ -549,6 +592,20 @@ button.danger-fill { background: var(--late); color: #fff; border-color: transpa
       </div>
       <div class="msg" id="resetMsg" role="status"></div>
       <p class="note">表示中の日のタスク・実績・🍅の記録をすべて消します(開始時刻と就寝期限、他の日のデータはそのまま)。2回押すと実行されます。</p>
+    </section>
+
+    <section class="card" id="logoCard">
+      <h2>ロゴのアニメーション</h2>
+      <div class="logo-opts" id="logoOpts">
+        <label><input type="radio" name="logoAnim" value="random"> ランダム</label>
+        <label><input type="radio" name="logoAnim" value="A"> A 発車案内板</label>
+        <label><input type="radio" name="logoAnim" value="B"> B 電車</label>
+        <label><input type="radio" name="logoAnim" value="C"> C LED掲示板</label>
+        <label><input type="radio" name="logoAnim" value="D"> D 路線図</label>
+        <label><input type="radio" name="logoAnim" value="off"> なし</label>
+      </div>
+      <div class="btnrow"><button id="logoPlay" class="grow">▶ 今すぐ見る</button></div>
+      <p class="note">アプリを開いたときに、ヘッダーの「StudyLine」が動きます。「ランダム」は毎回 A〜D からくじ引きで選びます。</p>
     </section>
   </div>
 </main>
@@ -1630,7 +1687,7 @@ document.addEventListener('keydown', e => {
 /* ================= バージョン・変更履歴 ================= */
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は小数として比べる: 新機能は 0.1 ずつ(2.1→2.2)、不具合修正は 0.01 ずつ(2.5→2.51)。大きな変更で 3.0 へ
-const APP_VERSION = '2.6';
+const APP_VERSION = '2.61';
 const isNewer = (a, b) => parseFloat(a) > parseFloat(b) + 1e-9;
 let updateDismissed = null; // 「あとで」を押したバージョン
 function renderChangelog(list) {
@@ -1665,6 +1722,48 @@ async function checkVersion() {
 checkVersion();
 setInterval(checkVersion, 15 * 60 * 1000); // 開きっぱなしでも15分ごとに確認
 document.addEventListener('visibilitychange', () => { if (!document.hidden) checkVersion(); });
+
+/* ================= ロゴのアニメーション ================= */
+// 開くたびに流す。'random' は A〜D から完全ランダム。設定は一番下のカード
+const LOGO_KINDS = ['A', 'B', 'C', 'D'];
+const LOGO_LEN = { A: 2.0, B: 2.1, C: 3.0, D: 2.1 }; // 秒(動き+少し止める)
+const logoSetting = () => { const v = store.get('logoAnim'); return v === 'off' || v === 'random' || LOGO_KINDS.includes(v) ? v : 'random'; };
+let logoTimer = null;
+function playLogo(kind) {
+  const el = $('logoAnim'), W = 'StudyLine';
+  clearTimeout(logoTimer);
+  if (kind === 'A') {
+    const R = 'ABCDEFGHJKLMNPRSTUVWXYZ0123456789';
+    el.innerHTML = `<div class="la-flap">${[...W].map((c, i) => `<div class="la-tile"><div class="la-col" style="animation-delay:${i * 0.12}s">${[0, 1, 2, 3, 4].map(() => `<span>${R[Math.floor(Math.random() * R.length)]}</span>`).join('')}<span>${c}</span></div></div>`).join('')}</div>`;
+  } else if (kind === 'B') {
+    el.innerHTML = '<div class="la-rail"></div><div class="la-reveal">StudyLine</div><div class="la-train"></div>';
+  } else if (kind === 'C') {
+    el.innerHTML = '<div class="la-led"><b>StudyLine</b></div>';
+  } else {
+    el.innerHTML = '<div class="la-route"><div class="la-line"></div>' + [...W].map((c, i) => `<div class="la-st" style="left:${4 + i * 24}px;animation-delay:${i * 0.13}s"></div><div class="la-lt" style="left:${4 + i * 24}px;animation-delay:${i * 0.13 + 0.1}s">${c}</div>`).join('') + '</div>';
+  }
+  el.classList.remove('fade'); el.hidden = false;
+  logoTimer = setTimeout(() => {
+    el.classList.add('fade');
+    logoTimer = setTimeout(() => { el.hidden = true; el.innerHTML = ''; }, 400);
+  }, LOGO_LEN[kind] * 1000);
+}
+function playLogoBySetting() {
+  const v = logoSetting();
+  if (v === 'off') return;
+  playLogo(v === 'random' ? LOGO_KINDS[Math.floor(Math.random() * LOGO_KINDS.length)] : v);
+}
+for (const rb of document.querySelectorAll('input[name=logoAnim]')) rb.checked = rb.value === logoSetting();
+$('logoOpts').addEventListener('change', e => {
+  if (e.target.name !== 'logoAnim') return;
+  store.set('logoAnim', e.target.value);
+  playLogoBySetting(); // 選んだものをその場で見せる
+});
+$('logoPlay').addEventListener('click', () => {
+  const v = logoSetting();
+  playLogo(LOGO_KINDS.includes(v) ? v : LOGO_KINDS[Math.floor(Math.random() * LOGO_KINDS.length)]);
+});
+playLogoBySetting();
 
 /* ================= reset day ================= */
 // 表示中の日の予定を消す。2回押しで実行し、直後の10秒間だけ「元に戻す」を出す
