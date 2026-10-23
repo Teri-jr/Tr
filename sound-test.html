@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>StudyLine 音のお試し</title>
+<style>
+:root {
+  --bg: #f4f5f7; --panel: #fff; --panel-2: #eef0f3; --text: #16181d; --sub: #646b76; --line: #e1e4e9;
+  --accent: #0b7a53; --accent-text: #fff; --board: #12161c; --board-text: #f5b301;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #0e1013; --panel: #171a1f; --panel-2: #20242b; --text: #e9ecf1; --sub: #9aa3af; --line: #2a2f37; --accent: #2fb57f; --accent-text: #06140e; --board: #080a0d; }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--text); font-size: 16px; line-height: 1.5;
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif;
+  padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  -webkit-tap-highlight-color: transparent;
+}
+header { background: var(--board); color: #e8ecf2; padding: calc(14px + env(safe-area-inset-top)) 16px 14px; }
+header h1 { margin: 0; font-size: 18px; letter-spacing: 0.06em; }
+header p { margin: 4px 0 0; font-size: 13px; color: #9aa6b4; }
+main { max-width: 720px; margin: 0 auto; padding: 12px 16px 40px; display: grid; gap: 12px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+.card h2 { margin: 0 0 8px; font-size: 14px; color: var(--sub); letter-spacing: 0.06em; }
+button, input { font: inherit; color: inherit; }
+button {
+  min-height: 44px; min-width: 44px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--panel-2); padding: 0 14px; touch-action: manipulation; cursor: pointer;
+}
+button.primary { background: var(--accent); color: var(--accent-text); border-color: transparent; font-weight: 700; }
+.sound { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: center; padding: 10px 0; border-top: 1px dashed var(--line); }
+.sound:first-of-type { border-top: none; }
+.sound button { grid-row: span 2; min-width: 64px; }
+.sound b { font-size: 16px; }
+.sound span { font-size: 13px; color: var(--sub); }
+.sound.playing button { background: var(--board-text); color: #2a1f00; border-color: transparent; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+input[type=range] { flex: 1; min-width: 160px; accent-color: var(--accent); }
+.note { font-size: 13px; color: var(--sub); margin: 8px 0 0; }
+.filebox { margin-top: 8px; padding: 10px; border-radius: 10px; background: var(--panel-2); font-size: 14px; word-break: break-all; }
+.filebox:empty { display: none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>StudyLine 音のお試し</h1>
+  <p>区切りの音の候補です。気に入ったものの番号を教えてください(作業開始用・休憩用・時間切れ用で別々でもOK)</p>
+</header>
+<main>
+  <section class="card">
+    <h2>音量</h2>
+    <div class="row">
+      <span>🔈</span><input type="range" id="vol" min="0" max="100" value="70" aria-label="音量"><span>🔊</span>
+      <button id="stop">■ 止める</button>
+    </div>
+    <p class="note">iPhone・iPad は消音モード(サイレント)だと鳴らないことがあります。</p>
+  </section>
+
+  <section class="card" id="list">
+    <h2>候補の音</h2>
+  </section>
+
+  <section class="card">
+    <h2>手持ちの音声ファイルを鳴らす(試作)</h2>
+    <div class="row">
+      <button class="primary" id="pick">🎵 ファイルを選ぶ</button>
+      <button id="playFile" disabled>▶ 再生</button>
+    </div>
+    <input type="file" id="file" accept="audio/*,.mp3,.m4a,.wav,.aac,.ogg" hidden>
+    <div class="filebox" id="fileInfo"></div>
+    <p class="note">iPhone・iPad では「ファイル」アプリの中の mp3 / m4a / wav などを選べます。ここでは試しに鳴らすだけで、どこにも保存・送信しません。</p>
+  </section>
+</main>
+
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+let ctx = null, master = null, playingEl = null, stopTimer = null;
+const live = []; // 鳴っている音(止めるため)
+
+function audio() {
+  if (!ctx) {
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    master = ctx.createGain(); master.connect(ctx.destination);
+  }
+  if (ctx.state !== 'running') ctx.resume();
+  master.gain.value = Math.pow($('vol').value / 100, 2);
+  return ctx;
+}
+// 1音: f=周波数, t=開始(秒), d=長さ, type=波形, v=音量, partials=倍音 [倍率, 音量]
+function tone({ f, t, d, type = 'sine', v = 0.35, attack = 0.01, partials = [[1, 1]] }) {
+  const c = audio(), st = c.currentTime + 0.05 + t;
+  for (const [mul, pv] of partials) {
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = type; o.frequency.value = f * mul;
+    g.gain.setValueAtTime(0.0001, st);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0002, v * pv), st + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, st + d);
+    o.connect(g); g.connect(master);
+    o.start(st); o.stop(st + d + 0.05);
+    live.push(o);
+  }
+}
+const BELL = [[1, 1], [2.76, 0.45], [5.4, 0.25], [8.9, 0.12]];
+const SOFT = [[1, 1], [2, 0.3], [3, 0.12]];
+const N = { C5: 523.25, D5: 587.33, E5: 659.25, F5: 698.46, G5: 783.99, A5: 880, B5: 987.77, C6: 1046.5, D6: 1174.7, E6: 1318.5, G4: 392, A4: 440, B4: 493.88, E4: 329.63, C4: 261.63 };
+
+// 候補(長さ=秒)
+const SOUNDS = [
+  { name: '今の音(作業再開)', desc: 'ド・ミ・ソ・ドの上昇4音', len: 1.4,
+    play: () => [N.C5, N.E5, N.G5, N.C6].forEach((f, i) => tone({ f, t: i * 0.3, d: 0.26, v: 0.4 })) },
+  { name: '今の音(休憩)', desc: '高・低の交互4音', len: 1.4,
+    play: () => [880, 660, 880, 660].forEach((f, i) => tone({ f, t: i * 0.3, d: 0.26, v: 0.4 })) },
+  { name: '発車ベル', desc: '駅のジリジリ鳴るベル風(2秒)', len: 2.2,
+    play: () => { for (let i = 0; i < 40; i++) tone({ f: 2100 + (i % 2) * 90, t: i * 0.05, d: 0.06, type: 'square', v: 0.12, attack: 0.003 }); } },
+  { name: '発車メロディ風', desc: '明るい短いメロディ', len: 2.4,
+    play: () => [[N.E5, 0], [N.G5, 0.2], [N.C6, 0.4], [N.B5, 0.7], [N.G5, 0.9], [N.A5, 1.1], [N.C6, 1.4]].forEach(([f, t]) => tone({ f, t, d: 0.6, v: 0.3, partials: SOFT })) },
+  { name: '車内チャイム', desc: 'ピン・ポン・パン(上昇3音)', len: 1.8,
+    play: () => [N.G5, N.C6, N.E6].forEach((f, i) => tone({ f, t: i * 0.32, d: 1.0, v: 0.3, partials: BELL })) },
+  { name: '学校チャイム', desc: 'キーンコーンカーンコーン', len: 3.4,
+    play: () => [N.E5, N.C5, N.D5, N.G4, N.G4, N.D5, N.E5, N.C5].forEach((f, i) => tone({ f, t: i * 0.42 - (i >= 4 ? 0 : 0), d: 0.9, v: 0.28, partials: BELL })) },
+  { name: 'ピンポン', desc: '玄関チャイムの2音', len: 1.6,
+    play: () => { tone({ f: N.E5, t: 0, d: 1.0, v: 0.35, partials: SOFT }); tone({ f: N.C5, t: 0.45, d: 1.2, v: 0.35, partials: SOFT }); } },
+  { name: '電子アラーム', desc: 'ピピピピッ×2(時間切れ向き)', len: 1.6,
+    play: () => { for (let r = 0; r < 2; r++) for (let i = 0; i < 4; i++) tone({ f: 2000, t: r * 0.8 + i * 0.12, d: 0.08, type: 'square', v: 0.12, attack: 0.003 }); } },
+  { name: '目覚まし', desc: '高低を速く繰り返す(強め)', len: 2.0,
+    play: () => { for (let i = 0; i < 16; i++) tone({ f: i % 2 ? 1400 : 1800, t: i * 0.11, d: 0.1, type: 'triangle', v: 0.3, attack: 0.003 }); } },
+  { name: '木琴', desc: 'ポロロン(やわらかい)', len: 1.6,
+    play: () => [N.C5, N.E5, N.G5, N.C6, N.E6].forEach((f, i) => tone({ f, t: i * 0.09, d: 0.7, type: 'triangle', v: 0.35, attack: 0.004 })) },
+  { name: 'ソフトベル', desc: 'チーン(静かな部屋向き)', len: 2.6,
+    play: () => tone({ f: N.A5, t: 0, d: 2.5, v: 0.35, partials: BELL }) },
+  { name: 'ファンファーレ', desc: '全部終わったとき向き', len: 2.0,
+    play: () => [[N.C5, 0, 0.15], [N.C5, 0.17, 0.15], [N.C5, 0.34, 0.15], [N.G5, 0.55, 0.9]].forEach(([f, t, d]) => { tone({ f, t, d: d + 0.2, type: 'sawtooth', v: 0.12 }); tone({ f: f * 1.5, t, d: d + 0.2, type: 'sawtooth', v: 0.06 }); }) }
+];
+
+function stopAll() {
+  while (live.length) { try { live.pop().stop(); } catch (e) {} }
+  if (playingEl) playingEl.classList.remove('playing');
+  playingEl = null; clearTimeout(stopTimer);
+  const a = $('fileAudio'); if (a) { a.pause(); a.currentTime = 0; }
+}
+
+$('list').insertAdjacentHTML('beforeend', SOUNDS.map((s, i) =>
+  `<div class="sound" id="s${i}"><button data-i="${i}" aria-label="${s.name}を再生">▶ ${i + 1}</button><b>${i + 1}. ${s.name}</b><span>${s.desc}</span></div>`).join(''));
+$('list').addEventListener('click', e => {
+  const b = e.target.closest('[data-i]');
+  if (!b) return;
+  stopAll();
+  const s = SOUNDS[+b.dataset.i];
+  s.play();
+  playingEl = b.parentElement; playingEl.classList.add('playing');
+  stopTimer = setTimeout(() => { if (playingEl) playingEl.classList.remove('playing'); playingEl = null; }, s.len * 1000);
+});
+$('stop').addEventListener('click', stopAll);
+$('vol').addEventListener('input', () => { if (master) master.gain.value = Math.pow($('vol').value / 100, 2); const a = $('fileAudio'); if (a) a.volume = $('vol').value / 100; });
+
+// 手持ちのファイル: その場で読み込んで鳴らすだけ(保存しない)
+let fileUrl = null;
+$('pick').addEventListener('click', () => { $('file').value = ''; $('file').click(); });
+$('file').addEventListener('change', () => {
+  const f = $('file').files[0];
+  if (!f) return;
+  stopAll();
+  if (fileUrl) URL.revokeObjectURL(fileUrl);
+  fileUrl = URL.createObjectURL(f);
+  $('fileInfo').innerHTML = '';
+  const a = document.createElement('audio');
+  a.id = 'fileAudio'; a.src = fileUrl; a.preload = 'auto'; a.volume = $('vol').value / 100;
+  a.addEventListener('loadedmetadata', () => {
+    $('fileInfo').textContent = `${f.name}(${(f.size / 1024 / 1024).toFixed(2)} MB・${a.duration.toFixed(1)} 秒)`;
+    $('playFile').disabled = false;
+  });
+  a.addEventListener('error', () => { $('fileInfo').textContent = `${f.name}: この端末では再生できない形式でした`; $('playFile').disabled = true; });
+  $('fileInfo').textContent = `${f.name} を読み込み中…`;
+  document.body.appendChild(a);
+  const old = document.querySelectorAll('#fileAudio'); if (old.length > 1) old[0].remove();
+});
+$('playFile').addEventListener('click', () => {
+  const a = $('fileAudio'); if (!a) return;
+  stopAll(); audio();
+  a.play().catch(() => { $('fileInfo').textContent += ' / 再生できませんでした'; });
+});
+})();
+</script>
+</body>
+</html>

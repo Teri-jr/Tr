@@ -3,6 +3,7 @@
 GitHub Pages で公開している個人用の学習アプリ置き場。main に push すると 1〜数分で https://teri-jr.github.io/Tr/ に反映される。
 
 - `/`(index.html, sw.js, manifest.json, changelog.json, アイコン): 受験勉強の運行表アプリ「StudyLine」
+- `sound-test.html`: StudyLine の区切り音の候補を試すページ(アプリ本体ではない)
 - `vocab/`: 単語・熟語・漢字の暗記アプリ「記憶回路」(別アプリ。触るときはそちらの changelog.json を使う)
 
 ## 更新するとき(どちらのアプリも共通)
