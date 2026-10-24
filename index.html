@@ -701,7 +701,7 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
 /* ================= storage ================= */
 const PREFIX = 'ttable:';
 const APP_ID = 'study-timetable';
-const ROLLOVER_H = 4; // 朝4時までは前日扱い
+const ROLLOVER_H = 2; // 朝2時までは前日扱い(夜中の時刻は最大 25:59 まで)
 const DEFAULT_SETTINGS = { start: 19 * 60, deadline: 24 * 60 };
 const DEFAULT_POMO = { work: 25, brk: 5, long: 15, every: 4 };
 
@@ -743,7 +743,7 @@ const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())
 const logicalToday = () => ymd(new Date(nowMs() - ROLLOVER_H * 3600e3));
 function baseOf(ds) { const [y, m, d] = ds.split('-').map(Number); return new Date(y, m - 1, d).getTime(); }
 function shiftDay(ds, n) { const [y, m, d] = ds.split('-').map(Number); return ymd(new Date(y, m - 1, d + n)); }
-// その日(論理日付)の0時からの分。翌日0:00〜3:59は1440〜1679になるので、24:00をまたいでも単調に増える
+// その日(論理日付)の0時からの分。翌日0:00〜1:59は1440〜1559になるので、24:00をまたいでも単調に増える
 const msToMin = ms => (ms - baseOf(dayStr)) / 60000;
 function fmt(min) { const m = Math.floor(min + 1e-6); return `${Math.floor(m / 60)}:${pad(((m % 60) + 60) % 60)}`; }
 function fmtSec(min) { const s = Math.max(0, Math.ceil(min * 60 - 1e-6)); return s >= 3600 ? `${Math.floor(s / 3600)}:${pad(Math.floor(s / 60) % 60)}:${pad(s % 60)}` : `${Math.floor(s / 60)}:${pad(s % 60)}`; }
@@ -759,7 +759,7 @@ let pomoCfg = loadPomoCfg();
 let editingId = null;
 
 const isToday = () => dayStr === logicalToday();
-// 今日、または朝4時をまたいで実行中のタスクが残っている日は「運行中」として現在時刻を反映
+// 今日、または朝2時をまたいで実行中のタスクが残っている日は「運行中」として現在時刻を反映
 const isLive = () => isToday() || data.tasks.some(t => t.actualStart && !t.actualEnd);
 const nowMin = () => msToMin(nowMs());
 const taskState = t => t.actualEnd ? 'done' : t.actualStart ? 'running' : 'pending';
@@ -1996,9 +1996,18 @@ document.addEventListener('keydown', e => {
 
 /* ================= バージョン・変更履歴 ================= */
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
+// 番号は「大.中.小」(例 3.1.2)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
+// (2.71 以前の古い版は parseFloat で比べるが、3.0.0 以降は parseFloat しても 3 以上なので必ず「新しい」と判定される)
 // 番号は小数として比べる: 新機能は 0.1 ずつ(2.1→2.2)、不具合修正は 0.01 ずつ(2.5→2.51)。大きな変更で 3.0 へ
-const APP_VERSION = '2.71';
-const isNewer = (a, b) => parseFloat(a) > parseFloat(b) + 1e-9;
+const APP_VERSION = '3.0.0';
+const versionParts = v => String(v).split('.').map(x => parseInt(x, 10) || 0);
+const isNewer = (a, b) => {
+  const x = versionParts(a), y = versionParts(b);
+  for (let i = 0; i < Math.max(x.length, y.length); i++) {
+    if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
+  }
+  return false;
+};
 let updateDismissed = null; // 「あとで」を押したバージョン
 function renderChangelog(list) {
   const entry = e => `<div class="cl-entry"><div class="cl-head"><b>v${esc(e.version)}</b><span>${esc(e.date)}</span>${isNewer(e.version, APP_VERSION) ? '<span>(未更新)</span>' : ''}</div>` +
@@ -2216,11 +2225,11 @@ $('todayBtn').addEventListener('click', () => gotoDay(logicalToday()));
 
 /* ================= tick ================= */
 let lastToday = logicalToday();
-let heldDay = null; // 朝4時をまたいだ時に実行中タスクがあって留まった日
+let heldDay = null; // 朝2時をまたいだ時に実行中タスクがあって留まった日
 function tick() {
   const lt = logicalToday();
   const running = data.tasks.some(x => taskState(x) === 'running');
-  // 朝4時をまたいだ時、今日を見ていたなら新しい日へ。実行中タスクがあれば終了するまで留まる
+  // 朝2時をまたいだ時、今日を見ていたなら新しい日へ。実行中タスクがあれば終了するまで留まる
   if (lt !== lastToday) {
     if (dayStr === lastToday) { if (running) heldDay = dayStr; else { gotoDay(lt); heldDay = null; } }
     lastToday = lt;
