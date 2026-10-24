@@ -336,6 +336,11 @@ button.armed { background: var(--late); color: #fff; border-color: transparent; 
 .msg { font-size: 14px; margin-top: 8px; }
 .msg.err { color: var(--late); font-weight: 700; }
 .msg:empty { display: none; }
+#news .warn { margin-bottom: 10px; }
+#news .warn button { min-height: 36px; padding: 0 12px; margin-left: 6px; }
+.linkbtn { background: none; border: 0; color: inherit; text-decoration: underline; font-weight: 700; padding: 0; min-height: 0; }
+#lastExport { margin-top: 8px; }
+#lastExport.old { color: var(--late); font-weight: 700; }
 .import-confirm { margin-top: 10px; padding: 10px; border: 1px solid var(--running-line); border-radius: 10px; background: var(--running-bg); }
 #flash {
   position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -563,6 +568,8 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
   </section>
 
   <div id="news">
+    <div class="warn" id="installWarn" hidden>⚠ ホーム画面に追加しないと、しばらく開かない間にデータが消えることがあります。<button type="button" class="linkbtn" id="installHow">追加のしかた</button></div>
+    <div class="warn" id="backupWarn" hidden><span id="backupWarnTxt"></span> <button type="button" id="backupNow">今すぐ書き出す</button></div>
     <div class="update-bar" id="updateBar" hidden>
       <span>🆕 新しいバージョン <b id="updateVer"></b> があります</span>
       <button class="primary" id="updateBtn">今すぐ更新</button>
@@ -695,6 +702,7 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
         <button id="shareBtn" class="grow" hidden>共有で送る</button>
         <button id="importBtn" class="grow">読み込む</button>
       </div>
+      <div class="cur-sub" id="lastExport"></div>
       <input type="file" id="importFile" hidden>
       <div id="importConfirm"></div>
       <div class="msg" id="dataMsg" role="status"></div>
@@ -768,6 +776,7 @@ function loadDay(ds) {
 function saveDay() {
   store.set('day:' + dayStr, data);
   store.set('lastSettings', data.settings);
+  if (typeof updateBackupUI === 'function') updateBackupUI();
 }
 function loadPomoCfg() {
   const c = { ...DEFAULT_POMO, ...(store.get('pomo') || {}) };
@@ -2076,7 +2085,7 @@ document.addEventListener('keydown', e => {
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '3.0.1';
+const APP_VERSION = '3.1.0';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
@@ -2247,6 +2256,7 @@ $('exportBtn').addEventListener('click', () => {
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 10000);
   dataMsg(`${days}日分を ${name} に書き出しました。`);
+  markExported();
 });
 // iPhone/iPad は「共有」から「ファイルに保存」やAirDropで送れる
 try {
@@ -2256,9 +2266,30 @@ $('shareBtn').addEventListener('click', async () => {
   const { name, json, days } = buildExport();
   try {
     await navigator.share({ files: [new File([json], name, { type: 'application/json' })], title: name });
-    dataMsg(`${days}日分を共有しました。`);
+    dataMsg(`${days}日分を共有しました。`); markExported();
   } catch (e) { if (e && e.name !== 'AbortError') dataMsg('共有できませんでした。「書き出す」を使ってください。', true); }
 });
+
+// 最後に書き出した日時(この端末だけの記録。書き出すファイルには入れない)
+const BACKUP_DAYS = 7;
+function markExported() { store.set('lastExport', nowMs()); updateBackupUI(); }
+function hasDayData() { return store.keys().some(k => k.startsWith('day:') && (store.get(k) || {}).tasks?.length); }
+function updateBackupUI() {
+  const last = store.get('lastExport');
+  const ago = typeof last === 'number' ? Math.floor((nowMs() - last) / 86400e3) : null;
+  const el = $('lastExport');
+  if (ago === null) { el.textContent = '最後の書き出し: まだありません'; }
+  else { const d = new Date(last); el.textContent = `最後の書き出し: ${d.getMonth() + 1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}(${ago < 1 ? '今日' : ago + '日前'})`; }
+  const old = (ago === null || ago >= BACKUP_DAYS) && hasDayData();
+  el.classList.toggle('old', old);
+  $('backupWarn').hidden = !old;
+  if (old) $('backupWarnTxt').textContent = ago === null ? '⚠ まだ一度もデータを書き出していません。' : `⚠ 最後の書き出しから${ago}日たっています。`;
+}
+$('backupNow').addEventListener('click', () => $(!$('shareBtn').hidden ? 'shareBtn' : 'exportBtn').click());
+// iPhone/iPad の Safari で開いている(ホーム画面に追加していない)とき
+$('installWarn').hidden = !(IS_IOS && !IS_STANDALONE);
+const IOS_INSTALL_STEPS = '<ol><li>Safari の下(または上)にある <b>共有ボタン</b>(四角から矢印が出たマーク)を押す</li><li>「<b>ホーム画面に追加</b>」を選ぶ(見つからなければ一覧を下にスクロール)</li><li>右上の「追加」を押し、ホーム画面の StudyLine から開く</li></ol>';
+$('installHow').addEventListener('click', () => openOkModal({ title: '📱 ホーム画面に追加する', body: IOS_INSTALL_STEPS + '<p>Safari で開いたままだと、しばらく使わない間に iPhone がデータを消すことがあります。追加したアプリには、今のデータは引き継がれないので、先に「書き出す」でファイルにしてから、追加したアプリで「読み込む」をしてください。</p>', ok: 'わかった', cancel: '閉じる', onOk: () => {} }));
 
 let pendingImport = null;
 $('importBtn').addEventListener('click', () => { $('importFile').value = ''; $('importFile').click(); });
@@ -2458,7 +2489,7 @@ if (DEBUG) {
   $('debugCard').hidden = false;
   const toLocalInput = ms => { const d = new Date(ms); return `${ymd(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}`; };
   $('dbgTime').value = toLocalInput(nowMs());
-  const afterChange = () => { $('dbgTime').value = toLocalInput(nowMs()); tick(); };
+  const afterChange = () => { $('dbgTime').value = toLocalInput(nowMs()); tick(); updateBackupUI(); };
   $('dbgApply').addEventListener('click', () => {
     const v = $('dbgTime').value;
     if (!v) return;
@@ -2480,7 +2511,9 @@ $('fPomo').checked = !!store.get('lastPomo');
 setFormMode(formMode);
 render();
 phaseKeySeen = phaseKeyNow;
+updateBackupUI();
 setInterval(tick, 1000);
+setInterval(updateBackupUI, 60000);
 })();
 </script>
 </body>
