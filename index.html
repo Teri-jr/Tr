@@ -259,6 +259,10 @@ main {
 .subj { display: inline-block; font-size: 12px; font-weight: 800; line-height: 1; padding: 4px 7px; border-radius: 6px; color: #fff; background: var(--sc, var(--s-ot)); vertical-align: 2px; margin-right: 6px; white-space: nowrap; }
 .subj-en { --sc: var(--s-en); } .subj-ma { --sc: var(--s-ma); } .subj-ph { --sc: var(--s-ph); } .subj-in { --sc: var(--s-in); } .subj-ot { --sc: var(--s-ot); }
 #fSubj button { min-width: 0; padding: 0 12px; }
+#fSubjOther { margin-top: 8px; display: grid; gap: 6px; }
+#fSubjOther[hidden] { display: none; }
+#subjRecent:empty { display: none; }
+#subjRecent button { min-width: 0; padding: 0 10px; min-height: 36px; font-size: 14px; }
 #fSubj button[aria-pressed="true"] { background: var(--sc, var(--accent)); color: #fff; border-color: transparent; }
 /* ---------- 勉強の記録 ---------- */
 .st-sum { display: flex; gap: 14px; flex-wrap: wrap; font-size: 14px; color: var(--sub); margin-bottom: 10px; }
@@ -691,6 +695,10 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
             <button type="button" data-subj="in" class="subj-in" aria-pressed="false">情報</button>
             <button type="button" data-subj="ot" class="subj-ot" aria-pressed="false">その他</button>
           </div>
+          <div id="fSubjOther" hidden>
+            <input id="fSubjText" maxlength="10" placeholder="教科名(例: 化学・古文・日本史)" aria-label="その他の教科名" enterkeyhint="done">
+            <div class="chips" id="subjRecent"></div>
+          </div>
         </div>
         <label class="toggle"><input type="checkbox" id="fPomo"> 🍅 ポモドーロで区切る</label>
         <div>
@@ -930,8 +938,18 @@ const taskState = t => t.actualEnd ? 'done' : t.actualStart ? 'running' : 'pendi
 const effDur = t => Math.max(1, t.dur + (t.adj || 0));
 // 教科(任意)。t.subj にキーを入れる。無いタスクは「なし」
 const SUBJECTS = { en: '英語', ma: '数学', ph: '物理', in: '情報', ot: 'その他' };
+// 「その他」は t.subjText に自由入力の教科名(化学・古文など)を入れられる。記録では教科名ごとに分ける
 const subjOf = t => SUBJECTS[t.subj] ? t.subj : '';
-const subjTag = t => subjOf(t) ? `<span class="subj subj-${t.subj}">${SUBJECTS[t.subj]}</span>` : '';
+const subjKey = t => { const k = subjOf(t); return k === 'ot' && t.subjText ? 'ot:' + t.subjText : k; };
+const OTHER_COLORS = ['#1a9c8c', '#c2477f', '#8a6d3b', '#5b7f1f', '#4a5fc1', '#b5562f', '#3f8fb0', '#9b3fa8'];
+function subjInfo(key) {
+  if (!key.startsWith('ot:')) return { label: SUBJECTS[key] || '', cls: 'subj-' + key, style: '' };
+  const name = key.slice(3);
+  let h = 0; for (const c of name) h = (h * 31 + c.codePointAt(0)) >>> 0;
+  return { label: name, cls: 'subj-ot', style: `--sc:${OTHER_COLORS[h % OTHER_COLORS.length]}` };
+}
+const subjTagOf = key => { if (!key) return ''; const i = subjInfo(key); return `<span class="subj ${i.cls}" style="${i.style}">${esc(i.label)}</span>`; };
+const subjTag = t => subjTagOf(subjKey(t));
 // 開始済みのタスクは開始時点の設定で固定(途中で設定を変えても過去の時刻がずれない)
 const cfgOf = t => t.cfg || pomoCfg;
 
@@ -1804,7 +1822,7 @@ function resetForm() {
   $('fDur').value = 30;
   $('fPomo').checked = !!store.get('lastPomo');
   $('fPomo').disabled = false;
-  setSubj('');
+  setSubj('', '');
   setFormMode(store.get('lastSw') ? 'sw' : 'timer');
   $('formTitle').textContent = 'タスクを追加';
   $('fSubmit').textContent = '追加';
@@ -1826,19 +1844,40 @@ $('taskForm').addEventListener('submit', e => {
     const t = data.tasks.find(x => x.id === editingId);
     if (t) {
       Object.assign(t, { name, dur, memo });
-      if (formSubj) t.subj = formSubj; else delete t.subj;
+      delete t.subj; delete t.subjText; Object.assign(t, subjFields());
       if (taskState(t) === 'pending') { t.pomo = pomo; t.sw = formMode === 'sw'; } // 開始後はポモドーロ・計り方を変えない
     }
   } else {
-    data.tasks.push({ id: uid(), name, dur, memo, pomo, sw: formMode === 'sw', adj: 0, actualStart: null, actualEnd: null, ...(formSubj ? { subj: formSubj } : {}) });
+    data.tasks.push({ id: uid(), name, dur, memo, pomo, sw: formMode === 'sw', adj: 0, actualStart: null, actualEnd: null, ...subjFields() });
     store.set('lastPomo', pomo); store.set('lastSw', formMode === 'sw');
   }
   saveDay(); resetForm(); render();
 });
 $('fCancel').addEventListener('click', resetForm);
 let formSubj = '';
-function setSubj(v) { formSubj = SUBJECTS[v] ? v : ''; for (const b of $('fSubj').querySelectorAll('[data-subj]')) b.setAttribute('aria-pressed', String(b.dataset.subj === formSubj)); }
-$('fSubj').addEventListener('click', e => { const b = e.target.closest('[data-subj]'); if (b) setSubj(b.dataset.subj); });
+function setSubj(v, text) {
+  formSubj = SUBJECTS[v] ? v : '';
+  for (const b of $('fSubj').querySelectorAll('[data-subj]')) b.setAttribute('aria-pressed', String(b.dataset.subj === formSubj));
+  $('fSubjOther').hidden = formSubj !== 'ot';
+  if (text !== undefined) $('fSubjText').value = text || '';
+  if (formSubj === 'ot') renderSubjRecent();
+}
+// フォームの教科 → タスクに入れる項目
+function subjFields() {
+  if (!formSubj) return {};
+  const text = formSubj === 'ot' ? $('fSubjText').value.trim().slice(0, 10) : '';
+  if (text) rememberSubj(text);
+  return text ? { subj: 'ot', subjText: text } : { subj: formSubj };
+}
+// 「その他」で使った教科名(新しい順に8つ)
+const recentSubjs = () => Array.isArray(store.get('subjList')) ? store.get('subjList').filter(x => typeof x === 'string') : [];
+function rememberSubj(text) { store.set('subjList', [text, ...recentSubjs().filter(x => x !== text)].slice(0, 8)); }
+function renderSubjRecent() {
+  const list = recentSubjs();
+  $('subjRecent').innerHTML = list.map(x => `<button type="button" data-subjtext="${esc(x)}">${esc(x)}</button>`).join('');
+}
+$('fSubj').addEventListener('click', e => { const b = e.target.closest('[data-subj]'); if (!b) return; setSubj(b.dataset.subj); if (formSubj === 'ot' && !$('fSubjText').value) $('fSubjText').focus(); });
+$('subjRecent').addEventListener('click', e => { const b = e.target.closest('[data-subjtext]'); if (b) $('fSubjText').value = b.dataset.subjtext; });
 $('durChips').addEventListener('click', e => {
   const b = e.target.closest('[data-dur]');
   if (b) $('fDur').value = b.dataset.dur;
@@ -1948,7 +1987,7 @@ const actions = {
     setInputMode('one');
     editingId = t.id;
     setFormCollapsed(false);
-    $('fName').value = t.name; $('fDur').value = t.dur; $('fMemo').value = t.memo || ''; setSubj(t.subj || '');
+    $('fName').value = t.name; $('fDur').value = t.dur; $('fMemo').value = t.memo || ''; setSubj(t.subj || '', t.subjText || '');
     $('fPomo').checked = !!t.pomo;
     $('fPomo').disabled = taskState(t) !== 'pending';
     setFormMode(t.sw ? 'sw' : 'timer', taskState(t) !== 'pending');
@@ -2200,7 +2239,7 @@ document.addEventListener('keydown', e => {
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '3.3.0';
+const APP_VERSION = '3.4.0';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
@@ -2353,7 +2392,7 @@ $('resetUndo').addEventListener('click', () => {
 });
 
 /* ================= export / import ================= */
-const VALID_KEY = k => /^day:\d{4}-\d{2}-\d{2}$/.test(k) || ['lastSettings', 'pomo', 'lastPomo', 'sound', 'sounds', 'clockSize', 'lastSw', 'logoAnim', 'timerDesign', 'inMode'].includes(k);
+const VALID_KEY = k => /^day:\d{4}-\d{2}-\d{2}$/.test(k) || ['lastSettings', 'pomo', 'lastPomo', 'sound', 'sounds', 'clockSize', 'lastSw', 'logoAnim', 'timerDesign', 'inMode', 'subjList'].includes(k);
 function buildExport() {
   const out = {};
   for (const k of store.keys()) if (VALID_KEY(k)) out[k] = store.get(k);
@@ -2449,7 +2488,7 @@ function dayStats(ds) {
   try {
     if (ds !== dayStr) { dayStr = ds; data = loadDay(ds); }
     for (const r of computeSchedule().rows) {
-      const k = subjOf(r.t), w = workedMin(r);
+      const k = subjKey(r.t), w = workedMin(r);
       const o = out.subj[k] = out.subj[k] || { plan: 0, act: 0 };
       o.plan += r.t.dur; o.act += w; out.plan += r.t.dur; out.act += w;
     }
@@ -2458,7 +2497,11 @@ function dayStats(ds) {
 }
 const hm = m => { m = Math.round(m); return m >= 60 ? `${Math.floor(m / 60)}時間${m % 60 ? (m % 60) + '分' : ''}` : `${m}分`; };
 const hmShort = m => { m = Math.round(m); return `${Math.floor(m / 60)}:${pad(m % 60)}`; };
-const SUBJ_ORDER = ['en', 'ma', 'ph', 'in', 'ot', ''];
+// 並び: 英数物情 → 自由入力の教科(多い順)→ その他 → 教科なし
+function subjOrder(obj) {
+  const custom = Object.keys(obj).filter(k => k.startsWith('ot:')).sort((a, b) => (obj[b].act - obj[a].act) || (obj[b].plan - obj[a].plan));
+  return ['en', 'ma', 'ph', 'in', ...custom, 'ot', ''].filter(k => obj[k]);
+}
 function renderStats() {
   const today = logicalToday(), wd = '日月火水木金土';
   const days = [];
@@ -2470,16 +2513,16 @@ function renderStats() {
   }
   if (!tot.plan && !tot.act) { setHTML('statsBody', '<p class="note" style="margin:0">タスクを始めると、ここに7日間の勉強時間が出ます。</p>'); return; }
   const max = Math.max(60, ...days.map(d => Math.max(d.plan, d.act)));
-  const bar = (plan, segs, mx) => `<div class="st-bar">${plan ? `<div class="plan" style="width:${plan / mx * 100}%"></div>` : ''}<div class="act">${segs.map(([k, v]) => `<i class="${k ? 'subj-' + k : 'none'}" style="width:${v / mx * 100}%"></i>`).join('')}</div></div>`;
+  const bar = (plan, segs, mx) => `<div class="st-bar">${plan ? `<div class="plan" style="width:${plan / mx * 100}%"></div>` : ''}<div class="act">${segs.map(([k, v]) => { const i = k ? subjInfo(k) : null; return `<i class="${i ? i.cls : 'none'}" style="width:${v / mx * 100}%;${i ? i.style : ''}"></i>`; }).join('')}</div></div>`;
   const rows = days.map(d => {
     const dt = new Date(baseOf(d.ds));
-    const segs = SUBJ_ORDER.filter(k => d.subj[k] && d.subj[k].act > 0.5).map(k => [k, d.subj[k].act]);
+    const segs = subjOrder(d.subj).filter(k => d.subj[k].act > 0.5).map(k => [k, d.subj[k].act]);
     return `<div class="st-day ${d.ds === today ? 'today' : ''}"><span class="st-lbl num">${d.ds === today ? '今日' : `${dt.getMonth() + 1}/${dt.getDate()}(${wd[dt.getDay()]})`}</span>${bar(d.plan, segs, max)}<span class="st-num num">${hmShort(d.act)}<small> / ${hmShort(d.plan)}</small></span></div>`;
   }).join('');
   const smax = Math.max(1, ...Object.values(tot.subj).map(v => Math.max(v.plan, v.act)));
-  const subjRows = SUBJ_ORDER.filter(k => tot.subj[k]).map(k => {
+  const subjRows = subjOrder(tot.subj).map(k => {
     const v = tot.subj[k];
-    return `<div><span>${k ? `<span class="subj subj-${k}">${SUBJECTS[k]}</span>` : '<span class="st-lbl">教科なし</span>'}</span>${bar(v.plan, [[k, v.act]], smax)}<span class="st-num num">${hmShort(v.act)}<small> / ${hmShort(v.plan)}</small></span></div>`;
+    return `<div><span>${k ? subjTagOf(k) : '<span class="st-lbl">教科なし</span>'}</span>${bar(v.plan, [[k, v.act]], smax)}<span class="st-num num">${hmShort(v.act)}<small> / ${hmShort(v.plan)}</small></span></div>`;
   }).join('');
   const rate = tot.plan ? Math.round(tot.act / tot.plan * 100) : 0;
   setHTML('statsBody', `<div class="st-sum"><span>実際 <b class="num">${hm(tot.act)}</b></span><span>予定 <b class="num">${hm(tot.plan)}</b></span>${tot.plan ? `<span>予定の <b class="num">${rate}%</b></span>` : ''}</div>
@@ -2528,7 +2571,7 @@ $('importConfirm').addEventListener('click', e => {
 const mdLabel = ds => `${+ds.slice(5, 7)}/${+ds.slice(8)}`;
 const taskDurLabel = t => `${t.sw ? '約' : ''}${t.dur}分${t.pomo ? ' 🍅' : ''}${t.sw ? ' ⏲' : ''}`;
 // 予定として引き継ぐ項目だけを取り出した新しいタスク(実績は持たない)
-const planCopy = t => ({ id: uid() + Math.random().toString(36).slice(2, 5), name: t.name, dur: t.dur, memo: t.memo || '', pomo: !!t.pomo, sw: !!t.sw, adj: 0, actualStart: null, actualEnd: null, ...(SUBJECTS[t.subj] ? { subj: t.subj } : {}) });
+const planCopy = t => ({ id: uid() + Math.random().toString(36).slice(2, 5), name: t.name, dur: t.dur, memo: t.memo || '', pomo: !!t.pomo, sw: !!t.sw, adj: 0, actualStart: null, actualEnd: null, ...(SUBJECTS[t.subj] ? { subj: t.subj } : {}), ...(t.subj === 'ot' && t.subjText ? { subjText: t.subjText } : {}) });
 function prevDayTasks() { const d = store.get('day:' + shiftDay(dayStr, -1)); return d && Array.isArray(d.tasks) ? d.tasks : []; }
 
 let toastTimer = null;
@@ -2609,17 +2652,20 @@ function parseTaskLines(text) {
     let name = line.replace(/[\s:：,、。\-–—|]+$/g, '').replace(/^[\s:：,、\-–—|]+/g, '').replace(/\s{2,}/g, ' ').trim();
     if (!name) continue;
     const guess = !(dur >= 1);
-    out.push({ name: name.slice(0, 60), dur: Math.min(600, Math.max(1, guess ? 30 : dur)), pomo, sw, guess, subj: guessSubj(name) });
+    out.push({ name: name.slice(0, 60), dur: Math.min(600, Math.max(1, guess ? 30 : dur)), pomo, sw, guess, ...guessSubj(name) });
   }
   return out;
 }
 // 名前の先頭が教科名なら教科を付ける(「数学 青チャート」→ 数学)
+// それ以外の教科名で始まるときは「その他」+教科名(前に使った教科名も見る)
+const OTHER_SUBJ_WORDS = ['化学', '生物', '地学', '国語', '現代文', '現文', '古文', '漢文', '日本史', '世界史', '地理', '公共', '政経', '政治経済', '倫理', '倫政', '小論文', '理科', '社会'];
 function guessSubj(name) {
-  if (/^(英語|英単語|英熟語|英文法|英作文|英文解釈|英検|リスニング|英語長文)/.test(name)) return 'en';
-  if (/^(数学|数[1-3IⅠⅡⅢ]|数[AB]|数C)/.test(name)) return 'ma';
-  if (/^物理/.test(name)) return 'ph';
-  if (/^情報/.test(name)) return 'in';
-  return '';
+  if (/^(英語|英単語|英熟語|英文法|英作文|英文解釈|英検|リスニング|英語長文)/.test(name)) return { subj: 'en' };
+  if (/^(数学|数[1-3IⅠⅡⅢ]|数[AB]|数C)/.test(name)) return { subj: 'ma' };
+  if (/^物理/.test(name)) return { subj: 'ph' };
+  if (/^情報/.test(name)) return { subj: 'in' };
+  const w = [...recentSubjs(), ...OTHER_SUBJ_WORDS].filter(x => name.startsWith(x)).sort((a, b) => b.length - a.length)[0];
+  return w ? { subj: 'ot', subjText: w } : {};
 }
 let bulkParsed = [];
 function renderBulkPreview() {
@@ -2634,20 +2680,31 @@ $('bulkAdd').addEventListener('click', () => {
   if (!bulkParsed.length) return;
   const n = bulkParsed.length, before = JSON.stringify(data.tasks);
   data.tasks.push(...bulkParsed.map(t => planCopy({ ...t, memo: '' })));
+  for (const t of bulkParsed) if (t.subjText) rememberSubj(t.subjText);
   saveDay();
   $('fBulk').value = ''; renderBulkPreview(); render();
   showToast(`${n}件を追加しました`, '元に戻す', () => { data.tasks = JSON.parse(before); saveDay(); render(); });
 });
-const AI_PROMPT = `今日の勉強の予定を、次の形式で1行に1つずつ書いてください。
-「名前 所要時間」
-・時間は「30分」「1時間30分」のように書く
-・時間をきっちり決めないものは「約30分」のように「約」を付ける
-・25分ごとに休憩を挟みたいものは、行の最後に「ポモ」と書く
-・余計な説明・見出し・番号は付けない
+const AI_PROMPT = `受験勉強の今日の予定を作ってください。下の【わたしの情報】をもとに考えてください。
 
-条件: `;
+【出力のルール】(答えをそのまま勉強アプリに貼り付けるので、必ず守ってください)
+・1行に1つ、「教科 内容 所要時間」の順で書く
+  例) 数学 青チャート 例題20〜35 50分
+・行の先頭は教科名にする(英語・数学・物理・情報・化学・古文 など)
+・時間は「30分」「1時間30分」のように書く
+・全部の時間の合計が、使える時間を超えないようにする
+・終わる時間を決めにくいもの(長文読解・過去問など)は「約40分」のように「約」を付ける
+・集中が必要で、25分ごとに休憩を挟みたいものは、行の最後に「ポモ」と書く
+・休憩・食事・お風呂は行にしない
+・番号・記号・見出し・説明・あいさつは書かず、予定の行だけを出す
+
+【わたしの情報】
+・使える時間: (例 19:00〜23:30)
+・今日やりたいこと・使う教材:
+・苦手な教科・優先したいこと:
+・その他(テストの日程など):`;
 $('aiPrompt').addEventListener('click', async () => {
-  try { await navigator.clipboard.writeText(AI_PROMPT); setText('bulkMsg', 'コピーしました。AIに貼り付けて「条件:」のあとに時間帯や科目を書き足してください。'); }
+  try { await navigator.clipboard.writeText(AI_PROMPT); setText('bulkMsg', 'コピーしました。AIに貼り付けて【わたしの情報】を書き足して送り、返ってきた予定をここに貼り付けてください。'); }
   catch (e) {
     // コピーできない環境では、入力欄ではなく読み取り専用の欄に出す(入力欄に入れるとタスクとして読み取られてしまうため)
     setText('bulkMsg', 'コピーできなかったので、下の文章を長押し(または選択)してコピーしてください。');
