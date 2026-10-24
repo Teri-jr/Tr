@@ -453,7 +453,7 @@ button.danger-fill { background: var(--late); color: #fff; border-color: transpa
 
 /* ---------- ストップウォッチ ---------- */
 .mode-tog { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
-.mode-tog button { flex: 1; border: none; border-radius: 0; background: var(--panel); font-weight: 700; }
+.mode-tog button { flex: 1; border: none; border-radius: 0; background: var(--panel); font-weight: 700; white-space: nowrap; padding: 0 6px; font-size: 15px; }
 .mode-tog button.on { background: var(--accent); color: var(--accent-text); }
 .mode-tog button:disabled { opacity: 0.5; }
 .pill.sw { background: #5b6cff; color: #fff; }
@@ -465,6 +465,7 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
 @media (prefers-color-scheme: dark) { .pill.sw { background: #7b88ff; } .sw-txt { color: #9aa5ff; } .cur-remain.sw-over { color: #fbbf24; } }
 
 /* ---------- 区切りの音 ---------- */
+#soundTest, #soundToggle { white-space: nowrap; padding: 0 8px; font-size: 14px; min-width: 0; }
 .sub-h { margin: 14px 0 6px; font-size: 13px; color: var(--sub); letter-spacing: 0.06em; }
 .snd-row { padding: 8px 0; border-top: 1px dashed var(--line); }
 .snd-row > label { font-size: 14px; font-weight: 700; color: var(--text); }
@@ -682,7 +683,7 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
         <label><input type="radio" name="timerDesign" value="B"> B 電車</label>
         <label><input type="radio" name="timerDesign" value="C"> C LED掲示板</label>
         <label><input type="radio" name="timerDesign" value="D"> D 路線図</label>
-        <label><input type="radio" name="timerDesign" value="plain"> 今のまま</label>
+        <label><input type="radio" name="timerDesign" value="plain"> シンプル</label>
       </div>
       <p class="note">タスクの実行中に「⛶」を押すと、このデザインで表示します。「ランダム」は開くたびに選び直します。</p>
     </section>
@@ -1060,7 +1061,8 @@ const SIGNALS = {
   brk:  { title: '☕ 休憩', sub: 'おつかれさま。休憩に入りましょう', tones: [880, 660, 880, 660], vib: [300, 150, 300] },
   work: { title: '🍅 作業再開', sub: '次のポモドーロを始めます', tones: [523, 659, 784, 1047], vib: [150, 100, 150, 100, 150] },
   over: { title: '⏰ 時間です', sub: '予定の所要時間に達しました', tones: [988, 988, 988], vib: [500, 200, 500] },
-  ask:  { title: '🍅 25分たちました', sub: '休憩しますか?「☕ 休憩する」か「続ける」を押してください', tones: [], vib: [300, 150, 300] }
+  ask:  { title: '🍅 作業時間になりました', // 実際の見出しは signalTitle() で分数を入れる
+          sub: '休憩しますか?「☕ 休憩する」か「続ける」を押してください', tones: [], vib: [300, 150, 300] }
 };
 /* ---------- browser notification ---------- */
 // 許可はボタンを押したときだけ求める。iOS はホーム画面に追加したWebアプリでのみ、Service Worker 経由で通知できる
@@ -1085,7 +1087,15 @@ async function showNotice(title, body) {
 function notifyPhase(kind, body) {
   if (!notifyEnabled()) return;
   if (!document.hidden && document.hasFocus()) return;
-  showNotice(SIGNALS[kind].title, body);
+  showNotice(signalTitle(kind), body);
+}
+// 知らせの見出し。「◯分たちました」は実行中タスクの作業時間の設定(cfgOf(t).work)に合わせる
+function signalTitle(kind) {
+  if (kind === 'ask') {
+    const r = lastSc && lastSc.rows.find(x => x.st === 'running');
+    return `🍅 ${r ? cfgOf(r.t).work : pomoCfg.work}分たちました`;
+  }
+  return SIGNALS[kind].title;
 }
 function notifyStatus() {
   if (!window.isSecureContext) return { msg: '🔕 通知: https で公開したページ(またはlocalhost)でのみ使えます。' };
@@ -1104,7 +1114,7 @@ function signal(kind, body) {
   vibrate(sg.vib);
   const f = $('flash');
   f.className = kind === 'work' || kind === 'ask' ? '' : kind;
-  f.innerHTML = `${sg.title}<small>${sg.sub}<br>(タップで閉じる)</small>`;
+  f.innerHTML = `${signalTitle(kind)}<small>${sg.sub}<br>(タップで閉じる)</small>`;
   f.hidden = false;
   f.style.animation = 'none'; void f.offsetWidth; f.style.animation = '';
   clearTimeout(flashTimer);
@@ -1987,7 +1997,7 @@ document.addEventListener('keydown', e => {
 /* ================= バージョン・変更履歴 ================= */
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は小数として比べる: 新機能は 0.1 ずつ(2.1→2.2)、不具合修正は 0.01 ずつ(2.5→2.51)。大きな変更で 3.0 へ
-const APP_VERSION = '2.7';
+const APP_VERSION = '2.71';
 const isNewer = (a, b) => parseFloat(a) > parseFloat(b) + 1e-9;
 let updateDismissed = null; // 「あとで」を押したバージョン
 function renderChangelog(list) {
@@ -2129,7 +2139,7 @@ $('resetUndo').addEventListener('click', () => {
 });
 
 /* ================= export / import ================= */
-const VALID_KEY = k => /^day:\d{4}-\d{2}-\d{2}$/.test(k) || ['lastSettings', 'pomo', 'lastPomo', 'sound', 'lastSw', 'logoAnim', 'timerDesign'].includes(k);
+const VALID_KEY = k => /^day:\d{4}-\d{2}-\d{2}$/.test(k) || ['lastSettings', 'pomo', 'lastPomo', 'sound', 'sounds', 'clockSize', 'lastSw', 'logoAnim', 'timerDesign'].includes(k);
 function buildExport() {
   const out = {};
   for (const k of store.keys()) if (VALID_KEY(k)) out[k] = store.get(k);
