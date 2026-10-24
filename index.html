@@ -164,7 +164,8 @@ header.board {
 main {
   display: grid; gap: 12px; padding: 12px 16px 40px;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-areas: "debug" "news" "current" "banner" "form" "settings" "table" "pomo" "data" "reset" "logo";
+  /* 1カラム(スマホ・タブレット縦): 運行状況 → 時刻表 → タスク追加 → ダイヤ設定 → ポモドーロ・音 → データ → リセット → デザイン */
+  grid-template-areas: "debug" "news" "current" "banner" "table" "form" "settings" "pomo" "data" "reset" "logo";
   max-width: 760px; margin: 0 auto;
 }
 @media (min-width: 900px) and (orientation: landscape) {
@@ -1211,6 +1212,7 @@ function render() {
   const wd = '日月火水木金土'[new Date(y, m - 1, d).getDay()];
   setHTML('dateLabel', `${m}月${d}日(${wd})<small>${isToday() ? '今日' : dayStr < logicalToday() ? '過去の日' : '先の日'}</small>`);
 
+  if (!data.tasks.length && $('formCard').classList.contains('collapsed')) setFormCollapsed(false); // 0件なら追加欄を開く
   const sc = computeSchedule();
   lastSc = sc;
   renderBanner(sc);
@@ -1596,6 +1598,11 @@ $('notifyTest').addEventListener('click', async () => {
 function setFormCollapsed(on) {
   $('formCard').classList.toggle('collapsed', on);
   $('formToggle').setAttribute('aria-expanded', String(!on));
+}
+// 1カラムのときは、タスクが1件以上あれば普段から畳む(0件なら開く)。2・3カラムは「実行中なら畳む」のまま
+const isOneCol = () => !matchMedia('(min-width: 900px) and (orientation: landscape)').matches;
+function foldFormByDefault() {
+  setFormCollapsed(isOneCol() ? data.tasks.length > 0 : data.tasks.some(t => taskState(t) === 'running'));
 }
 $('formToggle').addEventListener('click', () => setFormCollapsed(!$('formCard').classList.contains('collapsed')));
 // 計り方: タイマー(時間を決める) / ストップウォッチ(目安だけ決めて数え上げる)
@@ -1998,7 +2005,7 @@ document.addEventListener('keydown', e => {
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '2.8.0';
+const APP_VERSION = '2.9.0';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
@@ -2219,7 +2226,7 @@ $('importConfirm').addEventListener('click', e => {
 /* ================= day navigation ================= */
 function gotoDay(ds) {
   dayStr = ds; data = loadDay(ds);
-  resetForm(); syncSettingsUI(); render();
+  resetForm(); syncSettingsUI(); foldFormByDefault(); render();
   phaseKeySeen = phaseKeyNow;
 }
 $('prevDay').addEventListener('click', () => gotoDay(shiftDay(dayStr, -1)));
@@ -2266,7 +2273,7 @@ if (DEBUG) {
 
 syncSettingsUI();
 syncPomoUI();
-setFormCollapsed(data.tasks.some(t => taskState(t) === 'running')); // 実行中に開き直した場合も畳んだ状態で
+foldFormByDefault(); // スマホはタスクがあれば畳む。タブレット・PCは実行中なら畳む
 $('fPomo').checked = !!store.get('lastPomo');
 setFormMode(formMode);
 render();
