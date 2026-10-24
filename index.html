@@ -305,7 +305,8 @@ button.armed { background: var(--late); color: #fff; border-color: transparent; 
 #formCard.collapsed { padding-top: 6px; padding-bottom: 6px; }
 #formCard.collapsed .fold-head { margin: 0; color: var(--text); }
 #formCard.collapsed .fold-head .chev::after { content: "開く ▸"; color: var(--accent); }
-#formCard.collapsed #taskForm { display: none; }
+#formCard.collapsed #taskForm, #formCard.collapsed #fInTabs, #formCard.collapsed #bulkBox { display: none; }
+#taskForm[hidden], #bulkBox[hidden] { display: none; }
 .row.editing { box-shadow: inset 4px 0 0 var(--accent); }
 .form-msg { color: var(--late); font-size: 14px; font-weight: 700; min-height: 0; }
 .form-msg:empty { display: none; }
@@ -465,6 +466,32 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
 .t-exp small { font-size: 11px; font-weight: 600; color: var(--sub); margin-left: 1px; }
 @media (prefers-color-scheme: dark) { .pill.sw { background: #7b88ff; } .sw-txt { color: #9aa5ff; } .cur-remain.sw-over { color: #fbbf24; } }
 
+/* ---------- 入力を減らす(コピー・翌日へ・今やる・まとめて入力) ---------- */
+.in-tabs { margin-bottom: 10px; }
+.tt-tools { display: flex; gap: 6px; margin-bottom: 8px; }
+.tt-tools button { flex: 1; font-size: 14px; padding: 0 6px; white-space: nowrap; }
+.row .acts { gap: 4px; grid-column: 1 / -1; }
+.row .acts button { padding: 0 6px; font-size: 14px; min-width: 38px; }
+@media (max-width: 380px) { .row .acts button { padding: 0 4px; font-size: 13px; min-width: 34px; } }
+.row .acts button.pomo-btn { filter: grayscale(1); opacity: 0.55; }
+.row .acts button.pomo-btn.on { filter: none; opacity: 1; background: #fde8e8; border-color: #e5484d; }
+@media (prefers-color-scheme: dark) { .row .acts button.pomo-btn.on { background: #3a1714; } }
+.row .acts button.now-btn { background: var(--running-bg); border-color: var(--running-line); font-weight: 800; }
+.suggest { margin-top: 12px; border: 2px dashed var(--accent); border-radius: 12px; padding: 12px; text-align: left; color: var(--text); }
+.suggest ul, .modal-body ul { margin: 6px 0 10px; padding-left: 1.2em; font-size: 14px; }
+.suggest button { width: 100%; }
+.bulk-list { display: grid; gap: 6px; margin: 4px 0; }
+.bulk-list div { display: flex; justify-content: space-between; gap: 8px; border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; font-size: 14px; }
+.bulk-list div.guess { border-color: var(--running-line); background: var(--running-bg); }
+.bulk-list span { white-space: nowrap; font-weight: 700; }
+#toast { position: fixed; z-index: 80; left: 12px; right: 12px; bottom: calc(14px + env(safe-area-inset-bottom)); max-width: 520px; margin: 0 auto; display: flex; align-items: center; gap: 10px; background: #12161c; color: #fff; border-radius: 12px; padding: 8px 8px 8px 14px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3); }
+#toast[hidden] { display: none; }
+#toast span { flex: 1; font-size: 14px; }
+#toast button { background: transparent; color: #f5b301; border-color: #3a4452; font-weight: 800; }
+#modal .modal-box.ok { border-color: var(--accent); }
+#modal .modal-box.ok .modal-title { color: var(--accent); }
+#modal .modal-box.ok #modalOk { background: var(--accent); color: var(--accent-text); }
+
 /* ---------- 区切りの音 ---------- */
 #soundTest, #soundToggle { white-space: nowrap; padding: 0 8px; font-size: 14px; min-width: 0; }
 .sub-h { margin: 14px 0 6px; font-size: 13px; color: var(--sub); letter-spacing: 0.06em; }
@@ -554,6 +581,21 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
 
     <section class="card" id="formCard">
       <button type="button" class="fold-head" id="formToggle" aria-expanded="true" aria-controls="taskForm"><span id="formTitle">タスクを追加</span><span class="chev" aria-hidden="true"></span></button>
+      <div class="mode-tog in-tabs" id="fInTabs" role="tablist" aria-label="入力のしかた">
+        <button type="button" data-in="one" role="tab">1件ずつ</button>
+        <button type="button" data-in="bulk" role="tab">📝 文章でまとめて</button>
+      </div>
+      <div id="bulkBox" class="form-grid" hidden>
+        <label for="fBulk">1行に1つ「名前 時間」</label>
+        <textarea id="fBulk" rows="6" placeholder="数学 青チャート 50分 ポモ&#10;英単語 ターゲット 約30分&#10;古文単語 20分"></textarea>
+        <p class="note" style="margin:0">時間は 30分 / 1時間 / 1時間30分 / 90 / 1h など。「約」を付けるとストップウォッチ、最後に「ポモ」でポモドーロ。行頭の番号・記号や「19:00〜」は無視します。</p>
+        <div id="bulkPreview"></div>
+        <div class="btnrow" style="margin-top:0">
+          <button type="button" class="primary grow" id="bulkAdd" disabled>追加</button>
+          <button type="button" id="aiPrompt">🤖 AIへの頼み方をコピー</button>
+        </div>
+        <div class="msg" id="bulkMsg" role="status"></div>
+      </div>
       <form id="taskForm" class="form-grid" autocomplete="off">
         <div>
           <label for="fName">タスク名</label>
@@ -593,6 +635,10 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
 
   <section class="card" id="tableCard">
     <h2>時刻表</h2>
+    <div class="tt-tools">
+      <button id="copyPrev">📋 前日をコピー</button>
+      <button id="carryOver">➡ 未完了を翌日へ</button>
+    </div>
     <div class="tt-head"><span>#</span><span>見込み<br>(予定)</span><span>タスク / ズレ</span></div>
     <ol class="tt" id="tt"></ol>
   </section>
@@ -691,6 +737,7 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
   </div>
 </main>
 
+<div id="toast" hidden role="status"><span id="toastMsg"></span><button id="toastAct" hidden></button></div>
 <div id="focus" hidden role="dialog" aria-label="全画面タイマー"></div>
 <div id="modal" hidden role="alertdialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-box"><div class="modal-title" id="modalTitle"></div><div class="modal-body" id="modalBody"></div><div class="modal-btns"><button id="modalCancel"></button><button class="danger-fill" id="modalOk"></button></div></div></div>
 <div id="flash" hidden></div>
@@ -1356,8 +1403,20 @@ function segRows(r, now) {
 }
 
 function renderTable(sc) {
-  if (!sc.rows.length) { setHTML('tt', `<li class="empty">まだタスクがありません</li>`); return; }
+  const prev = prevDayTasks();
+  $('copyPrev').disabled = !prev.length;
+  $('carryOver').disabled = !data.tasks.some(t => taskState(t) === 'pending');
+  if (!sc.rows.length) {
+    // 空の日は、前日の予定をそのままコピーできるように大きく出す
+    const sug = prev.length ? `<div class="suggest"><b>📋 前日(${mdLabel(shiftDay(dayStr, -1))})の予定をコピー</b>
+      <ul>${prev.slice(0, 8).map(t => `<li>${esc(t.name)} ${taskDurLabel(t)}</li>`).join('')}${prev.length > 8 ? `<li>ほか${prev.length - 8}件</li>` : ''}</ul>
+      <button class="primary" id="copyPrevBig">${prev.length}件をコピーする</button></div>` : '';
+    setHTML('tt', `<li class="empty">まだタスクがありません${sug}</li>`);
+    return;
+  }
   const n = sc.rows.length;
+  const firstPending = sc.rows.findIndex(x => x.st === 'pending');
+  const anyRunning = sc.rows.some(x => x.st === 'running');
   let h = sc.rows.map((r, i) => {
     const t = r.t;
     const prevPending = i > 0 && sc.rows[i - 1].st === 'pending';
@@ -1382,9 +1441,10 @@ function renderTable(sc) {
         <div class="meta num">${durTxt}${pomoInfo}${label ? `<span>${label}</span>` : ''}${delayTxt}</div>
       </div>
       <div class="acts">
+        ${r.st === 'pending' && i > firstPending ? `<button class="now-btn" data-act="donow" data-id="${t.id}" ${anyRunning ? 'disabled' : ''}>▶今やる</button>` : ''}
         <button data-act="up" data-id="${t.id}" aria-label="上へ" ${canMove && prevPending ? '' : 'disabled'}>↑</button>
         <button data-act="down" data-id="${t.id}" aria-label="下へ" ${canMove && nextPending ? '' : 'disabled'}>↓</button>
-        <button data-act="pomo" data-id="${t.id}" aria-pressed="${!!t.pomo}" ${r.st === 'pending' ? '' : 'disabled'}>🍅${t.pomo ? 'ON' : 'OFF'}</button>
+        <button class="pomo-btn ${t.pomo ? 'on' : ''}" data-act="pomo" data-id="${t.id}" aria-pressed="${!!t.pomo}" aria-label="ポモドーロ ${t.pomo ? 'ON' : 'OFF'}" ${r.st === 'pending' ? '' : 'disabled'}>🍅</button>
         <button data-act="edit" data-id="${t.id}">${editingId === t.id ? '編集中' : '編集'}</button>
         ${armBtn('del', t.id, '削除', 'danger')}
       </div>
@@ -1749,9 +1809,18 @@ const actions = {
     brkMod(t, +btn.dataset.bi).ext += 5;
   },
   pomo(t) { if (taskState(t) !== 'pending') return false; t.pomo = !t.pomo; },
+  // 未開始タスクの先頭へ移す(実行中のタスクがあるときはしない)
+  donow(t) {
+    if (taskState(t) !== 'pending' || data.tasks.some(x => taskState(x) === 'running')) return false;
+    const first = data.tasks.findIndex(x => taskState(x) === 'pending');
+    data.tasks.splice(data.tasks.indexOf(t), 1);
+    data.tasks.splice(first, 0, t);
+    showToast(`「${t.name}」を次の発車にしました`);
+  },
   up(t) { move(t, -1); },
   down(t) { move(t, 1); },
   edit(t) {
+    setInputMode('one');
     editingId = t.id;
     setFormCollapsed(false);
     $('fName').value = t.name; $('fDur').value = t.dur; $('fMemo').value = t.memo || '';
@@ -1968,6 +2037,7 @@ function flipTile(tile, from, to) {
 // confirm() は埋め込み表示などで出ないことがあるので、自前のポップアップを使う
 let modalOk = null, modalValid = null;
 function openModal({ title, body, ok, cancel, onOk, valid }) {
+  $('modal').querySelector('.modal-box').classList.remove('ok'); // 緑の確認は openOkModal で付け直す
   modalValid = valid || null;
   $('modalTitle').textContent = title;
   $('modalBody').innerHTML = body;
@@ -2005,7 +2075,7 @@ document.addEventListener('keydown', e => {
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '2.9.0';
+const APP_VERSION = '3.0.0';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
@@ -2158,7 +2228,7 @@ $('resetUndo').addEventListener('click', () => {
 });
 
 /* ================= export / import ================= */
-const VALID_KEY = k => /^day:\d{4}-\d{2}-\d{2}$/.test(k) || ['lastSettings', 'pomo', 'lastPomo', 'sound', 'sounds', 'clockSize', 'lastSw', 'logoAnim', 'timerDesign'].includes(k);
+const VALID_KEY = k => /^day:\d{4}-\d{2}-\d{2}$/.test(k) || ['lastSettings', 'pomo', 'lastPomo', 'sound', 'sounds', 'clockSize', 'lastSw', 'logoAnim', 'timerDesign', 'inMode'].includes(k);
 function buildExport() {
   const out = {};
   for (const k of store.keys()) if (VALID_KEY(k)) out[k] = store.get(k);
@@ -2222,6 +2292,133 @@ $('importConfirm').addEventListener('click', e => {
   phaseKeySeen = phaseKeyNow;
   dataMsg(`${n}日分を読み込みました。`);
 });
+
+/* ================= 毎日の入力を減らす ================= */
+const mdLabel = ds => `${+ds.slice(5, 7)}/${+ds.slice(8)}`;
+const taskDurLabel = t => `${t.sw ? '約' : ''}${t.dur}分${t.pomo ? ' 🍅' : ''}${t.sw ? ' ⏲' : ''}`;
+// 予定として引き継ぐ項目だけを取り出した新しいタスク(実績は持たない)
+const planCopy = t => ({ id: uid() + Math.random().toString(36).slice(2, 5), name: t.name, dur: t.dur, memo: t.memo || '', pomo: !!t.pomo, sw: !!t.sw, adj: 0, actualStart: null, actualEnd: null });
+function prevDayTasks() { const d = store.get('day:' + shiftDay(dayStr, -1)); return d && Array.isArray(d.tasks) ? d.tasks : []; }
+
+let toastTimer = null;
+function showToast(msg, actLabel, onAct) {
+  $('toastMsg').textContent = msg;
+  $('toastAct').hidden = !actLabel;
+  if (actLabel) { $('toastAct').textContent = actLabel; $('toastAct').onclick = () => { $('toast').hidden = true; onAct(); }; }
+  $('toast').hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { $('toast').hidden = true; }, 8000);
+}
+// 確認ポップアップ(緑の「はい」系)。一時停止の赤い確認と見た目を分ける
+function openOkModal(opts) { openModal(opts); $('modal').querySelector('.modal-box').classList.add('ok'); }
+
+// 前日の予定をコピー(名前・時間・メモ・ポモドーロ・計り方)
+function copyPrevDay(confirmFirst) {
+  const prev = prevDayTasks();
+  if (!prev.length) return;
+  const run = () => {
+    const before = JSON.stringify(data.tasks);
+    data.tasks.push(...prev.map(planCopy));
+    saveDay(); render();
+    showToast(`${prev.length}件をコピーしました`, '元に戻す', () => { data.tasks = JSON.parse(before); saveDay(); render(); });
+  };
+  if (!confirmFirst) { run(); return; }
+  openOkModal({
+    title: `📋 前日(${mdLabel(shiftDay(dayStr, -1))})の予定をコピー`,
+    body: `次の${prev.length}件を、この日の時刻表の最後に追加します(実績はコピーしません)。<ul>${prev.map(t => `<li>${esc(t.name)} ${taskDurLabel(t)}</li>`).join('')}</ul>`,
+    ok: `${prev.length}件をコピー`, cancel: 'やめる', onOk: run
+  });
+}
+$('copyPrev').addEventListener('click', () => copyPrevDay(true));
+$('tt').addEventListener('click', e => { if (e.target.closest('#copyPrevBig')) copyPrevDay(false); });
+
+// 未完了(まだ始めていないタスク)を翌日の末尾へ移す
+$('carryOver').addEventListener('click', () => {
+  const moving = data.tasks.filter(t => taskState(t) === 'pending');
+  if (!moving.length) return;
+  const next = shiftDay(dayStr, 1);
+  openOkModal({
+    title: '➡ 未完了を翌日へ移しますか?',
+    body: `まだ始めていない <b>${moving.length}件</b> を、${mdLabel(next)} の時刻表の最後に移します。<ul>${moving.map(t => `<li>${esc(t.name)} ${taskDurLabel(t)}</li>`).join('')}</ul>`,
+    ok: `${moving.length}件を翌日へ`, cancel: 'やめる',
+    onOk: () => {
+      const nd = store.get('day:' + next) || { settings: { ...data.settings }, tasks: [] };
+      if (!Array.isArray(nd.tasks)) nd.tasks = [];
+      nd.tasks.push(...moving.map(planCopy));
+      store.set('day:' + next, nd);
+      data.tasks = data.tasks.filter(t => !moving.includes(t));
+      saveDay(); render();
+      showToast(`${moving.length}件を ${mdLabel(next)} へ移しました`, '翌日を見る', () => gotoDay(next));
+    }
+  });
+});
+
+// 文章でまとめて入力: 1行に1つ「名前 時間」。AIが作った予定をそのまま貼り付けられるようにする
+function parseTaskLines(text) {
+  const out = [];
+  for (let raw of String(text).split(/\r?\n/)) {
+    let line = raw.trim().replace(/^[①-⑳❶-❿]\s*/, '').normalize('NFKC').trim(); // 丸数字は半角にする前に取る(①→1 にならないように)
+    if (!line) continue;
+    line = line.replace(/^(?:[-*•・●○□■☐☑✓✔]|\d{1,2}[.)、]|\(\d{1,2}\)|[①-⑳])\s*/, '');           // 行頭の記号・番号
+    line = line.replace(/^\d{1,2}:\d{2}\s*(?:[-~〜–—ー]\s*\d{1,2}:\d{2})?\s*[:：]?\s*/, '');     // 行頭の時刻「19:00〜19:30」
+    let pomo = false, sw = false, dur = null;
+    if (/(?:^|\s|[(\[])(?:ポモ(?:ドーロ)?|🍅)(?:[)\]]|\s|$)/.test(line)) { pomo = true; line = line.replace(/[(\[]?(?:ポモ(?:ドーロ)?|🍅)[)\]]?/g, ' '); }
+    // 時間: 一番最後に出てくるものを使う
+    const re = /(約|およそ|だいたい|〜|~)?\s*(\d+(?:\.\d+)?)\s*(時間|h(?:ours?|r)?)(?:\s*(\d+)\s*(?:分|m(?:in)?))?|(約|およそ|だいたい|〜|~)?\s*(\d+)\s*(?:分|m(?:in(?:utes?)?)?)(?![a-z])/gi;
+    let m, last = null;
+    while ((m = re.exec(line))) last = m;
+    if (last) {
+      if (last[3]) { dur = Math.round(parseFloat(last[2]) * 60 + (last[4] ? +last[4] : 0)); sw = !!last[1]; }
+      else { dur = +last[6]; sw = !!last[5]; }
+      line = line.slice(0, last.index) + ' ' + line.slice(last.index + last[0].length);
+    } else {
+      const bare = line.match(/\s(\d{1,3})\s*$/); // 行末の数字だけ「数学 50」
+      if (bare) { dur = +bare[1]; line = line.slice(0, bare.index); }
+    }
+    let name = line.replace(/[\s:：,、。\-–—|]+$/g, '').replace(/^[\s:：,、\-–—|]+/g, '').replace(/\s{2,}/g, ' ').trim();
+    if (!name) continue;
+    const guess = !(dur >= 1);
+    out.push({ name: name.slice(0, 60), dur: Math.min(600, Math.max(1, guess ? 30 : dur)), pomo, sw, guess });
+  }
+  return out;
+}
+let bulkParsed = [];
+function renderBulkPreview() {
+  bulkParsed = parseTaskLines($('fBulk').value);
+  $('bulkAdd').disabled = !bulkParsed.length;
+  $('bulkAdd').textContent = bulkParsed.length ? `${bulkParsed.length}件を時刻表に追加` : '追加';
+  $('bulkPreview').innerHTML = bulkParsed.length ? `<b style="font-size:14px">こう読み取りました(${bulkParsed.length}件)</b><div class="bulk-list">${bulkParsed.map(t =>
+    `<div class="${t.guess ? 'guess' : ''}"><b>${esc(t.name)}</b><span>${t.sw ? '⏲ 約' : ''}${t.dur}分${t.pomo ? ' 🍅' : ''}${t.guess ? '(時間の記入なし)' : ''}</span></div>`).join('')}</div>` : '';
+}
+$('fBulk').addEventListener('input', renderBulkPreview);
+$('bulkAdd').addEventListener('click', () => {
+  if (!bulkParsed.length) return;
+  const n = bulkParsed.length, before = JSON.stringify(data.tasks);
+  data.tasks.push(...bulkParsed.map(t => planCopy({ ...t, memo: '' })));
+  saveDay();
+  $('fBulk').value = ''; renderBulkPreview(); render();
+  showToast(`${n}件を追加しました`, '元に戻す', () => { data.tasks = JSON.parse(before); saveDay(); render(); });
+});
+const AI_PROMPT = `今日の勉強の予定を、次の形式で1行に1つずつ書いてください。
+「名前 所要時間」
+・時間は「30分」「1時間30分」のように書く
+・時間をきっちり決めないものは「約30分」のように「約」を付ける
+・25分ごとに休憩を挟みたいものは、行の最後に「ポモ」と書く
+・余計な説明・見出し・番号は付けない
+
+条件: `;
+$('aiPrompt').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(AI_PROMPT); setText('bulkMsg', 'コピーしました。AIに貼り付けて「条件:」のあとに時間帯や科目を書き足してください。'); }
+  catch (e) { $('fBulk').value = AI_PROMPT; renderBulkPreview(); setText('bulkMsg', 'コピーできなかったので、入力欄に入れました。選択してコピーしてください。'); }
+});
+function setInputMode(mode) {
+  for (const b of $('fInTabs').querySelectorAll('[data-in]')) { b.classList.toggle('on', b.dataset.in === mode); b.setAttribute('aria-selected', String(b.dataset.in === mode)); }
+  $('bulkBox').hidden = mode !== 'bulk';
+  $('taskForm').hidden = mode === 'bulk';
+  store.set('inMode', mode);
+}
+$('fInTabs').addEventListener('click', e => { const b = e.target.closest('[data-in]'); if (b) { if (editingId) resetForm(); setInputMode(b.dataset.in); } });
+setInputMode(store.get('inMode') === 'bulk' ? 'bulk' : 'one');
 
 /* ================= day navigation ================= */
 function gotoDay(ds) {
