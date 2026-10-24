@@ -595,6 +595,7 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
           <button type="button" id="aiPrompt">🤖 AIへの頼み方をコピー</button>
         </div>
         <div class="msg" id="bulkMsg" role="status"></div>
+        <textarea id="aiPromptBox" rows="8" readonly hidden aria-label="AIへの頼み方"></textarea>
       </div>
       <form id="taskForm" class="form-grid" autocomplete="off">
         <div>
@@ -2075,7 +2076,7 @@ document.addEventListener('keydown', e => {
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '3.0.0';
+const APP_VERSION = '3.0.1';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
@@ -2409,7 +2410,11 @@ const AI_PROMPT = `今日の勉強の予定を、次の形式で1行に1つず�
 条件: `;
 $('aiPrompt').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText(AI_PROMPT); setText('bulkMsg', 'コピーしました。AIに貼り付けて「条件:」のあとに時間帯や科目を書き足してください。'); }
-  catch (e) { $('fBulk').value = AI_PROMPT; renderBulkPreview(); setText('bulkMsg', 'コピーできなかったので、入力欄に入れました。選択してコピーしてください。'); }
+  catch (e) {
+    // コピーできない環境では、入力欄ではなく読み取り専用の欄に出す(入力欄に入れるとタスクとして読み取られてしまうため)
+    setText('bulkMsg', 'コピーできなかったので、下の文章を長押し(または選択)してコピーしてください。');
+    $('aiPromptBox').value = AI_PROMPT; $('aiPromptBox').hidden = false; $('aiPromptBox').select();
+  }
 });
 function setInputMode(mode) {
   for (const b of $('fInTabs').querySelectorAll('[data-in]')) { b.classList.toggle('on', b.dataset.in === mode); b.setAttribute('aria-selected', String(b.dataset.in === mode)); }
