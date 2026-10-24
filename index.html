@@ -1996,11 +1996,14 @@ document.addEventListener('keydown', e => {
 
 /* ================= バージョン・変更履歴 ================= */
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
-// 番号は「大.中.小」(例 3.1.2)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
-// (2.71 以前の古い版は parseFloat で比べるが、3.0.0 以降は parseFloat しても 3 以上なので必ず「新しい」と判定される)
-// 番号は小数として比べる: 新機能は 0.1 ずつ(2.1→2.2)、不具合修正は 0.01 ずつ(2.5→2.51)。大きな変更で 3.0 へ
-const APP_VERSION = '3.0.0';
-const versionParts = v => String(v).split('.').map(x => parseInt(x, 10) || 0);
+// 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
+// 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
+const APP_VERSION = '2.8.0';
+const versionParts = v => {
+  const p = String(v).split('.');
+  if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
+  return p.map(x => parseInt(x, 10) || 0);
+};
 const isNewer = (a, b) => {
   const x = versionParts(a), y = versionParts(b);
   for (let i = 0; i < Math.max(x.length, y.length); i++) {
