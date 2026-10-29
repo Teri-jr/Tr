@@ -214,7 +214,6 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outli
     <section class="setup" id="setup">
       <div>
         <h1>京急本線 運転士タブレット（GPS連動）</h1>
-        <a href="sim.html" style="color:var(--dest-hi);font-size:13px">シミュレーション版へ →</a>
         <p>時刻表は使わず、スマホのGPSと駅・線路のデータだけで動く。次の停車駅までの距離を線路に沿って測り、停車・通過・駅間停車・待避を自動で判定して読み上げる。トンネルでGPSが切れたら最後の位置と速度から走行を推定し、次にGPSが入ったところで直す。家で試すときは「テスト走行」にすると、GPSの代わりに模擬の位置が流れる。</p>
       </div>
       <div class="field"><span>位置</span>
@@ -275,6 +274,12 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outli
           <button aria-pressed="false" data-v="on">ダイヤ乱れ</button>
         </div>
         <div class="hint testonly" hidden>テスト走行では、乱れにすると駅間停車と停車時間の延長がランダムに起きる。</div></div>
+      <div class="field"><span>測位の頻度</span>
+        <div class="seg" data-k="rate">
+          <button aria-pressed="true" data-v="std">標準</button>
+          <button aria-pressed="false" data-v="hi">高頻度（GPS詳細）</button>
+        </div>
+        <div class="hint">高頻度にすると、通常の受信に加えて0.25秒ごとに最新の位置を取りに行く。実際に増えるかは端末しだい（多くは1秒に1回が上限）。電池を多く使う。実際の回数は「詳細」で見られる。</div></div>
       <div class="field"><span>音声</span>
         <div class="seg" data-k="voice">
           <button aria-pressed="true" data-v="on">読み上げあり</button>
@@ -453,7 +458,7 @@ const MOVE_DIST=25;      // 止まった位置からこれ以上離れたら発�
 const OFF_MAX=250;       // 線路からこれ以上離れた測位は使わない
 const STALE_MS=4000;     // これより古い測位しかなければ推定に切り替える
 
-let cfg={kind:"kaitoku",sec:"品川|上大岡",src:"gps",speed:"1",cars:"8",voice:"on",weather:"fine",disorder:"off"};
+let cfg={kind:"kaitoku",sec:"品川|上大岡",src:"gps",speed:"1",cars:"8",voice:"on",weather:"fine",disorder:"off",rate:"std"};
 const $=id=>document.getElementById(id);
 document.querySelectorAll(".seg[data-k]").forEach(seg=>{
   seg.addEventListener("click",e=>{
@@ -592,7 +597,7 @@ function newG(){
 function onFix(f){
   if(!G||(G.lastSeen!=null&&f.t<=G.lastSeen)) return;
   const p=project(f.lat,f.lon);
-  G.acc=f.acc; G.off=p.off; G.rawS=p.s; G.lastSeen=f.t; G.geoErr="";
+  G.acc=f.acc; G.off=p.off; G.rawS=p.s; G.lastSeen=f.t; G.geoErr=""; (G.fixLog=G.fixLog||[]).push(f.t); if(G.fixLog.length>20) G.fixLog.shift();
   G.offRoute=p.off>OFF_MAX; if(G.offRoute) return;
   const xm=route.xOf(p.s), sp=(f.speed!=null&&isFinite(f.speed)&&f.speed>=0)?f.speed:null;
   if(G.fixT==null||f.t-G.fixT>STALE_MS){
@@ -603,9 +608,9 @@ function onFix(f){
   }
   // 位置と速度をなめらかにする（精度が良いほど測位を信じる）
   const dt=(f.t-G.fixT)/1000; G.fixT=f.t;
-  const pred=G.x+G.v*dt, r=xm-pred, a=f.acc<=15?0.6:f.acc<=40?0.35:0.15;
+  const pred=G.x+G.v*dt, r=xm-pred, a1=f.acc<=15?0.6:f.acc<=40?0.35:0.15, a=1-Math.pow(1-a1,Math.min(1,dt)); // 測位が多くても1秒あたりの効き方は同じにする
   G.x=pred+a*r;
-  let v=G.v+0.3*a*r/dt; if(sp!=null) v=0.3*v+0.7*sp;
+  let v=G.v+0.3*a*r/Math.max(dt,1); if(sp!=null){ const w=1-Math.pow(0.3,Math.min(1,dt)); v=(1-w)*v+w*sp; }
   G.v=Math.max(0,Math.min(v,45));
 }
 // 乗務開始後、最初の測位で今どこにいるかを決める（途中から使い始めてもよい）
@@ -795,7 +800,7 @@ function draw(e,now,dt){
   if(showDbg){
     const s0=STATIONS[0][1], age=G.lastSeen==null?"-":((now-G.lastSeen)/1000).toFixed(1);
     $("dbg").textContent=G.lastSeen==null?"測位なし":
-      `品川から ${((route.sAt(e.x)-s0)/1000).toFixed(3)}km ・ 横ずれ ${Math.round(G.off)}m ・ 精度 ±${Math.round(G.acc)}m ・ ${age}秒前 ・ ${e.src==="dr"?"推定":"GPS"} ・ 状態 ${G.mode}`;
+      `品川から ${((route.sAt(e.x)-s0)/1000).toFixed(3)}km ・ 横ずれ ${Math.round(G.off)}m ・ 精度 ±${Math.round(G.acc)}m ・ ${age}秒前 ・ ${e.src==="dr"?"推定":"GPS"} ・ 測位 ${fixRate()}回/秒 ・ 状態 ${G.mode}`;
   }
 }
 
@@ -839,7 +844,7 @@ function loop(ts){
   if(testMode&&!paused&&SIM.mode!=="end"){
     acc+=dtReal*mult; let n=Math.floor(acc/DT); acc-=n*DT;
     const rand=cfg.disorder==="on"? (()=>Math.random()<0.7?15+Math.random()*75:0) : (()=>Math.random()<0.35?5+Math.random()*25:0);
-    while(n-->0&&SIM.mode!=="end"){ step(SIM,route,K,simDecel(),rand,onSimEvent); if(SIM.t>=nextFixT){ nextFixT+=1; emitFakeFix(); } }
+    while(n-->0&&SIM.mode!=="end"){ step(SIM,route,K,simDecel(),rand,onSimEvent); if(SIM.t>=nextFixT){ nextFixT+=cfg.rate==="hi"?0.25:1; emitFakeFix(); } }
   }
   const now=nowMs(), dt=Math.max(0,(now-lastNow)/1000); lastNow=now;
   if(G.mode==="dwell"&&G.last===0&&!schedFixed){
@@ -860,11 +865,17 @@ document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==
 function startGeo(){
   if(!("geolocation" in navigator)||!window.isSecureContext){ G.geoErr="位置情報が使えない（HTTPSで開く）"; return; }
   watchId=navigator.geolocation.watchPosition(
-    p=>onFix({lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy,speed:p.coords.speed,t:Math.min(Date.now(),p.timestamp||Date.now())}),
+    onGeo,
     e=>{ if(G) G.geoErr=geoErrText(e); },
     {enableHighAccuracy:true,maximumAge:0,timeout:20000});
+  // 高頻度：watchPosition とは別に最新の位置を取りに行く（同じ測位が返ってきたら onFix で捨てる）
+  if(cfg.rate==="hi") pollId=setInterval(()=>{ if(pollBusy) return; pollBusy=true;
+    navigator.geolocation.getCurrentPosition(p=>{ pollBusy=false; onGeo(p); },()=>{ pollBusy=false; },{enableHighAccuracy:true,maximumAge:0,timeout:2000}); },250);
 }
-function stopGeo(){ if(watchId!=null){ try{navigator.geolocation.clearWatch(watchId);}catch(_){} watchId=null; } }
+let pollId=null,pollBusy=false;
+function onGeo(p){ onFix({lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy,speed:p.coords.speed,t:Math.min(Date.now(),p.timestamp||Date.now())}); }
+function fixRate(){ const l=G.fixLog||[]; if(l.length<2) return "-"; return ((l.length-1)/((l[l.length-1]-l[0])/1000)).toFixed(1); }
+function stopGeo(){ if(watchId!=null){ try{navigator.geolocation.clearWatch(watchId);}catch(_){} watchId=null; } clearInterval(pollId); pollId=null; pollBusy=false; }
 function parseSched(){
   const v=$("sched").value; if(!v) return null;
   const [h,m,s]=v.split(":").map(Number), d=new Date(); d.setHours(h,m,s||0,0);
