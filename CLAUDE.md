@@ -4,7 +4,7 @@ GitHub Pages で公開している個人用の学習アプリ置き場。main �
 
 - `/`(index.html, sw.js, manifest.json, changelog.json, アイコン): 受験勉強の運行表アプリ「StudyLine」
 - `vocab/`: 単語・熟語・漢字の暗記アプリ「記憶回路」(別アプリ。触るときはそちらの changelog.json を使う)
-- `keikyu/`: 京急 運転士タブレット風アプリ。`index.html` が GPS連動版、`sim.html` がシミュレーション版(どちらも1ファイル完結、バージョン管理・changelog は無し)
+- `keikyu/`: 京急 運転士タブレット風アプリ。`index.html` が GPS連動版、`sim.html` がシミュレーション版(どちらも1ファイル完結)。GPS版は `APP_VERSION`(keikyu/index.html 内)と `keikyu/changelog.json` で版を管理し、新しい版が出ると停車中に放送で知らせる。sim.html は版管理なし
 
 ## 更新するとき(どちらのアプリも共通)
 - 変更したら、そのアプリの `APP_VERSION`(index.html 内)と `changelog.json` の先頭を同じ番号に上げ、変更点を短い日本語で書く。
