@@ -1,0 +1,674 @@
+<title>運転士タブレット シミュ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDGothic:wght@400;700&family=BIZ+UDPGothic:wght@400;700&display=swap">
+<style>
+/* Layout: 乗務員タブレット画面の再現。左に時計列、右に種別ヘッダ＋駅一覧。下に操作バー。単一ダーク(タブレット画面)で固定 */
+:root{
+  color-scheme: dark;
+  --bg:#0b0f16;          /* 端末ベゼル外 */
+  --screen:#000000;      /* 画面地（完全な黒） */
+  --panel:#1c2431;       /* 行・パネル */
+  --line:#2c3646;        /* 罫線 */
+  --fg:#e9eef6;
+  --muted:#8b97a8;
+  --kind-kaitoku:#00a040; --sub-kaitoku:#00773a; /* 快特：緑 */
+  --kind-tokkyu:#8f0012;  --sub-tokkyu:#c40018;  /* 特急：濃いめの赤 */
+  --kind-kyuko:#4fb6e8;   --sub-kyuko:#1f6fc4;   /* 急行：薄い水色、次駅は濃い青（実機画面より） */
+  --kind-futsu:#111111;   --sub-futsu:#f2f2ee;   /* 普通：黒 */
+  --dest:#1f5fbf;
+  --dest-hi:#3f86e8;
+  --ok:#2bb04a;
+  --warn:#e3a323;
+  --bad:#e2483d;
+  --track:#4b86d6;
+  --f-ui:"BIZ UDPGothic","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+  --f-num:"BIZ UDGothic","Hiragino Sans","Noto Sans JP",ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-ui);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px}
+button{font-family:inherit;color:inherit;cursor:pointer}
+button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outline-offset:2px}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+
+/* 画面の高さいっぱいに広げ、駅一覧が残りの高さを全部使う */
+.device{max-width:1100px;margin:0 auto;height:100%}
+.screen{background:var(--screen);border-radius:8px;overflow:auto;height:100%;min-height:520px;display:flex;flex-direction:column}
+.status{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);padding:6px 12px 2px}
+
+/* setup */
+.setup{padding:20px;display:grid;gap:18px;max-width:560px;margin:0 auto;width:100%}
+.setup h1{font-size:22px;margin:4px 0 0;text-wrap:balance}
+.setup p{margin:0;color:var(--muted);font-size:13px;line-height:1.6}
+.field{display:grid;gap:8px}
+.field > span{font-size:12px;color:var(--muted);letter-spacing:.06em}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg button{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-size:15px;min-width:72px}
+.seg button[aria-pressed="true"]{background:var(--dest);border-color:var(--dest-hi)}
+.secpick{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.secpick select,.secpick button{background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:16px;font-family:inherit}
+.secpick select{flex:1;min-width:120px}
+.go{background:var(--ok);border:0;border-radius:10px;padding:14px;font-size:17px;font-weight:700;color:#06130a}
+
+/* run */
+.run{display:grid;grid-template-columns:150px 1fr;grid-template-rows:minmax(0,1fr);gap:10px;padding:8px 10px 10px;flex:1;min-height:0}
+.side{display:flex;flex-direction:column;gap:8px;align-items:center}
+#clock{width:120px;height:120px}
+.dclock{font-size:20px;letter-spacing:.08em}
+.meter{width:100%;background:var(--panel);border-radius:8px;padding:8px;display:grid;gap:2px;text-align:center}
+.meter small{font-size:10px;color:var(--muted);letter-spacing:.06em}
+.meter b{font-size:24px}
+.meter b span{font-size:12px;font-weight:400;color:var(--muted)}
+
+.main{display:flex;flex-direction:column;gap:6px;min-width:0;min-height:0}
+.head{display:grid;grid-template-columns:1fr 150px;grid-template-rows:auto auto;border-radius:4px;overflow:hidden}
+.kind{grid-column:1;background:var(--kind-kaitoku);text-align:center;font-size:88px;font-weight:700;letter-spacing:.4em;padding:6px 0 6px .4em;line-height:1.1}
+.next{grid-column:1;background:var(--ks,var(--dest));color:var(--ksf,#fff);border-top:2px solid var(--screen);text-align:center;font-size:56px;font-weight:700;padding:8px 4px}
+.next small{font-size:12px;font-weight:400;opacity:.8;margin-right:6px}
+.cars{grid-column:2;grid-row:1/3;background:var(--ks,var(--dest));color:var(--ksf,#fff);border-left:2px solid var(--screen);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.cars b{font-size:60px;line-height:1}
+.cars span{font-size:20px}
+.cars small{font-size:16px;opacity:.85}
+
+.statusrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.delay{display:inline-flex;align-items:center;gap:6px;background:var(--ok);color:#06130a;border-radius:4px;padding:4px 10px;font-size:13px;font-weight:700}
+.delay.warn{background:var(--warn)}
+.delay.bad{background:var(--bad);color:#fff}
+.dist{font-size:13px;color:var(--muted)}
+.dist b{color:var(--fg)}
+.annc{margin-left:auto;font-size:13px;background:#24304a;border:1px solid var(--dest);border-radius:4px;padding:3px 8px;opacity:0;transition:opacity .2s}
+.annc.on{opacity:1}
+
+.listhead{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:4px 2px;border-bottom:1px solid var(--line)}
+.listhead span:last-child{color:var(--muted);font-size:11px}
+.list{overflow-y:auto;flex:1;min-height:200px;scroll-behavior:smooth}
+/* iPadなど縦向き：駅一覧を大きめにして下まで使う */
+@media (orientation:portrait) and (min-width:700px){
+  .run{grid-template-columns:180px 1fr}
+  .row{font-size:22px;padding:16px 8px;grid-template-columns:minmax(0,1fr) 120px 36px 120px}
+  .trk{width:30px;height:30px;font-size:15px}
+  .listhead{font-size:16px}
+  .ctrl button{font-size:16px;padding:12px 14px}
+  #clock{width:160px;height:160px}
+  /* 上の表示を全幅にしてさらに約2倍 */
+  .run{grid-template-columns:150px 1fr}
+  #clock{width:130px;height:130px}
+  .head{grid-template-columns:1fr 170px}
+  #hStop{right:170px}
+  .kind{font-size:min(160px,19cqw)!important;line-height:1.05;letter-spacing:.25em;padding-left:.25em;white-space:nowrap}
+  .next{font-size:min(110px,12cqw)!important}
+  .cars b{font-size:96px}
+  .cars span{font-size:28px}
+  .cars small{font-size:20px}
+  .hover{font-size:220px!important}
+  #hStop{font-size:min(220px,31cqw)!important}
+}
+.row{display:grid;grid-template-columns:minmax(0,1fr) 88px 30px 88px;align-items:center;gap:6px;padding:9px 6px;border-bottom:1px solid var(--line);font-size:15px}
+.row .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .t{text-align:right}
+.trk{width:22px;height:22px;border-radius:50%;border:2px solid var(--track);color:var(--fg);display:grid;place-items:center;font-size:12px;font-weight:700;justify-self:center}
+.pass{justify-self:center;width:16px;height:18px;background:var(--track);clip-path:polygon(0 0,100% 0,100% 62%,50% 100%,0 62%)}
+.row.pass-row{color:var(--muted);font-size:14px}
+.row.passed{opacity:.35}
+.row.target{background:#1d2b42}
+.row.target .nm{color:#fff;font-weight:700}
+
+.ctrl{display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px 10px;border-top:1px solid var(--line);background:#10151e}
+.ctrl button{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 10px;font-size:13px}
+.ctrl button[aria-pressed="true"]{background:var(--dest);border-color:var(--dest-hi)}
+.ctrl .sp{flex:1}
+.note{max-width:980px;margin:10px auto 0;font-size:12px;color:var(--muted);line-height:1.6}
+
+@media (max-width:640px){
+  .run{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
+  .side{flex-direction:row;flex-wrap:wrap;justify-content:center}
+  #clock{width:84px;height:84px}
+  .meter{width:auto;flex:1;min-width:90px}
+  .row{grid-template-columns:minmax(0,1fr) 76px 26px 76px;font-size:14px}
+}
+.gps{display:inline-flex;align-items:center;gap:6px;background:var(--ok);color:#06130a;border-radius:4px;padding:4px 10px;font-size:13px;font-weight:700}
+.gps.warn{background:var(--warn)}
+.gps.bad{background:var(--bad);color:#fff}
+.gps.lost svg{opacity:.25}
+.head{position:relative}
+.hover{position:absolute;top:0;bottom:0;left:0;background:#efefea;color:#111;display:grid;place-items:center;font-size:160px;line-height:1;font-weight:400;letter-spacing:.06em;z-index:2}
+#hStop{right:150px}
+#hCars{right:0}
+.next.msg{background:#efefea;color:#111;font-weight:400}
+.head{container-type:inline-size;flex-shrink:0}
+.statusrow,.listhead{flex-shrink:0}
+.hover{white-space:nowrap;overflow:hidden}
+.dbadge{background:var(--bad);color:#fff;border-radius:4px;padding:4px 10px;font-size:13px;font-weight:700}
+.next.sec{background:#f4f4f0;color:#e60012;font-size:min(56px,8.6cqw)!important;letter-spacing:.02em}
+.next.sec.blink{background:#e60012;color:#f4f4f0}
+.row .dep.red{color:#ff3b30;font-weight:700}
+/* スマホ（縦・横）：画面の高さに詰め込まずページごとスクロール。操作ボタンは下に固定 */
+@media (max-width:640px),(max-height:600px){
+  .device,.screen{height:auto}
+  .screen{overflow:visible;min-height:0}
+  #runv{flex:none!important}
+  .run{grid-template-rows:auto auto}
+  .list{flex:none;min-height:0;max-height:60dvh}
+  .ctrl{position:sticky;bottom:0;z-index:6;padding-bottom:max(6px,env(safe-area-inset-bottom,0px))}
+}
+@media (max-height:600px) and (min-width:641px){
+  .hover{font-size:96px}
+  .kind{font-size:56px!important}
+  .next{font-size:34px!important}
+  .head{grid-template-columns:1fr 110px}
+  #hStop{right:110px}
+  .cars b{font-size:40px}
+  .run{grid-template-columns:130px 1fr}
+  #clock{width:70px;height:70px}
+  .mset{display:none}
+}
+@media (max-width:640px){
+  /* スマホ：上の計器類を詰めて、駅一覧の高さを稼ぐ */
+  .run{gap:6px;padding:6px}
+  .side{gap:6px}
+  #clock{width:60px;height:60px}
+  .dclock{font-size:16px}
+  .mset{display:none}
+  .meter{padding:4px 6px}
+  .meter b{font-size:18px}
+  .ctrl{gap:4px;padding:6px}
+  .ctrl .sp{display:none}
+  .ctrl button{font-size:12px;padding:7px 8px}
+  .row{padding:7px 4px}
+}
+.next{white-space:nowrap;overflow:hidden}
+/* スキット注意は幅に合わせて文字を縮めて1行に収める */
+.next.msg{font-size:min(56px,8.6cqw)!important;letter-spacing:.02em}
+.next.msg.blink{background:#111;color:#f4f4f0}
+.next.skid{background:#1f6fd1;color:#ffe23a;letter-spacing:.02em;font-size:min(56px,7.2cqw)!important}
+.next.skid.blink{background:#ffe23a;color:#1f6fd1}
+.hover.blink{background:#111;color:#f4f4f0}
+.next.taihi{background:#ecebe6;color:#111;font-weight:700;font-size:min(56px,6cqw)!important;letter-spacing:0}
+.row .tb{font-size:10px;border:1px solid var(--warn);color:var(--warn);border-radius:3px;padding:0 3px;margin-left:4px;vertical-align:2px}
+#taihiBtn[aria-pressed="true"]{background:var(--warn);border-color:var(--warn);color:#111}
+.next.blank{color:transparent}
+.mset{font-size:10px;color:var(--muted);line-height:1.5;align-self:flex-start;padding-left:8px}
+.gps svg{width:14px;height:14px}
+.main{position:relative}
+.alert{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%) scale(.9);background:rgba(10,14,22,.92);border:3px solid var(--warn);color:#fff;border-radius:10px;padding:14px 26px;font-size:44px;font-weight:700;letter-spacing:.08em;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s,transform .15s;z-index:5;text-align:center}
+.alert.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.alert.stop{border-color:var(--bad)}
+.alert.info{border-color:var(--dest-hi)}
+.row .nm::before{content:"";display:inline-block;width:14px}
+.row.target .nm::before{content:"▶";color:var(--warn);font-size:11px;vertical-align:1px}
+@media (max-width:640px){.alert{font-size:30px;padding:10px 16px}.hover{font-size:96px}.head{grid-template-columns:1fr 96px}#hStop{right:96px}.kind{font-size:56px!important}.next{font-size:34px!important}.cars b{font-size:40px}.cars span{font-size:14px}.cars small{font-size:12px}}
+@media (prefers-reduced-motion:reduce){.list{scroll-behavior:auto}.annc,.alert{transition:none}}
+</style>
+
+<div class="device">
+  <div class="screen">
+
+    <section class="setup" id="setup">
+      <div>
+        <h1>京急本線 運転士タブレット（シミュレーション）</h1>
+        <p>京急本線を加速・減速つきで走らせる。実際に乗りながら使うときは等倍で「乗務開始」を押し、発車した瞬間に「発車」、駅に止まった瞬間に「到着」を押すとズレが直る。停車駅の手前で「次は、停車。」「8両、停車。」「停止位置… 8」を読み上げる。雨にすると減速が弱くなってスキット注意が出る。</p>
+      </div>
+      <div class="field"><span>種別</span>
+        <div class="seg" data-k="kind">
+          <button aria-pressed="true" data-v="kaitoku">快特</button>
+          <button aria-pressed="false" data-v="tokkyu">特急</button>
+          <button aria-pressed="false" data-v="kyuko">急行</button>
+          <button aria-pressed="false" data-v="futsu">普通</button>
+        </div></div>
+      <div class="field"><span>区間</span>
+        <div class="secpick">
+          <select id="secFrom" aria-label="乗車駅"></select>
+          <span>→</span>
+          <select id="secTo" aria-label="降車駅"></select>
+          <button type="button" id="secSwap">入れ替え</button>
+        </div>
+        <div class="seg" id="secPresets">
+          <button data-p="品川|上大岡">品川 → 上大岡</button>
+          <button data-p="横浜|上大岡">横浜 → 上大岡</button>
+          <button data-p="上大岡|横浜">上大岡 → 横浜</button>
+          <button data-p="上大岡|品川">上大岡 → 品川</button>
+        </div>
+        <div id="secErr" style="color:var(--bad);font-size:12px" hidden>乗車駅と降車駅が同じ。どちらかを変えて</div></div>
+      <div class="field"><span>速さ</span>
+        <div class="seg" data-k="speed">
+          <button aria-pressed="true" data-v="1">等倍（乗りながら）</button>
+          <button aria-pressed="false" data-v="5">5倍速</button>
+        </div></div>
+      <div class="field"><span>両数</span>
+        <div class="seg" data-k="cars">
+          <button aria-pressed="false" data-v="4">4</button>
+          <button aria-pressed="false" data-v="6">6</button>
+          <button aria-pressed="true" data-v="8">8</button>
+          <button aria-pressed="false" data-v="12">12</button>
+        </div></div>
+      <div class="field"><span>天候</span>
+        <div class="seg" data-k="weather">
+          <button aria-pressed="true" data-v="fine">晴れ</button>
+          <button aria-pressed="false" data-v="rain">雨（スキット注意）</button>
+        </div></div>
+      <div class="field"><span>ダイヤ</span>
+        <div class="seg" data-k="disorder">
+          <button aria-pressed="true" data-v="off">平常</button>
+          <button aria-pressed="false" data-v="on">ダイヤ乱れ（駅間停車・停車時間延長）</button>
+        </div></div>
+      <div class="field"><span>音声</span>
+        <div class="seg" data-k="voice">
+          <button aria-pressed="true" data-v="on">読み上げあり</button>
+          <button aria-pressed="false" data-v="off">なし</button>
+        </div></div>
+      <button class="go" id="start">乗務開始</button>
+    </section>
+
+    <section id="runv" hidden style="display:flex;flex-direction:column;flex:1;min-height:0">
+      <div class="run">
+        <div class="side">
+          <canvas id="clock" width="240" height="240" aria-label="時計"></canvas>
+          <div class="dclock num" id="dclock">--:--:--</div>
+          <div class="mset" id="mset">放送：自動<br>音量：11</div>
+          <div class="meter"><small>速度</small><b class="num" id="spd">0<span> km/h</span></b></div>
+          <div class="meter"><small>次停車駅まで</small><b class="num" id="rem">0<span> m</span></b></div>
+        </div>
+        <div class="main">
+          <div class="head">
+            <div class="kind" id="kindLbl">快特</div>
+            <div class="next" id="nextLbl"><small>次</small>上大岡</div>
+            <div class="cars"><b class="num" id="carsLbl">8</b><span>ツーマン</span><small class="num" id="trainNo">1101A</small></div>
+            <div class="hover" id="hStop" hidden>停車</div>
+            <div class="hover" id="hCars" hidden>8両</div>
+          </div>
+          <div class="statusrow">
+            <span class="gps num" id="gps"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 3l5 5-2 2-5-5zM16 14l5 5-2 2-5-5zM9 9l6 6-3 3-6-6zM15 3a6 6 0 016 6h-2a4 4 0 00-4-4zm0 3a3 3 0 013 3h-2a1 1 0 00-1-1z"/></svg><span id="gpsTxt">GPS 良好</span></span>
+            <span class="delay num" id="delay">遅延 00:00:00</span>
+            <span class="dbadge" id="dbadge" hidden>ダイヤ乱れ</span>
+            <span class="dist" id="phase">停車中</span>
+            <span class="annc" id="annc"></span>
+          </div>
+          <div class="listhead"><span id="rangeLbl">金沢文庫 - 京急川崎 駅一覧</span><span>着 ・ 番線 ・ 発</span></div>
+          <div class="list" id="list"></div>
+
+        </div>
+      </div>
+      <div class="ctrl">
+        <button id="pause" aria-pressed="false">一時停止</button>
+        <button id="depNow">発車</button>
+        <button id="arrNow">到着</button>
+        <button id="taihiBtn" aria-pressed="false">待避</button>
+        <button id="haltBtn">駅間停車</button>
+        <button data-m="1" aria-pressed="true">等倍</button>
+        <button data-m="5" aria-pressed="false">5倍速</button>
+        <button data-m="20" aria-pressed="false">20倍速</button>
+        <span class="sp"></span>
+        <button id="minus">−10秒</button>
+        <button id="plus">＋10秒</button>
+        <button id="vtest">音声テスト</button>
+        <button id="back">設定へ</button>
+        <span id="vstat" style="flex-basis:100%;font-size:12px;color:var(--muted)"></span>
+      </div>
+    </section>
+  </div>
+</div>
+<p class="note" id="note">駅間距離・番線・停車時間はだいたいの値で、実際のダイヤとは違う。遅れは停車時間がランダムに延びることで発生し、−10秒／＋10秒で表示を補正できる。GPS表示はシミュ用の演出で、実際の測位はしていない。雨天時は計画より減速が弱くなるぶん遅れやすい。読み上げは最初に「乗務開始」を押したときに有効になる（iPhoneはマナーモードだと鳴らないことがある）。</p>
+
+<script>
+// ---- 路線データ（品川起点のおおよそのキロ程） ----
+const STATIONS=[
+ ["品川",0.0],["北品川",0.7],["新馬場",1.4],["青物横丁",2.2],["鮫洲",2.7],["立会川",3.5],["大森海岸",4.8],
+ ["平和島",5.7],["大森町",6.5],["梅屋敷",7.2],["京急蒲田",8.0],["雑色",9.4],["六郷土手",10.6],
+ ["京急川崎",11.8],["八丁畷",13.0],["鶴見市場",13.8],["京急鶴見",15.3],["花月総持寺",16.1],["生麦",16.9],
+ ["京急新子安",18.0],["子安",19.0],["神奈川新町",19.7],["京急東神奈川",20.4],["神奈川",21.6],["横浜",22.2],
+ ["戸部",23.4],["日ノ出町",24.3],["黄金町",25.2],["南太田",26.0],["井土ヶ谷",27.1],["弘明寺",28.2],
+ ["上大岡",29.6],["屏風浦",31.1],["杉田",32.1],["京急富岡",34.1],["能見台",35.3],["金沢文庫",36.6]
+];
+const KINDS={
+ kaitoku:{label:"快特",color:"var(--kind-kaitoku)",sub:"var(--sub-kaitoku)",stops:["品川","京急蒲田","京急川崎","横浜","上大岡","金沢文庫"],vmax:120,acc:0.85,dwell:35,long:{"横浜":45,"上大岡":40,"京急蒲田":40}},
+ tokkyu:{label:"特急",color:"var(--kind-tokkyu)",sub:"var(--sub-tokkyu)",stops:["品川","青物横丁","平和島","京急蒲田","京急川崎","神奈川新町","横浜","上大岡","金沢文庫"],vmax:110,acc:0.9,dwell:30,long:{"横浜":40,"上大岡":35}},
+ kyuko:{label:"急行",color:"var(--kind-kyuko)",sub:"var(--sub-kyuko)",taihi:true,stops:["品川","青物横丁","平和島","京急蒲田","京急川崎","京急鶴見","神奈川新町","京急東神奈川","横浜","日ノ出町","井土ヶ谷","弘明寺","上大岡","杉田","能見台","金沢文庫"],vmax:110,acc:0.9,dwell:25,long:{"横浜":40,"上大岡":35}},
+ futsu:{label:"普通",color:"var(--kind-futsu)",sub:"var(--sub-futsu)",subFg:"#111",taihi:true,stops:null,vmax:90,acc:0.95,dwell:20,long:{"横浜":30}}
+};
+const DECEL=0.95, DT=0.1;
+// 通過駅でも時刻を書く駅（主要駅・待避駅）
+const MAJOR=new Set(["品川","京急蒲田","京急川崎","横浜","上大岡","金沢文庫"]);
+// 待避駅（up=品川方面の上りのみ、down=下りのみ）
+const TAIHI={"鮫洲":"both","平和島":"both","京急蒲田":"both","京急川崎":"both","京急鶴見":"up","生麦":"down","子安":"up","神奈川新町":"both","南太田":"both","上大岡":"both"};
+
+let cfg={disorder:"off",kind:"kaitoku",sec:"品川|上大岡",speed:"1",cars:"8",voice:"on",weather:"fine"};
+let decel=DECEL;
+document.querySelectorAll(".seg").forEach(seg=>{
+  seg.addEventListener("click",e=>{
+    const b=e.target.closest("button");if(!b)return;
+    seg.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));
+    cfg[seg.dataset.k]=b.dataset.v;
+  });
+});
+
+// 区間選択：乗車駅・降車駅を自由に選ぶ
+function secSync(){ const $=id=>document.getElementById(id); const f=$("secFrom").value, t=$("secTo").value; cfg.sec=f+"|"+t; $("secErr").hidden=f!==t; $("start").disabled=f===t;
+  document.querySelectorAll("#secPresets button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.p===cfg.sec)); }
+(function initSec(){
+  const $=id=>document.getElementById(id);
+  const opts=STATIONS.map(s=>`<option value="${s[0]}">${s[0]}</option>`).join("");
+  $("secFrom").innerHTML=opts; $("secTo").innerHTML=opts;
+  const [f,t]=cfg.sec.split("|"); $("secFrom").value=f; $("secTo").value=t;
+  $("secFrom").addEventListener("change",secSync); $("secTo").addEventListener("change",secSync);
+  $("secSwap").addEventListener("click",()=>{ const a=$("secFrom").value; $("secFrom").value=$("secTo").value; $("secTo").value=a; secSync(); });
+  document.querySelectorAll("#secPresets button").forEach(b=>b.addEventListener("click",()=>{ const [a,c]=b.dataset.p.split("|"); $("secFrom").value=a; $("secTo").value=c; secSync(); }));
+  secSync();
+})();
+function buildRoute(){
+  const k=KINDS[cfg.kind];
+  const [from,to]=cfg.sec.split("|");
+  const a=STATIONS.findIndex(s=>s[0]===from), b=STATIONS.findIndex(s=>s[0]===to);
+  const down=a<b; cfg.dir=down?"down":"up";
+  let st=STATIONS.slice(Math.min(a,b),Math.max(a,b)+1);
+  if(!down) st.reverse();
+  const origin=st[0][1];
+  return st.map(([name,km])=>({
+    name, x:Math.abs(origin-km)*1000,
+    stop: (k.stops? k.stops.includes(name):true) || name===from || name===to,
+    track: down?1:2,
+    taihiOK: !!TAIHI[name]&&(TAIHI[name]==="both"||TAIHI[name]===(down?"down":"up")),
+    dwell: k.long[name]||k.dwell
+  }));
+}
+
+// ---- 走行シミュレーション本体 ----
+function newState(route){
+  return {x:0,v:0,mode:"dwell",remain:route[0].dwell,t:0,target:nextStop(route,0),last:0,events:{},announced:{},extraDone:false,taihiPending:false,taihiAt:-1,dwellStart:0};
+}
+function nextStop(route,i){for(let j=i+1;j<route.length;j++) if(route[j].stop) return j; return -1;}
+
+function step(s,route,k,rand,onEvent){
+  if(s.mode==="end") return;
+  s.t+=DT;
+  if(s.mode==="dwell"){
+    s.remain-=DT;
+    if(s.remain<=0){
+      const here=s.last;
+      if(here===route.length-1||s.target<0){s.mode="end";return;}
+      (s.events[here]=s.events[here]||{}).dep=s.t;
+      s.mode="run"; s.braking=false; s.halt=null; onEvent&&onEvent("dep",here);
+    }
+    return;
+  }
+  // 駅間停車中
+  if(s.mode==="halt"){
+    s.remain-=DT;
+    if(s.remain<=0){ s.mode="run"; s.braking=false; onEvent&&onEvent("resume"); }
+    return;
+  }
+  const tgt=route[s.target];
+  const haltX=(s.halt&&!s.halt.done&&s.halt.x<tgt.x)?s.halt.x:null;
+  const stopX=haltX!=null?haltX:tgt.x, dist=stopX-s.x;
+  let a;
+  const req=s.v*s.v/(2*Math.max(dist,0.01));
+  // braking は「駅に止まるためのブレーキ」だけ。駅間停車のブレーキでは「次は停車」を出さない
+  if(req>=decel*0.97){ a=-Math.min(req,1.3); s.braking=(haltX==null); }
+  else if(s.v<k.vmax/3.6){ a=k.acc*Math.max(0.25,1-0.7*s.v/(k.vmax/3.6)); s.braking=false; }
+  else { a=0; s.braking=false; }
+  s.v=Math.max(0,s.v+a*DT);
+  if(s.v>k.vmax/3.6) s.v=k.vmax/3.6;
+  const px=s.x; s.x+=s.v*DT;
+  // 通過駅
+  for(let i=s.last+1;i<s.target;i++){
+    if(px<route[i].x&&s.x>=route[i].x){(s.events[i]=s.events[i]||{}).pass=s.t; onEvent&&onEvent("pass",i);}
+  }
+  if(dist<=0.4 || (s.v<0.25&&dist<3)){
+    s.x=stopX; s.v=0;
+    if(haltX!=null){ s.mode="halt"; s.remain=s.halt.sec; s.halt.done=true; s.haltStart=s.t; onEvent&&onEvent("halt"); return; }
+    s.mode="dwell";
+    const i=s.target; s.last=i;
+    (s.events[i]=s.events[i]||{}).arr=s.t;
+    s.remain=route[i].dwell + (rand? rand(i):0);
+    s.target=nextStop(route,i);
+    onEvent&&onEvent("arr",i);
+  }
+}
+
+function planTimes(route,k){
+  const s=newState(route); let n=0;
+  while(s.mode!=="end"&&n<200000){step(s,route,k,null,null);n++;}
+  return s.events;
+}
+
+// ---- 表示・実行 ----
+const $=id=>document.getElementById(id);
+let route,K,plan,S,startEpoch,mult=1,paused=false,raf,lastReal,offset=0,delaySec=0,trainNo,acc=0;
+
+function fmt(sec){
+  const d=new Date(startEpoch+sec*1000);
+  return [d.getHours(),d.getMinutes(),d.getSeconds()].map(n=>String(n).padStart(2,"0")).join(":");
+}
+function fmtDelay(sec){
+  const sgn=sec<0?"−":"+", a=Math.abs(Math.round(sec));
+  return sgn+String(Math.floor(a/60)).padStart(2,"0")+":"+String(a%60).padStart(2,"0");
+}
+
+function renderList(){
+  const L=$("list"); L.innerHTML="";
+  route.forEach((r,i)=>{
+    const e=plan[i]||{}, row=document.createElement("div");
+    row.className="row"+(r.stop?"":" pass-row"); row.id="r"+i;
+    const arr=i===0?"":(r.stop?fmt(e.arr):((MAJOR.has(r.name)||r.taihiOK)?fmt(e.pass):""));
+    const dep=r.stop?(i===route.length-1?"--:--:--":fmt(e.dep)):"";
+    row.innerHTML=`<span class="nm">${r.name}${(S&&S.taihiAt===i)?'<span class="tb">待避</span>':''}</span><span class="t num">${arr}</span>`+
+      (r.stop?`<span class="trk num">${r.track}</span>`:`<span class="pass" title="通過"></span>`)+
+      `<span class="t num dep">${dep}</span>`;
+    L.appendChild(row);
+  });
+}
+
+// 男声(案内)・女声(警告)の2役。端末に日本語音声が2種類あれば別の声、なければ高さで分ける
+let jaVoices=[];
+function loadVoices(){try{jaVoices=speechSynthesis.getVoices().filter(v=>/^ja/i.test(v.lang));}catch(_){}}
+if("speechSynthesis" in window){loadVoices();try{speechSynthesis.onvoiceschanged=loadVoices;}catch(_){}}
+// iPhone対策：タップ中に無音の発話＋WebAudioを起こしておく
+let actx=null, unlocked=false;
+function unlockAudio(){
+  try{ if(!actx){const AC=window.AudioContext||window.webkitAudioContext; if(AC) actx=new AC();} if(actx&&actx.state==="suspended") actx.resume(); }catch(_){}
+  if(unlocked) return; unlocked=true;
+  try{ const u=new SpeechSynthesisUtterance(" "); u.volume=0; u.lang="ja-JP"; speechSynthesis.speak(u); }catch(_){}
+}
+function chime(hi){
+  if(!actx) return;
+  try{ const t=actx.currentTime; [0,0.18].forEach((d,k)=>{ const o=actx.createOscillator(), g=actx.createGain();
+    o.frequency.value=hi?(k?1320:1760):(k?660:880); g.gain.setValueAtTime(0.0001,t+d); g.gain.exponentialRampToValueAtTime(0.25,t+d+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t+d+0.16);
+    o.connect(g); g.connect(actx.destination); o.start(t+d); o.stop(t+d+0.17); }); }catch(_){}
+}
+// 駅名の読み（読み上げ用）
+const YOMI={"品川":"しながわ","北品川":"きたしながわ","新馬場":"しんばんば","青物横丁":"あおものよこちょう","鮫洲":"さめず","立会川":"たちあいがわ","大森海岸":"おおもりかいがん","平和島":"へいわじま","大森町":"おおもりまち","梅屋敷":"うめやしき","京急蒲田":"けいきゅうかまた","雑色":"ぞうしき","六郷土手":"ろくごうどて","京急川崎":"けいきゅうかわさき","八丁畷":"はっちょうなわて","鶴見市場":"つるみいちば","京急鶴見":"けいきゅうつるみ","花月総持寺":"かげつそうじじ","生麦":"なまむぎ","京急新子安":"けいきゅうしんこやす","子安":"こやす","神奈川新町":"かながわしんまち","京急東神奈川":"けいきゅうひがしかながわ","神奈川":"かながわ","横浜":"よこはま","戸部":"とべ","日ノ出町":"ひのでちょう","黄金町":"こがねちょう","南太田":"みなみおおた","井土ヶ谷":"いどがや","上大岡":"かみおおおか","屏風浦":"びょうぶがうら","杉田":"すぎた","京急富岡":"けいきゅうとみおか","能見台":"のうけんだい","金沢文庫":"かなざわぶんこ","快特":"かいとく","待避":"たいひ","停止位置":"ていしいち"};
+const YOMI_KEYS=Object.keys(YOMI).sort((a,b)=>b.length-a.length);
+const YOMI_RE=new RegExp(YOMI_KEYS.join("|"),"g");
+function yomi(t){return t.replace(YOMI_RE,m=>YOMI[m]);}
+function speak(text,role="f",onend){
+  const el=$("annc"); el.textContent="🔊 "+text; el.classList.add("on");
+  clearTimeout(speak.tm); speak.tm=setTimeout(()=>el.classList.remove("on"),3500);
+  if(cfg.voice!=="on"||!("speechSynthesis" in window)) return;
+  try{
+    // 倍速のときは喋りが追いつかないので、前の発話中は新しいものを捨てる（溜めて遅れて鳴るのを防ぐ）
+    if(mult>1&&(speechSynthesis.speaking||speechSynthesis.pending)) return;
+    const u=new SpeechSynthesisUtterance(yomi(text)); u.lang="ja-JP"; u.rate=1.1;
+    if(onend){ u.onend=onend; }
+    const male=jaVoices.find(v=>/otoya|ichiro|keita|male|男/i.test(v.name)), female=jaVoices.find(v=>/kyoko|o-ren|haruka|ayumi|nanami|female|女/i.test(v.name));
+    if(role==="m"){ if(male) u.voice=male; else if(jaVoices[0]) u.voice=jaVoices[0]; u.pitch=male?1:0.7; }
+    else { if(female) u.voice=female; else if(jaVoices[1]||jaVoices[0]) u.voice=jaVoices[1]||jaVoices[0]; u.pitch=female?1.1:1.5; }
+    speechSynthesis.speak(u);
+  }catch(_){}
+}
+// ヘッダー2段目に出す一時メッセージ（実時間で管理）
+let msgText="",msgUntil=0,skidUntil=0;
+function flashMsg(t,ms){msgText=t;msgUntil=performance.now()+ms;}
+
+function onEvent(type,i){
+  const p=plan[i]||{}, e=S.events[i];
+  if(type==="halt"){ speak("セクション、注意。","f"); return; }
+  if(type==="resume"){ flashMsg("解除長標確認",4000); speak("セクション、確認。","f"); return; }
+  if(type==="dep"){ delaySec=e.dep-p.dep;
+    if(cfg.disorder==="on"&&S.target>=0&&Math.random()<0.55){ const a0=route[i].x, L=route[S.target].x-a0;
+      if(L>700) S.halt={x:a0+L*(0.3+0.4*Math.random()), sec:25+Math.random()*90, done:false}; }
+    const t=S.target; if(t>=0){ speak(`次は、${route[t].name}、停車。`,"f"); } }
+  if(type==="arr"){ delaySec=e.arr-p.arr; S.dwellStart=S.t;
+    if(S.taihiPending&&K.taihi&&route[i].taihiOK) applyTaihi(i); }
+  if(type==="pass"){ delaySec=e.pass-p.pass; }
+}
+
+// 待避：停車を合計2分に延ばし、予定時刻もその分後ろにずらす（待避はダイヤ上の予定なので遅延にしない）
+const TAIHI_SEC=120;
+function applyTaihi(i){
+  if(S.taihiAt===i) return;
+  S.remain=Math.max(S.remain,TAIHI_SEC-(S.t-S.dwellStart));
+  const p=plan[i]||{}, shift=TAIHI_SEC-((p.dep??0)-(p.arr??0));
+  if(shift>0){ route.forEach((_,j)=>{ const q=plan[j]; if(!q||j<i) return;
+    if(j===i){ if(q.dep!=null) q.dep+=shift; } else { ["arr","dep","pass"].forEach(k=>{ if(q[k]!=null) q[k]+=shift; }); } }); }
+  S.taihiAt=i; S.taihiPending=false; $("taihiBtn").setAttribute("aria-pressed","false");
+  renderList(); speak("待避","f");
+}
+// 「停止位置 ○！」を喋り終わったらすぐ次を流す。止まる直前（5km/h以下）で終わり
+function stopPosLoop(k){
+  if(!S||S.mode!=="run"||S.target!==k||S.v<=20/3.6) return;
+  const a=S.announced[k], n=performance.now();
+  if(n<(a.posNext||0)) return;
+  if(a.pos!==1){ speak("停止位置","f"); a.pos=1; a.posNext=n+300; a.gapAt=0; }
+  else { if(!a.gapAt){ a.gapAt=n+800/Math.max(1,mult); return; } if(n<a.gapAt) return; speak(String(cfg.cars),"f"); a.pos=2; a.posNext=n+300; }
+}
+function speechIdle(){ try{ return cfg.voice==="on"&&!speechSynthesis.speaking&&!speechSynthesis.pending; }catch(_){ return false; } }
+function checkApproach(){
+  if(S.mode!=="run"||S.target<0) return;
+  const d=route[S.target].x-S.x, key=S.target;
+  const a=S.announced[key]=S.announced[key]||{};
+  // 発車後、列車長ぶん進んだら「解除長標確認」（演出）
+  const rk="rel"+S.last;
+  if(!S.announced[rk]&&S.x>=route[S.last].x+(+cfg.cars)*20+120&&d>900){S.announced[rk]=1; flashMsg("解除長標確認",4500);}
+  // 実機の字幕より：次は停車！ → ○両！停車！ → (スキット注意！) → 停止位置 ○！
+  // ブレーキをかけ始めたら「次は停車！」×2 → ホーム入線少し前で「○両！停車！」×1 → 5km/h以下まで「停止位置 ○！」を繰り返す
+  const plat=Math.max(+cfg.cars,6)*20+60, nowR=performance.now();
+  if(!a.brake&&(S.braking||d<=plat+150)){a.brake=1; speak("次は、停車。　次は、停車。","f");}
+  if(!a.cars&&d<=plat){a.cars=1; a.brake=1; const k=S.target;
+    if(cfg.weather==="rain"){ a.skid=1; skidUntil=nowR+2600/Math.max(1,mult); speak(`${cfg.cars}両、停車。　スキット注意。`,"f"); }
+    else speak(`${cfg.cars}両、停車。`,"f"); }
+  // 喋り終わったら即「停止位置 ○！」を次々流す
+  if(a.cars&&speechIdle()) stopPosLoop(S.target);
+}
+
+function draw(){
+  const tsec=S.t, now=new Date(startEpoch+tsec*1000);
+  $("dclock").textContent=fmt(tsec);
+  drawClock(now);
+  $("spd").firstChild.textContent=Math.round(S.v*3.6);
+  const tg=S.target>=0?route[S.target]:null;
+  $("rem").firstChild.textContent=tg? (S.mode==="run"?Math.round(tg.x-S.x):Math.round(tg.x-route[S.last].x)) : 0;
+  // ヘッダー表示：動画の流れ（次駅 → 停車 → ○両 → 到着で空欄）
+  const nowR=performance.now(), nl=$("nextLbl");
+  const dd=(S.mode==="run"&&tg)?tg.x-S.x:Infinity, skid=nowR<skidUntil;
+  $("hCars").textContent=cfg.cars+"両";
+  const ann=(tg&&S.announced[S.target])||{}, blink=Math.floor(nowR/500)%2===1;
+  $("hCars").hidden=!(S.mode==="run"&&ann.cars&&!skid&&S.v>20/3.6);
+  $("hStop").hidden=!(S.mode==="run"&&ann.brake&&!ann.cars);
+  $("hCars").classList.remove("blink"); $("hStop").classList.toggle("blink",blink);
+  if(S.mode==="dwell"&&K.taihi&&route[S.last].taihiOK&&S.last>0&&S.t-S.dwellStart>=TAIHI_SEC&&S.taihiAt!==S.last){S.taihiAt=S.last;renderList();}
+  if(S.mode==="halt"){nl.className="next sec"+(blink?" blink":"");nl.textContent="セクション注意";}
+  else if(skid){nl.className="next skid"+(blink?" blink":"");nl.textContent="！スキット注意！";}
+  else if(S.mode==="dwell"&&S.taihiAt===S.last){nl.className="next taihi";nl.textContent=`待避　発車まで ${Math.max(0,Math.ceil(S.remain))}秒`;}
+  else if(nowR<msgUntil&&S.mode==="run"){nl.className="next msg"+(blink?" blink":"");nl.textContent=msgText;}
+  else if(S.mode==="run"&&tg||(S.mode==="dwell"&&S.last===0&&tg)){nl.className="next";nl.textContent=tg.name;}
+  else {nl.className="next blank";nl.textContent="　";}
+  const ph=S.mode==="halt"?`駅間停車 ・ 運転再開まで ${Math.max(0,Math.ceil(S.remain))}秒`:S.mode==="end"?"乗務終了":S.mode==="dwell"?`停車中 ・ 発車まで ${Math.max(0,Math.ceil(S.remain))}秒`:(S.v>0&&tg&&(tg.x-S.x)<=S.v*S.v/(2*DECEL)+60?"減速中":"力行・惰行");
+  $("phase").textContent=ph;
+  const lost=S.mode==="run"&&Math.floor(S.t/40)%9===4;
+  $("gps").classList.toggle("lost",lost);
+  const d=delaySec+offset+(S.mode==="halt"?S.t-S.haltStart:0), ad=Math.abs(Math.round(d));
+  const hms=[Math.floor(ad/3600),Math.floor(ad/60)%60,ad%60].map(n=>String(n).padStart(2,"0")).join(":");
+  $("gpsTxt").textContent=lost?"GPS 補正中":"GPS 良好 ±"+(3+Math.floor(S.t/7)%4)+"m";
+  $("gps").className="gps num"+(lost?" warn lost":"");
+  const de=$("delay"); de.textContent="遅延 "+(d<0?"−":"")+hms;
+  de.className="delay num"+(d>60?" bad":d>=15?" warn":"");
+  route.forEach((r,i)=>{
+    const row=$("r"+i); if(!row) return;
+    const passed = S.mode==="run"? r.x<S.x : i<S.last;
+    row.classList.toggle("passed",passed && i!==S.last);
+    // ▶：停車中は今いる駅、発車したら次の停車駅
+    row.classList.toggle("target",i===((S.mode==="dwell"||S.mode==="end")?S.last:S.target));
+    const dp=row.querySelector(".dep"); if(dp) dp.classList.toggle("red",S.mode==="dwell"&&i===S.last&&blink);
+  });
+}
+
+function drawClock(d){
+  const c=$("clock"),g=c.getContext("2d"),R=120;
+  g.clearRect(0,0,240,240);
+  g.fillStyle="#f3f3ee";g.beginPath();g.arc(R,R,114,0,Math.PI*2);g.fill();
+  g.fillStyle="#111";g.font="bold 22px sans-serif";g.textAlign="center";g.textBaseline="middle";
+  for(let n=1;n<=12;n++){const a=n*Math.PI/6;g.fillText(n,R+86*Math.sin(a),R-86*Math.cos(a));}
+  const hand=(ang,len,w,col)=>{g.strokeStyle=col;g.lineWidth=w;g.lineCap="round";g.beginPath();g.moveTo(R,R);g.lineTo(R+len*Math.sin(ang),R-len*Math.cos(ang));g.stroke();};
+  const s=d.getSeconds(),m=d.getMinutes()+s/60,h=(d.getHours()%12)+m/60;
+  hand(h*Math.PI/6,52,7,"#111");hand(m*Math.PI/30,78,5,"#111");hand(s*Math.PI/30,88,2,"#c8302f");
+  g.fillStyle="#111";g.beginPath();g.arc(R,R,6,0,Math.PI*2);g.fill();
+}
+
+function loop(ts){
+  if(lastReal==null) lastReal=ts;
+  // 画面が止まっていた分も取り戻す（最大60秒）
+  const dtReal=Math.min(60,(ts-lastReal)/1000); lastReal=ts;
+  if(!paused&&S.mode!=="end"){
+    acc+=dtReal*mult; let n=Math.floor(acc/DT); acc-=n*DT;
+    const rand=cfg.disorder==="on"? (i=>Math.random()<0.7?15+Math.random()*75:0) : (i=>Math.random()<0.35?5+Math.random()*25:0);
+    while(n-->0&&S.mode!=="end"){ step(S,route,K,rand,onEvent); checkApproach(); }
+  }
+  draw();
+  const row=$("r"+((S.mode==="dwell"||S.mode==="end"||S.target<0)?S.last:S.target));
+  if(row&&row!==loop.lastRow){loop.lastRow=row;const L=$("list"); L.scrollTop=row.offsetTop-L.offsetTop-L.clientHeight/2+row.offsetHeight/2;}
+  raf=requestAnimationFrame(loop);
+}
+
+$("start").addEventListener("click",()=>{
+  route=buildRoute(); K=KINDS[cfg.kind]; decel=DECEL; plan=planTimes(route,K);
+  decel=cfg.weather==="rain"?0.8:DECEL;
+  startEpoch=Date.now();
+  mult=+cfg.speed; document.querySelectorAll("[data-m]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.m===cfg.speed));
+  S=newState(route); offset=0; delaySec=0; lastReal=null; loop.lastRow=null;
+  const nd=new Date(); trainNo=String(nd.getHours()*100+nd.getMinutes()).padStart(4,"0")+({kaitoku:"H",tokkyu:"SH",kyuko:"",futsu:""}[cfg.kind]);
+  const hd=document.querySelector(".head"); hd.style.setProperty("--ks",K.sub); hd.style.setProperty("--ksf",K.subFg||"#fff");
+  $("taihiBtn").hidden=!K.taihi; $("taihiBtn").setAttribute("aria-pressed","false");
+  $("kindLbl").textContent=K.label; $("kindLbl").style.background=K.color; $("kindLbl").style.color=K.fg||"#fff";
+  $("carsLbl").textContent=cfg.cars; $("trainNo").textContent=trainNo;
+  $("mset").innerHTML="放送："+(cfg.voice==="on"?"自動":"切")+"<br>音量：11"; msgUntil=0; skidUntil=0;
+  $("rangeLbl").textContent=`${route[0].name} - ${route[route.length-1].name} 駅一覧`;
+  renderList();
+  $("dbadge").hidden=cfg.disorder!=="on";
+  $("setup").hidden=true; $("runv").hidden=false; $("note").hidden=true;
+  try{ window.scrollTo(0,0); document.querySelector(".screen").scrollTop=0; }catch(_){}
+  try{navigator.wakeLock&&navigator.wakeLock.request("screen").catch(()=>{});}catch(_){}
+  acc=0; unlockAudio();
+  speak(`${K.label}、${route[route.length-1].name}行き、${cfg.cars}両、乗務開始`,"m");
+  cancelAnimationFrame(raf); raf=requestAnimationFrame(loop);
+});
+$("pause").addEventListener("click",e=>{paused=!paused;e.target.setAttribute("aria-pressed",paused);e.target.textContent=paused?"再開":"一時停止";});
+document.querySelectorAll("[data-m]").forEach(b=>b.addEventListener("click",()=>{
+  mult=+b.dataset.m; document.querySelectorAll("[data-m]").forEach(x=>x.setAttribute("aria-pressed",x===b));
+}));
+// 実車との同期：発車ボタンで停車を打ち切り、到着ボタンで次の停車駅に位置を合わせる
+$("depNow").addEventListener("click",()=>{ unlockAudio(); if(S&&(S.mode==="dwell"||S.mode==="halt")) S.remain=0; });
+// 駅間停車ボタン：今の速度から止まれる位置で止める。運転再開は「発車」
+$("haltBtn").addEventListener("click",()=>{ if(!S||S.mode!=="run") return; S.halt={x:S.x+S.v*S.v/(2*decel)+5, sec:40+Math.random()*50, done:false}; });
+$("vtest").addEventListener("click",()=>{ unlockAudio(); speak("音声テスト、停車","f"); setTimeout(()=>{ const ok=("speechSynthesis" in window); $("vstat").textContent= ok? `読み上げ機能あり・日本語の声 ${jaVoices.length}種類。聞こえなければマナーモードと音量を確認` : "この画面では読み上げが使えない。Safariで開くと声が出るかも"; },400); });
+// 待避ボタン：待避駅に停車中ならその場で、走行中なら次の待避駅で待避（もう一度押すと取り消し）
+$("taihiBtn").addEventListener("click",()=>{
+  if(!S||!K.taihi) return;
+  if(S.mode==="dwell"&&S.last>0&&route[S.last].taihiOK&&S.taihiAt!==S.last){ applyTaihi(S.last); return; }
+  S.taihiPending=!S.taihiPending; $("taihiBtn").setAttribute("aria-pressed",S.taihiPending);
+});
+$("arrNow").addEventListener("click",()=>{
+  if(!S||(S.mode!=="run"&&S.mode!=="halt")||S.target<0) return;
+  const i=S.target;
+  for(let j=S.last+1;j<i;j++){ if(!(S.events[j]&&S.events[j].pass)) (S.events[j]=S.events[j]||{}).pass=S.t; }
+  S.x=route[i].x; S.v=0; S.mode="dwell"; S.last=i;
+  (S.events[i]=S.events[i]||{}).arr=S.t;
+  S.remain=route[i].dwell; S.target=nextStop(route,i); S.dwellStart=S.t; S.halt=null;
+  onEvent("arr",i);
+});
+$("minus").addEventListener("click",()=>{offset-=10;});
+$("plus").addEventListener("click",()=>{offset+=10;});
+$("back").addEventListener("click",()=>{cancelAnimationFrame(raf);try{speechSynthesis.cancel()}catch(_){};$("runv").hidden=true;$("setup").hidden=false;$("note").hidden=false;});
+</script>

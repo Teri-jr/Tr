@@ -1,0 +1,930 @@
+<title>運転士タブレット GPS</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDGothic:wght@400;700&family=BIZ+UDPGothic:wght@400;700&display=swap">
+<style>
+/* Layout: 乗務員タブレット画面の再現。左に時計列、右に種別ヘッダ＋駅一覧。下に操作バー。単一ダーク(タブレット画面)で固定 */
+:root{
+  color-scheme: dark;
+  --bg:#0b0f16;          /* 端末ベゼル外 */
+  --screen:#000000;      /* 画面地（完全な黒） */
+  --panel:#1c2431;       /* 行・パネル */
+  --line:#2c3646;        /* 罫線 */
+  --fg:#e9eef6;
+  --muted:#8b97a8;
+  --kind-kaitoku:#00a040; --sub-kaitoku:#00773a; /* 快特：緑 */
+  --kind-tokkyu:#8f0012;  --sub-tokkyu:#c40018;  /* 特急：濃いめの赤 */
+  --kind-kyuko:#4fb6e8;   --sub-kyuko:#1f6fc4;   /* 急行：薄い水色、次駅は濃い青（実機画面より） */
+  --kind-futsu:#111111;   --sub-futsu:#f2f2ee;   /* 普通：黒 */
+  --dest:#1f5fbf;
+  --dest-hi:#3f86e8;
+  --ok:#2bb04a;
+  --warn:#e3a323;
+  --bad:#e2483d;
+  --track:#4b86d6;
+  --f-ui:"BIZ UDPGothic","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+  --f-num:"BIZ UDGothic","Hiragino Sans","Noto Sans JP",ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-ui);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px}
+button{font-family:inherit;color:inherit;cursor:pointer}
+button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outline-offset:2px}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+
+/* 画面の高さいっぱいに広げ、駅一覧が残りの高さを全部使う */
+.device{max-width:1100px;margin:0 auto;height:100%}
+.screen{background:var(--screen);border-radius:8px;overflow:auto;height:100%;min-height:520px;display:flex;flex-direction:column}
+.status{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);padding:6px 12px 2px}
+
+/* setup */
+.setup{padding:20px;display:grid;gap:18px;max-width:560px;margin:0 auto;width:100%}
+.setup h1{font-size:22px;margin:4px 0 0;text-wrap:balance}
+.setup p{margin:0;color:var(--muted);font-size:13px;line-height:1.6}
+.field{display:grid;gap:8px}
+.field > span{font-size:12px;color:var(--muted);letter-spacing:.06em}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg button{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-size:15px;min-width:72px}
+.seg button[aria-pressed="true"]{background:var(--dest);border-color:var(--dest-hi)}
+.secpick{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.secpick select,.secpick button{background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:16px;font-family:inherit}
+.secpick select{flex:1;min-width:120px}
+.go{background:var(--ok);border:0;border-radius:10px;padding:14px;font-size:17px;font-weight:700;color:#06130a}
+
+/* run */
+.run{display:grid;grid-template-columns:150px 1fr;grid-template-rows:minmax(0,1fr);gap:10px;padding:8px 10px 10px;flex:1;min-height:0}
+.side{display:flex;flex-direction:column;gap:8px;align-items:center}
+#clock{width:120px;height:120px}
+.dclock{font-size:20px;letter-spacing:.08em}
+.meter{width:100%;background:var(--panel);border-radius:8px;padding:8px;display:grid;gap:2px;text-align:center}
+.meter small{font-size:10px;color:var(--muted);letter-spacing:.06em}
+.meter b{font-size:24px}
+.meter b span{font-size:12px;font-weight:400;color:var(--muted)}
+
+.main{display:flex;flex-direction:column;gap:6px;min-width:0;min-height:0}
+.head{display:grid;grid-template-columns:1fr 150px;grid-template-rows:auto auto;border-radius:4px;overflow:hidden}
+.kind{grid-column:1;background:var(--kind-kaitoku);text-align:center;font-size:88px;font-weight:700;letter-spacing:.4em;padding:6px 0 6px .4em;line-height:1.1}
+.next{grid-column:1;background:var(--ks,var(--dest));color:var(--ksf,#fff);border-top:2px solid var(--screen);text-align:center;font-size:56px;font-weight:700;padding:8px 4px}
+.next small{font-size:12px;font-weight:400;opacity:.8;margin-right:6px}
+.cars{grid-column:2;grid-row:1/3;background:var(--ks,var(--dest));color:var(--ksf,#fff);border-left:2px solid var(--screen);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.cars b{font-size:60px;line-height:1}
+.cars span{font-size:20px}
+.cars small{font-size:16px;opacity:.85}
+
+.statusrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.delay{display:inline-flex;align-items:center;gap:6px;background:var(--ok);color:#06130a;border-radius:4px;padding:4px 10px;font-size:13px;font-weight:700}
+.delay.warn{background:var(--warn)}
+.delay.bad{background:var(--bad);color:#fff}
+.dist{font-size:13px;color:var(--muted)}
+.dist b{color:var(--fg)}
+.annc{margin-left:auto;font-size:13px;background:#24304a;border:1px solid var(--dest);border-radius:4px;padding:3px 8px;opacity:0;transition:opacity .2s}
+.annc.on{opacity:1}
+
+.listhead{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:4px 2px;border-bottom:1px solid var(--line)}
+.listhead span:last-child{color:var(--muted);font-size:11px}
+.list{overflow-y:auto;flex:1;min-height:200px;scroll-behavior:smooth}
+/* iPadなど縦向き：駅一覧を大きめにして下まで使う */
+@media (orientation:portrait) and (min-width:700px){
+  .run{grid-template-columns:180px 1fr}
+  .row{font-size:22px;padding:16px 8px;grid-template-columns:minmax(0,1fr) 120px 36px 120px}
+  .trk{width:30px;height:30px;font-size:15px}
+  .listhead{font-size:16px}
+  .ctrl button{font-size:16px;padding:12px 14px}
+  #clock{width:160px;height:160px}
+  /* 上の表示を全幅にしてさらに約2倍 */
+  .run{grid-template-columns:150px 1fr}
+  #clock{width:130px;height:130px}
+  .head{grid-template-columns:1fr 170px}
+  #hStop{right:170px}
+  .kind{font-size:min(160px,19cqw)!important;line-height:1.05;letter-spacing:.25em;padding-left:.25em;white-space:nowrap}
+  .next{font-size:min(110px,12cqw)!important}
+  .cars b{font-size:96px}
+  .cars span{font-size:28px}
+  .cars small{font-size:20px}
+  .hover{font-size:220px!important}
+  #hStop{font-size:min(220px,31cqw)!important}
+}
+.row{display:grid;grid-template-columns:minmax(0,1fr) 88px 30px 88px;align-items:center;gap:6px;padding:9px 6px;border-bottom:1px solid var(--line);font-size:15px}
+.row .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .t{text-align:right}
+.trk{width:22px;height:22px;border-radius:50%;border:2px solid var(--track);color:var(--fg);display:grid;place-items:center;font-size:12px;font-weight:700;justify-self:center}
+.pass{justify-self:center;width:16px;height:18px;background:var(--track);clip-path:polygon(0 0,100% 0,100% 62%,50% 100%,0 62%)}
+.row.pass-row{color:var(--muted);font-size:14px}
+.row.passed{opacity:.35}
+.row.target{background:#1d2b42}
+.row.target .nm{color:#fff;font-weight:700}
+
+.ctrl{display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px 10px;border-top:1px solid var(--line);background:#10151e}
+.ctrl button{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 10px;font-size:13px}
+.ctrl button[aria-pressed="true"]{background:var(--dest);border-color:var(--dest-hi)}
+.ctrl .sp{flex:1}
+.note{max-width:980px;margin:10px auto 0;font-size:12px;color:var(--muted);line-height:1.6}
+
+@media (max-width:640px){
+  .run{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
+  .side{flex-direction:row;flex-wrap:wrap;justify-content:center}
+  #clock{width:84px;height:84px}
+  .meter{width:auto;flex:1;min-width:90px}
+  .row{grid-template-columns:minmax(0,1fr) 76px 26px 76px;font-size:14px}
+}
+.gps{display:inline-flex;align-items:center;gap:6px;background:var(--ok);color:#06130a;border-radius:4px;padding:4px 10px;font-size:13px;font-weight:700}
+.gps.warn{background:var(--warn)}
+.gps.bad{background:var(--bad);color:#fff}
+.gps.lost svg{opacity:.25}
+.head{position:relative}
+.hover{position:absolute;top:0;bottom:0;left:0;background:#efefea;color:#111;display:grid;place-items:center;font-size:160px;line-height:1;font-weight:400;letter-spacing:.06em;z-index:2}
+#hStop{right:150px}
+#hCars{right:0}
+.next.msg{background:#efefea;color:#111;font-weight:400}
+.head{container-type:inline-size;flex-shrink:0}
+.statusrow,.listhead{flex-shrink:0}
+.hover{white-space:nowrap;overflow:hidden}
+.dbadge{background:var(--bad);color:#fff;border-radius:4px;padding:4px 10px;font-size:13px;font-weight:700}
+.next.sec{background:#f4f4f0;color:#e60012;font-size:min(56px,8.6cqw)!important;letter-spacing:.02em}
+.next.sec.blink{background:#e60012;color:#f4f4f0}
+.row .dep.red{color:#ff3b30;font-weight:700}
+/* スマホ（縦・横）：画面の高さに詰め込まずページごとスクロール。操作ボタンは下に固定 */
+@media (max-width:640px),(max-height:600px){
+  .device,.screen{height:auto}
+  .screen{overflow:visible;min-height:0}
+  #runv{flex:none!important}
+  .run{grid-template-rows:auto auto}
+  .list{flex:none;min-height:0;max-height:60dvh}
+  .ctrl{position:sticky;bottom:0;z-index:6;padding-bottom:max(6px,env(safe-area-inset-bottom,0px))}
+}
+@media (max-height:600px) and (min-width:641px){
+  .hover{font-size:96px}
+  .kind{font-size:56px!important}
+  .next{font-size:34px!important}
+  .head{grid-template-columns:1fr 110px}
+  #hStop{right:110px}
+  .cars b{font-size:40px}
+  .run{grid-template-columns:130px 1fr}
+  #clock{width:70px;height:70px}
+  .mset{display:none}
+}
+@media (max-width:640px){
+  /* スマホ：上の計器類を詰めて、駅一覧の高さを稼ぐ */
+  .run{gap:6px;padding:6px}
+  .side{gap:6px}
+  #clock{width:60px;height:60px}
+  .dclock{font-size:16px}
+  .mset{display:none}
+  .meter{padding:4px 6px}
+  .meter b{font-size:18px}
+  .ctrl{gap:4px;padding:6px}
+  .ctrl .sp{display:none}
+  .ctrl button{font-size:12px;padding:7px 8px}
+  .row{padding:7px 4px}
+}
+.next{white-space:nowrap;overflow:hidden}
+/* スキット注意は幅に合わせて文字を縮めて1行に収める */
+.next.msg{font-size:min(56px,8.6cqw)!important;letter-spacing:.02em}
+.next.msg.blink{background:#111;color:#f4f4f0}
+.next.skid{background:#1f6fd1;color:#ffe23a;letter-spacing:.02em;font-size:min(56px,7.2cqw)!important}
+.next.skid.blink{background:#ffe23a;color:#1f6fd1}
+.hover.blink{background:#111;color:#f4f4f0}
+.next.taihi{background:#ecebe6;color:#111;font-weight:700;font-size:min(56px,6cqw)!important;letter-spacing:0}
+.row .tb{font-size:10px;border:1px solid var(--warn);color:var(--warn);border-radius:3px;padding:0 3px;margin-left:4px;vertical-align:2px}
+#taihiBtn[aria-pressed="true"]{background:var(--warn);border-color:var(--warn);color:#111}
+.next.blank{color:transparent}
+.mset{font-size:10px;color:var(--muted);line-height:1.5;align-self:flex-start;padding-left:8px}
+.gps svg{width:14px;height:14px}
+.main{position:relative}
+.alert{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%) scale(.9);background:rgba(10,14,22,.92);border:3px solid var(--warn);color:#fff;border-radius:10px;padding:14px 26px;font-size:44px;font-weight:700;letter-spacing:.08em;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s,transform .15s;z-index:5;text-align:center}
+.alert.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.alert.stop{border-color:var(--bad)}
+.alert.info{border-color:var(--dest-hi)}
+.row .nm::before{content:"";display:inline-block;width:14px}
+.row.target .nm::before{content:"▶";color:var(--warn);font-size:11px;vertical-align:1px}
+@media (max-width:640px){.alert{font-size:30px;padding:10px 16px}.hover{font-size:96px}.head{grid-template-columns:1fr 96px}#hStop{right:96px}.kind{font-size:56px!important}.next{font-size:34px!important}.cars b{font-size:40px}.cars span{font-size:14px}.cars small{font-size:12px}}
+@media (prefers-reduced-motion:reduce){.list{scroll-behavior:auto}.annc,.alert{transition:none}}
+.hint{font-size:12px;color:var(--muted);line-height:1.6}
+.secpick input[type=time]{background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:16px;font-family:var(--f-num);flex:1;min-width:140px}
+.dbg{font-size:11px;color:var(--muted);flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.go:disabled{opacity:.4;cursor:not-allowed}
+</style>
+
+<div class="device">
+  <div class="screen">
+
+    <section class="setup" id="setup">
+      <div>
+        <h1>京急本線 運転士タブレット（GPS連動）</h1>
+        <p>時刻表は使わず、スマホのGPSと駅・線路のデータだけで動く。次の停車駅までの距離を線路に沿って測り、停車・通過・駅間停車・待避を自動で判定して読み上げる。トンネルでGPSが切れたら最後の位置と速度から走行を推定し、次にGPSが入ったところで直す。家で試すときは「テスト走行」にすると、GPSの代わりに模擬の位置が流れる。</p>
+      </div>
+      <div class="field"><span>位置</span>
+        <div class="seg" data-k="src">
+          <button aria-pressed="true" data-v="gps">GPS（実際に乗る）</button>
+          <button aria-pressed="false" data-v="test">テスト走行（GPSを模擬）</button>
+        </div></div>
+      <div class="field"><span>種別</span>
+        <div class="seg" data-k="kind">
+          <button aria-pressed="true" data-v="kaitoku">快特</button>
+          <button aria-pressed="false" data-v="tokkyu">特急</button>
+          <button aria-pressed="false" data-v="kyuko">急行</button>
+          <button aria-pressed="false" data-v="futsu">普通</button>
+        </div></div>
+      <div class="field"><span>区間</span>
+        <div class="secpick">
+          <select id="secFrom" aria-label="乗車駅"></select>
+          <span>→</span>
+          <select id="secTo" aria-label="降車駅"></select>
+          <button type="button" id="secSwap">入れ替え</button>
+          <button type="button" id="secHere">現在地から</button>
+        </div>
+        <div class="seg" id="secPresets">
+          <button data-p="品川|上大岡">品川 → 上大岡</button>
+          <button data-p="横浜|上大岡">横浜 → 上大岡</button>
+          <button data-p="上大岡|横浜">上大岡 → 横浜</button>
+          <button data-p="上大岡|品川">上大岡 → 品川</button>
+        </div>
+        <div id="secErr" style="color:var(--bad);font-size:12px" hidden>乗車駅と降車駅が同じ。どちらかを変えて</div>
+        <div class="hint" id="hereMsg" hidden></div></div>
+      <div class="field"><span>乗車駅の発車時刻（なくてもよい）</span>
+        <div class="secpick">
+          <input type="time" id="sched" step="1" aria-label="乗車駅の発車時刻">
+          <button type="button" id="schedClr">消す</button>
+        </div>
+        <div class="hint">入れると、その時刻を基準に遅れを出す。空なら実際に発車した時刻を基準にする。</div></div>
+      <div class="field testonly" hidden><span>テストの速さ</span>
+        <div class="seg" data-k="speed">
+          <button aria-pressed="true" data-v="1">等倍</button>
+          <button aria-pressed="false" data-v="5">5倍速</button>
+          <button aria-pressed="false" data-v="20">20倍速</button>
+        </div></div>
+      <div class="field"><span>両数</span>
+        <div class="seg" data-k="cars">
+          <button aria-pressed="false" data-v="4">4</button>
+          <button aria-pressed="false" data-v="6">6</button>
+          <button aria-pressed="true" data-v="8">8</button>
+          <button aria-pressed="false" data-v="12">12</button>
+        </div></div>
+      <div class="field"><span>天候</span>
+        <div class="seg" data-k="weather">
+          <button aria-pressed="true" data-v="fine">晴れ</button>
+          <button aria-pressed="false" data-v="rain">雨（スキット注意）</button>
+        </div></div>
+      <div class="field"><span>ダイヤ</span>
+        <div class="seg" data-k="disorder">
+          <button aria-pressed="true" data-v="off">平常</button>
+          <button aria-pressed="false" data-v="on">ダイヤ乱れ</button>
+        </div>
+        <div class="hint testonly" hidden>テスト走行では、乱れにすると駅間停車と停車時間の延長がランダムに起きる。</div></div>
+      <div class="field"><span>音声</span>
+        <div class="seg" data-k="voice">
+          <button aria-pressed="true" data-v="on">読み上げあり</button>
+          <button aria-pressed="false" data-v="off">なし</button>
+        </div></div>
+      <div class="hint" id="geoWarn" hidden></div>
+      <button class="go" id="start">乗務開始</button>
+    </section>
+
+    <section id="runv" hidden style="display:flex;flex-direction:column;flex:1;min-height:0">
+      <div class="run">
+        <div class="side">
+          <canvas id="clock" width="240" height="240" aria-label="時計"></canvas>
+          <div class="dclock num" id="dclock">--:--:--</div>
+          <div class="mset" id="mset">放送：自動<br>音量：11</div>
+          <div class="meter"><small>速度</small><b class="num" id="spd">0<span> km/h</span></b></div>
+          <div class="meter"><small>次停車駅まで</small><b class="num" id="rem">0<span> m</span></b></div>
+        </div>
+        <div class="main">
+          <div class="head">
+            <div class="kind" id="kindLbl">快特</div>
+            <div class="next" id="nextLbl"><small>次</small>上大岡</div>
+            <div class="cars"><b class="num" id="carsLbl">8</b><span>ツーマン</span><small class="num" id="trainNo">1101A</small></div>
+            <div class="hover" id="hStop" hidden>停車</div>
+            <div class="hover" id="hCars" hidden>8両</div>
+          </div>
+          <div class="statusrow">
+            <span class="gps num" id="gps"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 3l5 5-2 2-5-5zM16 14l5 5-2 2-5-5zM9 9l6 6-3 3-6-6zM15 3a6 6 0 016 6h-2a4 4 0 00-4-4zm0 3a3 3 0 013 3h-2a1 1 0 00-1-1z"/></svg><span id="gpsTxt">GPS 受信待ち</span></span>
+            <span class="delay num" id="delay">遅延 00:00:00</span>
+            <span class="dbadge" id="dbadge" hidden>ダイヤ乱れ</span>
+            <span class="dist" id="phase">GPS 受信待ち</span>
+            <span class="annc" id="annc"></span>
+          </div>
+          <div class="dbg num" id="dbg" hidden></div>
+          <div class="listhead"><span id="rangeLbl">駅一覧</span><span>着 ・ 番線 ・ 発</span></div>
+          <div class="list" id="list"></div>
+        </div>
+      </div>
+      <div class="ctrl">
+        <button id="depNow">発車</button>
+        <button id="arrNow">到着</button>
+        <button id="taihiBtn" aria-pressed="false">待避</button>
+        <span class="testctl" style="display:contents">
+          <button id="pause" aria-pressed="false">一時停止</button>
+          <button data-m="1" aria-pressed="true">等倍</button>
+          <button data-m="5" aria-pressed="false">5倍速</button>
+          <button data-m="20" aria-pressed="false">20倍速</button>
+          <button id="haltBtn">駅間停車</button>
+          <button id="gapBtn">GPS断</button>
+        </span>
+        <span class="sp"></span>
+        <button id="minus">−10秒</button>
+        <button id="plus">＋10秒</button>
+        <button id="dbgBtn" aria-pressed="false">詳細</button>
+        <button id="vtest">音声テスト</button>
+        <button id="back">設定へ</button>
+        <span id="vstat" style="flex-basis:100%;font-size:12px;color:var(--muted)"></span>
+      </div>
+    </section>
+  </div>
+</div>
+<p class="note" id="note">駅と線路の位置は国土数値情報（鉄道データ、国土交通省）から作った。予定時刻は線路のカーブから見積もった走行モデルによるもので、実際のダイヤとは違う。位置情報はHTTPSのページ（GitHub Pagesなど）でしか使えない。iPhoneは画面を消すとGPSも止まるので、画面はつけっぱなしにする（バッテリーを食う）。地下区間（泉岳寺方面など）は対応していない。読み上げは「乗務開始」を押したときに有効になる（マナーモードだと鳴らないことがある）。</p>
+
+<script>
+// ---- 線路・駅データ（国土数値情報「鉄道データ」N02-23、国土交通省 から作成。線路は約4mの精度に間引き） ----
+const GEO={"track":[[35.62888,139.73825],[35.62802,139.73819],[35.62774,139.73799],[35.62751,139.73796],[35.62684,139.73808],[35.62524,139.73856],[35.62465,139.73903],[35.6243,139.73917],[35.62261,139.73926],[35.62222,139.73934],[35.62135,139.73974],[35.62,139.74062],[35.61907,139.74097],[35.61008,139.74296],[35.60754,139.74349],[35.60695,139.74353],[35.60631,139.74335],[35.60391,139.74155],[35.60332,139.7412],[35.59403,139.73686],[35.59256,139.73619],[35.59188,139.73598],[35.58628,139.73515],[35.58464,139.73517],[35.58216,139.73553],[35.58141,139.73552],[35.58049,139.73541],[35.5789,139.73504],[35.57835,139.73485],[35.57637,139.73377],[35.57313,139.73241],[35.57094,139.73107],[35.56707,139.7284],[35.56453,139.72629],[35.56163,139.7243],[35.56054,139.72346],[35.55239,139.71672],[35.54893,139.71451],[35.54686,139.71298],[35.54148,139.70846],[35.54025,139.70732],[35.5342,139.7021],[35.53224,139.70018],[35.51833,139.68704],[35.51717,139.68621],[35.5117,139.68276],[35.51072,139.68189],[35.50802,139.67884],[35.50652,139.67743],[35.50547,139.67668],[35.50216,139.67454],[35.50108,139.67368],[35.50002,139.67252],[35.49393,139.66543],[35.49043,139.66125],[35.48878,139.65895],[35.48818,139.65794],[35.48741,139.65634],[35.48603,139.6529],[35.48568,139.65182],[35.48545,139.65089],[35.48532,139.64999],[35.485,139.64669],[35.48473,139.64552],[35.48433,139.64435],[35.48339,139.64282],[35.48199,139.64078],[35.47313,139.62906],[35.46722,139.62388],[35.46494,139.62211],[35.46435,139.62194],[35.46322,139.62198],[35.4628,139.62179],[35.46068,139.61992],[35.45968,139.61892],[35.45912,139.61861],[35.45877,139.61861],[35.45835,139.61873],[35.45713,139.61936],[35.45429,139.62059],[35.45107,139.62151],[35.45063,139.62179],[35.44947,139.62288],[35.44685,139.62591],[35.44648,139.62621],[35.44522,139.62685],[35.44448,139.62697],[35.44389,139.62687],[35.44129,139.62526],[35.44055,139.62437],[35.4399,139.62315],[35.43824,139.61821],[35.43764,139.61651],[35.43725,139.61564],[35.43714,139.61526],[35.43598,139.60823],[35.43476,139.60451],[35.43339,139.59829],[35.43323,139.59784],[35.43262,139.59693],[35.43204,139.59643],[35.43159,139.59618],[35.43061,139.59591],[35.42909,139.59595],[35.42731,139.5961],[35.42534,139.59652],[35.42201,139.59752],[35.42058,139.59781],[35.41863,139.5976],[35.41488,139.59672],[35.41394,139.59658],[35.41244,139.59654],[35.40702,139.59668],[35.40629,139.59677],[35.4051,139.59713],[35.40296,139.59822],[35.40234,139.59856],[35.4016,139.59909],[35.39983,139.60128],[35.3981,139.60255],[35.39763,139.60302],[35.39738,139.60337],[35.39706,139.60415],[35.39649,139.60675],[35.39607,139.60811],[35.39538,139.60909],[35.39315,139.61143],[35.39231,139.61215],[35.3913,139.61275],[35.39,139.61322],[35.38808,139.61366],[35.38688,139.61407],[35.37861,139.61837],[35.37741,139.61911],[35.37706,139.61946],[35.37625,139.6205],[35.37497,139.62263],[35.3743,139.624],[35.37367,139.62645],[35.3733,139.62701],[35.37194,139.62859],[35.37128,139.62891],[35.37062,139.62909],[35.36723,139.62969],[35.36543,139.62991],[35.36244,139.62962],[35.36075,139.62936],[35.35818,139.62806],[35.35764,139.62793],[35.35428,139.62801],[35.35337,139.62786],[35.35225,139.62749],[35.3513,139.62692],[35.34973,139.6251],[35.34943,139.62485],[35.34664,139.62314],[35.34547,139.62233],[35.33895,139.6206]],"stations":[["品川",35.62771,139.73809],["北品川",35.62243,139.73931],["新馬場",35.61666,139.7415],["青物横丁",35.60919,139.74313],["鮫洲",35.60507,139.74245],["立会川",35.59851,139.73895],["大森海岸",35.58741,139.73531],["平和島",35.57865,139.73493],["大森町",35.5725,139.73201],["梅屋敷",35.56678,139.72817],["京急蒲田",35.5617,139.72433],["雑色",35.54977,139.71504],["六郷土手",35.54053,139.70756],["京急川崎",35.53301,139.70094],["八丁畷",35.52303,139.69145],["鶴見市場",35.51759,139.68649],["京急鶴見",35.50666,139.67759],["花月総持寺",35.50033,139.67286],["生麦",35.4956,139.66733],["京急新子安",35.48722,139.65585],["子安",35.48457,139.64504],["神奈川新町",35.48152,139.64017],["京急東神奈川",35.47755,139.63493],["神奈川",35.47125,139.62742],["横浜",35.46625,139.62313],["戸部",35.45666,139.61956],["日ノ出町",35.44563,139.62666],["黄金町",35.43971,139.62256],["南太田",35.43689,139.61363],["井土ヶ谷",35.43388,139.60053],["弘明寺",35.4241,139.59691],["上大岡",35.40935,139.59661],["屏風浦",35.39413,139.61044],["杉田",35.3839,139.61561],["京急富岡",35.36671,139.62976],["能見台",35.36056,139.62923],["金沢文庫",35.34326,139.62178]]}
+;
+// カーブ制限の係数（快特 品川→上大岡 が実際の23〜24分になるよう合わせた）・下限速度・常用ブレーキ・計算の刻み
+const CURVE_K=3.3, CURVE_MIN=35, DECEL=0.95, DT=0.1;
+// ---- 線路の形と距離 ----
+const R_E=6371000, LAT0=35.5, LON0=139.65, KX=Math.cos(LAT0*Math.PI/180)*R_E*Math.PI/180, KY=R_E*Math.PI/180;
+const toXY=(lat,lon)=>[(lon-LON0)*KX,(lat-LAT0)*KY];
+const TP=GEO.track.map(([a,b])=>toXY(a,b)), TS=[0];
+for(let i=1;i<TP.length;i++) TS.push(TS[i-1]+Math.hypot(TP[i][0]-TP[i-1][0],TP[i][1]-TP[i-1][1]));
+// 緯度経度 → 線路上の位置 s(m) と線路からの横ずれ off(m)
+function project(lat,lon){
+  const [px,py]=toXY(lat,lon); let off=1e9,s=0;
+  for(let i=0;i<TP.length-1;i++){
+    const [ax,ay]=TP[i],[bx,by]=TP[i+1],dx=bx-ax,dy=by-ay,L2=dx*dx+dy*dy||1e-9;
+    const t=Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/L2)),o=Math.hypot(ax+t*dx-px,ay+t*dy-py);
+    if(o<off){off=o;s=TS[i]+t*(TS[i+1]-TS[i]);}
+  }
+  return {s,off};
+}
+function segAt(s){let lo=0,hi=TS.length-2;while(lo<hi){const m=(lo+hi+1)>>1;if(TS[m]<=s)lo=m;else hi=m-1;}return lo;}
+function latLonAt(s){
+  s=Math.max(0,Math.min(TS[TS.length-1],s)); const i=segAt(s),t=(s-TS[i])/((TS[i+1]-TS[i])||1),a=GEO.track[i],b=GEO.track[i+1];
+  return [a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t];
+}
+function headingAt(s){ s=Math.max(0,Math.min(TS[TS.length-1]-0.01,s)); const i=segAt(s); return Math.atan2(TP[i+1][1]-TP[i][1],TP[i+1][0]-TP[i][0]); }
+const STATIONS=GEO.stations.map(([n,lat,lon])=>[n,project(lat,lon).s]);
+
+// カーブの速度制限（線路の曲がり具合からの推定値。R=400mで約85km/h）
+const GRID=10, CURVE=(()=>{
+  const n=Math.ceil(TS[TS.length-1]/GRID)+1, raw=new Float32Array(n), out=new Float32Array(n);
+  for(let g=0;g<n;g++){
+    const s=g*GRID; let d=headingAt(s+100)-headingAt(s-100); d=Math.abs(Math.atan2(Math.sin(d),Math.cos(d)));
+    raw[g]=d<1e-4?200:Math.min(200,CURVE_K*Math.sqrt(200/d));
+  }
+  for(let g=0;g<n;g++){let m=200;for(let h=Math.max(0,g-8);h<=Math.min(n-1,g+8);h++)m=Math.min(m,raw[h]);out[g]=Math.max(CURVE_MIN,m);}
+  return out;
+})();
+const curveAt=s=>CURVE[Math.max(0,Math.min(CURVE.length-1,Math.round(s/GRID)))];
+
+// ---- 走行モデル（予定時刻・到着予想・テスト走行に使う） ----
+function nextStop(route,i){for(let j=i+1;j<route.length;j++) if(route[j].stop) return j; return -1;}
+// 今の位置から止まる位置までの「この速度以下で走る」曲線（カーブ制限とブレーキを合成）
+function makeEnv(route,k,x0,x1,decel){
+  const n=Math.max(1,Math.ceil((x1-x0)/GRID)), e=new Float32Array(n+1), vmax=k.vmax/3.6;
+  e[n]=0;
+  for(let i=n-1;i>=0;i--){ const x=x0+i*GRID, lim=Math.min(vmax,curveAt(route.sAt(x))/3.6);
+    e[i]=Math.min(lim,Math.sqrt(e[i+1]*e[i+1]+2*decel*Math.min(GRID,x1-x))); }
+  return {x0,x1,e};
+}
+function envAt(env,x){ if(x>=env.x1) return 0; const f=(x-env.x0)/GRID,i=Math.max(0,Math.floor(f)),t=f-i; const a=env.e[i],b=env.e[Math.min(env.e.length-1,i+1)]; return a+(b-a)*t; }
+function newState(route){ return {x:0,v:0,mode:"dwell",remain:route[0].dwell,t:0,target:nextStop(route,0),last:0,events:{},halt:null,env:null,traj:[]}; }
+function step(s,route,k,decel,rand,onEvent){
+  if(s.mode==="end") return;
+  s.t+=DT;
+  if(s.mode==="dwell"||s.mode==="halt"){
+    s.remain-=DT; if(s.remain>0) return;
+    if(s.mode==="halt"){ s.mode="run"; s.env=makeEnv(route,k,s.x,route[s.target].x,decel); onEvent&&onEvent("resume"); return; }
+    const here=s.last;
+    if(here===route.length-1||s.target<0){s.mode="end";return;}
+    (s.events[here]=s.events[here]||{}).dep=s.t;
+    s.mode="run"; s.halt=null; onEvent&&onEvent("dep",here);
+    const hx=s.halt&&!s.halt.done?s.halt.x:route[s.target].x;
+    s.env=makeEnv(route,k,s.x,hx,decel);
+    return;
+  }
+  const vmax=k.vmax/3.6, acc=k.acc*Math.max(0.25,1-0.7*s.v/vmax);
+  s.v=Math.max(0,Math.min(s.v+acc*DT,envAt(s.env,s.x+s.v*DT),vmax));
+  const px=s.x; s.x+=s.v*DT;
+  for(let i=s.last+1;i<s.target;i++) if(px<route[i].x&&s.x>=route[i].x){(s.events[i]=s.events[i]||{}).pass=s.t; onEvent&&onEvent("pass",i);}
+  const stopX=s.env.x1, dist=stopX-s.x;
+  if(dist<=0.4||(s.v<0.25&&dist<3)){
+    s.x=stopX; s.v=0;
+    if(s.halt&&!s.halt.done){ s.mode="halt"; s.remain=s.halt.sec; s.halt.done=true; onEvent&&onEvent("halt"); return; }
+    const i=s.target; s.mode="dwell"; s.last=i;
+    (s.events[i]=s.events[i]||{}).arr=s.t;
+    s.remain=route[i].dwell+(rand?rand(i):0);
+    s.target=nextStop(route,i);
+    onEvent&&onEvent("arr",i);
+  }
+}
+// 走行中に駅間停車を差し込む（今の速度から止まれる位置）
+function insertHalt(s,route,k,decel,sec){
+  if(s.mode!=="run") return;
+  const hx=s.x+s.v*s.v/(2*decel)+5; if(hx>=route[s.target].x-50) return;
+  s.halt={x:hx,sec,done:false}; s.env=makeEnv(route,k,s.x,hx,decel);
+}
+function planTimes(route,k){
+  const s=newState(route); let n=0;
+  while(s.mode!=="end"&&n<400000){ step(s,route,k,DECEL,null,null); if(n%10===0) s.traj.push([s.t,s.x]); n++; }
+  return {ev:s.events,traj:s.traj};
+}
+// ---- 種別・待避駅 ----
+const KINDS={
+ kaitoku:{label:"快特",color:"var(--kind-kaitoku)",sub:"var(--sub-kaitoku)",stops:["品川","京急蒲田","京急川崎","横浜","上大岡","金沢文庫"],vmax:120,acc:0.85,dwell:35,long:{"横浜":45,"上大岡":40,"京急蒲田":40}},
+ tokkyu:{label:"特急",color:"var(--kind-tokkyu)",sub:"var(--sub-tokkyu)",stops:["品川","青物横丁","平和島","京急蒲田","京急川崎","神奈川新町","横浜","上大岡","金沢文庫"],vmax:110,acc:0.9,dwell:30,long:{"横浜":40,"上大岡":35}},
+ kyuko:{label:"急行",color:"var(--kind-kyuko)",sub:"var(--sub-kyuko)",taihi:true,stops:["品川","青物横丁","平和島","京急蒲田","京急川崎","京急鶴見","神奈川新町","京急東神奈川","横浜","日ノ出町","井土ヶ谷","弘明寺","上大岡","杉田","能見台","金沢文庫"],vmax:110,acc:0.9,dwell:25,long:{"横浜":40,"上大岡":35}},
+ futsu:{label:"普通",color:"var(--kind-futsu)",sub:"var(--sub-futsu)",subFg:"#111",taihi:true,stops:null,vmax:90,acc:0.95,dwell:20,long:{"横浜":30}}
+};
+// 通過駅でも時刻を書く駅（主要駅・待避駅）
+const MAJOR=new Set(["品川","京急蒲田","京急川崎","横浜","上大岡","金沢文庫"]);
+// 待避駅（up=品川方面の上りのみ、down=下りのみ）
+const TAIHI={"鮫洲":"both","平和島":"both","京急蒲田":"both","京急川崎":"both","京急鶴見":"up","生麦":"down","子安":"up","神奈川新町":"both","南太田":"both","上大岡":"both"};
+const TAIHI_SEC=120;
+// GPS判定のしきい値
+const ZONE=200;          // 駅の半径。この中で止まったら停車
+const STILL_V=0.8;       // これ未満(m/s、約3km/h)が続いたら止まったとみなす
+const STILL_MS=4000;
+const MOVE_V=1.5;        // これを超えて(約5km/h)続いたら動き出したとみなす
+const MOVE_MS=2000;
+const MOVE_DIST=25;      // 止まった位置からこれ以上離れたら発車
+const OFF_MAX=250;       // 線路からこれ以上離れた測位は使わない
+const STALE_MS=4000;     // これより古い測位しかなければ推定に切り替える
+
+let cfg={kind:"kaitoku",sec:"品川|上大岡",src:"gps",speed:"1",cars:"8",voice:"on",weather:"fine",disorder:"off"};
+const $=id=>document.getElementById(id);
+document.querySelectorAll(".seg[data-k]").forEach(seg=>{
+  seg.addEventListener("click",e=>{
+    const b=e.target.closest("button");if(!b)return;
+    seg.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));
+    cfg[seg.dataset.k]=b.dataset.v;
+    if(seg.dataset.k==="src") srcSync();
+  });
+});
+function srcSync(){
+  document.querySelectorAll(".testonly").forEach(e=>e.hidden=cfg.src!=="test");
+  const w=$("geoWarn"), bad=cfg.src==="gps"&&(!("geolocation" in navigator)||!window.isSecureContext);
+  w.hidden=!bad; w.textContent="このページでは位置情報が使えない（HTTPSのページで開く必要がある）。テスト走行なら使える。";
+}
+srcSync();
+
+// 区間選択
+function secSync(){ const f=$("secFrom").value, t=$("secTo").value; cfg.sec=f+"|"+t; $("secErr").hidden=f!==t; $("start").disabled=f===t;
+  document.querySelectorAll("#secPresets button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.p===cfg.sec)); }
+(function initSec(){
+  const opts=STATIONS.map(s=>`<option value="${s[0]}">${s[0]}</option>`).join("");
+  $("secFrom").innerHTML=opts; $("secTo").innerHTML=opts;
+  const [f,t]=cfg.sec.split("|"); $("secFrom").value=f; $("secTo").value=t;
+  $("secFrom").addEventListener("change",secSync); $("secTo").addEventListener("change",secSync);
+  $("secSwap").addEventListener("click",()=>{ const a=$("secFrom").value; $("secFrom").value=$("secTo").value; $("secTo").value=a; secSync(); });
+  document.querySelectorAll("#secPresets button").forEach(b=>b.addEventListener("click",()=>{ const [a,c]=b.dataset.p.split("|"); $("secFrom").value=a; $("secTo").value=c; secSync(); }));
+  $("schedClr").addEventListener("click",()=>{ $("sched").value=""; });
+  secSync();
+})();
+function geoErrText(e){ return e&&e.code===1?"位置情報が許可されていない。ブラウザの設定で許可して":e&&e.code===3?"位置情報の取得に時間がかかっている":"位置情報が取れない"; }
+// 現在地にいちばん近い駅を乗車駅にする
+$("secHere").addEventListener("click",()=>{
+  const m=$("hereMsg"); m.hidden=false;
+  if(!("geolocation" in navigator)||!window.isSecureContext){ m.textContent="このページでは位置情報が使えない（HTTPSのページで開く必要がある）"; return; }
+  m.textContent="現在地を取得中…";
+  navigator.geolocation.getCurrentPosition(p=>{
+    const q=project(p.coords.latitude,p.coords.longitude);
+    if(q.off>1500){ m.textContent=`京急本線から約${(q.off/1000).toFixed(1)}km離れている`; return; }
+    let best=STATIONS[0]; for(const s of STATIONS) if(Math.abs(s[1]-q.s)<Math.abs(best[1]-q.s)) best=s;
+    $("secFrom").value=best[0]; secSync();
+    m.textContent=`いちばん近い駅：${best[0]}（線路から${Math.round(q.off)}m）`;
+  },e=>{ m.textContent=geoErrText(e); },{enableHighAccuracy:true,timeout:15000,maximumAge:10000});
+});
+
+function buildRoute(){
+  const k=KINDS[cfg.kind];
+  const [from,to]=cfg.sec.split("|");
+  const a=STATIONS.findIndex(s=>s[0]===from), b=STATIONS.findIndex(s=>s[0]===to);
+  const down=a<b; cfg.dir=down?"down":"up";
+  let st=STATIONS.slice(Math.min(a,b),Math.max(a,b)+1);
+  if(!down) st.reverse();
+  const o=st[0][1];
+  const r=st.map(([name,s])=>({
+    name, x:Math.abs(s-o),
+    stop: (k.stops? k.stops.includes(name):true) || name===from || name===to,
+    track: down?1:2,
+    taihiOK: !!TAIHI[name]&&(TAIHI[name]==="both"||TAIHI[name]===(down?"down":"up")),
+    dwell: k.long[name]||k.dwell
+  }));
+  r.sAt=x=>down?o+x:o-x; r.xOf=s=>down?s-o:o-s;
+  return r;
+}
+
+// ---- 状態 ----
+// route:区間の駅  plan:走行モデルの予定(秒)  planEpoch:予定の0秒にあたる時刻(ms)
+// G:GPSから判定した列車の状態  SIM:テスト走行の模擬列車  DR:GPSが切れている間の推定
+let route,K,plan,planEpoch=0,schedFixed=false,G,SIM=null,DR=null,testMode=false,simEpoch=0,mult=1,paused=false;
+let raf,lastReal=null,acc=0,offset=0,trainNo,watchId=null,wakeLock=null,lastNow=0,lastEst={x:0,v:0},showDbg=false;
+const nowMs=()=>testMode?simEpoch+SIM.t*1000:Date.now();
+const pt=t=>planEpoch+t*1000;
+function fmt(ms){ const d=new Date(ms); return [d.getHours(),d.getMinutes(),d.getSeconds()].map(n=>String(n).padStart(2,"0")).join(":"); }
+// 予定上、位置xを通る時刻(秒)
+function planTimeAt(x){
+  const tr=plan.traj; let lo=0,hi=tr.length-1;
+  if(x>=tr[hi][1]) return tr[hi][0];
+  while(lo<hi){const m=(lo+hi)>>1; if(tr[m][1]>=x) hi=m; else lo=m+1;}
+  if(lo===0) return tr[0][0];
+  const [t0,x0]=tr[lo-1],[t1,x1]=tr[lo];
+  return x1>x0? t0+(x-x0)/(x1-x0)*(t1-t0) : t1;
+}
+
+function renderList(){
+  const L=$("list"); L.innerHTML="";
+  route.forEach((r,i)=>{
+    const e=plan.ev[i]||{}, row=document.createElement("div");
+    row.className="row"+(r.stop?"":" pass-row"); row.id="r"+i;
+    const arr=i===0?"":(r.stop?fmt(pt(e.arr)):((MAJOR.has(r.name)||r.taihiOK)?fmt(pt(e.pass)):""));
+    const dep=r.stop?(i===route.length-1?"--:--:--":fmt(pt(e.dep))):"";
+    row.innerHTML=`<span class="nm">${r.name}${(G&&G.taihiAt===i)?'<span class="tb">待避</span>':''}</span><span class="t num">${arr}</span>`+
+      (r.stop?`<span class="trk num">${r.track}</span>`:`<span class="pass" title="通過"></span>`)+
+      `<span class="t num dep">${dep}</span>`;
+    L.appendChild(row);
+  });
+}
+
+// ---- 音声 ----
+// 男声(案内)・女声(警告)の2役。端末に日本語音声が2種類あれば別の声、なければ高さで分ける
+let jaVoices=[];
+function loadVoices(){try{jaVoices=speechSynthesis.getVoices().filter(v=>/^ja/i.test(v.lang));}catch(_){}}
+if("speechSynthesis" in window){loadVoices();try{speechSynthesis.onvoiceschanged=loadVoices;}catch(_){}}
+// iPhone対策：タップ中に無音の発話を出して読み上げを有効にしておく
+let unlocked=false;
+function unlockAudio(){
+  if(unlocked) return; unlocked=true;
+  try{ const u=new SpeechSynthesisUtterance(" "); u.volume=0; u.lang="ja-JP"; speechSynthesis.speak(u); }catch(_){}
+}
+// 駅名の読み（読み上げ用）。弘明寺はひらがなだと「ぐみようじ」になるので漢字のまま
+const YOMI={"品川":"しながわ","北品川":"きたしながわ","新馬場":"しんばんば","青物横丁":"あおものよこちょう","鮫洲":"さめず","立会川":"たちあいがわ","大森海岸":"おおもりかいがん","平和島":"へいわじま","大森町":"おおもりまち","梅屋敷":"うめやしき","京急蒲田":"けいきゅうかまた","雑色":"ぞうしき","六郷土手":"ろくごうどて","京急川崎":"けいきゅうかわさき","八丁畷":"はっちょうなわて","鶴見市場":"つるみいちば","京急鶴見":"けいきゅうつるみ","花月総持寺":"かげつそうじじ","生麦":"なまむぎ","京急新子安":"けいきゅうしんこやす","子安":"こやす","神奈川新町":"かながわしんまち","京急東神奈川":"けいきゅうひがしかながわ","神奈川":"かながわ","横浜":"よこはま","戸部":"とべ","日ノ出町":"ひのでちょう","黄金町":"こがねちょう","南太田":"みなみおおた","井土ヶ谷":"いどがや","上大岡":"かみおおおか","屏風浦":"びょうぶがうら","杉田":"すぎた","京急富岡":"けいきゅうとみおか","能見台":"のうけんだい","金沢文庫":"かなざわぶんこ","快特":"かいとく","待避":"たいひ","停止位置":"ていしいち"};
+const YOMI_KEYS=Object.keys(YOMI).sort((a,b)=>b.length-a.length);
+const YOMI_RE=new RegExp(YOMI_KEYS.join("|"),"g");
+function yomi(t){return t.replace(YOMI_RE,m=>YOMI[m]);}
+function speak(text,role="f"){
+  const el=$("annc"); el.textContent="🔊 "+text; el.classList.add("on");
+  clearTimeout(speak.tm); speak.tm=setTimeout(()=>el.classList.remove("on"),3500);
+  if(cfg.voice!=="on"||!("speechSynthesis" in window)) return;
+  try{
+    // 倍速のときは喋りが追いつかないので、前の発話中は新しいものを捨てる（溜めて遅れて鳴るのを防ぐ）
+    if(mult>1&&(speechSynthesis.speaking||speechSynthesis.pending)) return;
+    const u=new SpeechSynthesisUtterance(yomi(text)); u.lang="ja-JP"; u.rate=1.1;
+    const male=jaVoices.find(v=>/otoya|ichiro|keita|male|男/i.test(v.name)), female=jaVoices.find(v=>/kyoko|o-ren|haruka|ayumi|nanami|female|女/i.test(v.name));
+    if(role==="m"){ if(male) u.voice=male; else if(jaVoices[0]) u.voice=jaVoices[0]; u.pitch=male?1:0.7; }
+    else { if(female) u.voice=female; else if(jaVoices[1]||jaVoices[0]) u.voice=jaVoices[1]||jaVoices[0]; u.pitch=female?1.1:1.5; }
+    speechSynthesis.speak(u);
+  }catch(_){}
+}
+function speechIdle(){ try{ return cfg.voice==="on"&&!speechSynthesis.speaking&&!speechSynthesis.pending; }catch(_){ return false; } }
+// ヘッダー2段目に出す一時メッセージ（実時間で管理）
+let msgText="",msgUntil=0,skidUntil=0;
+function flashMsg(t,ms){msgText=t;msgUntil=performance.now()+ms/Math.max(1,mult);}
+
+// ---- GPSの測位を受け取る ----
+function newG(){
+  return {mode:"dwell",last:0,target:nextStop(route,0),started:false,x:0,v:0,fixT:null,acc:null,off:0,offRoute:false,lastSeen:null,geoErr:"",
+    events:{},announced:{},holdX:0,dwellStart:nowMs(),haltStart:0,stillSince:null,moveSince:null,relX:null,taihiAt:-1,taihiPending:false,delay:0};
+}
+function onFix(f){
+  if(!G||(G.lastSeen!=null&&f.t<=G.lastSeen)) return;
+  const p=project(f.lat,f.lon);
+  G.acc=f.acc; G.off=p.off; G.rawS=p.s; G.lastSeen=f.t; G.geoErr="";
+  G.offRoute=p.off>OFF_MAX; if(G.offRoute) return;
+  const xm=route.xOf(p.s), sp=(f.speed!=null&&isFinite(f.speed)&&f.speed>=0)?f.speed:null;
+  if(G.fixT==null||f.t-G.fixT>STALE_MS){
+    // 最初の測位、またはGPSが切れたあと：測位の位置に合わせ直す
+    G.x=xm; G.v=sp??(DR?DR.v:0); G.fixT=f.t; DR=null;
+    if(!G.started) initPosition(xm,f.t);
+    return;
+  }
+  // 位置と速度をなめらかにする（精度が良いほど測位を信じる）
+  const dt=(f.t-G.fixT)/1000; G.fixT=f.t;
+  const pred=G.x+G.v*dt, r=xm-pred, a=f.acc<=15?0.6:f.acc<=40?0.35:0.15;
+  G.x=pred+a*r;
+  let v=G.v+0.3*a*r/dt; if(sp!=null) v=0.3*v+0.7*sp;
+  G.v=Math.max(0,Math.min(v,45));
+}
+// 乗務開始後、最初の測位で今どこにいるかを決める（途中から使い始めてもよい）
+function initPosition(x,now){
+  G.started=true;
+  let j=-1;
+  route.forEach((r,i)=>{ if(r.stop&&Math.abs(r.x-x)<=ZONE&&(j<0||Math.abs(r.x-x)<Math.abs(route[j].x-x))) j=i; });
+  if(j===0||(j<0&&x<0)){ G.mode="dwell"; G.last=0; G.target=nextStop(route,0); G.holdX=x; G.dwellStart=now; return; }
+  if(j>0){
+    G.last=j; G.target=nextStop(route,j); G.mode=j===route.length-1?"end":"dwell"; G.holdX=x; G.dwellStart=now;
+    if(!schedFixed){ planEpoch=now-plan.ev[j].arr*1000; schedFixed=true; }
+  } else {
+    let l=0; route.forEach((r,i)=>{ if(r.stop&&r.x<x) l=i; });
+    G.last=l; G.target=nextStop(route,l); G.mode="run";
+    if(!schedFixed){ planEpoch=now-planTimeAt(x)*1000; schedFixed=true; }
+  }
+  renderList();
+}
+// GPSが切れている間の推定：走っていたら、最後の位置・速度から走行モデルで走らせる（次の停車駅で止まる）。
+// 止まっていたら止まったままとみなす（止まっているとスマホが測位を出さないことがあるので、勝手に発車させない）
+function makeDR(x,v){
+  const d={x,v,t:0,last:G.last,target:G.target,events:{},halt:null,remain:1e9,acc:0};
+  if(G.mode==="run"&&G.target>=0&&v>=STILL_V){ d.mode="run"; d.env=makeEnv(route,K,x,Math.max(x+1,route[G.target].x),DECEL); }
+  else { d.mode="halt"; d.v=0; }
+  return d;
+}
+function estimate(now,dt){
+  if(!G.started) return {x:0,v:0,src:"none"};
+  const age=now-G.fixT;
+  if(age<=STALE_MS){ DR=null; return {x:G.x+G.v*Math.max(0,age)/1000,v:G.v,src:"gps"}; }
+  if(!DR) DR=makeDR(G.x+G.v*STALE_MS/1000,G.v);
+  DR.acc+=dt; while(DR.acc>=DT){ DR.acc-=DT; step(DR,route,K,DECEL,null,null); }
+  return {x:DR.x,v:DR.v,src:"dr"};
+}
+
+// ---- 停車・通過・駅間停車の判定 ----
+function track(e,now){
+  if(!G.started||G.mode==="end") return;
+  const x=e.x, v=e.v;
+  if(G.mode==="run"){
+    for(let i=G.last+1;i<G.target;i++){ const ev=G.events[i]=G.events[i]||{}; if(ev.pass==null&&x>=route[i].x) ev.pass=now; }
+    const tg=route[G.target];
+    G.stillSince=v<STILL_V?(G.stillSince??now):null;
+    if(G.stillSince!=null&&now-G.stillSince>=STILL_MS){
+      if(Math.abs(x-tg.x)<=ZONE) arrive(G.target,G.stillSince,x);
+      else { G.mode="halt"; G.holdX=x; G.haltStart=G.stillSince; G.moveSince=null; speak("セクション、注意。","f"); }
+      return;
+    }
+    // 停車駅を過ぎてしまった（GPSが切れている間に停車・発車した等）：停車したことにして先へ進める
+    if(x>tg.x+ZONE){ arrive(G.target,now,x,true); if(G.mode==="dwell") depart(now,true); }
+  } else if(G.mode==="dwell"||G.mode==="halt"){
+    const moved=Math.abs(x-G.holdX);
+    G.moveSince=(v>MOVE_V||moved>MOVE_DIST)?(G.moveSince??now):null;
+    // 5km/h に達するのは動き出して約1.5秒後なので、そのぶん前の時刻を発車とする
+    if(G.moveSince!=null&&(now-G.moveSince>=MOVE_MS||moved>MOVE_DIST*2)) depart(Math.max(G.mode==="dwell"?G.dwellStart:G.haltStart,G.moveSince-1500));
+  }
+}
+function arrive(i,t,x,silent){
+  for(let j=G.last+1;j<i;j++){ const ev=G.events[j]=G.events[j]||{}; if(ev.pass==null) ev.pass=t; }
+  G.mode=i===route.length-1?"end":"dwell"; G.last=i; G.holdX=x;
+  (G.events[i]=G.events[i]||{}).arr=t;
+  G.target=nextStop(route,i); G.dwellStart=t; G.stillSince=null; G.moveSince=null;
+  if(!silent&&G.taihiPending&&K.taihi&&route[i].taihiOK) applyTaihi(i);
+}
+function depart(t,silent){
+  const wasHalt=G.mode==="halt";
+  if(G.mode==="dwell"){
+    (G.events[G.last]=G.events[G.last]||{}).dep=t;
+    if(G.last===0&&!schedFixed){ planEpoch=t-plan.ev[0].dep*1000; schedFixed=true; renderList(); }
+  }
+  G.mode="run"; G.stillSince=null; G.moveSince=null;
+  if(wasHalt){ flashMsg("解除長標確認",4000); speak("セクション、確認。","f"); return; }
+  G.relX=route[G.last].x;
+  if(!silent&&G.target>=0) speak(`次は、${route[G.target].name}、停車。`,"f");
+}
+// 待避：停車を合計2分に延ばし、予定時刻もその分後ろにずらす（待避はダイヤ上の予定なので遅延にしない）
+function applyTaihi(i){
+  if(G.taihiAt===i) return;
+  const p=plan.ev[i]||{}, shift=TAIHI_SEC-((p.dep??0)-(p.arr??0));
+  if(shift>0){
+    const t0=p.dep;
+    route.forEach((_,j)=>{ const q=plan.ev[j]; if(!q||j<i) return;
+      if(j===i){ if(q.dep!=null) q.dep+=shift; } else { ["arr","dep","pass"].forEach(k=>{ if(q[k]!=null) q[k]+=shift; }); } });
+    plan.traj.forEach(s=>{ if(s[0]>=t0) s[0]+=shift; });
+  }
+  if(testMode&&SIM.mode==="dwell"&&SIM.last===i) SIM.remain=Math.max(SIM.remain,TAIHI_SEC-(SIM.t-SIM.dwellStart));
+  G.taihiAt=i; G.taihiPending=false; $("taihiBtn").setAttribute("aria-pressed","false");
+  renderList(); speak("待避","f");
+}
+
+// ---- 読み上げのタイミング（GPSの距離と速度で発火） ----
+// 「停止位置」→0.8秒→「○」を、20km/h以下になるまで繰り返す
+function stopPosLoop(k,v){
+  if(G.mode!=="run"||G.target!==k||v<=20/3.6) return;
+  const a=G.announced[k], n=performance.now();
+  if(n<(a.posNext||0)) return;
+  if(a.pos!==1){ speak("停止位置","f"); a.pos=1; a.posNext=n+300; a.gapAt=0; }
+  else { if(!a.gapAt){ a.gapAt=n+800/Math.max(1,mult); return; } if(n<a.gapAt) return; speak(String(cfg.cars),"f"); a.pos=2; a.posNext=n+300; }
+}
+function checkApproach(e){
+  if(G.mode!=="run"||G.target<0) return;
+  const x=e.x, v=e.v, key=G.target, d=route[key].x-x;
+  const a=G.announced[key]=G.announced[key]||{};
+  // 発車後、列車長ぶん進んだら「解除長標確認」
+  const rk="rel"+G.last;
+  if(G.relX!=null&&!G.announced[rk]&&x>=G.relX+(+cfg.cars)*20+120&&d>900){G.announced[rk]=1; flashMsg("解除長標確認",4500);}
+  // 停車駅へのブレーキをかけ始める距離（今の速度で止まれる距離＋余裕）で「次は停車」×2 → ホーム手前で「○両、停車」
+  const plat=Math.max(+cfg.cars,6)*20+60, nowR=performance.now();
+  if(!a.brake&&v>10/3.6&&d<=Math.max(plat+150,v*v/(2*0.9)+80)){a.brake=1; speak("次は、停車。　次は、停車。","f");}
+  if(!a.cars&&d<=plat){a.cars=1; a.brake=1;
+    if(cfg.weather==="rain"){ a.skid=1; skidUntil=nowR+2600/Math.max(1,mult); speak(`${cfg.cars}両、停車。　スキット注意。`,"f"); }
+    else speak(`${cfg.cars}両、停車。`,"f"); }
+  if(a.cars&&speechIdle()) stopPosLoop(key,v);
+}
+
+// ---- 遅延 ----
+function rawDelay(x,now){
+  const ev=plan.ev;
+  if(G.mode==="dwell"||G.mode==="end"){
+    const p=ev[G.last]||{}, e=G.events[G.last]||{};
+    let d=(e.arr!=null&&p.arr!=null)?(e.arr-pt(p.arr))/1000:0;
+    if(G.mode==="dwell"&&p.dep!=null) d=Math.max(d,(now-pt(p.dep))/1000);
+    return d;
+  }
+  return (now-pt(planTimeAt(x)))/1000;
+}
+
+// ---- 画面 ----
+function gpsBadge(now){
+  const el=$("gps"), tx=$("gpsTxt");
+  let cls="", t;
+  const age=G.lastSeen==null?Infinity:now-G.lastSeen;
+  const still=!G.started||G.mode!=="run"||G.v<STILL_V;
+  if(G.lastSeen==null){ cls=" bad lost"; t=G.geoErr||"GPS 受信待ち"; }
+  else if(age>60000){ cls=" bad lost"; t="GPS 受信なし（推定中）"; }
+  else if(G.offRoute){ cls=" warn"; t=`線路外 ${Math.round(G.off)}m`; }
+  else if(age>STALE_MS&&!still){ cls=" warn lost"; t="GPS 推定中"; }
+  else if(G.acc>50){ cls=" warn"; t=`GPS 精度低 ±${Math.round(G.acc)}m`; }
+  else t=`GPS 良好 ±${Math.max(1,Math.round(G.acc))}m`;
+  el.className="gps num"+cls; tx.textContent=t;
+}
+function draw(e,now,dt){
+  $("dclock").textContent=fmt(now);
+  drawClock(new Date(now));
+  const running=G.mode==="run";
+  $("spd").firstChild.textContent=running?Math.round(e.v*3.6):0;
+  const tg=G.target>=0?route[G.target]:null;
+  $("rem").firstChild.textContent=tg? Math.max(0,Math.round(tg.x-(running||G.mode==="halt"?e.x:route[G.last].x))) : 0;
+  // ヘッダー表示：次駅 → 停車 → ○両 → 到着で空欄
+  const nowR=performance.now(), nl=$("nextLbl"), skid=nowR<skidUntil;
+  $("hCars").textContent=cfg.cars+"両";
+  const ann=(tg&&G.announced[G.target])||{}, blink=Math.floor(nowR/500)%2===1;
+  $("hCars").hidden=!(running&&ann.cars&&!skid&&e.v>20/3.6);
+  $("hStop").hidden=!(running&&ann.brake&&!ann.cars);
+  $("hStop").classList.toggle("blink",blink);
+  const pdep=(plan.ev[G.last]||{}).dep, toDep=pdep!=null?Math.ceil((pt(pdep)-now)/1000):null;
+  if(G.mode==="halt"){nl.className="next sec"+(blink?" blink":"");nl.textContent="セクション注意";}
+  else if(skid){nl.className="next skid"+(blink?" blink":"");nl.textContent="！スキット注意！";}
+  else if(G.mode==="dwell"&&G.taihiAt===G.last){nl.className="next taihi";nl.textContent=`待避　発車まで ${Math.max(0,toDep??0)}秒`;}
+  else if(nowR<msgUntil&&running){nl.className="next msg"+(blink?" blink":"");nl.textContent=msgText;}
+  else if(running&&tg||(G.mode==="dwell"&&G.last===0&&tg)){nl.className="next";nl.textContent=tg.name;}
+  else {nl.className="next blank";nl.textContent="　";}
+  let ph;
+  if(!G.started) ph=testMode?"テスト走行 準備中":(G.offRoute?"線路から離れている":"GPS 受信待ち");
+  else if(G.mode==="halt") ph=`駅間停車 ・ ${Math.max(0,Math.floor((now-G.haltStart)/1000))}秒`;
+  else if(G.mode==="end") ph="乗務終了";
+  else if(G.mode==="dwell"&&G.last===0&&!schedFixed) ph="発車待ち";
+  else if(G.mode==="dwell") ph=toDep==null?"停車中":toDep>=0?`停車中 ・ 発車まで ${toDep}秒`:`停車中 ・ 発車時刻を ${-toDep}秒 過ぎた`;
+  else ph=(tg&&e.v>0&&(tg.x-e.x)<=e.v*e.v/(2*0.9)+60)?"減速中":"走行中";
+  $("phase").textContent=ph;
+  gpsBadge(now);
+  // 遅延：走行中はGPSのぶれでちらつくのでなだらかに、停車中は駅の時刻でそのまま
+  const raw=G.started?rawDelay(e.x,now):0;
+  G.delay=running?G.delay+(raw-G.delay)*Math.min(1,dt/2):raw;
+  const d=G.delay+offset, ad=Math.abs(Math.round(d));
+  const hms=[Math.floor(ad/3600),Math.floor(ad/60)%60,ad%60].map(n=>String(n).padStart(2,"0")).join(":");
+  const de=$("delay"); de.textContent="遅延 "+(d<-0.5?"−":"")+hms;
+  de.className="delay num"+(d>60?" bad":d>=15?" warn":"");
+  route.forEach((r,i)=>{
+    const row=$("r"+i); if(!row) return;
+    const passed=running? r.x<e.x : i<G.last;
+    row.classList.toggle("passed",G.started&&passed&&i!==G.last);
+    // ▶：停車中は今いる駅、発車したら次の停車駅
+    row.classList.toggle("target",i===((G.mode==="dwell"||G.mode==="end")?G.last:G.target));
+    const dp=row.querySelector(".dep"); if(dp) dp.classList.toggle("red",G.mode==="dwell"&&i===G.last&&blink);
+  });
+  if(showDbg){
+    const s0=STATIONS[0][1], age=G.lastSeen==null?"-":((now-G.lastSeen)/1000).toFixed(1);
+    $("dbg").textContent=G.lastSeen==null?"測位なし":
+      `品川から ${((route.sAt(e.x)-s0)/1000).toFixed(3)}km ・ 横ずれ ${Math.round(G.off)}m ・ 精度 ±${Math.round(G.acc)}m ・ ${age}秒前 ・ ${e.src==="dr"?"推定":"GPS"} ・ 状態 ${G.mode}`;
+  }
+}
+
+function drawClock(d){
+  const c=$("clock"),g=c.getContext("2d"),R=120;
+  g.clearRect(0,0,240,240);
+  g.fillStyle="#f3f3ee";g.beginPath();g.arc(R,R,114,0,Math.PI*2);g.fill();
+  g.fillStyle="#111";g.font="bold 22px sans-serif";g.textAlign="center";g.textBaseline="middle";
+  for(let n=1;n<=12;n++){const a=n*Math.PI/6;g.fillText(n,R+86*Math.sin(a),R-86*Math.cos(a));}
+  const hand=(ang,len,w,col)=>{g.strokeStyle=col;g.lineWidth=w;g.lineCap="round";g.beginPath();g.moveTo(R,R);g.lineTo(R+len*Math.sin(ang),R-len*Math.cos(ang));g.stroke();};
+  const s=d.getSeconds(),m=d.getMinutes()+s/60,h=(d.getHours()%12)+m/60;
+  hand(h*Math.PI/6,52,7,"#111");hand(m*Math.PI/30,78,5,"#111");hand(s*Math.PI/30,88,2,"#c8302f");
+  g.fillStyle="#111";g.beginPath();g.arc(R,R,6,0,Math.PI*2);g.fill();
+}
+
+// ---- テスト走行：模擬列車を走らせ、1秒ごとにGPSの測位（数mのぶれつき）を流す ----
+const simDecel=()=>cfg.weather==="rain"?0.8:DECEL;
+function onSimEvent(type,i){
+  if(type==="dep"){
+    const a0=route[i].x, L=route[SIM.target].x-a0;
+    if(cfg.disorder==="on"&&L>700&&Math.random()<0.55) SIM.halt={x:a0+L*(0.3+0.4*Math.random()),sec:25+Math.random()*90,done:false};
+    // ときどきトンネルでGPSが切れる
+    if(L>1500&&Math.random()<0.3) SIM.gap={from:SIM.t+20+Math.random()*60,len:30+Math.random()*60};
+  }
+  if(type==="arr"){
+    SIM.dwellStart=SIM.t;
+    // 普通・急行はときどき待避で長く止まる（2分以上で自動判定されるかの確認）
+    if(K.taihi&&route[i].taihiOK&&i<route.length-1&&Math.random()<0.3) SIM.remain=Math.max(SIM.remain,125+Math.random()*20);
+  }
+}
+let nextFixT=0;
+function emitFakeFix(){
+  if(SIM.gap&&SIM.t>=SIM.gap.from&&SIM.t<SIM.gap.from+SIM.gap.len) return;
+  const [lat,lon]=latLonAt(route.sAt(SIM.x)), n=()=>(Math.random()+Math.random()+Math.random()-1.5)*4;
+  onFix({lat:lat+n()/KY,lon:lon+n()/KX,acc:4+Math.random()*6,speed:Math.max(0,SIM.v+(Math.random()-0.5)*0.6),t:nowMs()});
+}
+
+function loop(ts){
+  if(lastReal==null) lastReal=ts;
+  const dtReal=Math.min(60,(ts-lastReal)/1000); lastReal=ts;
+  if(testMode&&!paused&&SIM.mode!=="end"){
+    acc+=dtReal*mult; let n=Math.floor(acc/DT); acc-=n*DT;
+    const rand=cfg.disorder==="on"? (()=>Math.random()<0.7?15+Math.random()*75:0) : (()=>Math.random()<0.35?5+Math.random()*25:0);
+    while(n-->0&&SIM.mode!=="end"){ step(SIM,route,K,simDecel(),rand,onSimEvent); if(SIM.t>=nextFixT){ nextFixT+=1; emitFakeFix(); } }
+  }
+  const now=nowMs(), dt=Math.max(0,(now-lastNow)/1000); lastNow=now;
+  if(G.mode==="dwell"&&G.last===0&&!schedFixed){
+    // 定刻がなければ、始発駅では「今発車したら」の時刻で並べる
+    const e0=Math.round((now-plan.ev[0].dep*1000)/1000)*1000; if(e0!==planEpoch){ planEpoch=e0; renderList(); }
+  }
+  const e=estimate(now,dt); lastEst=e;
+  track(e,now); checkApproach(e);
+  if(G.mode==="dwell"&&K.taihi&&route[G.last].taihiOK&&G.last>0&&now-G.dwellStart>=TAIHI_SEC*1000&&G.taihiAt!==G.last) applyTaihi(G.last);
+  draw(e,now,dt);
+  const row=$("r"+((G.mode==="dwell"||G.mode==="end"||G.target<0)?G.last:G.target));
+  if(row&&row!==loop.lastRow){loop.lastRow=row;const L=$("list"); L.scrollTop=row.offsetTop-L.offsetTop-L.clientHeight/2+row.offsetHeight/2;}
+  raf=requestAnimationFrame(loop);
+}
+
+function keepAwake(){ try{ navigator.wakeLock&&navigator.wakeLock.request("screen").then(w=>{wakeLock=w;}).catch(()=>{}); }catch(_){} }
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"&&!$("runv").hidden) keepAwake(); });
+function startGeo(){
+  if(!("geolocation" in navigator)||!window.isSecureContext){ G.geoErr="位置情報が使えない（HTTPSで開く）"; return; }
+  watchId=navigator.geolocation.watchPosition(
+    p=>onFix({lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy,speed:p.coords.speed,t:Math.min(Date.now(),p.timestamp||Date.now())}),
+    e=>{ if(G) G.geoErr=geoErrText(e); },
+    {enableHighAccuracy:true,maximumAge:0,timeout:20000});
+}
+function stopGeo(){ if(watchId!=null){ try{navigator.geolocation.clearWatch(watchId);}catch(_){} watchId=null; } }
+function parseSched(){
+  const v=$("sched").value; if(!v) return null;
+  const [h,m,s]=v.split(":").map(Number), d=new Date(); d.setHours(h,m,s||0,0);
+  if(d.getTime()<Date.now()-6*3600e3) d.setDate(d.getDate()+1);
+  return d.getTime();
+}
+
+$("start").addEventListener("click",()=>{
+  unlockAudio();
+  testMode=cfg.src==="test";
+  route=buildRoute(); K=KINDS[cfg.kind]; plan=planTimes(route,K);
+  mult=testMode?+cfg.speed:1; paused=false; $("pause").setAttribute("aria-pressed","false"); $("pause").textContent="一時停止";
+  document.querySelectorAll("[data-m]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.m===String(mult)));
+  document.querySelector(".testctl").hidden=!testMode;
+  simEpoch=Date.now(); SIM=testMode?newState(route):null; if(SIM){ SIM.dwellStart=0; SIM.gap=null; } nextFixT=0; DR=null;
+  G=newG(); offset=0; lastReal=null; lastNow=nowMs(); acc=0; loop.lastRow=null;
+  const sched=parseSched(); schedFixed=sched!=null; planEpoch=schedFixed?sched-plan.ev[0].dep*1000:nowMs()-plan.ev[0].dep*1000;
+  const nd=new Date(); trainNo=String(nd.getHours()*100+nd.getMinutes()).padStart(4,"0")+({kaitoku:"H",tokkyu:"SH",kyuko:"",futsu:""}[cfg.kind]);
+  const hd=document.querySelector(".head"); hd.style.setProperty("--ks",K.sub); hd.style.setProperty("--ksf",K.subFg||"#fff");
+  $("taihiBtn").hidden=!K.taihi; $("taihiBtn").setAttribute("aria-pressed","false");
+  $("kindLbl").textContent=K.label; $("kindLbl").style.background=K.color; $("kindLbl").style.color="#fff";
+  $("carsLbl").textContent=cfg.cars; $("trainNo").textContent=trainNo;
+  $("mset").innerHTML="放送："+(cfg.voice==="on"?"自動":"切")+"<br>音量：11"; msgUntil=0; skidUntil=0;
+  $("rangeLbl").textContent=`${route[0].name} - ${route[route.length-1].name} 駅一覧`;
+  renderList();
+  $("dbadge").hidden=cfg.disorder!=="on";
+  $("setup").hidden=true; $("runv").hidden=false; $("note").hidden=true;
+  try{ window.scrollTo(0,0); document.querySelector(".screen").scrollTop=0; }catch(_){}
+  keepAwake();
+  if(!testMode) startGeo();
+  speak(`${K.label}、${route[route.length-1].name}行き、${cfg.cars}両、乗務開始`,"m");
+  cancelAnimationFrame(raf); raf=requestAnimationFrame(loop);
+});
+$("pause").addEventListener("click",e=>{paused=!paused;e.target.setAttribute("aria-pressed",paused);e.target.textContent=paused?"再開":"一時停止";});
+document.querySelectorAll("[data-m]").forEach(b=>b.addEventListener("click",()=>{
+  mult=+b.dataset.m; document.querySelectorAll("[data-m]").forEach(x=>x.setAttribute("aria-pressed",x===b));
+}));
+// 手動の補正：GPSの判定がずれたとき用。テスト走行では模擬列車を発車させる
+$("depNow").addEventListener("click",()=>{
+  unlockAudio(); if(!G) return;
+  if(testMode){ if(SIM.mode==="dwell"||SIM.mode==="halt") SIM.remain=0; return; }
+  if(G.mode==="dwell"||G.mode==="halt"){ G.started=true; depart(nowMs()); }
+});
+$("arrNow").addEventListener("click",()=>{
+  if(!G||(G.mode!=="run"&&G.mode!=="halt")||G.target<0) return;
+  arrive(G.target,nowMs(),lastEst.x);
+});
+$("taihiBtn").addEventListener("click",()=>{
+  if(!G||!K.taihi) return;
+  if(G.mode==="dwell"&&G.last>0&&route[G.last].taihiOK&&G.taihiAt!==G.last){ applyTaihi(G.last); return; }
+  G.taihiPending=!G.taihiPending; $("taihiBtn").setAttribute("aria-pressed",G.taihiPending);
+});
+$("haltBtn").addEventListener("click",()=>{ if(testMode) insertHalt(SIM,route,K,simDecel(),40+Math.random()*50); });
+$("gapBtn").addEventListener("click",()=>{ if(testMode) SIM.gap={from:SIM.t,len:60}; });
+$("minus").addEventListener("click",()=>{offset-=10;});
+$("plus").addEventListener("click",()=>{offset+=10;});
+$("dbgBtn").addEventListener("click",e=>{showDbg=!showDbg; e.target.setAttribute("aria-pressed",showDbg); $("dbg").hidden=!showDbg;});
+$("vtest").addEventListener("click",()=>{ unlockAudio(); speak("音声テスト、停車","f"); setTimeout(()=>{ const ok=("speechSynthesis" in window); $("vstat").textContent= ok? `読み上げ機能あり・日本語の声 ${jaVoices.length}種類。聞こえなければマナーモードと音量を確認` : "この画面では読み上げが使えない。Safariで開くと声が出るかも"; },400); });
+$("back").addEventListener("click",()=>{
+  cancelAnimationFrame(raf); stopGeo(); try{speechSynthesis.cancel()}catch(_){}
+  try{ wakeLock&&wakeLock.release(); }catch(_){} wakeLock=null;
+  $("runv").hidden=true; $("setup").hidden=false; $("note").hidden=false;
+});
+</script>
