@@ -1,0 +1,1282 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="待機画面">
+<meta name="theme-color" content="#141413">
+<title>待機画面</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Barlow+Condensed:wght@300;400;500;600;700&display=swap">
+<style>
+/* 1180×820(iPad 第10世代 横向き)の画面を作り、画面サイズに合わせて拡大縮小する */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#141413;--ink:#ece8df;--sub:#8d8a83;--dim:#4a4844;--rule:#2b2a28;--card:#1b1b19;--track:#2f2e2b;--seg:#24231f;--segdone:#3a3833;
+  --red:#ff5b3a;--blue:#6fa8dc;--yel:#e8c65a;--grn:#79c28a;--sl:#f5b301;--onpill:#141413;
+  --jp:"Zen Kaku Gothic New","Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
+  --num:"Barlow Condensed","Helvetica Neue",Arial,sans-serif}
+body.light{--bg:#eceeef;--ink:#16181b;--sub:#656a70;--dim:#a6abb0;--rule:#d3d7db;--card:#f7f8f9;--track:#d6dadd;--seg:#dde1e4;--segdone:#c7ccd1;
+  --red:#e0431f;--blue:#2f78c4;--yel:#a87a05;--grn:#2f9a55;--sl:#c98a00;--onpill:#fff}
+html,body{height:100%;background:var(--bg);overflow:hidden}
+body{color:var(--ink);font-family:var(--jp);font-size:14px;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.n{font-family:var(--num);font-variant-numeric:tabular-nums;letter-spacing:.01em}
+[hidden]{display:none!important}
+#stage{position:absolute;left:0;top:0;width:1180px;height:820px;transform-origin:0 0;overflow:hidden;background:var(--bg)}
+
+/* 上のバー */
+.bar{position:absolute;left:0;right:0;top:0;height:52px;border-bottom:1px solid var(--rule);display:flex;align-items:center;gap:8px;padding:0 16px}
+.chip{display:flex;align-items:baseline;gap:7px;border:1px solid var(--rule);padding:5px 12px;font-size:13px;color:var(--sub);white-space:nowrap}
+.chip b{font-family:var(--num);font-size:19px;color:var(--ink);font-weight:500}
+.chip.on{border-color:var(--ink);color:var(--ink);background:var(--card)}
+.chip .slc{color:var(--sl);font-weight:700}
+.bar .right{margin-left:auto;display:flex;align-items:center;gap:14px;font-size:12px;color:var(--sub);white-space:nowrap}
+.bar .right .warn{color:var(--red)}
+.gear{border:1px solid var(--rule);padding:5px 12px;font-size:13px;color:var(--ink)}
+
+.page{position:absolute;left:0;right:0;top:52px;bottom:0;display:grid;grid-template-columns:300px 1fr 300px}
+.col{display:flex;flex-direction:column;min-width:0;min-height:0}
+.col+.col{border-left:1px solid var(--rule)}
+.tile{padding:20px 24px;border-bottom:1px solid var(--rule);min-height:0;overflow:hidden}
+.tile:last-child{border-bottom:0}
+.grow{flex:1}
+h3{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:.12em;margin-bottom:12px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+h3 span{font-weight:400;letter-spacing:0;font-size:12px;white-space:nowrap}
+ul{list-style:none}
+
+/* 時間割 */
+.tt li{display:grid;grid-template-columns:18px 1fr auto;column-gap:10px;padding:8px 0;border-bottom:1px solid var(--rule);align-items:baseline}
+.tt li:last-child{border:0}
+.tt .p{color:var(--sub);font-size:17px}.tt .s{font-size:17px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tt .rm{font-size:11px;color:var(--sub);margin-left:6px;font-weight:400}.tt .t{color:var(--sub);font-size:17px}
+.tt li.past *{color:var(--dim)!important}
+.tt li.now{border-bottom-color:var(--red)} .tt li.now .p,.tt li.now .t{color:var(--red)}
+.tt li.now .s::after{content:"  いま";color:var(--red);font-size:11px;font-weight:700}
+.empty{color:var(--sub);font-size:13px;line-height:1.7}
+
+/* やること */
+.todo li{display:grid;grid-template-columns:16px 1fr auto;gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid var(--rule);font-size:15px}
+.todo li:last-child{border:0}
+.box{width:15px;height:15px;border:1.5px solid var(--sub)}
+.todo li.d{color:var(--dim);text-decoration:line-through}.todo li.d .box{background:var(--dim);border-color:var(--dim)}
+.todo .tx{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.due{font-size:11.5px;color:var(--sub);white-space:nowrap} .due.h{color:var(--red)}
+.kd{font-style:normal;font-size:10px;border:1px solid var(--yel);color:var(--yel);padding:0 3px;margin-right:7px;vertical-align:2px}
+.add{font-size:16px;color:var(--sub);border:1px solid var(--rule);width:24px;height:24px;line-height:20px;text-align:center}
+
+/* 時計 */
+.clockt{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px 30px}
+.date{font-size:16px;letter-spacing:.06em;color:var(--sub)} .date b{color:var(--ink);font-weight:500}
+.clock{font-size:220px;font-weight:300;line-height:.88;letter-spacing:-2px;margin-top:10px;display:flex;align-items:flex-start;white-space:nowrap}
+.clock .colon{color:var(--red);margin:0 2px;position:relative;top:-6px}
+.clock .sec{font-size:44px;color:var(--sub);margin:18px 0 0 8px;font-weight:400;width:1.1em}
+.next{margin-top:14px;font-size:16px;color:var(--sub);text-align:center} .next b{color:var(--ink)} .next .n{font-size:24px;color:var(--red);font-weight:500}
+.pbar{width:100%;margin-top:18px;display:flex;height:22px;gap:2px}
+.pbar div{flex:1;background:var(--seg);font-size:10.5px;color:var(--sub);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.pbar .done{background:var(--segdone)}
+.pbar .cur{color:#fff}
+.pbar .cur i{position:absolute;left:0;top:0;bottom:0;background:var(--red)}
+.pbar .cur span{position:relative}
+.pbar .brk{flex:.5;background:transparent;border-top:1px dashed var(--dim);height:1px;margin-top:11px}
+.ticks{width:100%;display:flex;justify-content:space-between;margin-top:5px;color:var(--dim);font-size:12px}
+
+/* 時計の下の枠 */
+.slot{height:250px;flex:none;padding:18px 26px;display:flex;flex-direction:column}
+.slot .back{font-size:11px;color:var(--dim);text-align:right;margin-top:auto;padding-top:6px}
+.slhead{display:flex;align-items:baseline;gap:12px;min-width:0}
+.pill{font-size:11.5px;font-weight:700;padding:1px 8px;background:var(--sl);color:var(--onpill);white-space:nowrap}
+.pill.g{background:transparent;border:1px solid var(--sub);color:var(--sub);font-weight:500}
+.slname{font-size:19px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.slremain{margin-left:auto;font-size:15px;color:var(--sub);white-space:nowrap} .slremain .n{font-size:40px;color:var(--sl);font-weight:500;line-height:1}
+.slsub{font-size:13px;color:var(--sub);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.late{color:var(--red)} .okc{color:var(--grn)}
+.route{position:relative;height:70px;margin:16px 8px 0}
+.route .ln{position:absolute;left:0;right:0;top:12px;height:4px;background:var(--track)}
+.route .ln i{position:absolute;left:0;top:0;bottom:0;background:var(--sl)}
+.st{position:absolute;top:0;transform:translateX(-50%);text-align:center}
+.st .dot{width:14px;height:14px;border-radius:50%;background:var(--bg);border:3px solid var(--dim);margin:7px auto 0}
+.st.done .dot{border-color:var(--sl);background:var(--sl)}
+.st.cur .dot{border-color:var(--sl);box-shadow:0 0 0 4px rgba(245,179,1,.25)}
+.st.end .dot{width:18px;height:18px;border-radius:2px;margin-top:5px;border-color:var(--ink)}
+.st .nm{font-size:12.5px;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st .tm{font-size:14px;color:var(--sub)}
+.st.done .nm{color:var(--sub)} .st.cur .nm{color:var(--sl);font-weight:700}
+.st.first{transform:none;text-align:left}.st.first .dot{margin-left:0}
+.st.end{transform:translateX(-100%);text-align:right}.st.end .dot{margin-right:0}
+.train{position:absolute;top:2px;width:26px;height:24px;transform:translateX(-50%);background:var(--sl);color:var(--onpill);font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;clip-path:polygon(0 0,80% 0,100% 50%,80% 100%,0 100%)}
+.slfoot{display:flex;gap:18px;margin-top:4px;font-size:12.5px;color:var(--sub);border-top:1px solid var(--rule);padding-top:8px}
+.slfoot b{color:var(--ink);font-weight:500}
+
+/* 記憶回路・語句のカード */
+.card{border:1px solid var(--rule);background:var(--card);padding:14px 18px;display:flex;align-items:center;gap:22px;min-height:118px}
+.ctag{font-size:10.5px;color:var(--yel);border:1px solid var(--yel);padding:0 6px;white-space:nowrap}
+.cside{display:flex;flex-direction:column;gap:6px;align-items:flex-start;flex:none}
+.cw{font-family:var(--num);font-size:46px;font-weight:500;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.cw.jp{font-family:var(--jp);font-size:34px;font-weight:700}
+.cans{min-width:0;flex:1}
+.cans .a{font-size:20px;font-weight:700}
+.cans .def{font-size:12px;color:var(--sub);margin-top:3px;line-height:1.5;max-height:3em;overflow:hidden}
+.flip{margin-left:auto;font-size:12px;border:1px solid var(--dim);padding:3px 10px;color:var(--sub);white-space:nowrap}
+.grade{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+.grade button{font-size:13px;border:1px solid var(--rule);padding:7px 0;color:var(--sub)}
+.subj3{display:flex;gap:16px;font-size:12.5px;color:var(--sub);margin-bottom:10px}.subj3 b{color:var(--ink);font-size:17px;font-weight:500;margin-left:3px}
+.term .tw{font-size:30px;font-weight:700;letter-spacing:.02em}
+.term .tr{font-size:12px;color:var(--sub);margin-top:2px}
+.term .td2{font-size:14px;line-height:1.65;margin-top:8px}
+.tcat{font-size:10.5px;color:var(--blue);border:1px solid var(--blue);padding:0 6px}
+.big2{display:flex;gap:0}
+.big2>div{flex:1}.big2>div+div{border-left:1px solid var(--rule);padding-left:22px}
+.big2 .k{font-size:13px;color:var(--sub)}
+.big2 .v{font-size:84px;line-height:1;font-weight:500}.big2 .v small{font-size:18px;font-family:var(--jp);margin-left:4px;color:var(--sub)}
+.big2 .d{font-size:12.5px;color:var(--sub);margin-top:4px}
+.dots{display:grid;grid-template-columns:repeat(52,1fr);gap:2px;margin-top:10px}
+.dots i{aspect-ratio:1;background:var(--track)}.dots i.f{background:var(--ink)}.dots i.c{background:var(--red)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;row-gap:1px}
+.cal span{padding:2px 0;font-family:var(--num);font-size:16px;position:relative}
+.cal .w{font-size:11px;color:var(--sub);font-family:var(--jp)}
+.cal .o{color:var(--dim)} .cal .su{color:#d0705f}
+.cal .td{background:var(--ink);color:var(--bg);font-weight:600}
+.cal .ev::after{content:"";position:absolute;left:50%;bottom:0;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--yel)}
+
+/* 天気・予定 */
+.wx{display:grid;grid-template-columns:auto auto 1fr;gap:0 12px;align-items:center}
+.wx .t{font-size:62px;line-height:.9}
+.wx .d{font-size:12.5px;color:var(--sub);line-height:1.5}
+.wx .say{grid-column:1/-1;font-size:14px;margin-top:10px}
+.hrs{display:grid;grid-template-columns:repeat(6,1fr);margin-top:10px;text-align:center;font-size:11px;color:var(--sub)}
+.hrs b{display:block;color:var(--ink);font-family:var(--num);font-size:17px;font-weight:500}
+.hrs span{color:var(--blue);font-size:10.5px}
+.sched li{display:grid;grid-template-columns:52px 46px 3px 1fr;gap:9px;align-items:center;padding:9px 0;border-bottom:1px solid var(--rule);font-size:14.5px}
+.sched li:last-child{border:0}
+.sched .dd{color:var(--sub);font-family:var(--num);font-size:16px}
+.sched .tm{font-family:var(--num);font-size:17px}
+.sched i{height:16px;background:var(--blue)}
+.sched .tx{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* 地震情報の帯 */
+.qb{position:absolute;left:0;right:0;top:0;height:52px;display:flex;align-items:center;gap:14px;padding:0 18px;font-size:14px;z-index:5;background:#2a1c10;color:#f3e7d9;border-bottom:2px solid #ff9a3a;white-space:nowrap;overflow:hidden}
+.qb .lb{background:#ff9a3a;color:#141413;font-weight:900;padding:2px 10px;font-size:13px}
+.qb .s{color:#c9b9a6}.qb .r{margin-left:auto;color:#c9b9a6;font-size:12px}
+.qb .si{padding:1px 8px;font-weight:700;color:#111}
+.qb.eew{background:#3a0d0d;border-bottom-color:#ff3b3b}.qb.eew .lb{background:#ff3b3b;color:#fff}
+.demo-tag{background:#fff;color:#000;font-weight:900;padding:1px 8px;font-size:12px}
+
+/* 緊急地震速報 全画面 */
+#eew{position:absolute;inset:0;z-index:10;background:#0b0c0e;color:#fff;display:grid;grid-template-columns:640px 1fr}
+#eew .map{position:relative;overflow:hidden}
+#eew canvas{width:640px;height:820px;display:block}
+#eew .lg{position:absolute;left:14px;bottom:14px;background:rgba(11,12,14,.85);padding:8px 12px;font-size:13px;display:flex;gap:10px;align-items:center}
+#eew .lg i{display:inline-block;width:14px;height:14px;margin-right:4px;vertical-align:-2px}
+#eew .wv{position:absolute;left:14px;top:14px;background:rgba(11,12,14,.85);padding:8px 12px;font-size:13px;line-height:1.7}
+#eew .p{display:flex;flex-direction:column;border-left:4px solid #ff3b3b;min-width:0}
+#eew .hd{background:#ff3b3b;padding:14px 24px;display:flex;align-items:baseline;gap:14px}
+#eew .hd b{font-size:30px;font-weight:900;letter-spacing:.04em}
+#eew .hd span{font-size:16px;font-weight:700}
+#eew .hd .x{margin-left:auto;border:2px solid #fff;padding:2px 12px;font-size:14px;font-weight:700}
+#eew .bd{padding:22px 28px;display:flex;flex-direction:column;gap:16px;flex:1;min-height:0}
+#eew .lab{font-size:15px;color:#b9bec5;font-weight:700}
+#eew .row1{display:flex;align-items:flex-end;gap:20px}
+#eew .sh{font-size:150px;line-height:.82;font-weight:700;padding:14px 18px 8px;min-width:150px;text-align:center}
+#eew .sh small{font-size:64px;font-family:var(--jp);font-weight:900;margin-left:4px}
+#eew .cd{margin-left:auto;text-align:center;border:3px solid #ffd23f;padding:6px 18px 4px;color:#ffd23f;min-width:150px}
+#eew .cd .v{font-size:96px;line-height:.9;font-weight:700}
+#eew .cd .u{font-size:14px;font-weight:700}
+#eew .src{font-size:24px;font-weight:700;border-top:1px solid #2b2e33;padding-top:14px}
+#eew .src span{font-size:17px;color:#b9bec5;font-weight:500;margin-left:10px}
+#eew .st2 div{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #2b2e33;padding:7px 0;font-size:16px;color:#b9bec5}
+#eew .st2 b{color:#fff;font-size:22px}
+#eew .act{display:grid;gap:8px;margin-top:auto}
+#eew .act div{background:#fff;color:#0b0c0e;font-size:26px;font-weight:900;padding:10px 16px}
+#eew .ft{font-size:12px;color:#8a9097}
+#eew .demo{position:absolute;right:20px;top:86px;background:#fff;color:#000;font-weight:900;font-size:18px;padding:4px 14px}
+
+/* 下のお知らせ */
+.toast{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;font-size:14px;z-index:20;display:flex;gap:14px;align-items:center;white-space:nowrap}
+.toast button{border:1px solid var(--bg);padding:3px 12px;font-weight:700}
+
+/* 設定(拡大縮小しない、ふつうにスクロールする画面) */
+#settings{position:fixed;inset:0;z-index:50;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;user-select:text;-webkit-user-select:text}
+.sx{max-width:860px;margin:0 auto;padding:max(20px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) 80px max(18px,env(safe-area-inset-left))}
+.sx header{display:flex;align-items:center;gap:12px;position:sticky;top:0;background:var(--bg);padding:10px 0;border-bottom:1px solid var(--rule);z-index:2}
+.sx header h1{font-size:20px}
+.sx header .done{margin-left:auto;border:1px solid var(--ink);padding:6px 20px;font-weight:700}
+.sx nav{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+.sx nav a{color:var(--sub);text-decoration:none;font-size:13px;border:1px solid var(--rule);padding:3px 10px}
+.sx section{padding:22px 0;border-bottom:1px solid var(--rule)}
+.sx h2{font-size:16px;margin-bottom:10px}
+.sx p,.sx li{font-size:14px;line-height:1.75;color:var(--ink)}
+.sx .note{font-size:12.5px;color:var(--sub);line-height:1.7;margin-top:6px}
+.sx label{display:inline-flex;align-items:center;gap:6px;margin:4px 14px 4px 0;font-size:14px}
+.sx input[type=text],.sx input[type=url],.sx input[type=date],.sx input[type=time],.sx input[type=number],.sx select{font:inherit;font-size:15px;color:var(--ink);background:var(--card);border:1px solid var(--rule);padding:6px 8px;border-radius:0;min-width:0}
+.sx input[type=checkbox],.sx input[type=radio]{width:18px;height:18px;accent-color:var(--red)}
+.sx .btn{border:1px solid var(--ink);padding:6px 14px;font-size:14px;font-weight:700;margin:4px 6px 4px 0}
+.sx .btn.sub{border-color:var(--rule);font-weight:500}
+.sx .btn.red{border-color:var(--red);color:var(--red)}
+.sx table{border-collapse:collapse;width:100%}
+.sx td,.sx th{padding:5px 6px 5px 0;border-bottom:1px solid var(--rule);font-size:14px;text-align:left;vertical-align:middle}
+.sx th{font-size:12px;color:var(--sub);font-weight:700}
+.sx td input[type=text]{width:100%}
+.sx .tabs{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap}
+.sx .tabs button{border:1px solid var(--rule);padding:4px 14px;color:var(--sub)}
+.sx .tabs button.on{border-color:var(--ink);color:var(--ink);font-weight:700}
+.sx pre{background:var(--card);border:1px solid var(--rule);padding:12px;font-size:12px;overflow-x:auto;white-space:pre;line-height:1.5}
+.sx .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0}
+.sx .mono{font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.sx ol,.sx ul.l{padding-left:1.4em;list-style:revert}
+.sx .chiprow{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--rule)}
+.sx .chiprow .nm{flex:1}
+.sx .chiprow button{border:1px solid var(--rule);width:32px;height:30px}
+.sx .ok{color:var(--grn)} .sx .ng{color:var(--red)}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="bar" id="bar">
+    <div id="chips" style="display:flex;gap:8px"></div>
+    <div class="right"><span id="stSound"></span><span id="stWake"></span><button class="gear" id="openSettings">設定</button></div>
+  </div>
+  <div class="qb" id="qb" hidden></div>
+  <div class="page">
+    <div class="col">
+      <section class="tile tt" id="ttTile"></section>
+      <section class="tile todo grow" id="todoTile"></section>
+    </div>
+    <div class="col">
+      <section class="tile clockt" id="clockTile">
+        <div class="date" id="date"></div>
+        <div class="clock n" id="clock"></div>
+        <div class="next" id="next"></div>
+        <div class="pbar" id="pbar"></div>
+        <div class="ticks" id="ticks"></div>
+      </section>
+      <section class="tile slot" id="slot"></section>
+    </div>
+    <div class="col">
+      <section class="tile" id="wxTile"></section>
+      <section class="tile sched grow" id="schedTile"></section>
+    </div>
+  </div>
+  <div id="eew" hidden>
+    <div class="map"><canvas id="eewMap" width="1280" height="1640"></canvas>
+      <div class="wv"><b>━ P波</b> 小さな揺れ<br><b style="color:#ff6b6b">━ S波</b> 大きな揺れ</div>
+      <div class="lg" id="eewLegend"></div>
+    </div>
+    <div class="p" id="eewPanel"></div>
+  </div>
+  <div class="toast" id="toast" hidden></div>
+</div>
+
+<div id="settings" hidden></div>
+
+<script>
+'use strict';
+const APP_VERSION = '1.0.0'; // 変えたら changelog.json の先頭も同じ番号にする
+
+/* ================= 基本 ================= */
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, '0');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const PREFIX = 'home:';
+const store = {
+  get(k) { try { return JSON.parse(localStorage.getItem(PREFIX + k)); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(PREFIX + k, JSON.stringify(v)); } catch (e) {} }
+};
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parseYmd = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+const toMin = s => { const m = /^(\d{1,2}):(\d{2})$/.exec(s || ''); return m ? +m[1] * 60 + +m[2] : null; };
+const fmtMin = m => `${Math.floor(m / 60)}:${pad(Math.round(m) % 60)}`;
+const fmtDay = m => fmtMin(m > 1440 ? m - 1440 : m); // 24:00 はそのまま、それより後は 0:10 のように
+const WD = ['日', '月', '火', '水', '木', '金', '土'];
+const md = d => `${d.getMonth() + 1}/${d.getDate()}`;
+const minOfDay = d => d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60;
+const dayDiff = (a, b) => Math.round((new Date(b.getFullYear(), b.getMonth(), b.getDate()) - new Date(a.getFullYear(), a.getMonth(), a.getDate())) / 864e5);
+const hm = ms => { const m = Math.max(0, Math.round(ms / 60000)); return m >= 60 ? `${Math.floor(m / 60)}時間${m % 60 ? pad(m % 60) + '分' : ''}` : `${m}分`; };
+
+// ?at=2026-10-29T20:18 で時刻をずらして確認できる(進み続ける)
+let timeOffset = 0;
+{ const at = new URLSearchParams(location.search).get('at'); if (at) { const t = new Date(at).getTime(); if (!isNaN(t)) timeOffset = t - Date.now(); } }
+const nowMs = () => Date.now() + timeOffset;
+const now = () => new Date(nowMs());
+
+/* ================= 設定 ================= */
+const DEFAULT_CFG = {
+  theme: 'dark', lightFrom: '06:30', darkFrom: '18:00', showSec: true,
+  loc: null, // {lat, lon, pref, how}
+  gasUrl: '',
+  periods: [['8:50', '9:40'], ['9:50', '10:40'], ['10:50', '11:40'], ['11:50', '12:40'], ['13:25', '14:15'], ['14:25', '15:15']],
+  shr: ['15:20', '15:35'], sat: false,
+  tt: { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] }, // 曜日ごと [{s:教科, r:教室}]
+  chips: [['studyline', true], ['kioku', true], ['count', true], ['holiday', true], ['terms', true], ['calendar', true]],
+  countdowns: [{ name: '共通テスト', date: '2027-01-16' }, { name: '', date: '' }],
+  termCats: ['日本史', '古文単語', '化学', '物理', '現代文', '四字熟語'],
+  qFull: 5, qBeep: 3 // 震度の段階(0〜9)。5 = 5弱
+};
+let cfg = Object.assign({}, DEFAULT_CFG, store.get('cfg') || {});
+const saveCfg = () => store.set('cfg', cfg);
+let todos = store.get('todos') || [];
+const saveTodos = () => store.set('todos', todos);
+
+/* ================= 祝日(2026〜2027) ================= */
+const HOLIDAYS = {
+  '2026-01-01': '元日', '2026-01-12': '成人の日', '2026-02-11': '建国記念の日', '2026-02-23': '天皇誕生日', '2026-03-20': '春分の日',
+  '2026-04-29': '昭和の日', '2026-05-03': '憲法記念日', '2026-05-04': 'みどりの日', '2026-05-05': 'こどもの日', '2026-05-06': '振替休日',
+  '2026-07-20': '海の日', '2026-08-11': '山の日', '2026-09-21': '敬老の日', '2026-09-22': '国民の休日', '2026-09-23': '秋分の日',
+  '2026-10-12': 'スポーツの日', '2026-11-03': '文化の日', '2026-11-23': '勤労感謝の日',
+  '2027-01-01': '元日', '2027-01-11': '成人の日', '2027-02-11': '建国記念の日', '2027-02-23': '天皇誕生日', '2027-03-21': '春分の日',
+  '2027-03-22': '振替休日', '2027-04-29': '昭和の日', '2027-05-03': '憲法記念日', '2027-05-04': 'みどりの日', '2027-05-05': 'こどもの日',
+  '2027-07-19': '海の日', '2027-08-11': '山の日', '2027-09-20': '敬老の日', '2027-09-23': '秋分の日', '2027-10-11': 'スポーツの日',
+  '2027-11-03': '文化の日', '2027-11-23': '勤労感謝の日'
+};
+const isSchoolDay = d => { const w = d.getDay(); return (w >= 1 && w <= 5 || (w === 6 && cfg.sat)) && !HOLIDAYS[ymd(d)]; };
+const nextSchoolDay = d => { let x = addDays(d, 1); for (let i = 0; i < 30 && !isSchoolDay(x); i++) x = addDays(x, 1); return x; };
+
+/* ================= 画面の大きさ ================= */
+function fit() {
+  const s = Math.min(innerWidth / 1180, innerHeight / 820);
+  $('stage').style.transform = `translate(${(innerWidth - 1180 * s) / 2}px,${(innerHeight - 820 * s) / 2}px) scale(${s})`;
+}
+addEventListener('resize', fit);
+
+/* ================= テーマ ================= */
+function applyTheme() {
+  let light = cfg.theme === 'light';
+  if (cfg.theme === 'auto') { const m = minOfDay(now()), a = toMin(cfg.lightFrom) ?? 390, b = toMin(cfg.darkFrom) ?? 1080; light = a < b ? m >= a && m < b : m >= a || m < b; }
+  document.body.classList.toggle('light', light);
+  document.querySelector('meta[name=theme-color]').content = light ? '#eceeef' : '#141413';
+}
+
+/* ================= 学校の1日 ================= */
+function periodsMin() { return cfg.periods.map(([s, e]) => [toMin(s), toMin(e)]).filter(([s, e]) => s != null && e != null && e > s); }
+function schoolState(d) {
+  const ps = periodsMin(), m = minOfDay(d), shr = [toMin(cfg.shr[0]), toMin(cfg.shr[1])];
+  if (!isSchoolDay(d) || !ps.length) return { mode: 'off', ps };
+  const endAll = Math.max(ps[ps.length - 1][1], shr[1] ?? 0);
+  if (m < ps[0][0]) return { mode: 'before', ps, next: 0, left: ps[0][0] - m };
+  for (let i = 0; i < ps.length; i++) {
+    if (m >= ps[i][0] && m < ps[i][1]) return { mode: 'class', ps, i, left: ps[i][1] - m, frac: (m - ps[i][0]) / (ps[i][1] - ps[i][0]) };
+    if (i + 1 < ps.length && m >= ps[i][1] && m < ps[i + 1][0]) return { mode: 'break', ps, next: i + 1, left: ps[i + 1][0] - m };
+  }
+  if (shr[0] != null && m >= shr[0] && m < shr[1]) return { mode: 'shr', ps, left: shr[1] - m, frac: (m - shr[0]) / (shr[1] - shr[0]) };
+  if (m < endAll) return { mode: 'break', ps, next: -1, left: (shr[0] ?? endAll) - m };
+  return { mode: 'after', ps };
+}
+const ttOf = d => (cfg.tt[d.getDay()] || []);
+const subjOf = (d, i) => (ttOf(d)[i] || {}).s || '';
+const roomOf = (d, i) => (ttOf(d)[i] || {}).r || '';
+const dayLabel = (base, d) => { const k = dayDiff(base, d); return k === 0 ? '今日' : k === 1 ? '明日' : `${md(d)}(${WD[d.getDay()]})`; };
+
+function renderClock() {
+  const d = now();
+  $('date').innerHTML = `<b>${d.getMonth() + 1}月${d.getDate()}日</b>　${WD[d.getDay()]}曜日${HOLIDAYS[ymd(d)] ? '　' + esc(HOLIDAYS[ymd(d)]) : ''}`;
+  $('clock').innerHTML = `${d.getHours()}<span class="colon">:</span>${pad(d.getMinutes())}${cfg.showSec ? `<span class="sec">${pad(d.getSeconds())}</span>` : ''}`;
+  const st = schoolState(d);
+  let t = '';
+  const sub = (dd, i) => { const s = subjOf(dd, i); return s ? `<b>${esc(s)}</b>${roomOf(dd, i) ? `(${esc(roomOf(dd, i))})` : ''}` : `<b>${i + 1}限</b>`; };
+  const left = m => `<span class="n">${Math.ceil(m)}</span> 分`;
+  if (st.mode === 'before') t = `1限まで ${left(st.left)}　／　${sub(d, 0)}`;
+  else if (st.mode === 'class') t = `${st.i + 1}限 終わりまで ${left(st.left)}　／　次は ${st.i + 1 < st.ps.length ? sub(d, st.i + 1) : '<b>帰りのSHR</b>'}`;
+  else if (st.mode === 'break') t = st.next >= 0 ? `${st.next + 1}限まで ${left(st.left)}　／　${sub(d, st.next)}` : `帰りのSHRまで ${left(st.left)}`;
+  else if (st.mode === 'shr') t = `帰りのSHR　あと ${left(st.left)}`;
+  else {
+    const nd = st.mode === 'after' ? nextSchoolDay(d) : (isSchoolDay(d) ? d : nextSchoolDay(d));
+    const s0 = subjOf(nd, 0), p0 = periodsMin()[0];
+    t = `${st.mode === 'after' ? '今日の授業はおわり' : '今日はお休み'}　／　${dayLabel(d, nd)} 1限は ${s0 ? `<b>${esc(s0)}</b>` : '—'} ${p0 ? `<span class="n" style="color:var(--sub);font-size:20px">${fmtMin(p0[0])}</span>` : ''}`;
+  }
+  $('next').innerHTML = t;
+  // 時限バー(授業がある日の昼間だけ)
+  const show = st.mode !== 'off' && st.mode !== 'after';
+  $('pbar').hidden = $('ticks').hidden = !show;
+  if (show) {
+    const ps = st.ps, m = minOfDay(d);
+    let h = '';
+    ps.forEach(([s, e], i) => {
+      if (i > 0 && s - ps[i - 1][1] >= 30) h += '<div class="brk"></div>';
+      if (m >= e) h += `<div class="done">${i + 1}</div>`;
+      else if (m >= s) h += `<div class="cur"><i style="width:${((m - s) / (e - s) * 100).toFixed(1)}%"></i><span>${i + 1}</span></div>`;
+      else h += `<div>${i + 1}</div>`;
+    });
+    const shr = [toMin(cfg.shr[0]), toMin(cfg.shr[1])];
+    if (shr[0] != null && shr[1] > shr[0]) h += m >= shr[1] ? '<div class="done" style="flex:.6">SHR</div>' : m >= shr[0] ? `<div class="cur" style="flex:.6"><i style="width:${((m - shr[0]) / (shr[1] - shr[0]) * 100).toFixed(1)}%"></i><span>SHR</span></div>` : '<div style="flex:.6">SHR</div>';
+    $('pbar').innerHTML = h;
+    const lunch = ps.findIndex((p, i) => i > 0 && p[0] - ps[i - 1][1] >= 30);
+    $('ticks').innerHTML = `<span class="n">${fmtMin(ps[0][0])}</span>${lunch > 0 ? `<span><span class="n">${fmtMin(ps[lunch - 1][1])}</span> 昼休み</span>` : ''}<span class="n">${fmtMin(shr[1] || ps[ps.length - 1][1])}</span>`;
+  }
+  return st;
+}
+
+/* ================= 時間割タイル ================= */
+function renderTT(st) {
+  const d = now();
+  let day = d, title = '今日の時間割';
+  if (st.mode === 'after' || st.mode === 'off') { day = st.mode === 'off' && isSchoolDay(d) ? d : nextSchoolDay(d); title = `${dayLabel(d, day) === '明日' ? '明日' : dayLabel(d, day)}の時間割`; }
+  const ps = periodsMin(), list = ttOf(day), m = minOfDay(d), today = day === d;
+  let h = `<h3>${title} <span>${WD[day.getDay()]}曜</span></h3>`;
+  if (!list.some(x => x && x.s)) h += `<p class="empty">時間割がまだありません。<br>右上の「設定」→「時間割」で入れてください。</p>`;
+  else {
+    h += '<ul>';
+    ps.forEach(([s, e], i) => {
+      const it = list[i] || {};
+      const cls = today && st.mode !== 'off' ? (m >= e ? 'past' : m >= s ? 'now' : '') : '';
+      h += `<li class="${cls}"><span class="p n">${i + 1}</span><span class="s">${esc(it.s || '—')}${it.r ? `<span class="rm">${esc(it.r)}</span>` : ''}</span><span class="t n">${fmtMin(s)}</span></li>`;
+    });
+    h += '</ul>';
+  }
+  $('ttTile').innerHTML = h;
+}
+$('ttTile').addEventListener('click', () => openSettings('s-tt'));
+
+/* ================= やること ================= */
+function dueInfo(t) {
+  if (!t.due) return { label: '', hot: false, ord: 9e9 };
+  const d = parseYmd(t.due), k = dayDiff(now(), d);
+  return { label: k < 0 ? '期限切れ' : k === 0 ? '今日' : k === 1 ? '明日' : md(d), hot: k <= 0 || (k === 1 && t.bring), ord: d.getTime() };
+}
+function cleanTodos() {
+  const t0 = new Date(now().getFullYear(), now().getMonth(), now().getDate()).getTime();
+  const before = todos.length;
+  todos = todos.filter(t => !t.done || (t.doneAt || 0) >= t0);
+  if (todos.length !== before) saveTodos();
+}
+function renderTodo() {
+  cleanTodos();
+  const list = [...todos].sort((a, b) => (a.done - b.done) || (dueInfo(a).ord - dueInfo(b).ord));
+  const open = todos.filter(t => !t.done).length;
+  let h = `<h3>やること <span>${open}件 <button class="add" id="todoAdd" aria-label="追加">+</button></span></h3>`;
+  if (!list.length) h += '<p class="empty">課題や持ちものを「+」で追加できます。</p>';
+  else h += '<ul>' + list.slice(0, 9).map(t => { const di = dueInfo(t); return `<li class="${t.done ? 'd' : ''}" data-id="${esc(t.id)}"><span class="box"></span><span class="tx">${t.bring ? '<em class="kd">持</em>' : ''}${esc(t.text)}</span><span class="due ${di.hot && !t.done ? 'h' : ''}">${t.done ? '済' : di.label}</span></li>`; }).join('') + '</ul>';
+  $('todoTile').innerHTML = h;
+}
+$('todoTile').addEventListener('click', e => {
+  if (e.target.closest('#todoAdd')) { openSettings('s-todo'); return; }
+  const li = e.target.closest('li[data-id]');
+  if (!li) return;
+  const t = todos.find(x => x.id === li.dataset.id);
+  if (!t) return;
+  t.done = !t.done; t.doneAt = t.done ? nowMs() : null;
+  saveTodos(); renderTodo();
+});
+
+/* ================= 天気(Open-Meteo) ================= */
+const DEFAULT_LOC = { lat: 35.681, lon: 139.767, pref: '東京都', how: 'default' };
+const loc = () => cfg.loc || DEFAULT_LOC;
+let wx = store.get('wx'), wxFail = false; // 最後に取れた天気
+const WCODE = c => c === 0 ? ['快晴', 'sun'] : c <= 2 ? ['晴れ', 'sunc'] : c === 3 ? ['くもり', 'cloud'] : c <= 48 ? ['霧', 'fog'] : c <= 67 ? ['雨', 'rain'] : c <= 77 ? ['雪', 'snow'] : c <= 82 ? ['にわか雨', 'rain'] : c <= 86 ? ['にわか雪', 'snow'] : ['雷雨', 'thunder'];
+function wxIcon(kind, night) {
+  const sun = night ? '<path d="M26 6a12 12 0 1 0 8 20 10 10 0 0 1-8-20z"/>' : '<circle cx="20" cy="17" r="8"/><path d="M20 3v3M20 28v3M6 17h3M34 17h-2M10 7l2 2M30 7l-2 2M10 27l2-2"/>';
+  const cloud = '<path d="M24 40h20a7 7 0 0 0-1-14 10 10 0 0 0-19 3 6 6 0 0 0 0 11z" style="fill:var(--bg)"/>';
+  const cloudBig = '<path d="M12 36h30a8 8 0 0 0-1-16 12 12 0 0 0-23 4 6 6 0 0 0-6 12z" style="fill:var(--bg)"/>';
+  const inner = { sun, sunc: sun + cloud, cloud: cloudBig, fog: cloudBig + '<path d="M8 42h36M12 46h28"/>', rain: cloudBig + '<path d="M18 40l-3 6M28 40l-3 6M38 40l-3 6" style="stroke:var(--blue)"/>', snow: cloudBig + '<path d="M18 42h.1M28 44h.1M38 42h.1" stroke-width="4" stroke-linecap="round"/>', thunder: cloudBig + '<path d="M28 36l-5 8h6l-4 7" style="stroke:var(--yel)"/>' }[kind] || cloudBig;
+  return `<svg width="54" height="50" viewBox="0 0 54 52" fill="none" stroke-width="1.8" style="stroke:var(--ink)">${inner}</svg>`;
+}
+async function loadWeather() {
+  const L = loc();
+  try {
+    const u = `https://api.open-meteo.com/v1/forecast?latitude=${L.lat}&longitude=${L.lon}&current=temperature_2m,weather_code,is_day&hourly=temperature_2m,precipitation_probability,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max&timezone=Asia%2FTokyo&forecast_days=3`;
+    const r = await fetch(u, { cache: 'no-store' });
+    const j = await r.json();
+    if (!j.current) throw new Error(j.reason || 'no data');
+    wx = { at: Date.now(), cur: j.current, hourly: j.hourly, daily: j.daily, pref: L.pref };
+    store.set('wx', wx);
+  } catch (e) { if (wx) wx.err = true; else wxFail = true; }
+  renderWeather();
+}
+function renderWeather() {
+  const T = $('wxTile');
+  if (!wx) { T.innerHTML = `<h3>天気 <span>${esc(loc().pref)}</span></h3><p class="empty">${wxFail ? '天気を取得できませんでした。しばらくしてもう一度試します。' : '天気を読み込み中…'}</p>`; return; }
+  const d = now(), st = schoolState(d);
+  const H = wx.hourly, D = wx.daily, hourIdx = H.time.findIndex(t => new Date(t + ':00+09:00').getTime() > nowMs() - 3600e3);
+  const night = !wx.cur.is_day;
+  const [txt, kind] = WCODE(wx.cur.weather_code);
+  const after = st.mode === 'after' || minOfDay(d) >= 17 * 60;
+  const di = after ? 1 : 0;
+  let say;
+  if (!after) {
+    const goHome = Math.floor((toMin(cfg.shr[1]) ?? 960) / 60);
+    const idx = H.time.findIndex(t => t.startsWith(ymd(d)) && +t.slice(11, 13) === goHome);
+    const p = idx >= 0 ? H.precipitation_probability[idx] : D.precipitation_probability_max[0];
+    const k = idx >= 0 ? WCODE(H.weather_code[idx])[0] : '';
+    say = `帰り(${goHome}時)は${k}。` + umbrella(p);
+  } else {
+    const p = D.precipitation_probability_max[1];
+    say = `明日は${WCODE(D.weather_code[1])[0]} ${p}%。` + umbrella(p);
+  }
+  let hrs = '';
+  if (hourIdx >= 0) for (let i = 0; i < 6; i++) { const k = hourIdx + 1 + i * 3; if (k >= H.time.length) break; hrs += `<div>${+H.time[k].slice(11, 13)}時<b>${Math.round(H.temperature_2m[k])}°</b><span>${H.precipitation_probability[k] ?? '-'}%</span></div>`; }
+  T.innerHTML = `<h3>天気 <span>${esc(wx.pref || loc().pref)}${wx.err ? ' ・ 更新できません' : ''}</span></h3>
+    <div class="wx">${wxIcon(kind, night)}<span class="t n">${Math.round(wx.cur.temperature_2m)}°</span>
+    <div class="d">${esc(txt)}<br><b class="n" style="color:var(--red);font-size:17px">${Math.round(D.temperature_2m_max[di])}°</b> / <b class="n" style="color:var(--blue);font-size:17px">${Math.round(D.temperature_2m_min[di])}°</b>${di ? ' 明日' : ''}</div>
+    <div class="say">${esc(say)}</div></div><div class="hrs">${hrs}</div>`;
+}
+const umbrella = p => p >= 50 ? '傘を持っていく' : p >= 30 ? '折りたたみ傘があると安心' : '傘はいりません';
+
+/* ================= 予定(Googleカレンダー / Apps Script) ================= */
+let events = store.get('events') || null, eventsAt = store.get('eventsAt') || 0, eventsErr = '';
+async function loadEvents() {
+  if (!cfg.gasUrl) { renderSched(); return; }
+  try {
+    const r = await fetch(cfg.gasUrl, { cache: 'no-store' });
+    const j = await r.json();
+    if (!Array.isArray(j)) throw new Error('形式が違います');
+    events = j.filter(e => e && e.title && e.start).map(e => ({ title: String(e.title), start: e.start, end: e.end || e.start, allDay: !!e.allDay, color: e.color || '' }));
+    eventsAt = Date.now(); eventsErr = '';
+    store.set('events', events); store.set('eventsAt', eventsAt);
+  } catch (e) { eventsErr = '読めませんでした'; }
+  renderSched();
+}
+function upcoming() {
+  if (!events) return [];
+  const t = nowMs(), d0 = new Date(now().getFullYear(), now().getMonth(), now().getDate()).getTime();
+  return events.filter(e => (e.allDay ? new Date(e.end).getTime() > d0 : new Date(e.end).getTime() > t)).sort((a, b) => new Date(a.start) - new Date(b.start));
+}
+const EV_COLORS = { 1: '#7986cb', 2: '#33b679', 3: '#8e24aa', 4: '#e67c73', 5: '#f6bf26', 6: '#f4511e', 7: '#039be5', 8: '#616161', 9: '#3f51b5', 10: '#0b8043', 11: '#d50000' };
+function renderSched() {
+  const T = $('schedTile');
+  let h = `<h3>予定 <span>${cfg.gasUrl ? (eventsErr ? '<span style="color:var(--red)">更新できません</span>' : 'Googleカレンダー') : ''}</span></h3>`;
+  if (!cfg.gasUrl) h += '<p class="empty">「設定」→「Googleカレンダー」で連携すると、ここに予定が出ます。</p>';
+  else {
+    const list = upcoming().slice(0, 6);
+    if (!list.length) h += `<p class="empty">${events ? 'この先の予定はありません。' : '読み込み中…'}</p>`;
+    else h += '<ul>' + list.map(e => {
+      const s = new Date(e.start), dl = dayDiff(now(), s);
+      const lab = dl <= 0 ? '今日' : dl === 1 ? '明日' : md(s);
+      return `<li><span class="dd">${lab}</span><span class="tm">${e.allDay ? '終日' : `${s.getHours()}:${pad(s.getMinutes())}`}</span><i style="${e.color ? `background:${esc(EV_COLORS[e.color] || e.color)}` : ''}"></i><span class="tx">${esc(e.title)}</span></li>`;
+    }).join('') + '</ul>';
+  }
+  T.innerHTML = h;
+}
+
+/* ================= StudyLine(同じサイトの保存データを読む) ================= */
+function slDay(ds) { try { const d = JSON.parse(localStorage.getItem('ttable:day:' + ds)); return d && Array.isArray(d.tasks) ? d : null; } catch (e) { return null; } }
+function slPomo() { try { return Object.assign({ work: 25, brk: 5, long: 15, every: 4 }, JSON.parse(localStorage.getItem('ttable:pomo')) || {}); } catch (e) { return { work: 25, brk: 5, long: 15, every: 4 }; } }
+const slDur = t => Math.max(1, (+t.dur || 0) + (+t.adj || 0));
+function slSpan(t, pc) { // 休憩も含めたおおよその長さ(分)
+  const w = slDur(t);
+  if (!t.pomo || t.sw) return w;
+  const blocks = Math.ceil(w / Math.max(1, pc.work));
+  let br = 0; for (let i = 1; i < blocks; i++) br += i % Math.max(1, pc.every) === 0 ? pc.long : pc.brk;
+  return w + br;
+}
+function slStudied(d) { // その日に終えた・やっている分(分)
+  if (!d) return 0;
+  let s = 0;
+  for (const t of d.tasks) if (t.actualStart) s += ((t.actualEnd || (ymd(now()) === d._ds ? nowMs() : t.actualStart)) - t.actualStart) / 60000;
+  return Math.max(0, s);
+}
+function slSchedule() {
+  const ds = ymd(now()), d = slDay(ds);
+  if (!d || !d.tasks.length) return null;
+  d._ds = ds;
+  const base = new Date(now().getFullYear(), now().getMonth(), now().getDate()).getTime();
+  const nm = (nowMs() - base) / 60000, pc = slPomo();
+  const start = +(d.settings && d.settings.start) || 19 * 60, deadline = d.settings && d.settings.deadline;
+  let plan = start, cur = start;
+  const rows = d.tasks.map(t => {
+    const span = slSpan(t, pc), ps = plan; plan += span;
+    let s, e, st;
+    if (t.actualEnd) { st = 'done'; s = (t.actualStart - base) / 60000; e = (t.actualEnd - base) / 60000; }
+    else if (t.actualStart) { st = 'run'; s = (t.actualStart - base) / 60000; e = Math.max(nm, s + span); }
+    else { st = 'wait'; s = Math.max(cur, nm); e = s + span; }
+    cur = e;
+    return { t, st, ps, s, e };
+  });
+  return { d, rows, start, planEnd: plan, end: cur, deadline, nm };
+}
+function renderStudyLine() {
+  const sc = slSchedule();
+  const today = slDay(ymd(now())), yd = slDay(ymd(addDays(now(), -1)));
+  if (yd) yd._ds = ymd(addDays(now(), -1));
+  let week = 0; for (let i = 0; i < 7; i++) { const x = slDay(ymd(addDays(now(), -i))); if (x) { x._ds = ymd(addDays(now(), -i)); week += slStudied(x); } }
+  const foot = `<div class="slfoot"><span>今日 <b>${hm(slStudied(today && Object.assign(today, { _ds: ymd(now()) })) * 60000)}</b></span><span>昨日 <b>${hm(slStudied(yd) * 60000)}</b></span><span style="margin-left:auto">7日で <b>${(week / 60).toFixed(1)}時間</b></span></div>`;
+  if (!sc) return `<h3><b style="color:var(--sl);letter-spacing:.06em">StudyLine</b> <span>今日のダイヤ</span></h3><p class="empty" style="flex:1">今日のダイヤはまだありません。StudyLine で作るとここに出ます。<br>(StudyLine と同じ iPad・同じ開き方で使ってください)</p>${foot}`;
+  const { rows, start, planEnd, end, deadline, nm } = sc;
+  const run = rows.find(r => r.st === 'run'), nextR = rows.find(r => r.st === 'wait'), allDone = rows.every(r => r.st === 'done');
+  const delay = Math.round(end - planEnd);
+  const delayTxt = delay > 0 ? `<span class="late">+${delay}分 遅れ</span>` : delay < 0 ? `<span class="okc">${-delay}分 早い</span>` : '定時';
+  const room = deadline ? Math.round(deadline - end) : null;
+  const roomTxt = room == null ? '' : ` ・ 就寝期限 ${fmtDay(deadline)} まで ${room >= 0 ? `<span class="okc">余裕 ${hm(room * 60000)}</span>` : `<span class="late">${hm(-room * 60000)} オーバー</span>`}`;
+  let head, sub;
+  if (run) {
+    head = `<span class="pill">運行中</span><span class="slname">${esc(run.t.name)}</span><span class="slremain">あと <span class="n">${Math.max(0, Math.ceil(run.e - nm))}</span>分</span>`;
+    sub = `${fmtMin(run.s)} 発 ・ ${delayTxt} ・ 終点 ${fmtDay(end)} 着見込み${roomTxt}`;
+  } else if (allDone) {
+    head = `<span class="pill g">終点着</span><span class="slname">今日のダイヤは完了</span>`;
+    sub = `${fmtDay(end)} 着 ・ ${delayTxt}`;
+  } else if (rows.some(r => r.st === 'done')) {
+    head = `<span class="pill g">停車中</span><span class="slname">次は ${esc(nextR.t.name)}</span>`;
+    sub = `${delayTxt} ・ 終点 ${fmtDay(end)} 着見込み${roomTxt}`;
+  } else {
+    const wait = start - nm;
+    head = `<span class="pill g">発車前</span><span class="slname">${fmtMin(start)} 発　${rows.length}駅 ・ ${hm((planEnd - start) * 60000)}</span>${wait > 0 ? `<span class="slremain">発車まで <span class="n" style="color:var(--ink)">${Math.floor(wait / 60)}:${pad(Math.floor(wait % 60))}</span></span>` : ''}`;
+    sub = `終点 ${fmtDay(planEnd)} 着予定${room == null ? '' : ` ・ 就寝期限 ${fmtDay(deadline)} まで <span class="okc">余裕 ${hm((deadline - planEnd) * 60000)}</span>`}`;
+  }
+  // 路線図:駅の位置は時刻の割合。近すぎる駅は少し離す
+  const t0 = rows[0].s, t1 = end, span = Math.max(1, t1 - t0);
+  let pos = rows.map(r => Math.min(.86, (r.s - t0) / span));
+  for (let i = 1; i < pos.length; i++) pos[i] = Math.max(pos[i], pos[i - 1] + .14);
+  const over = pos[pos.length - 1] - .86; if (over > 0) pos = pos.map((p, i) => p - over * i / (pos.length - 1 || 1));
+  const many = rows.length > 6;
+  let route = `<div class="ln"><i style="width:${Math.min(100, Math.max(0, (nm - t0) / span * 100)).toFixed(1)}%"></i></div>`;
+  const RW = 500; // 路線図のおおよその幅(px)。駅名が隣とかさならない幅にする
+  rows.forEach((r, i) => {
+    const cls = (i === 0 ? 'first ' : '') + (r.st === 'done' ? 'done' : r.st === 'run' ? 'cur' : '');
+    const name = many ? r.t.name.slice(0, 4) : r.t.name;
+    const gapL = i === 0 ? 1 : (pos[i] - pos[i - 1]) / 2, gapR = ((i + 1 < pos.length ? pos[i + 1] : 1) - pos[i]) / (i === 0 ? 1 : 2);
+    const w = Math.max(48, Math.min(130, (i === 0 ? gapR : Math.min(gapL, gapR) * 2) * RW - 6));
+    route += `<div class="st ${cls}" style="left:${(pos[i] * 100).toFixed(1)}%;max-width:${w.toFixed(0)}px"><div class="dot"></div><div class="nm">${esc(name)}</div><div class="tm n">${fmtDay(r.s)}</div></div>`;
+  });
+  if (run) route += `<div class="train" style="left:${Math.min(97, Math.max(1, (nm - t0) / span * 100)).toFixed(1)}%">▶</div>`;
+  route += `<div class="st end" style="left:100%"><div class="dot"></div><div class="nm">終点</div><div class="tm n">${fmtDay(end)}</div></div>`;
+  return `<h3><b style="color:var(--sl);letter-spacing:.06em">StudyLine</b> <span>${run ? '運行状況' : '今日のダイヤ'}</span></h3><div class="slhead">${head}</div><div class="slsub">${sub}</div><div class="route">${route}</div>${foot}`;
+}
+function slChip() {
+  const sc = slSchedule();
+  if (!sc) return 'なし';
+  const run = sc.rows.find(r => r.st === 'run');
+  if (run) return `あと <b>${Math.max(0, Math.ceil(run.e - sc.nm))}</b>分`;
+  if (sc.rows.every(r => r.st === 'done')) return '完了';
+  if (!sc.rows.some(r => r.st === 'done')) return `<b>${fmtMin(sc.start)}</b>発`;
+  return `終点 <b>${fmtDay(sc.end)}</b>`;
+}
+addEventListener('storage', e => { if (e.key && (e.key.startsWith('ttable:') || e.key.startsWith('vocabTest.'))) { kioku.db = {}; renderAll(); } });
+
+/* ================= 記憶回路(同じサイトの単語と記録を使う) ================= */
+const VOCAB = [{ id: 'comm', name: '英語コミュ', file: '../vocab/words.csv' }, { id: 'jukugo', name: '速読英熟語', file: '../vocab/jukugo.csv' }, { id: 'kanji', name: '漢字', file: '../vocab/kanji.csv' }];
+const kioku = { words: {}, db: {}, cur: null, shown: false, loaded: false };
+function parseCsv(text) {
+  const rows = []; let row = [], f = '', q = false;
+  text = text.replace(/^﻿/, '');
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += c; }
+    else if (c === '"') q = true;
+    else if (c === ',') { row.push(f); f = ''; }
+    else if (c === '\n' || c === '\r') { if (c === '\r' && text[i + 1] === '\n') i++; row.push(f); rows.push(row); row = []; f = ''; }
+    else f += c;
+  }
+  if (f || row.length) { row.push(f); rows.push(row); }
+  const head = rows.shift() || [];
+  const ix = k => head.indexOf(k);
+  return rows.filter(r => r[ix('english')]).map(r => ({ english: r[ix('english')].trim(), japanese: (r[ix('japanese')] || '').trim(), definition: (r[ix('definition')] || '').trim() }));
+}
+async function loadVocab() {
+  await Promise.all(VOCAB.map(async v => { try { const r = await fetch(v.file, { cache: 'no-store' }); if (r.ok) kioku.words[v.id] = parseCsv(await r.text()); } catch (e) {} }));
+  kioku.loaded = true; renderSlot(); renderChips();
+}
+// 記憶回路と同じ決まり(朝4時で日付が変わる、同じ間隔の計算)
+const vToday = () => { const d = now(); return Math.floor((d.getTime() - d.getTimezoneOffset() * 60000 - 4 * 3600000) / 86400000); };
+const vKey = (sub, w) => (sub === 'kanji' ? `${w.english}|${w.japanese}` : w.english).toLowerCase();
+function vDb(sub) { if (!kioku.db[sub]) { try { kioku.db[sub] = JSON.parse(localStorage.getItem('vocabTest.srs.' + sub)) || {}; } catch (e) { kioku.db[sub] = {}; } } return kioku.db[sub]; }
+const EASE_START = 2.5, EASE_MIN = 1.3, IVL_MAX = 365;
+function vSchedule(rec, grade, t) {
+  if (grade === 3 && rec && rec.last === t) grade = 2;
+  const r = rec ? { ...rec } : { ivl: 0, ease: EASE_START, reps: 0, lapses: 0, due: t, last: null };
+  const elapsed = r.last == null ? 0 : Math.max(0, t - r.last), sameDay = r.last === t;
+  if (grade === 0) { if (r.ivl > 0 && !sameDay) { r.lapses++; r.ease = Math.max(EASE_MIN, r.ease - .2); } r.ivl = 0; }
+  else if (grade === 1) { if (r.ivl > 0 && !sameDay) r.ease = Math.max(EASE_MIN, r.ease - .15); r.ivl = 1; }
+  else if (r.ivl === 0) r.ivl = grade === 3 ? 4 : 1;
+  else if (elapsed === 0) { /* 同じ日の2回目以降は伸ばさない */ }
+  else {
+    const early = elapsed < r.ivl, base = Math.max(1, early ? elapsed : r.ivl + (elapsed - r.ivl) / 2);
+    const next = Math.round(base * r.ease * (grade === 3 ? 1.8 : 1));
+    r.ivl = Math.min(IVL_MAX, Math.max(next, early ? r.ivl : r.ivl + (grade === 3 ? 2 : 1)));
+  }
+  if (grade === 3) r.ease += .15;
+  r.reps++; r.last = t; r.due = t + r.ivl;
+  return r;
+}
+const isWeak = r => !!r && (r.lapses > 0 || r.ease < EASE_START || (r.ivl === 0 && r.reps > 0));
+function dueList() {
+  const t = vToday(), out = [];
+  for (const v of VOCAB) {
+    const db = vDb(v.id);
+    for (const w of kioku.words[v.id] || []) { const r = db[vKey(v.id, w)]; if (r && r.due <= t) out.push({ sub: v.id, w, r }); }
+  }
+  return out.sort((a, b) => (isWeak(b.r) - isWeak(a.r)) || (a.r.due - b.r.due));
+}
+function renderKioku() {
+  if (!kioku.loaded) return '<h3>記憶回路</h3><p class="empty">単語を読み込み中…</p>';
+  const list = dueList();
+  const cnt = id => list.filter(x => x.sub === id).length;
+  if (kioku.cur && !list.some(x => x.sub === kioku.cur.sub && x.w === kioku.cur.w)) kioku.cur = null;
+  if (!kioku.cur && list.length) { kioku.cur = list[0]; kioku.shown = false; }
+  let h = `<h3>記憶回路 <span>今日の復習 <b class="n" style="font-size:16px;color:var(--ink)">${list.length}</b></span></h3>
+    <div class="subj3">${VOCAB.map(v => `<span>${v.name} <b class="n">${cnt(v.id)}</b></span>`).join('')}</div>`;
+  if (!list.length) return h + '<p class="empty">今日の復習はおわりです。新しい単語は記憶回路で覚えましょう。</p>';
+  const c = kioku.cur, w = c.w, isK = c.sub === 'kanji', kana = isK && /^[゠-ヿ・ー]+$/.test(w.english);
+  const tag = `${VOCAB.find(v => v.id === c.sub).name}${isK ? (kana ? ' ・ 書き' : ' ・ 読み') : ''}${isWeak(c.r) ? ' ・ 苦手' : ''}`;
+  h += `<div class="card" id="kCard"><div class="cside"><span class="ctag">${esc(tag)}</span></div><div class="cw ${isK ? 'jp' : ''}">${esc(w.english)}</div>`;
+  h += kioku.shown ? `<div class="cans"><div class="a">${esc(w.japanese)}</div>${w.definition && !isK ? `<div class="def">${esc(w.definition)}</div>` : ''}</div>` : `<span class="flip">タップで答え</span>`;
+  h += '</div>';
+  if (kioku.shown) h += `<div class="grade" id="kGrade"><button data-g="0">✕ 全然</button><button data-g="1">△ 惜しい</button><button data-g="2">○ 正解</button><button data-g="3">◎ 余裕</button></div>`;
+  return h;
+}
+function kiokuClick(e) {
+  const g = e.target.closest('[data-g]');
+  if (g && kioku.cur) {
+    const c = kioku.cur, k = vKey(c.sub, c.w);
+    // 記憶回路が別に書いた分を消さないよう、保存の直前に読み直してから1語だけ書き換える
+    let fresh = {}; try { fresh = JSON.parse(localStorage.getItem('vocabTest.srs.' + c.sub)) || {}; } catch (err) {}
+    fresh[k] = vSchedule(fresh[k], +g.dataset.g, vToday()); kioku.db[c.sub] = fresh;
+    try { localStorage.setItem('vocabTest.srs.' + c.sub, JSON.stringify(fresh)); } catch (err) {}
+    kioku.cur = null; renderSlot(); renderChips(); return;
+  }
+  if (e.target.closest('#kCard')) { kioku.shown = !kioku.shown; renderSlot(); }
+}
+
+/* ================= 受験の語句 ================= */
+let terms = [], termCur = null, termAt = 0;
+fetch('terms.json', { cache: 'no-store' }).then(r => r.json()).then(j => { terms = j; renderSlot(); }).catch(() => {});
+function pickTerm() { const pool = terms.filter(t => cfg.termCats.includes(t.cat)); termCur = pool.length ? pool[Math.floor(Math.random() * pool.length)] : null; termAt = nowMs(); }
+function renderTerms() {
+  if (!termCur || nowMs() - termAt > 5 * 60e3) pickTerm();
+  if (!termCur) return '<h3>受験の語句</h3><p class="empty">設定で科目を選んでください。</p>';
+  const t = termCur, left = Math.max(1, Math.ceil((5 * 60e3 - (nowMs() - termAt)) / 60e3));
+  return `<h3>受験の語句 <span>タップで次へ ・ 次まで ${left}分</span></h3><div class="term" id="termCard" style="flex:1">
+    <div style="display:flex;gap:10px;align-items:center"><span class="tcat">${esc(t.cat)}</span><span style="color:var(--sub);font-size:12px">${esc(t.note || '')}</span></div>
+    <div class="tw">${esc(t.term)}</div>${t.yomi ? `<div class="tr">${esc(t.yomi)}</div>` : ''}<div class="td2">${esc(t.desc)}</div></div>`;
+}
+
+/* ================= カウントダウン・次の休み・カレンダー ================= */
+function cdList() { return cfg.countdowns.filter(c => c.name && c.date).map(c => ({ ...c, days: dayDiff(now(), parseYmd(c.date)) })).filter(c => c.days >= 0); }
+function renderCount() {
+  const l = cdList();
+  if (!l.length) return '<h3>カウントダウン</h3><p class="empty">設定で日付を入れてください。</p>';
+  return `<h3>カウントダウン</h3><div class="big2">${l.slice(0, 2).map(c => `<div><div class="k">${esc(c.name)}まで</div><div class="v n">${c.days}<small>日</small></div><div class="d">${md(parseYmd(c.date))}(${WD[parseYmd(c.date).getDay()]}) ・ 残り${Math.floor(c.days / 7)}週</div></div>`).join('')}</div>`;
+}
+function nextOff() {
+  const d = now(); let x = d, i = 0;
+  if (!isSchoolDay(d)) return { today: true, from: d, len: offLen(d) };
+  while (isSchoolDay(x) && i < 60) { x = addDays(x, 1); i++; }
+  return { days: dayDiff(d, x), from: x, len: offLen(x) };
+}
+function offLen(d) { let n = 0, x = d; while (!isSchoolDay(x) && n < 30) { x = addDays(x, 1); n++; } return n; }
+function renderHoliday() {
+  const o = nextOff(), d = now(), y0 = new Date(d.getFullYear(), 0, 1), y1 = new Date(d.getFullYear() + 1, 0, 1);
+  const frac = (nowMs() - y0) / (y1 - y0), left = dayDiff(d, y1) - 1;
+  const hol = [...Array(o.len)].map((_, i) => HOLIDAYS[ymd(addDays(o.from, i))]).filter(Boolean);
+  let dots = ''; const fw = Math.floor(frac * 52); for (let i = 0; i < 52; i++) dots += `<i class="${i < fw ? 'f' : i === fw ? 'c' : ''}"></i>`;
+  return `<h3>次の休み <span>土日・祝日</span></h3><div class="big2">
+    <div><div class="k">${o.today ? '今日はお休み' : '次の休みまで'}</div><div class="v n">${o.today ? o.len : o.days}<small>${o.today ? '連休' : '日後'}</small></div><div class="d">${md(o.from)}(${WD[o.from.getDay()]})から ${o.len}連休${hol.length ? ' ・ ' + esc(hol.join('・')) : ''}</div></div>
+    <div><div class="k">${d.getFullYear()}年の残り</div><div class="v n">${left}<small>日</small></div><div class="d">${(frac * 100).toFixed(1)}% 経過</div></div></div><div class="dots">${dots}</div>`;
+}
+function renderCalendar() {
+  const d = now(), mon = addDays(d, -((d.getDay() + 6) % 7));
+  const evDays = new Set(upcoming().map(e => ymd(new Date(e.start))));
+  let h = `<h3>カレンダー <span>${d.getMonth() + 1}月 –</span></h3><div class="cal">` + ['月', '火', '水', '木', '金', '土', '日'].map((w, i) => `<span class="w ${i === 6 ? 'su' : ''}">${w}</span>`).join('');
+  for (let i = 0; i < 28; i++) {
+    const x = addDays(mon, i), k = ymd(x);
+    const cls = [x < new Date(d.getFullYear(), d.getMonth(), d.getDate()) ? 'o' : '', (x.getDay() === 0 || HOLIDAYS[k]) ? 'su' : '', k === ymd(d) ? 'td' : '', evDays.has(k) ? 'ev' : ''].join(' ');
+    h += `<span class="${cls}">${x.getDate()}</span>`;
+  }
+  return h + '</div>';
+}
+
+/* ================= 上のバーと時計の下の枠 ================= */
+const CHIP = {
+  studyline: { name: 'StudyLine', render: renderStudyLine, chip: () => `<span class="slc">StudyLine</span> ${slChip()}` },
+  kioku: { name: '記憶回路', render: renderKioku, chip: () => `記憶回路 <b>${kioku.loaded ? dueList().length : '…'}</b>` },
+  count: { name: 'カウントダウン', render: renderCount, chip: () => { const c = cdList()[0]; return c ? `${esc(c.name)} <b>${c.days}</b>日` : 'カウントダウン'; } },
+  holiday: { name: '次の休み', render: renderHoliday, chip: () => { const o = nextOff(); return o.today ? '今日は休み' : `次の休み <b>${o.days}</b>日後`; } },
+  terms: { name: '受験の語句', render: renderTerms, chip: () => '受験の語句' },
+  calendar: { name: 'カレンダー', render: renderCalendar, chip: () => `カレンダー` }
+};
+const enabledChips = () => cfg.chips.filter(([k, on]) => on && CHIP[k]).map(([k]) => k);
+let slotMode = null, slotTouched = 0;
+const homeSlot = () => enabledChips()[0] || null;
+function renderChips() {
+  $('chips').innerHTML = enabledChips().map(k => `<button class="chip ${k === slotMode ? 'on' : ''}" data-k="${k}">${CHIP[k].chip()}</button>`).join('');
+}
+$('chips').addEventListener('click', e => {
+  const b = e.target.closest('[data-k]'); if (!b) return;
+  slotMode = b.dataset.k; slotTouched = nowMs();
+  if (slotMode === 'terms' && termCur) { /* そのまま */ }
+  renderChips(); renderSlot();
+});
+function renderSlot() {
+  const en = enabledChips();
+  if (!en.includes(slotMode)) slotMode = homeSlot();
+  const S = $('slot');
+  if (!slotMode) { S.hidden = true; return; }
+  S.hidden = false;
+  S.innerHTML = CHIP[slotMode].render() + (slotMode !== homeSlot() ? `<div class="back">しばらく触らないと ${esc(CHIP[homeSlot()].name)} に戻ります</div>` : '');
+}
+$('slot').addEventListener('click', e => {
+  slotTouched = nowMs();
+  if (slotMode === 'kioku') kiokuClick(e);
+  else if (slotMode === 'terms' && e.target.closest('#termCard')) { pickTerm(); renderSlot(); }
+});
+
+function renderAll() { const st = renderClock(); renderTT(st); renderTodo(); renderWeather(); renderSched(); renderChips(); renderSlot(); }
+
+/* ================= 音(タップするまで鳴らせない) ================= */
+let actx = null;
+function unlockAudio() {
+  if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+  if (actx && actx.state !== 'running') actx.resume().catch(() => {});
+  // iOS は無音を一度鳴らすと確実に有効になる
+  if (actx) { const b = actx.createBuffer(1, 1, 22050), s = actx.createBufferSource(); s.buffer = b; s.connect(actx.destination); s.start(0); }
+  renderStatus();
+}
+addEventListener('pointerdown', unlockAudio, { capture: true });
+function tone(freq, t0, dur, vol = .25, type = 'square') {
+  if (!actx || actx.state !== 'running') return;
+  const o = actx.createOscillator(), g = actx.createGain();
+  o.type = type; o.frequency.value = freq; o.connect(g); g.connect(actx.destination);
+  const t = actx.currentTime + t0;
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .01); g.gain.setValueAtTime(vol, t + dur - .02); g.gain.linearRampToValueAtTime(0, t + dur);
+  o.start(t); o.stop(t + dur + .02);
+}
+const soundBeep = () => { tone(880, 0, .18, .2, 'sine'); tone(880, .28, .18, .2, 'sine'); };
+const soundAlarm = () => { for (let i = 0; i < 3; i++) { tone(1040, i * .5, .22, .3); tone(780, i * .5 + .24, .22, .3); } };
+
+/* ================= スリープ防止 ================= */
+let wakeLock = null, wakeState = 'none';
+async function requestWake() {
+  if (!('wakeLock' in navigator)) { wakeState = 'unsupported'; renderStatus(); return; }
+  try { wakeLock = await navigator.wakeLock.request('screen'); wakeState = 'on'; wakeLock.addEventListener('release', () => { wakeState = 'off'; renderStatus(); }); }
+  catch (e) { wakeState = 'off'; }
+  renderStatus();
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { requestWake(); tick(true); loadWeather(); loadEvents(); pollQuake(); checkVersion(); } });
+addEventListener('pointerdown', () => { if (wakeState !== 'on') requestWake(); });
+function renderStatus() {
+  const snd = actx && actx.state === 'running';
+  $('stSound').innerHTML = snd ? '音 オン' : '<span class="warn">タップで音オン</span>';
+  $('stWake').innerHTML = wakeState === 'on' ? 'スリープ防止中' : wakeState === 'unsupported' ? '<span class="warn">スリープ防止なし</span>' : '<span class="warn">タップでスリープ防止</span>';
+}
+
+/* ================= 地図データ ================= */
+let JAPAN = null;
+fetch('japan.json').then(r => r.json()).then(j => {
+  JAPAN = j.map(p => {
+    const rings = p.r.map(a => { const pts = []; for (let i = 0; i < a.length; i += 2) pts.push([a[i] / 100, a[i + 1] / 100]); return pts; });
+    let big = rings[0], ba = 0;
+    for (const r of rings) { const a = Math.abs(r.reduce((s, q, i) => { const n = r[(i + 1) % r.length]; return s + q[0] * n[1] - n[0] * q[1]; }, 0)); if (a > ba) { ba = a; big = r; } }
+    const c = big.reduce((s, q) => [s[0] + q[0] / big.length, s[1] + q[1] / big.length], [0, 0]);
+    return { name: p.n, rings, c };
+  });
+  if (cfg.loc && !cfg.loc.pref) { cfg.loc.pref = prefAt(cfg.loc.lat, cfg.loc.lon) || ''; saveCfg(); }
+}).catch(() => {});
+function prefAt(lat, lon) {
+  if (!JAPAN) return null;
+  for (const p of JAPAN) for (const r of p.rings) {
+    let inside = false;
+    for (let i = 0, j = r.length - 1; i < r.length; j = i++) {
+      const [xi, yi] = r[i], [xj, yj] = r[j];
+      if ((yi > lat) !== (yj > lat) && lon < (xj - xi) * (lat - yi) / (yj - yi) + xi) inside = !inside;
+    }
+    if (inside) return p.name;
+  }
+  // 海の近くで外れたときは一番近い県の中心
+  let best = null, bd = 1e9; for (const p of JAPAN) { const d = (p.c[0] - lon) ** 2 + (p.c[1] - lat) ** 2; if (d < bd) { bd = d; best = p.name; } }
+  return bd < .6 ? best : null;
+}
+
+/* ================= 震度 ================= */
+const SHINDO = ['0', '1', '2', '3', '4', '5弱', '5強', '6弱', '6強', '7'];
+const SHINDO_COLOR = ['#3a3d42', '#F2F2FF', '#00AAFF', '#0041FF', '#FAE696', '#FFE600', '#FF9900', '#FF2800', '#A50021', '#B40068'];
+const SHINDO_TEXT = ['#fff', '#111', '#111', '#fff', '#111', '#111', '#111', '#fff', '#fff', '#fff'];
+const shindoIdx = s => { s = String(s ?? '').replace('-', '弱').replace('+', '強').replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)); const i = SHINDO.indexOf(s); return i; };
+const P2P_SCALE = { 10: 1, 20: 2, 30: 3, 40: 4, 45: 5, 46: 5, 50: 6, 55: 7, 60: 8, 70: 9 };
+const kmBetween = (a, b, c, d) => { const R = 6371, r = Math.PI / 180, x = Math.sin((c - a) * r / 2) ** 2 + Math.cos(a * r) * Math.cos(c * r) * Math.sin((d - b) * r / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(x)); };
+// 推定震度:司・翠川(1999)の最大速度の距離減衰式 + 地盤の増幅(1.4倍) + 計測震度への換算
+function estIntensity(M, depth, eLat, eLon, lat, lon) {
+  const D = Math.max(0, Math.min(depth, 100)), epi = kmBetween(eLat, eLon, lat, lon), X = Math.max(3, Math.sqrt(epi * epi + D * D));
+  const lg = 0.58 * M + 0.0038 * D - 1.29 - Math.log10(X + 0.0028 * Math.pow(10, 0.5 * M)) - 0.002 * X;
+  const pgv = Math.pow(10, lg) * 1.4;
+  const I = 2.68 + 1.72 * Math.log10(pgv);
+  return I < .5 ? 0 : I < 1.5 ? 1 : I < 2.5 ? 2 : I < 3.5 ? 3 : I < 4.5 ? 4 : I < 5 ? 5 : I < 5.5 ? 6 : I < 6 ? 7 : I < 6.5 ? 8 : 9;
+}
+const VP = 6.5, VS = 3.6; // km/s(目安)
+const shindoChip = (i, big) => `<span class="si" style="background:${SHINDO_COLOR[i]};color:${SHINDO_TEXT[i]}">${big ? '' : '震度'}${SHINDO[i]}</span>`;
+
+/* ================= 緊急地震速報(Wolfx) ================= */
+let eew = null; // 表示中の速報
+let ws = null, wsFails = 0, wsLast = 0;
+function connectEEW() {
+  try { ws = new WebSocket('wss://ws-api.wolfx.jp/jma_eew'); } catch (e) { scheduleReconnect(); return; }
+  ws.onopen = () => { wsFails = 0; wsLast = Date.now(); };
+  ws.onmessage = ev => { wsLast = Date.now(); let d; try { d = JSON.parse(ev.data); } catch (e) { return; } if (d && d.Title && /緊急地震速報/.test(d.Title)) handleEEW(d, false); };
+  ws.onclose = () => { ws = null; scheduleReconnect(); };
+  ws.onerror = () => { try { ws.close(); } catch (e) {} };
+}
+function scheduleReconnect() { wsFails++; setTimeout(connectEEW, Math.min(60e3, 2000 * 2 ** Math.min(wsFails, 5))); }
+setInterval(() => { if (ws && ws.readyState === 1 && Date.now() - wsLast > 120e3) { try { ws.close(); } catch (e) {} } }, 30e3); // 2分なにも来なければつなぎ直す
+const jst = s => new Date(String(s).replace(/\//g, '-').replace(' ', 'T') + '+09:00').getTime();
+
+function handleEEW(d, demo) {
+  if (d.isTraining && !demo) return;
+  if (eew && eew.demo && !demo) endEEW(); // 本物が来たらデモはやめる
+  if (eew && !demo && eew.demo === false && eew.id === d.EventID && +d.Serial < eew.serial) return;
+  if (d.isCancel) { if (eew && eew.id === d.EventID) { endEEW(); toast('緊急地震速報は取り消されました'); } return; }
+  const L = loc();
+  const M = +(d.Magnitude ?? d.Magunitude) || 0, depth = +d.Depth || 10, lat = +d.Latitude, lon = +d.Longitude;
+  if (!isFinite(lat) || !isFinite(lon)) return;
+  const maxI = Math.max(0, shindoIdx(d.MaxIntensity));
+  let local = estIntensity(M, depth, lat, lon, L.lat, L.lon);
+  local = Math.min(local, maxI || 9);
+  if (demo && d._local != null) local = d._local; // デモは設定どおりの見え方になるように
+  for (const a of d.WarnArea || []) if (L.pref && String(a.Chiiki || '').startsWith(L.pref.replace(/[都府県]$/, ''))) local = Math.max(local, shindoIdx(a.Shindo2), 0);
+  const origin = jst(d.OriginTime) + (demo ? timeOffset : 0);
+  const hypo = Math.sqrt(kmBetween(lat, lon, L.lat, L.lon) ** 2 + depth ** 2);
+  const prev = eew;
+  eew = { id: d.EventID, serial: +d.Serial || 0, d, demo, M, depth, lat, lon, maxI, local, origin, hypo, warn: !!d.isWarn, final: !!d.isFinal,
+    sAt: origin + hypo / VS * 1000, pAt: origin + hypo / VP * 1000, recv: nowMs(), view: prev && prev.id === d.EventID ? prev.view : null, alarmed: prev && prev.id === d.EventID ? prev.alarmed : 0 };
+  if (local < 1 && !d.isWarn && !demo) { eew = prev && prev.id !== d.EventID ? prev : null; return; } // ここではほぼ揺れない予報は出さない
+  showEEW();
+}
+function eewLevel() { if (!eew) return 0; return eew.local >= cfg.qFull ? 2 : 1; }
+function showEEW() {
+  const lv = eewLevel();
+  if (lv === 2) { $('eew').hidden = false; drawEEWPanel(); drawEEWMap(); }
+  else $('eew').hidden = true;
+  renderQBanner();
+  const want = lv === 2 ? 2 : eew.local >= cfg.qBeep ? 1 : 0;
+  if (want > (eew.alarmed || 0)) { eew.alarmed = want; want === 2 ? soundAlarm() : soundBeep(); }
+}
+function endEEW() { eew = null; $('eew').hidden = true; renderQBanner(); }
+function eewTick() {
+  if (!eew) return;
+  const t = nowMs();
+  if (t > Math.max(eew.origin + 180e3, eew.sAt + 90e3) || (eew.demo && t > eew.sAt + 25e3)) { const wasDemo = eew.demo; endEEW(); if (wasDemo) demoInfo(); else setTimeout(pollQuake, 30e3); return; }
+  if (!$('eew').hidden) { drawEEWPanel(); drawEEWMap(); if (eew.alarmed === 2 && t < eew.sAt + 5e3 && Math.floor(t / 2500) !== Math.floor((t - 250) / 2500)) soundAlarm(); }
+  renderQBanner();
+}
+function drawEEWPanel() {
+  const e = eew, t = nowMs(), left = Math.ceil((e.sAt - t) / 1000);
+  const tm = ms => { const d = new Date(ms); return `${d.getHours()}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; };
+  $('eewPanel').innerHTML = `<div class="hd"><b>緊急地震速報</b><span>${e.warn ? '強い揺れに警戒' : '予報'}</span><button class="x" id="eewClose">閉じる</button></div>
+  <div class="bd">
+    <div class="lab">現在地(${esc(loc().pref || '')}付近)の予想震度 ・ 推定</div>
+    <div class="row1"><div class="sh n" style="background:${SHINDO_COLOR[e.local]};color:${SHINDO_TEXT[e.local]}">${SHINDO[e.local].replace(/(弱|強)/, '<small>$1</small>')}</div>
+      <div class="cd"><div class="u">${left > 0 ? '大きな揺れまで' : '大きな揺れ'}</div><div class="v n">${left > 0 ? left : '到達'}</div><div class="u">${left > 0 ? '秒(目安)' : 'おそれ'}</div></div></div>
+    <div class="src">${esc(e.d.Hypocenter || '震源')} <span class="n" style="font-size:22px;color:#fff">M${e.M.toFixed(1)}</span><span>深さ ${e.depth}km ・ 最大 ${SHINDO[e.maxI] || '不明'}</span></div>
+    <div class="st2"><div><span>小さな揺れ(P波)</span><b class="n">${t >= e.pAt ? '到達' : tm(e.pAt) + ' ごろ'}</b></div><div><span>大きな揺れ(S波)</span><b class="n" style="color:#ffd23f">${tm(e.sAt)} ごろ</b></div><div><span>発生</span><b class="n">${tm(e.origin)}</b></div></div>
+    <div class="act"><div>頭を守る・机の下へ</div><div>窓や棚から離れる</div></div>
+    <div class="ft">${tm(e.recv)} 受信 ・ 第${e.serial}報${e.final ? '(最終)' : ''} ・ 予想震度は距離からの推定です ・ 学校の放送・先生の指示を優先</div>
+  </div>${e.demo ? '<div class="demo">デモ</div>' : ''}`;
+  $('eewClose').onclick = () => { $('eew').hidden = true; eew.closed = true; };
+}
+function drawEEWMap() {
+  const cv = $('eewMap'), g = cv.getContext('2d'), W = 640, H = 820, e = eew, L = loc();
+  g.setTransform(2, 0, 0, 2, 0, 0);
+  g.fillStyle = '#101418'; g.fillRect(0, 0, W, H);
+  if (!e.view) { // 震源と現在地が入るように。最低でも緯度3度ぶん
+    const lat0 = Math.min(e.lat, L.lat), lat1 = Math.max(e.lat, L.lat), lon0 = Math.min(e.lon, L.lon), lon1 = Math.max(e.lon, L.lon);
+    const k = Math.cos((lat0 + lat1) / 2 * Math.PI / 180);
+    let span = Math.max(3, (lat1 - lat0) * 1.5, (lon1 - lon0) * k * 1.5 * H / W);
+    e.view = { cLat: (lat0 + lat1) / 2, cLon: (lon0 + lon1) / 2, span, k };
+  }
+  const v = e.view, ppd = H / v.span; // 1度あたりのピクセル(緯度方向)
+  const P = (lon, lat) => [W / 2 + (lon - v.cLon) * v.k * ppd, H / 2 - (lat - v.cLat) * ppd];
+  if (JAPAN) {
+    for (const p of JAPAN) {
+      if (p._est == null || p._for !== e.id + ':' + e.serial) {
+        // デモは現在地の震度を設定に合わせているので、地図の色も同じだけずらす
+        const shift = e.demo ? e.local - estIntensity(e.M, e.depth, e.lat, e.lon, L.lat, L.lon) : 0;
+        p._est = Math.max(0, Math.min(estIntensity(e.M, e.depth, e.lat, e.lon, p.c[1], p.c[0]) + shift, e.maxI || 9)); p._for = e.id + ':' + e.serial;
+      }
+      g.fillStyle = p._est >= 1 ? SHINDO_COLOR[p._est] : '#2a2d32';
+      g.strokeStyle = '#0b0c0e'; g.lineWidth = .8;
+      g.beginPath();
+      for (const r of p.rings) { r.forEach((q, i) => { const [x, y] = P(q[0], q[1]); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.closePath(); }
+      g.fill(); g.stroke();
+    }
+  }
+  const t = (nowMs() - e.origin) / 1000, [ex, ey] = P(e.lon, e.lat), kmpx = ppd / 111;
+  const rad = vel => { const h = vel * t; return h > e.depth ? Math.sqrt(h * h - e.depth * e.depth) * kmpx : 0; };
+  const rp = rad(VP), rs = rad(VS);
+  if (rp > 0) { g.strokeStyle = '#ffffff'; g.lineWidth = 3; g.beginPath(); g.arc(ex, ey, rp, 0, 7); g.stroke(); }
+  if (rs > 0) { g.fillStyle = 'rgba(255,40,0,.2)'; g.strokeStyle = '#ff2800'; g.lineWidth = 4; g.beginPath(); g.arc(ex, ey, rs, 0, 7); g.fill(); g.stroke(); }
+  g.strokeStyle = '#fff'; g.lineWidth = 4; g.beginPath(); g.moveTo(ex - 11, ey - 11); g.lineTo(ex + 11, ey + 11); g.moveTo(ex + 11, ey - 11); g.lineTo(ex - 11, ey + 11); g.stroke();
+  const [hx, hy] = P(L.lon, L.lat); g.fillStyle = '#fff'; g.strokeStyle = '#000'; g.lineWidth = 2; g.beginPath(); g.arc(hx, hy, 7, 0, 7); g.fill(); g.stroke();
+  if (!$('eewLegend').innerHTML) $('eewLegend').innerHTML = SHINDO.slice(1).reverse().map((s, i) => `<span><i style="background:${SHINDO_COLOR[9 - i]}"></i>${s}</span>`).join('');
+}
+
+/* ================= 地震情報(P2P地震情報) ================= */
+let quake = null, quakeSeen = store.get('quakeSeen') || '';
+async function pollQuake() {
+  try {
+    const r = await fetch('https://api.p2pquake.net/v2/history?codes=551&limit=3', { cache: 'no-store' });
+    const j = await r.json();
+    const q = j && j[0];
+    if (!q || !q.earthquake) return;
+    const at = jst(q.earthquake.time);
+    if (nowMs() - timeOffset - at > 30 * 60e3) { if (quake && !quake.demo) { quake = null; renderQBanner(); } return; }
+    showQuakeInfo(q, false);
+  } catch (e) {}
+}
+function showQuakeInfo(q, demo) {
+  const L = loc(), E = q.earthquake, pts = q.points || [];
+  const mine = pts.filter(p => p.pref === L.pref).reduce((m, p) => Math.max(m, P2P_SCALE[p.scale] || 0), 0);
+  const maxI = P2P_SCALE[E.maxScale] || 0;
+  if (!demo && mine < 1 && maxI < 5) return; // 自分の県で揺れていない小さな地震は出さない
+  if (!demo && quakeSeen === q.id + ':closed') return;
+  const isNew = !quake || quake.id !== q.id;
+  quake = { id: q.id, q, demo, mine, maxI, until: nowMs() + 15 * 60e3 };
+  if (isNew && mine >= cfg.qBeep) soundBeep();
+  renderQBanner();
+}
+const TSUNAMI = { None: 'この地震による津波の心配はありません', Unknown: '津波の有無は不明', Checking: '津波の有無を調査中', NonEffective: '若干の海面変動の可能性(被害の心配なし)', Watch: '津波注意報 発表中', Warning: '津波警報 発表中' };
+function renderQBanner() {
+  const B = $('qb');
+  if (eew && (eewLevel() === 1 || eew.closed)) {
+    const left = Math.ceil((eew.sAt - nowMs()) / 1000);
+    B.className = 'qb eew'; B.hidden = false;
+    B.innerHTML = `${eew.demo ? '<span class="demo-tag">デモ</span>' : ''}<span class="lb">緊急地震速報${eew.warn ? '' : '(予報)'}</span><b>${esc(eew.d.Hypocenter || '')}</b><span class="s">M${eew.M.toFixed(1)} ・ 最大 ${SHINDO[eew.maxI] || '不明'}</span><span>現在地 ${shindoChip(eew.local)}</span><b style="color:#ffd23f">${left > 0 ? `揺れまで 約${left}秒` : '揺れに注意'}</b><span class="r">推定 ・ 第${eew.serial}報</span>`;
+    return;
+  }
+  if (quake && nowMs() < quake.until) {
+    const E = quake.q.earthquake, H = E.hypocenter || {}, t = new Date(jst(E.time) + (quake.demo ? timeOffset : 0));
+    const ago = Math.max(0, Math.round((nowMs() - t.getTime()) / 60e3));
+    B.className = 'qb'; B.hidden = false;
+    B.innerHTML = `${quake.demo ? '<span class="demo-tag">デモ</span>' : ''}<span class="lb">地震</span><b>${t.getHours()}:${pad(t.getMinutes())} ごろ　${esc(H.name || '震源は調査中')}</b>${H.magnitude > 0 ? `<span class="s">M${(+H.magnitude).toFixed(1)}${H.depth > 0 ? ` ・ 深さ ${H.depth}km` : H.depth === 0 ? ' ・ ごく浅い' : ''}</span>` : ''}<span>最大 ${shindoChip(quake.maxI)}</span>${quake.mine ? `<span>${esc(loc().pref)} ${shindoChip(quake.mine)}</span>` : ''}<span class="s">${esc(TSUNAMI[E.domesticTsunami] || '')}</span><span class="r">${quake.demo ? 'デモ' : '気象庁'} ・ ${ago ? ago + '分前' : 'いま'} ・ タップで閉じる</span>`;
+    return;
+  }
+  B.hidden = true;
+}
+$('qb').addEventListener('click', () => {
+  if (eew && eew.closed) { eew.closed = false; showEEW(); return; }
+  if (quake && !eew) { if (!quake.demo) { quakeSeen = quake.id + ':closed'; store.set('quakeSeen', quakeSeen); } quake = null; renderQBanner(); }
+});
+
+/* ================= デモ ================= */
+let demoTimers = [];
+function demoEEW(strong) {
+  demoTimers.forEach(clearTimeout); demoTimers = [];
+  const L = loc(), o = nowMs() - timeOffset - 3000;
+  const ts = ms => { const d = new Date(ms + 9 * 3600e3); return d.toISOString().slice(0, 19).replace('T', ' ').replace(/-/g, '/'); };
+  const lat = +(L.lat + (strong ? .38 : 1.6)).toFixed(1), lon = +(L.lon + (strong ? .32 : 1.4)).toFixed(1);
+  const full = Math.max(4, cfg.qFull), beep = Math.min(4, Math.max(1, cfg.qBeep > 9 ? 2 : cfg.qBeep));
+  const steps = strong
+    ? [[0, 5.6, '4', false, false, full - 1], [1500, 6.3, '5弱', true, false, full], [4000, 6.6, '5強', true, false, full], [9000, 6.6, '5強', true, true, full]]
+    : [[0, 4.6, '3', false, false, beep], [3000, 4.8, '3', false, true, beep]];
+  steps.forEach(([at, M, mx, warn, fin, lc], i) => demoTimers.push(setTimeout(() => handleEEW({ _local: lc,
+    Title: warn ? '緊急地震速報(警報)' : '緊急地震速報(予報)', EventID: 'DEMO' + o, Serial: i + 1, OriginTime: ts(o), Hypocenter: 'デモ震源', Latitude: lat, Longitude: lon,
+    Magnitude: M, Depth: strong ? 40 : 30, MaxIntensity: mx, WarnArea: [], isWarn: warn, isFinal: !!fin, isCancel: false, isTraining: false
+  }, true), at)));
+}
+function demoInfo() {
+  const L = loc(), t = new Date(nowMs() - timeOffset - 60e3 + 9 * 3600e3).toISOString().slice(0, 19).replace('T', ' ').replace(/-/g, '/');
+  showQuakeInfo({ id: 'demo', earthquake: { time: t, hypocenter: { name: 'デモ震源', magnitude: 6.2, depth: 40 }, maxScale: 50, domesticTsunami: 'None' }, points: [{ pref: L.pref, scale: 45 }] }, true);
+}
+
+/* ================= お知らせ・更新 ================= */
+let toastTimer;
+function toast(msg, btn, fn) {
+  const T = $('toast'); T.innerHTML = esc(msg) + (btn ? ` <button id="toastBtn">${esc(btn)}</button>` : ''); T.hidden = false;
+  if (btn) $('toastBtn').onclick = fn;
+  clearTimeout(toastTimer); if (!btn) toastTimer = setTimeout(() => T.hidden = true, 6000);
+}
+const vparts = v => String(v).split('.').map(x => parseInt(x, 10) || 0);
+const isNewer = (a, b) => { const x = vparts(a), y = vparts(b); for (let i = 0; i < 3; i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); return false; };
+let changelog = [];
+async function checkVersion() {
+  if (location.protocol === 'file:') return;
+  try {
+    const r = await fetch('changelog.json?t=' + Date.now(), { cache: 'no-store' });
+    changelog = await r.json();
+    const latest = String(changelog[0].version);
+    if (isNewer(latest, APP_VERSION)) toast(`新しいバージョン v${latest} があります`, '更新', () => location.replace(location.pathname + '?v=' + encodeURIComponent(latest)));
+  } catch (e) {}
+}
+
+/* ================= 設定画面 ================= */
+const GAS_CODE = `function doGet() {
+  var start = new Date(); start.setHours(0, 0, 0, 0);
+  var end = new Date(start.getTime() + 35 * 24 * 3600 * 1000);
+  var out = [];
+  CalendarApp.getAllCalendars().forEach(function (cal) {
+    if (cal.isHidden()) return;
+    cal.getEvents(start, end).forEach(function (e) {
+      out.push({ title: e.getTitle(), start: e.getStartTime().toISOString(),
+        end: e.getEndTime().toISOString(), allDay: e.isAllDayEvent(), color: e.getColor() });
+    });
+  });
+  out.sort(function (a, b) { return a.start < b.start ? -1 : 1; });
+  return ContentService.createTextOutput(JSON.stringify(out.slice(0, 60)))
+    .setMimeType(ContentService.MimeType.JSON);
+}`;
+let ttDay = 1;
+const CHIP_DESC = { studyline: '今日のダイヤ・運行状況', kioku: '今日の復習を1語ずつ採点', count: '共通テストなどまでの日数', holiday: '次の連休・今年の残り', terms: '受験の語句をランダムに', calendar: '4週間分のカレンダー' };
+function openSettings(anchor) {
+  renderSettings();
+  $('settings').hidden = false;
+  if (anchor) setTimeout(() => { const el = $(anchor); if (el) el.scrollIntoView(); }, 0); else $('settings').scrollTop = 0;
+}
+function closeSettings() { $('settings').hidden = true; saveCfg(); applyTheme(); renderAll(); }
+$('openSettings').addEventListener('click', () => openSettings());
+function renderSettings() {
+  const L = cfg.loc;
+  const prefs = JAPAN ? JAPAN.map(p => p.name) : [];
+  const ps = cfg.periods;
+  const tt = cfg.tt[ttDay] || [];
+  const opt = (v, cur, lab) => `<option value="${v}" ${String(v) === String(cur) ? 'selected' : ''}>${esc(lab)}</option>`;
+  const days = cfg.sat ? [1, 2, 3, 4, 5, 6] : [1, 2, 3, 4, 5];
+  $('settings').innerHTML = `<div class="sx">
+  <header><h1>設定</h1><button class="done" id="sDone">完了</button></header>
+  <nav><a href="#s-view">表示</a><a href="#s-chips">上のバー</a><a href="#s-tt">時間割</a><a href="#s-todo">やること</a><a href="#s-cd">カウントダウン</a><a href="#s-loc">場所</a><a href="#s-gcal">Googleカレンダー</a><a href="#s-quake">地震</a><a href="#s-terms">受験の語句</a><a href="#s-about">このアプリ</a></nav>
+
+  <section id="s-view"><h2>表示</h2>
+    <div class="row">${['dark', 'light', 'auto'].map(v => `<label><input type="radio" name="theme" value="${v}" ${cfg.theme === v ? 'checked' : ''}>${{ dark: 'ダーク', light: 'ライト', auto: '時間で自動' }[v]}</label>`).join('')}</div>
+    <div class="row">自動のとき:ライトは <input type="time" id="lightFrom" value="${esc(cfg.lightFrom)}"> から、ダークは <input type="time" id="darkFrom" value="${esc(cfg.darkFrom)}"> から</div>
+    <div class="row"><label><input type="checkbox" id="showSec" ${cfg.showSec ? 'checked' : ''}>秒を表示</label></div>
+    <p class="note">置きっぱなしにするときは、充電しながら使ってください。開いている間は画面が自動で消えないようにしています(iPadOS 16.4 以降)。</p>
+  </section>
+
+  <section id="s-chips"><h2>上のバー</h2>
+    <p class="note">押すと時計の下に開きます。一番上にあるものが、しばらく触らないときに戻る表示です。</p>
+    ${cfg.chips.map(([k, on], i) => `<div class="chiprow"><input type="checkbox" data-chip="${k}" ${on ? 'checked' : ''}><span class="nm"><b>${CHIP[k].name}</b> <span class="note">${CHIP_DESC[k]}</span></span><button data-up="${i}" ${i ? '' : 'disabled'}>↑</button><button data-down="${i}" ${i < cfg.chips.length - 1 ? '' : 'disabled'}>↓</button></div>`).join('')}
+  </section>
+
+  <section id="s-tt"><h2>時間割</h2>
+    <div class="tabs">${days.map(d => `<button data-ttday="${d}" class="${d === ttDay ? 'on' : ''}">${WD[d]}</button>`).join('')}</div>
+    <table><tr><th style="width:3em">時限</th><th>教科</th><th style="width:30%">教室(空でOK)</th></tr>
+    ${ps.map((p, i) => `<tr><td class="n">${i + 1}</td><td><input type="text" data-tts="${i}" value="${esc((tt[i] || {}).s || '')}" placeholder="教科"></td><td><input type="text" data-ttr="${i}" value="${esc((tt[i] || {}).r || '')}"></td></tr>`).join('')}</table>
+    <h2 style="margin-top:18px">時刻</h2>
+    <table><tr><th style="width:3em">時限</th><th>はじまり</th><th>おわり</th></tr>
+    ${ps.map((p, i) => `<tr><td class="n">${i + 1}</td><td><input type="time" data-ps="${i}" value="${esc(pad5(p[0]))}"></td><td><input type="time" data-pe="${i}" value="${esc(pad5(p[1]))}"></td></tr>`).join('')}
+    <tr><td>SHR</td><td><input type="time" id="shrS" value="${esc(pad5(cfg.shr[0]))}"></td><td><input type="time" id="shrE" value="${esc(pad5(cfg.shr[1]))}"></td></tr></table>
+    <div class="row"><button class="btn sub" id="pAdd">時限を増やす</button><button class="btn sub" id="pDel" ${ps.length > 1 ? '' : 'disabled'}>時限を減らす</button><label><input type="checkbox" id="sat" ${cfg.sat ? 'checked' : ''}>土曜も授業</label></div>
+    <p class="note">30分以上あいたところは昼休みとして表示します。</p>
+  </section>
+
+  <section id="s-todo"><h2>やること</h2>
+    <div class="row"><input type="text" id="tdText" placeholder="例:英作文 添削提出" style="flex:1;min-width:200px"><label><input type="checkbox" id="tdBring">持ちもの</label><input type="date" id="tdDue"><button class="btn" id="tdAdd">追加</button></div>
+    <table>${todos.map(t => `<tr><td>${t.bring ? '<span class="kd">持</span>' : ''}${esc(t.text)}${t.done ? ' <span class="note">(済)</span>' : ''}</td><td class="n" style="width:6em">${t.due ? md(parseYmd(t.due)) : ''}</td><td style="width:4em"><button class="btn sub" data-tddel="${esc(t.id)}">削除</button></td></tr>`).join('') || '<tr><td class="note">まだありません</td></tr>'}</table>
+    <p class="note">画面のやることをタップすると済になります。済にしたものは次の日に消えます。</p>
+  </section>
+
+  <section id="s-cd"><h2>カウントダウン</h2>
+    ${cfg.countdowns.map((c, i) => `<div class="row"><input type="text" data-cdn="${i}" value="${esc(c.name)}" placeholder="名前(例:期末考査)"><input type="date" data-cdd="${i}" value="${esc(c.date)}"></div>`).join('')}
+  </section>
+
+  <section id="s-loc"><h2>場所</h2>
+    <p>いまの設定:<b>${L ? esc(L.pref || '') + (L.how === 'gps' ? '(現在地)' : '') : '未設定(東京)'}</b>${L ? ` <span class="note mono">${L.lat}, ${L.lon}</span>` : ''}</p>
+    <div class="row"><button class="btn" id="useGps">現在地を使う</button><span id="gpsMsg" class="note"></span></div>
+    <div class="row">または都道府県を選ぶ <select id="prefSel"><option value="">—</option>${prefs.map(p => opt(p, L && L.how === 'pref' ? L.pref : '', p)).join('')}</select></div>
+    <p class="note">天気と、地震の予想震度・揺れまでの秒数に使います。位置は最初に一度だけ取り、この iPad の中にだけ保存します。</p>
+  </section>
+
+  <section id="s-gcal"><h2>Googleカレンダー</h2>
+    <div class="row"><input type="url" id="gasUrl" value="${esc(cfg.gasUrl)}" placeholder="https://script.google.com/macros/s/…/exec" style="flex:1;min-width:260px"><button class="btn" id="gasTest">保存して読み込む</button></div>
+    <p id="gasMsg" class="note">${cfg.gasUrl ? (eventsErr ? '<span class="ng">読めませんでした</span>' : events ? `<span class="ok">${events.length}件 読み込み済み</span>` : '') : ''}</p>
+    <ol class="note" style="margin-top:8px">
+      <li>パソコンかiPadで <span class="mono">script.google.com</span> を開き、「新しいプロジェクト」を作る</li>
+      <li>中身を全部消して、下のコードを貼り付けて保存</li>
+      <li>「デプロイ」→「新しいデプロイ」→ 種類「ウェブアプリ」。実行するユーザー「自分」、アクセスできるユーザー「全員」にしてデプロイ</li>
+      <li>カレンダーへのアクセスを許可する(「安全ではないページ」と出たら「詳細」→「移動」)</li>
+      <li>表示された「ウェブアプリのURL」を上に貼り付けて「保存して読み込む」</li>
+    </ol>
+    <pre id="gasCode">${esc(GAS_CODE)}</pre><button class="btn sub" id="gasCopy">コードをコピー</button>
+    <p class="note">このURLを知っている人は予定を読めるので、人に教えないでください。URLはこの iPad の中にだけ保存します。</p>
+  </section>
+
+  <section id="s-quake"><h2>地震</h2>
+    <div class="row">全画面で知らせる:現在地の予想震度が <select id="qFull">${[4, 5, 6, 7].map(i => opt(i, cfg.qFull, SHINDO[i] + ' 以上')).join('')}</select></div>
+    <div class="row">音を鳴らす:<select id="qBeep">${[1, 2, 3, 4, 5, 10].map(i => opt(i, cfg.qBeep, i === 10 ? '鳴らさない' : SHINDO[i] + ' 以上')).join('')}</select></div>
+    <div class="row"><button class="btn red" id="demoStrong">デモ:強い揺れ(全画面)</button><button class="btn" id="demoWeak">デモ:弱い揺れ(上の帯)</button><button class="btn sub" id="demoInfo">デモ:地震情報</button><button class="btn sub" id="soundTest">音のテスト</button></div>
+    <p class="note">緊急地震速報は Wolfx、地震情報は P2P地震情報 から受け取ります。どちらも気象庁の発表を中継する無料のサービスで、数秒遅れることがあります。<b>公式の警報の代わりにはなりません。</b>学校の放送や先生の指示を優先してください。<br>現在地の予想震度は、震源・規模・距離からの推定です(気象庁の地域ごとの予想とずれることがあります)。<br>音は、ページを開いたあと画面を一度タップすると鳴らせるようになります。</p>
+  </section>
+
+  <section id="s-terms"><h2>受験の語句</h2>
+    <div class="row">${[...new Set(terms.map(t => t.cat))].map(c => `<label><input type="checkbox" data-tcat="${esc(c)}" ${cfg.termCats.includes(c) ? 'checked' : ''}>${esc(c)}</label>`).join('')}</div>
+  </section>
+
+  <section id="s-about"><h2>このアプリ</h2>
+    <p>待機画面 v${APP_VERSION}</p>
+    ${changelog.slice(0, 5).map(e => `<p class="note"><b>v${esc(e.version)}</b> ${esc(e.date)}</p><ul class="l note">${(e.items || []).map(i => `<li>${esc(i)}</li>`).join('')}</ul>`).join('')}
+    <p class="note" style="margin-top:10px">天気:Open-Meteo / 緊急地震速報:Wolfx / 地震情報:P2P地震情報(どちらも気象庁の発表をもとにしたもの)/ 地図:dataofjapan/land(地球地図日本 ©国土地理院)を簡略化 / 震度の色:気象庁の配色</p>
+    <p class="note">StudyLine と記憶回路のデータは、同じ iPad・同じ開き方(どちらも Safari、またはどちらもホーム画面)で使っているときに読めます。</p>
+  </section>
+  </div>`;
+}
+const pad5 = s => { const m = toMin(s); return m == null ? '' : `${pad(Math.floor(m / 60))}:${pad(m % 60)}`; };
+const unpad = s => { const m = toMin(s); return m == null ? '' : `${Math.floor(m / 60)}:${pad(m % 60)}`; };
+$('settings').addEventListener('click', e => {
+  const t = e.target, rs = () => { saveCfg(); renderSettings(); };
+  if (t.id === 'sDone') return closeSettings();
+  if (t.dataset.up != null || t.dataset.down != null) { const i = +(t.dataset.up ?? t.dataset.down), j = t.dataset.up != null ? i - 1 : i + 1; [cfg.chips[i], cfg.chips[j]] = [cfg.chips[j], cfg.chips[i]]; return rs(); }
+  if (t.dataset.ttday) { ttDay = +t.dataset.ttday; return renderSettings(); }
+  if (t.id === 'pAdd') { const last = cfg.periods[cfg.periods.length - 1], e0 = toMin(last[1]) + 10; cfg.periods.push([fmtMin(e0), fmtMin(e0 + 50)]); return rs(); }
+  if (t.id === 'pDel') { cfg.periods.pop(); return rs(); }
+  if (t.id === 'tdAdd') {
+    const text = $('tdText').value.trim(); if (!text) return;
+    todos.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), text: text.slice(0, 40), bring: $('tdBring').checked, due: $('tdDue').value || '', done: false });
+    saveTodos(); renderSettings(); setTimeout(() => $('tdText').focus(), 0); return;
+  }
+  if (t.dataset.tddel) { todos = todos.filter(x => x.id !== t.dataset.tddel); saveTodos(); return renderSettings(); }
+  if (t.id === 'useGps') {
+    $('gpsMsg').textContent = '位置を取得中…';
+    if (!navigator.geolocation) { $('gpsMsg').textContent = 'この端末では位置情報を使えません。都道府県を選んでください。'; return; }
+    navigator.geolocation.getCurrentPosition(p => {
+      const lat = +p.coords.latitude.toFixed(3), lon = +p.coords.longitude.toFixed(3);
+      cfg.loc = { lat, lon, pref: prefAt(lat, lon) || '', how: 'gps' }; saveCfg(); loadWeather(); renderSettings();
+    }, err => { $('gpsMsg').textContent = '位置を取れませんでした(' + (err.code === 1 ? '許可されていません' : '取得できません') + ')。都道府県を選んでください。'; }, { enableHighAccuracy: false, timeout: 15000, maximumAge: 600000 });
+    return;
+  }
+  if (t.id === 'gasTest') { cfg.gasUrl = $('gasUrl').value.trim(); saveCfg(); $('gasMsg').textContent = '読み込み中…'; loadEvents().then(() => { $('gasMsg').innerHTML = eventsErr ? '<span class="ng">読めませんでした。URLと「アクセスできるユーザー:全員」を確認してください。</span>' : `<span class="ok">${events ? events.length : 0}件 読み込みました</span>`; }); return; }
+  if (t.id === 'gasCopy') { navigator.clipboard?.writeText(GAS_CODE).then(() => { t.textContent = 'コピーしました'; }, () => { const r = document.createRange(); r.selectNodeContents($('gasCode')); getSelection().removeAllRanges(); getSelection().addRange(r); }); return; }
+  if (t.id === 'demoStrong' || t.id === 'demoWeak') { unlockAudio(); closeSettings(); demoEEW(t.id === 'demoStrong'); return; }
+  if (t.id === 'demoInfo') { unlockAudio(); closeSettings(); demoInfo(); return; }
+  if (t.id === 'soundTest') { unlockAudio(); setTimeout(soundAlarm, 100); return; }
+});
+$('settings').addEventListener('change', e => {
+  const t = e.target;
+  if (t.name === 'theme') cfg.theme = t.value;
+  else if (t.id === 'lightFrom') cfg.lightFrom = t.value;
+  else if (t.id === 'darkFrom') cfg.darkFrom = t.value;
+  else if (t.id === 'showSec') cfg.showSec = t.checked;
+  else if (t.dataset.chip) { cfg.chips.find(c => c[0] === t.dataset.chip)[1] = t.checked; }
+  else if (t.dataset.tts != null || t.dataset.ttr != null) {
+    const i = +(t.dataset.tts ?? t.dataset.ttr), arr = cfg.tt[ttDay] = cfg.tt[ttDay] || [];
+    arr[i] = Object.assign({ s: '', r: '' }, arr[i]); arr[i][t.dataset.tts != null ? 's' : 'r'] = t.value.trim().slice(0, 20);
+  }
+  else if (t.dataset.ps != null) cfg.periods[+t.dataset.ps][0] = unpad(t.value);
+  else if (t.dataset.pe != null) cfg.periods[+t.dataset.pe][1] = unpad(t.value);
+  else if (t.id === 'shrS') cfg.shr[0] = unpad(t.value);
+  else if (t.id === 'shrE') cfg.shr[1] = unpad(t.value);
+  else if (t.id === 'sat') { cfg.sat = t.checked; saveCfg(); renderSettings(); return; }
+  else if (t.dataset.cdn != null) cfg.countdowns[+t.dataset.cdn].name = t.value.trim().slice(0, 12);
+  else if (t.dataset.cdd != null) cfg.countdowns[+t.dataset.cdd].date = t.value;
+  else if (t.id === 'prefSel' && t.value) { const p = JAPAN.find(x => x.name === t.value); cfg.loc = { lat: +p.c[1].toFixed(3), lon: +p.c[0].toFixed(3), pref: p.name, how: 'pref' }; saveCfg(); loadWeather(); renderSettings(); return; }
+  else if (t.id === 'qFull') cfg.qFull = +t.value;
+  else if (t.id === 'qBeep') cfg.qBeep = +t.value;
+  else if (t.dataset.tcat) { const c = t.dataset.tcat; cfg.termCats = t.checked ? [...new Set([...cfg.termCats, c])] : cfg.termCats.filter(x => x !== c); termCur = null; }
+  else return;
+  saveCfg(); applyTheme();
+});
+
+/* ================= 動かす ================= */
+let lastMin = -1;
+function tick(force) {
+  const d = now();
+  if (eew && $('eew').hidden === false) { /* 地震の全画面は eewTick が描く */ }
+  const st = renderClock();
+  if (force || d.getMinutes() !== lastMin) {
+    lastMin = d.getMinutes();
+    applyTheme(); renderTT(st); renderTodo(); renderSched(); renderChips();
+    if (slotMode !== homeSlot() && nowMs() - slotTouched > 90e3) slotMode = homeSlot();
+    if (!(slotMode === 'kioku' && kioku.shown)) renderSlot();
+    if (d.getMinutes() % 30 === 0) loadWeather();
+    if (d.getMinutes() % 10 === 5) loadEvents();
+    if (d.getMinutes() % 2 === 0) renderWeather();
+  }
+}
+function loop() { tick(false); setTimeout(loop, 1000 - (Date.now() % 1000) + 5); }
+setInterval(eewTick, 250);
+setInterval(pollQuake, 60e3);
+
+fit(); applyTheme(); renderStatus();
+renderAll();
+loadWeather(); loadEvents(); loadVocab(); pollQuake(); checkVersion(); requestWake();
+connectEEW();
+loop();
+// 地震のデモを URL で始められる(確認用): ?demo=strong / weak / info
+{ const dm = new URLSearchParams(location.search).get('demo'); if (dm) setTimeout(() => dm === 'info' ? demoInfo() : demoEEW(dm === 'strong'), 1500); }
+</script>
+</body>
+</html>

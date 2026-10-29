@@ -1587,6 +1587,8 @@ function srsDb() {
 function saveSrs() {
   try { localStorage.setItem(srsKey(), JSON.stringify(srsMem.db)); } catch { /* 保存不可の環境 */ }
 }
+// 待機画面(/home/)など別のタブで記録が変わったら、次に使うときに読み直す
+window.addEventListener('storage', e => { if (e.key && e.key.startsWith('vocabTest.srs.')) srsMem.id = null; });
 
 // 日付は朝4時で切り替える（夜ふかしして0時を過ぎても、同じ日として数える）
 function today() {
@@ -3024,7 +3026,7 @@ $('sfxChk').addEventListener('change', e => {
 
 // ---------- バージョン・変更履歴 ----------
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
-const APP_VERSION = '3.12';
+const APP_VERSION = '3.13';
 const versionNum = v => String(v).split('.').map(Number);
 const isNewer = (a, b) => {
   const x = versionNum(a), y = versionNum(b);

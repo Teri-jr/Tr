@@ -4,6 +4,7 @@ GitHub Pages で公開している個人用の学習アプリ置き場。main �
 
 - `/`(index.html, sw.js, manifest.json, changelog.json, アイコン): 受験勉強の運行表アプリ「StudyLine」
 - `vocab/`: 単語・熟語・漢字の暗記アプリ「記憶回路」(別アプリ。触るときはそちらの changelog.json を使う)
+- `home/`: 学校の iPad に置く待機画面(別アプリ。触るときは `home/index.html` の `APP_VERSION` と `home/changelog.json` を使う。番号は StudyLine と同じ「大.中.小」)。StudyLine・記憶回路の保存データを同じサイトの localStorage から読む(記憶回路の復習記録は書き込みもする)
 - `keikyu/`: 京急 運転士タブレット風アプリ。`index.html` が GPS連動版、`sim.html` がシミュレーション版(どちらも1ファイル完結、バージョン管理・changelog は無し)
 
 ## 更新するとき(どちらのアプリも共通)
@@ -14,4 +15,4 @@ GitHub Pages で公開している個人用の学習アプリ置き場。main �
   注意: 2.71 以前の古い端末は parseFloat で比べるため、2.10.0 は 2.1 と読まれて「新しい」と出ない。古い端末が残っていそうな間は 2.9.x の次を 3.0.0 にする。
 - ビルドは無し。HTML/CSS/JS をそのまま置く。
 - 個人情報(本名・メール・トークン)をファイルに入れない。
-- push 後は、確認用に `https://teri-jr.github.io/Tr/?v=<バージョン>`(vocab は `/Tr/vocab/?v=…`)のリンクを伝える。
+- push 後は、確認用に `https://teri-jr.github.io/Tr/?v=<バージョン>`(vocab は `/Tr/vocab/?v=…`、待機画面は `/Tr/home/?v=…`)のリンクを伝える。
