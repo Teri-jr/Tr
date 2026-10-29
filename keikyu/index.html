@@ -453,8 +453,9 @@ const ZONE=200;          // 駅の半径。この中で止まったら停車
 const STILL_V=0.8;       // これ未満(m/s、約3km/h)が続いたら止まったとみなす
 const STILL_MS=4000;
 const MOVE_V=1.5;        // これを超えて(約5km/h)続いたら動き出したとみなす
-const MOVE_MS=2000;
-const MOVE_DIST=25;      // 止まった位置からこれ以上離れたら発車
+const MOVE_MS=5000;       // 動いている状態がこれだけ続き、直近2秒も前へ進み続けていたら発車（駅の屋根の下でGPSが跳んでも発車にしない）
+const UNDO_MS=45000;      // 発車してこの時間内に同じ駅で止まり直したら、発車を取り消す
+const MOVE_DIST=40;      // 止まった位置からこれ以上（精度が悪いときは精度の2倍以上）前へ出たら、動いた候補
 const OFF_MAX=250;       // 線路からこれ以上離れた測位は使わない
 const STALE_MS=4000;     // これより古い測位しかなければ推定に切り替える
 
@@ -599,7 +600,7 @@ function onFix(f){
   const p=project(f.lat,f.lon);
   G.acc=f.acc; G.off=p.off; G.rawS=p.s; G.lastSeen=f.t; G.geoErr=""; (G.fixLog=G.fixLog||[]).push(f.t); if(G.fixLog.length>20) G.fixLog.shift();
   G.offRoute=p.off>OFF_MAX; if(G.offRoute) return;
-  const xm=route.xOf(p.s), sp=(f.speed!=null&&isFinite(f.speed)&&f.speed>=0)?f.speed:null;
+  const xm=route.xOf(p.s), sp=(f.speed!=null&&isFinite(f.speed)&&f.speed>=0)?f.speed:null; G.sp=sp;
   if(G.fixT==null||f.t-G.fixT>STALE_MS){
     // 最初の測位、またはGPSが切れたあと：測位の位置に合わせ直す
     G.x=xm; G.v=sp??(DR?DR.v:0); G.fixT=f.t; DR=null;
@@ -655,6 +656,9 @@ function track(e,now){
     const tg=route[G.target];
     G.stillSince=v<STILL_V?(G.stillSince??now):null;
     if(G.stillSince!=null&&now-G.stillSince>=STILL_MS){
+      // 発車直後に同じ駅で止まり直した：GPSのぶれで発車と誤判定していたので取り消す
+      const from=route[G.last];
+      if(G.depFrom==="dwell"&&now-G.depAt<=UNDO_MS&&Math.abs(x-from.x)<=ZONE&&Math.abs(x-from.x)<Math.abs(x-tg.x)){ undoDepart(x); return; }
       if(Math.abs(x-tg.x)<=ZONE) arrive(G.target,G.stillSince,x);
       else { G.mode="halt"; G.holdX=x; G.haltStart=G.stillSince; G.moveSince=null; speak("セクション、注意。","f"); }
       return;
@@ -662,10 +666,15 @@ function track(e,now){
     // 停車駅を過ぎてしまった（GPSが切れている間に停車・発車した等）：停車したことにして先へ進める
     if(x>tg.x+ZONE){ arrive(G.target,now,x,true); if(G.mode==="dwell") depart(now,true); }
   } else if(G.mode==="dwell"||G.mode==="halt"){
-    const moved=Math.abs(x-G.holdX);
-    G.moveSince=(v>MOVE_V||moved>MOVE_DIST)?(G.moveSince??now):null;
+    // 前へ進んだ分だけ見る（後ろへの跳びは無視）。端末の速度が取れればそれを使う
+    const fwd=x-G.holdX, sp=(G.sp!=null&&now-G.lastSeen<=STALE_MS)?G.sp:v;
+    const hist=G.xHist=(G.xHist||[]).filter(h=>now-h[0]<=3000); hist.push([now,x]);
+    const moving=(sp>MOVE_V&&fwd>-10)||fwd>Math.max(MOVE_DIST,2*(G.acc||10));
+    G.moveSince=moving?(G.moveSince??now):null;
+    // 直近2秒でも前へ2m以上進み続けている（GPSの跳びは跳んだ先で止まるので、これで弾ける）
+    const h2=hist.find(h=>now-h[0]<=2000), going=h2&&now-h2[0]>=1500&&x-h2[1]>2;
     // 5km/h に達するのは動き出して約1.5秒後なので、そのぶん前の時刻を発車とする
-    if(G.moveSince!=null&&(now-G.moveSince>=MOVE_MS||moved>MOVE_DIST*2)) depart(Math.max(G.mode==="dwell"?G.dwellStart:G.haltStart,G.moveSince-1500));
+    if(G.moveSince!=null&&now-G.moveSince>=MOVE_MS&&going) depart(Math.max(G.mode==="dwell"?G.dwellStart:G.haltStart,G.moveSince-1500));
   }
 }
 function arrive(i,t,x,silent){
@@ -677,14 +686,23 @@ function arrive(i,t,x,silent){
 }
 function depart(t,silent){
   const wasHalt=G.mode==="halt";
+  G.depFrom=G.mode; G.depAt=t; G.depAnchored=false; G.xHist=[];
   if(G.mode==="dwell"){
     (G.events[G.last]=G.events[G.last]||{}).dep=t;
-    if(G.last===0&&!schedFixed){ planEpoch=t-plan.ev[0].dep*1000; schedFixed=true; renderList(); }
+    if(G.last===0&&!schedFixed){ planEpoch=t-plan.ev[0].dep*1000; schedFixed=true; G.depAnchored=true; renderList(); }
   }
   G.mode="run"; G.stillSince=null; G.moveSince=null;
   if(wasHalt){ flashMsg("解除長標確認",4000); speak("セクション、確認。","f"); return; }
   G.relX=route[G.last].x;
   if(!silent&&G.target>=0) speak(`次は、${route[G.target].name}、停車。`,"f");
+}
+function undoDepart(x){
+  const ev=G.events[G.last]; if(ev) delete ev.dep;
+  for(let j=G.last+1;j<route.length;j++){ const e=G.events[j]; if(e) delete e.pass; }
+  if(G.depAnchored) schedFixed=false;
+  G.mode="dwell"; G.holdX=x; G.stillSince=null; G.moveSince=null; G.depFrom=null; G.relX=null;
+  if(G.target>=0) G.announced[G.target]={};
+  delete G.announced["rel"+G.last];
 }
 // 待避：停車を合計2分に延ばし、予定時刻もその分後ろにずらす（待避はダイヤ上の予定なので遅延にしない）
 function applyTaihi(i){
