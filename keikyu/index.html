@@ -209,10 +209,13 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outli
 .upd{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#24304a;border:1px solid var(--dest-hi);border-radius:8px;padding:10px 12px;margin-top:10px;font-size:13px;line-height:1.5}
 .upd span{flex:1;min-width:200px}
 .updGo{background:var(--warn)!important;color:#111!important;border:0!important;border-radius:6px;padding:8px 12px;font-weight:700}
-.updbar{display:flex;align-items:center;gap:8px;flex-shrink:0;background:#24304a;border:1px solid var(--warn);border-radius:6px;padding:6px 8px 6px 12px;font-size:14px;font-weight:700}
-.updbar span{flex:1;min-width:0}
-.updbar button{border-radius:6px;padding:7px 12px;font-size:13px}
-#updLater{background:var(--panel);border:1px solid var(--line)}
+.head>.kind{grid-row:1}
+.head>.next{grid-row:2}
+.updkind{grid-column:1;grid-row:1;z-index:3;display:grid;grid-template-columns:1fr 1fr;gap:2px;background:var(--screen)}
+.updkind button{border:0;font-weight:700;font-size:min(64px,9cqw);letter-spacing:.1em;border-radius:0}
+.updkind .updGo{border-radius:0!important;padding:0}
+#updLater{background:#3a4352;color:#fff}
+.next.updmsg{font-size:min(56px,6.4cqw)!important}
 .go:disabled{opacity:.4;cursor:not-allowed}
 </style>
 
@@ -313,6 +316,7 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outli
             <div class="kind" id="kindLbl">快特</div>
             <div class="next" id="nextLbl"><small>次</small>上大岡</div>
             <div class="cars"><b class="num" id="carsLbl">8</b><span>ツーマン</span><small class="num" id="trainNo">1101A</small></div>
+            <div class="updkind" id="updKind" hidden><button type="button" class="updGo">更新</button><button type="button" id="updLater">あとで</button></div>
             <div class="hover" id="hStop" hidden>停車</div>
             <div class="hover" id="hCars" hidden>8両</div>
           </div>
@@ -323,7 +327,6 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outli
             <span class="dist" id="phase">GPS 受信待ち</span>
             <span class="annc" id="annc"></span>
           </div>
-          <div class="updbar" id="updBar" hidden><span id="updBarTxt"></span><button type="button" class="updGo">更新</button><button type="button" id="updLater">あとで</button></div>
           <div class="dbg num" id="dbg" hidden></div>
           <div class="listhead"><span id="rangeLbl">駅一覧</span><span>着 ・ 番線 ・ 発</span></div>
           <div class="list" id="list"></div>
@@ -449,7 +452,7 @@ function planTimes(route,k){
   return {ev:s.events,traj:s.traj};
 }
 // ---- バージョン（変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする） ----
-const APP_VERSION='1.1.1';
+const APP_VERSION='1.1.2';
 const isNewer=(a,b)=>{ const x=String(a).split(".").map(Number), y=String(b).split(".").map(Number); for(let i=0;i<3;i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0); } return false; };
 let upd=null; // {version, items}：新しい版が出ていたら入る。announced=放送済み
 async function checkUpdate(){
@@ -461,10 +464,13 @@ async function checkUpdate(){
     document.getElementById("updSetup").hidden=false; document.getElementById("updBtn").hidden=false;
   }catch(_){}
 }
-function showUpdBar(){ document.getElementById("updBarTxt").textContent=`新しいバージョン v${upd.version} があります`; document.getElementById("updBar").hidden=false; }
+// 種別の欄を「更新／あとで」の2つに分け、次駅の欄に「新バージョン v○」を出す（停車中だけ。発車したら「あとで」扱い）
+function showUpdBar(){ upd.showing=true; document.getElementById("updKind").hidden=false; }
+function hideUpdBar(){ if(upd) upd.showing=false; document.getElementById("updKind").hidden=true; }
 function reloadToUpdate(){ location.replace(location.pathname+"?v="+(upd?upd.version:Date.now())); }
 // 乗務中は、停車中（または発車待ち）になったら放送する。走行中・駅に近づいているときは邪魔しない
 function announceUpdate(){
+  if(upd&&upd.showing&&G&&G.mode==="run"){ hideUpdBar(); upd.later=true; return; }
   if(upd&&upd.later&&!upd.endShown&&G&&G.mode==="end"){ upd.endShown=true; showUpdBar(); return; }
   if(!upd||upd.announced||!G||(G.mode!=="dwell"&&G.mode!=="end")) return;
   upd.announced=true; showUpdBar();
@@ -828,6 +834,7 @@ function draw(e,now,dt){
   $("hStop").classList.toggle("blink",blink);
   const pdep=(plan.ev[G.last]||{}).dep, toDep=pdep!=null?Math.ceil((pt(pdep)-now)/1000):null;
   if(G.mode==="halt"){nl.className="next sec"+(blink?" blink":"");nl.textContent="セクション注意";}
+  else if(upd&&upd.showing){nl.className="next msg updmsg";nl.textContent=`新バージョン v${upd.version}`;}
   else if(skid){nl.className="next skid"+(blink?" blink":"");nl.textContent="！スキット注意！";}
   else if(G.mode==="dwell"&&G.taihiAt===G.last){nl.className="next taihi";nl.textContent=`待避　発車まで ${Math.max(0,toDep??0)}秒`;}
   else if(nowR<msgUntil&&running){nl.className="next msg"+(blink?" blink":"");nl.textContent=msgText;}
@@ -997,7 +1004,7 @@ $("dbgBtn").addEventListener("click",e=>{showDbg=!showDbg; e.target.setAttribute
 $("vtest").addEventListener("click",()=>{ unlockAudio(); speak("音声テスト、停車","f"); setTimeout(()=>{ const ok=("speechSynthesis" in window); $("vstat").textContent= ok? `読み上げ機能あり・日本語の声 ${jaVoices.length}種類。聞こえなければマナーモードと音量を確認` : "この画面では読み上げが使えない。Safariで開くと声が出るかも"; },400); });
 document.querySelectorAll(".updGo").forEach(b=>b.addEventListener("click",reloadToUpdate));
 // あとで：バーを閉じる（下の「更新」ボタンは残す）。乗務終了のときにもう一度出す
-$("updLater").addEventListener("click",()=>{ $("updBar").hidden=true; if(upd) upd.later=true; });
+$("updLater").addEventListener("click",()=>{ hideUpdBar(); if(upd) upd.later=true; });
 $("appVer").textContent="v"+APP_VERSION;
 $("back").addEventListener("click",()=>{
   cancelAnimationFrame(raf); stopGeo(); try{speechSynthesis.cancel()}catch(_){}
