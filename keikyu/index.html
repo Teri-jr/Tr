@@ -209,6 +209,10 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outli
 .upd{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#24304a;border:1px solid var(--dest-hi);border-radius:8px;padding:10px 12px;margin-top:10px;font-size:13px;line-height:1.5}
 .upd span{flex:1;min-width:200px}
 .updGo{background:var(--warn)!important;color:#111!important;border:0!important;border-radius:6px;padding:8px 12px;font-weight:700}
+.updbar{display:flex;align-items:center;gap:8px;flex-shrink:0;background:#24304a;border:1px solid var(--warn);border-radius:6px;padding:6px 8px 6px 12px;font-size:14px;font-weight:700}
+.updbar span{flex:1;min-width:0}
+.updbar button{border-radius:6px;padding:7px 12px;font-size:13px}
+#updLater{background:var(--panel);border:1px solid var(--line)}
 .go:disabled{opacity:.4;cursor:not-allowed}
 </style>
 
@@ -319,6 +323,7 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outli
             <span class="dist" id="phase">GPS 受信待ち</span>
             <span class="annc" id="annc"></span>
           </div>
+          <div class="updbar" id="updBar" hidden><span id="updBarTxt"></span><button type="button" class="updGo">更新</button><button type="button" id="updLater">あとで</button></div>
           <div class="dbg num" id="dbg" hidden></div>
           <div class="listhead"><span id="rangeLbl">駅一覧</span><span>着 ・ 番線 ・ 発</span></div>
           <div class="list" id="list"></div>
@@ -444,7 +449,7 @@ function planTimes(route,k){
   return {ev:s.events,traj:s.traj};
 }
 // ---- バージョン（変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする） ----
-const APP_VERSION='1.1.0';
+const APP_VERSION='1.1.1';
 const isNewer=(a,b)=>{ const x=String(a).split(".").map(Number), y=String(b).split(".").map(Number); for(let i=0;i<3;i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0); } return false; };
 let upd=null; // {version, items}：新しい版が出ていたら入る。announced=放送済み
 async function checkUpdate(){
@@ -456,11 +461,13 @@ async function checkUpdate(){
     document.getElementById("updSetup").hidden=false; document.getElementById("updBtn").hidden=false;
   }catch(_){}
 }
+function showUpdBar(){ document.getElementById("updBarTxt").textContent=`新しいバージョン v${upd.version} があります`; document.getElementById("updBar").hidden=false; }
 function reloadToUpdate(){ location.replace(location.pathname+"?v="+(upd?upd.version:Date.now())); }
 // 乗務中は、停車中（または発車待ち）になったら放送する。走行中・駅に近づいているときは邪魔しない
 function announceUpdate(){
+  if(upd&&upd.later&&!upd.endShown&&G&&G.mode==="end"){ upd.endShown=true; showUpdBar(); return; }
   if(!upd||upd.announced||!G||(G.mode!=="dwell"&&G.mode!=="end")) return;
-  upd.announced=true; flashMsg(`新バージョン v${upd.version}`,8000*Math.max(1,mult));
+  upd.announced=true; showUpdBar();
   speak(`お知らせします。タブレットの新しいバージョン、${upd.version.split(".").join("てん")}が出ています。停車中に、更新ボタンを押してください。`,"m");
 }
 setInterval(checkUpdate,60000); document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") checkUpdate(); });
@@ -823,7 +830,7 @@ function draw(e,now,dt){
   if(G.mode==="halt"){nl.className="next sec"+(blink?" blink":"");nl.textContent="セクション注意";}
   else if(skid){nl.className="next skid"+(blink?" blink":"");nl.textContent="！スキット注意！";}
   else if(G.mode==="dwell"&&G.taihiAt===G.last){nl.className="next taihi";nl.textContent=`待避　発車まで ${Math.max(0,toDep??0)}秒`;}
-  else if(nowR<msgUntil&&(running||msgText.startsWith("新バージョン"))){nl.className="next msg"+(blink?" blink":"");nl.textContent=msgText;}
+  else if(nowR<msgUntil&&running){nl.className="next msg"+(blink?" blink":"");nl.textContent=msgText;}
   else if(running&&tg||(G.mode==="dwell"&&G.last===0&&tg)){nl.className="next";nl.textContent=tg.name;}
   else {nl.className="next blank";nl.textContent="　";}
   let ph;
@@ -989,6 +996,8 @@ $("plus").addEventListener("click",()=>{offset+=10;});
 $("dbgBtn").addEventListener("click",e=>{showDbg=!showDbg; e.target.setAttribute("aria-pressed",showDbg); $("dbg").hidden=!showDbg;});
 $("vtest").addEventListener("click",()=>{ unlockAudio(); speak("音声テスト、停車","f"); setTimeout(()=>{ const ok=("speechSynthesis" in window); $("vstat").textContent= ok? `読み上げ機能あり・日本語の声 ${jaVoices.length}種類。聞こえなければマナーモードと音量を確認` : "この画面では読み上げが使えない。Safariで開くと声が出るかも"; },400); });
 document.querySelectorAll(".updGo").forEach(b=>b.addEventListener("click",reloadToUpdate));
+// あとで：バーを閉じる（下の「更新」ボタンは残す）。乗務終了のときにもう一度出す
+$("updLater").addEventListener("click",()=>{ $("updBar").hidden=true; if(upd) upd.later=true; });
 $("appVer").textContent="v"+APP_VERSION;
 $("back").addEventListener("click",()=>{
   cancelAnimationFrame(raf); stopGeo(); try{speechSynthesis.cancel()}catch(_){}
