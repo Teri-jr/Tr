@@ -898,12 +898,32 @@ const store = {
 
 // 保存データ・読み込んだファイルの形を整える(壊れた値があっても起動できるように)
 const isObj = v => !!v && typeof v === 'object' && !Array.isArray(v);
+// 教科のキー(SUBJECTS と同じ)。"toString" のような名前を教科と取り違えないよう、自前の一覧で確かめる
+const SUBJECT_KEYS = ['en', 'ma', 'ph', 'in', 'ot'];
+const hasSubj = k => typeof k === 'string' && SUBJECT_KEYS.includes(k);
 function cleanSettings(v) {
   const st = { ...DEFAULT_SETTINGS, ...(isObj(v) ? v : {}) };
   for (const k of ['start', 'deadline']) st[k] = Number.isFinite(+st[k]) && st[k] !== null && st[k] !== '' ? Math.min(29 * 60 + 55, Math.max(0, Math.round(+st[k]))) : DEFAULT_SETTINGS[k];
   return st;
 }
 const numOrNull = v => Number.isFinite(v) ? v : null;
+const numOr = (v, d) => Number.isFinite(+v) && v !== null && v !== '' && typeof v !== 'boolean' ? +v : d;
+const clampN = (v, lo, hi, d) => Math.min(hi, Math.max(lo, Math.round(numOr(v, d))));
+// ポモドーロの設定(全体の設定・開始したタスクの t.cfg)。文字や範囲外の値は既定値・範囲内にする
+function cleanPomo(v) {
+  const c = isObj(v) ? v : {};
+  return { work: clampN(c.work, 1, 180, 25), brk: clampN(c.brk, 0, 60, 5), long: clampN(c.long, 0, 120, 15), every: clampN(c.every, 1, 20, 4) };
+}
+// タスクの中の記録(一時停止・休憩)を整える。形のおかしいものは捨てる
+function cleanRecords(t) {
+  const out = {};
+  if (t.pauses !== undefined) out.pauses = (Array.isArray(t.pauses) ? t.pauses : []).filter(p => isObj(p) && Number.isFinite(p.s)).map(p => ({ s: p.s, e: Number.isFinite(p.e) ? p.e : null }));
+  if (t.swBreaks !== undefined) out.swBreaks = (Array.isArray(t.swBreaks) ? t.swBreaks : []).filter(b => isObj(b) && Number.isFinite(b.s)).map(b => ({ s: b.s, len: clampN(b.len, 0, 120, 5), ext: clampN(b.ext, 0, 600, 0), skip: Number.isFinite(b.skip) ? b.skip : null, long: !!b.long }));
+  if (t.brk !== undefined) { out.brk = {}; if (isObj(t.brk)) for (const [k, m] of Object.entries(t.brk)) if (/^\d+$/.test(k) && isObj(m)) out.brk[k] = { ext: clampN(m.ext, 0, 600, 0), skip: Number.isFinite(m.skip) ? m.skip : null }; }
+  if (t.cfg !== undefined) out.cfg = isObj(t.cfg) ? cleanPomo(t.cfg) : undefined;
+  if (t.swNextAsk !== undefined) out.swNextAsk = Number.isFinite(t.swNextAsk) ? t.swNextAsk : undefined;
+  return out;
+}
 // newIds=true(ファイルから読み込むとき)は、タスクの id を振り直す
 function cleanDay(d, newIds) {
   const tasks = (Array.isArray(d.tasks) ? d.tasks : []).filter(t => isObj(t) && typeof t.name === 'string').map(t => {
@@ -915,10 +935,14 @@ function cleanDay(d, newIds) {
       dur: Number.isFinite(dur) ? Math.min(600, Math.max(1, dur)) : 30,
       adj: Number.isFinite(+t.adj) ? Math.round(+t.adj) : 0,
       memo: typeof t.memo === 'string' ? t.memo : '',
-      actualStart: numOrNull(t.actualStart), actualEnd: numOrNull(t.actualEnd)
+      actualStart: numOrNull(t.actualStart), actualEnd: numOrNull(t.actualEnd),
+      pomo: !!t.pomo, sw: !!t.sw,
+      subj: hasSubj(t.subj) ? t.subj : undefined,
+      subjText: t.subj === 'ot' && typeof t.subjText === 'string' && t.subjText.trim() ? t.subjText.trim().slice(0, 10) : undefined,
+      ...cleanRecords(t)
     };
-  });
-  return { ...d, settings: cleanSettings(d.settings), tasks };
+  }).map(t => { for (const k of Object.keys(t)) if (t[k] === undefined) delete t[k]; return t; });
+  return { ...d, settings: cleanSettings(d.settings), tasks, pomoDone: clampN(d.pomoDone, 0, 999, 0) };
 }
 function loadDay(ds) {
   const d = store.get('day:' + ds);
@@ -927,13 +951,11 @@ function loadDay(ds) {
 }
 function saveDay() {
   store.set('day:' + dayStr, data);
-  store.set('lastSettings', data.settings);
+  if (dayStr >= logicalToday()) store.set('lastSettings', data.settings); // 昔の日を直しても、これからの日の設定は変えない
   if (typeof updateBackupUI === 'function') { updateBackupUI(); statsAt = 0; }
 }
 function loadPomoCfg() {
-  const c = { ...DEFAULT_POMO, ...(store.get('pomo') || {}) };
-  c.work = Math.max(1, c.work); c.every = Math.max(1, c.every);
-  return c;
+  return cleanPomo(store.get('pomo'));
 }
 
 /* ================= clock (debug override) ================= */
@@ -970,19 +992,31 @@ let pomoCfg = loadPomoCfg();
 let editingId = null;
 
 const isToday = () => dayStr === logicalToday();
-// 今日、または0時をまたいで実行中のタスクが残っている日は「運行中」として現在時刻を反映
-const isLive = () => isToday() || data.tasks.some(t => t.actualStart && !t.actualEnd);
+// 0時を過ぎても朝4時までは、前日に「まだ始めていないタスク」が残っていて、前日の勉強が続いていそうなら前日の続きとして扱う
+// (直前3時間以内に開始・終了した記録がある、または就寝期限が0時より後)
+const CONTINUE_UNTIL_H = 4, CONTINUE_GAP_MS = 3 * 3600e3;
+function continuesYesterday(ds, d) {
+  const now = nowMs(), today = logicalToday();
+  if (ds !== shiftDay(today, -1) || now - baseOf(today) >= CONTINUE_UNTIL_H * 3600e3) return false;
+  if (!d.tasks.some(t => !t.actualStart)) return false;
+  const last = Math.max(0, ...d.tasks.flatMap(t => [t.actualStart || 0, t.actualEnd || 0]));
+  return now - last < CONTINUE_GAP_MS || d.settings.deadline <= d.settings.start;
+}
+// 今日、0時をまたいで実行中のタスクが残っている日、前日の続きの日は「運行中」として現在時刻を反映
+const isLive = () => isToday() || data.tasks.some(t => t.actualStart && !t.actualEnd) || continuesYesterday(dayStr, data);
+// 0時すぎに開いたとき、前日の続きなら前日を出す
+{ const y = shiftDay(dayStr, -1), yd = loadDay(y); if (continuesYesterday(y, yd) || yd.tasks.some(t => t.actualStart && !t.actualEnd)) { dayStr = y; data = yd; } }
 const nowMin = () => msToMin(nowMs());
 const taskState = t => t.actualEnd ? 'done' : t.actualStart ? 'running' : 'pending';
 const effDur = t => Math.max(1, t.dur + (t.adj || 0));
 // 教科(任意)。t.subj にキーを入れる。無いタスクは「なし」
 const SUBJECTS = { en: '英語', ma: '数学', ph: '物理', in: '情報', ot: 'その他' };
 // 「その他」は t.subjText に自由入力の教科名(化学・古文など)を入れられる。記録では教科名ごとに分ける
-const subjOf = t => SUBJECTS[t.subj] ? t.subj : '';
+const subjOf = t => hasSubj(t.subj) ? t.subj : '';
 const subjKey = t => { const k = subjOf(t); return k === 'ot' && t.subjText ? 'ot:' + t.subjText : k; };
 const OTHER_COLORS = ['#1a9c8c', '#c2477f', '#8a6d3b', '#5b7f1f', '#4a5fc1', '#b5562f', '#3f8fb0', '#9b3fa8'];
 function subjInfo(key) {
-  if (!key.startsWith('ot:')) return { label: SUBJECTS[key] || '', cls: 'subj-' + key, style: '' };
+  if (!key.startsWith('ot:')) return { label: hasSubj(key) ? SUBJECTS[key] : '', cls: 'subj-' + key, style: '' };
   const name = key.slice(3);
   let h = 0; for (const c of name) h = (h * 31 + c.codePointAt(0)) >>> 0;
   return { label: name, cls: 'subj-ot', style: `--sc:${OTHER_COLORS[h % OTHER_COLORS.length]}` };
@@ -1317,7 +1351,7 @@ function notifyPhase(kind, body) {
 // 知らせの見出し。「◯分たちました」は実行中タスクの作業時間の設定(cfgOf(t).work)に合わせる
 function signalTitle(kind) {
   if (kind === 'ask') {
-    const r = lastSc && lastSc.rows.find(x => x.st === 'running');
+    const r = runSc && runSc.rows.find(x => x.st === 'running');
     return `🍅 ${r ? cfgOf(r.t).work : pomoCfg.work}分たちました`;
   }
   return SIGNALS[kind].title;
@@ -1361,7 +1395,7 @@ function updatePhaseKey(sc) {
 }
 // 通知の本文: 「A英語 ・ 19:30 まで休憩」など
 function phaseBody() {
-  const r = lastSc && lastSc.rows.find(x => x.st === 'running');
+  const r = runSc && runSc.rows.find(x => x.st === 'running');
   if (!r || !r.curPh) return '';
   if (r.sw && r.sw.ask) return `${r.t.name} ・ 作業${Math.round(r.sw.workMin)}分。休憩しますか?`;
   if (r.sw && r.curPh.k === 'w') return `${r.t.name} ・ 作業を再開しました`;
@@ -1431,6 +1465,20 @@ function delayHTML(d) {
 }
 
 let lastSc = null;
+// 実行中のタスクがある日(表示中の日と違うこともある)。知らせ・二重開始の防止に使う
+function findRunDay() {
+  if (data.tasks.some(t => t.actualStart && !t.actualEnd)) return dayStr;
+  const today = logicalToday();
+  for (const ds of [today, shiftDay(today, -1)]) if (ds !== dayStr && loadDay(ds).tasks.some(t => t.actualStart && !t.actualEnd)) return ds;
+  return null;
+}
+// 別の日のデータで fn を実行する(dayStr と data を一時的に切り替える)
+function withDay(ds, fn) {
+  if (ds === dayStr) return fn();
+  const keepDay = dayStr, keepData = data;
+  try { dayStr = ds; data = loadDay(ds); return fn(); } finally { dayStr = keepDay; data = keepData; }
+}
+let runSc = null, runDay = null; // 実行中タスクのある日の予定(知らせの判定用)
 function render() {
   const now = new Date(nowMs());
   $('clock').textContent = (isLive() ? fmt(msToMin(now.getTime())) : `${pad(now.getHours())}:${pad(now.getMinutes())}`) + (debugOffset ? ' *' : '');
@@ -1439,18 +1487,20 @@ function render() {
     : `実時刻で動作中 ・ 論理日付 ${logicalToday()}`);
   const [y, m, d] = dayStr.split('-').map(Number);
   const wd = '日月火水木金土'[new Date(y, m - 1, d).getDay()];
-  setHTML('dateLabel', `${m}月${d}日(${wd})<small>${isToday() ? '今日' : dayStr < logicalToday() ? '過去の日' : '先の日'}</small>`);
+  setHTML('dateLabel', `${m}月${d}日(${wd})<small>${isToday() ? '今日' : isLive() && dayStr === shiftDay(logicalToday(), -1) ? '昨日の続き' : dayStr < logicalToday() ? '過去の日' : '先の日'}</small>`);
 
   if (!data.tasks.length && $('formCard').classList.contains('collapsed')) setFormCollapsed(false); // 0件なら追加欄を開く
   const sc = computeSchedule();
   lastSc = sc;
+  runDay = findRunDay();
+  runSc = runDay === null || runDay === dayStr ? sc : withDay(runDay, computeSchedule);
   renderBanner(sc);
   renderCurrent(sc);
   renderTable(sc);
   renderPomo(sc);
   renderReset();
   renderFocus(sc);
-  updatePhaseKey(sc);
+  updatePhaseKey(runSc);
   if (modalValid && !$('modal').hidden && !modalValid()) closeModal(); // 確認の対象がもう無ければ閉じる
   const running = sc.rows.find(r => r.st === 'running');
   syncWakeLock(!!((running && (running.t.pomo || focusOpen)) || !$('clockFull').hidden));
@@ -1488,6 +1538,8 @@ function renderCurrent(sc) {
   const lastDone = [...sc.rows].reverse().find(r => r.st === 'done');
   let h = '<h2>運行状況</h2>';
   let inBreak = false;
+  const elsewhere = runDay && runDay !== dayStr ? withDay(runDay, () => data.tasks.find(t => t.actualStart && !t.actualEnd)) : null;
+  if (elsewhere) h += `<div class="warn" style="margin-bottom:10px">▶ ${mdLabel(runDay)} の「${esc(elsewhere.name)}」が実行中です <button type="button" class="linkbtn" id="gotoRun">見る</button></div>`;
   if (!isLive()) {
     h += `<div class="cur-sub">開始・終了の記録は「今日」の画面でのみできます。</div>`;
   } else if (running) {
@@ -1907,7 +1959,7 @@ $('taskForm').addEventListener('submit', e => {
 $('fCancel').addEventListener('click', resetForm);
 let formSubj = '';
 function setSubj(v, text) {
-  formSubj = SUBJECTS[v] ? v : '';
+  formSubj = hasSubj(v) ? v : '';
   for (const b of $('fSubj').querySelectorAll('[data-subj]')) b.setAttribute('aria-pressed', String(b.dataset.subj === formSubj));
   $('fSubjOther').hidden = formSubj !== 'ot';
   if (text !== undefined) $('fSubjText').value = text || '';
@@ -1947,6 +1999,8 @@ function brkMod(t, bi) {
 const actions = {
   start(t) {
     if (!isLive() || data.tasks.some(x => taskState(x) === 'running')) return false;
+    const rd = findRunDay();
+    if (rd && rd !== dayStr) { showToast(`${mdLabel(rd)} のタスクが実行中です。先に終了してください`, '見る', () => gotoDay(rd)); return false; }
     if (t.sw) { t.swBreaks = []; delete t.swNextAsk; }
     setFormCollapsed(true);
     audio.unlock();
@@ -1988,7 +2042,7 @@ const actions = {
     t.actualStart = null; t.adj = 0; delete t.cfg; delete t.brk; delete t.pauses; delete t.swBreaks; delete t.swNextAsk;
   },
   unfinish(t) {
-    if (data.tasks.some(x => taskState(x) === 'running')) return false;
+    if (findRunDay()) return false;
     if (!confirmTap('unfinish', t)) return false;
     t.actualEnd = null;
   },
@@ -2075,6 +2129,7 @@ document.addEventListener('click', e => {
   phaseKeySeen = phaseKeyNow; // 操作による切り替わりでは鳴らさない
 });
 $('flash').addEventListener('click', () => { $('flash').hidden = true; });
+$('currentCard').addEventListener('click', e => { if (e.target.id === 'gotoRun' && runDay) gotoDay(runDay); });
 
 /* ================= focus (全画面タイマー) ================= */
 // 残り時間を画面いっぱいに出す。Fullscreen API が使える端末(PC・iPadなど)では本当の全画面にもする
@@ -2283,14 +2338,14 @@ $('focus').addEventListener('click', e => {
 });
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
-  if (!$('modal').hidden) closeModal(); else if (focusOpen) closeFocus();
+  if (!$('modal').hidden) closeModal(); else if (!$('guide').hidden) closeGuide(); else if (focusOpen) closeFocus();
 });
 
 /* ================= バージョン・変更履歴 ================= */
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '3.4.3';
+const APP_VERSION = '3.4.4';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
@@ -2609,7 +2664,7 @@ $('importFile').addEventListener('change', async () => {
 $('importConfirm').addEventListener('click', e => {
   if (e.target.id === 'importCancel') { pendingImport = null; $('importConfirm').innerHTML = ''; return; }
   if (e.target.id !== 'importDo' || !pendingImport) return;
-  for (const [k, v] of pendingImport) store.set(k, k.startsWith('day:') ? cleanDay(v, true) : k === 'lastSettings' ? cleanSettings(v) : v);
+  for (const [k, v] of pendingImport) store.set(k, k.startsWith('day:') ? cleanDay(v, true) : k === 'lastSettings' ? cleanSettings(v) : k === 'pomo' ? cleanPomo(v) : k === 'subjList' ? (Array.isArray(v) ? v.filter(x => typeof x === 'string').map(x => x.slice(0, 10)).slice(0, 8) : []) : v);
   const n = pendingImport.filter(([k]) => k.startsWith('day:')).length;
   pendingImport = null; $('importConfirm').innerHTML = '';
   data = loadDay(dayStr); pomoCfg = loadPomoCfg();
@@ -2622,7 +2677,7 @@ $('importConfirm').addEventListener('click', e => {
 const mdLabel = ds => `${+ds.slice(5, 7)}/${+ds.slice(8)}`;
 const taskDurLabel = t => `${t.sw ? '約' : ''}${t.dur}分${t.pomo ? ' 🍅' : ''}${t.sw ? ' ⏲' : ''}`;
 // 予定として引き継ぐ項目だけを取り出した新しいタスク(実績は持たない)
-const planCopy = t => ({ id: uid() + Math.random().toString(36).slice(2, 5), name: t.name, dur: t.dur, memo: t.memo || '', pomo: !!t.pomo, sw: !!t.sw, adj: 0, actualStart: null, actualEnd: null, ...(SUBJECTS[t.subj] ? { subj: t.subj } : {}), ...(t.subj === 'ot' && t.subjText ? { subjText: t.subjText } : {}) });
+const planCopy = t => ({ id: uid() + Math.random().toString(36).slice(2, 5), name: t.name, dur: t.dur, memo: t.memo || '', pomo: !!t.pomo, sw: !!t.sw, adj: 0, actualStart: null, actualEnd: null, ...(hasSubj(t.subj) ? { subj: t.subj } : {}), ...(t.subj === 'ot' && t.subjText ? { subjText: t.subjText } : {}) });
 function prevDayTasks() { const d = store.get('day:' + shiftDay(dayStr, -1)); return isObj(d) && Array.isArray(d.tasks) ? cleanDay(d, false).tasks : []; }
 
 // 「元に戻す」: 追加した日の予定を、追加する前の状態に戻す(日を移動していても、その日に戻す)
@@ -2655,10 +2710,11 @@ function copyPrevDay(confirmFirst) {
     showToast(`${prev.length}件をコピーしました`, '元に戻す', () => restoreTasks(addedDay, before));
   };
   if (!confirmFirst) { run(); return; }
+  const fromDay = dayStr;
   openOkModal({
     title: `📋 前日(${mdLabel(shiftDay(dayStr, -1))})の予定をコピー`,
     body: `次の${prev.length}件を、この日の時刻表の最後に追加します(実績はコピーしません)。<ul>${prev.map(t => `<li>${esc(t.name)} ${taskDurLabel(t)}</li>`).join('')}</ul>`,
-    ok: `${prev.length}件をコピー`, cancel: 'やめる', onOk: run
+    ok: `${prev.length}件をコピー`, cancel: 'やめる', valid: () => dayStr === fromDay, onOk: () => { if (dayStr === fromDay) run(); }
   });
 }
 $('copyPrev').addEventListener('click', () => copyPrevDay(true));
@@ -2668,12 +2724,14 @@ $('tt').addEventListener('click', e => { if (e.target.closest('#copyPrevBig')) c
 $('carryOver').addEventListener('click', () => {
   const moving = data.tasks.filter(t => taskState(t) === 'pending');
   if (!moving.length) return;
-  const next = shiftDay(dayStr, 1);
+  const next = shiftDay(dayStr, 1), fromDay = dayStr;
   openOkModal({
     title: '➡ 未完了を翌日へ移しますか?',
     body: `まだ始めていない <b>${moving.length}件</b> を、${mdLabel(next)} の時刻表の最後に移します。<ul>${moving.map(t => `<li>${esc(t.name)} ${taskDurLabel(t)}</li>`).join('')}</ul>`,
     ok: `${moving.length}件を翌日へ`, cancel: 'やめる',
+    valid: () => dayStr === fromDay && moving.every(t => data.tasks.includes(t) && taskState(t) === 'pending'),
     onOk: () => {
+      if (dayStr !== fromDay) return; // 確認中に日付が変わったら何もしない
       const raw = store.get('day:' + next);
       const nd = isObj(raw) && Array.isArray(raw.tasks) ? cleanDay(raw, false) : { settings: { ...data.settings }, tasks: [] };
       nd.tasks.push(...moving.map(planCopy));
@@ -2790,15 +2848,16 @@ $('todayBtn').addEventListener('click', () => gotoDay(logicalToday()));
 
 /* ================= tick ================= */
 let lastToday = logicalToday();
-let heldDay = null; // 0時をまたいだ時に実行中タスクがあって留まった日
+let heldDay = dayStr !== lastToday ? dayStr : null; // 0時をまたいだ時に、実行中タスクがある・前日の続きで留まった日
 function tick() {
   const lt = logicalToday();
   const running = data.tasks.some(x => taskState(x) === 'running');
   // 0時をまたいだ時、今日を見ていたなら新しい日へ。実行中タスクがあれば終了するまで留まる
+  const stay = running || continuesYesterday(dayStr, data);
   if (lt !== lastToday) {
-    if (dayStr === lastToday) { if (running) heldDay = dayStr; else { gotoDay(lt); heldDay = null; } }
+    if (dayStr === lastToday) { if (stay) heldDay = dayStr; else { gotoDay(lt); heldDay = null; } }
     lastToday = lt;
-  } else if (heldDay && heldDay === dayStr && !running) {
+  } else if (heldDay && heldDay === dayStr && !stay) {
     heldDay = null; gotoDay(lt);
   }
   render();

@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>運転士タブレット GPS</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -205,6 +206,16 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outli
 .hint{font-size:12px;color:var(--muted);line-height:1.6}
 .secpick input[type=time]{background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:16px;font-family:var(--f-num);flex:1;min-width:140px}
 .dbg{font-size:11px;color:var(--muted);flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.upd{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#24304a;border:1px solid var(--dest-hi);border-radius:8px;padding:10px 12px;margin-top:10px;font-size:13px;line-height:1.5}
+.upd span{flex:1;min-width:200px}
+.updGo{background:var(--warn)!important;color:#111!important;border:0!important;border-radius:6px;padding:8px 12px;font-weight:700}
+.head>.kind{grid-row:1}
+.head>.next{grid-row:2}
+.updkind{grid-column:1;grid-row:1;z-index:3;display:grid;grid-template-columns:1fr 1fr;gap:2px;background:var(--screen)}
+.updkind button{border:0;font-weight:700;font-size:min(64px,9cqw);letter-spacing:.1em;border-radius:0}
+.updkind .updGo{border-radius:0!important;padding:0}
+#updLater{background:#3a4352;color:#fff}
+.next.updmsg{font-size:min(56px,6.4cqw)!important}
 .go:disabled{opacity:.4;cursor:not-allowed}
 </style>
 
@@ -214,6 +225,8 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outli
     <section class="setup" id="setup">
       <div>
         <h1>京急本線 運転士タブレット（GPS連動）</h1>
+        <div class="upd" id="updSetup" hidden><span id="updSetupTxt"></span><button type="button" class="updGo">更新する</button></div>
+        <div class="hint">バージョン <span id="appVer"></span></div>
         <p>時刻表は使わず、スマホのGPSと駅・線路のデータだけで動く。次の停車駅までの距離を線路に沿って測り、停車・通過・駅間停車・待避を自動で判定して読み上げる。トンネルでGPSが切れたら最後の位置と速度から走行を推定し、次にGPSが入ったところで直す。家で試すときは「テスト走行」にすると、GPSの代わりに模擬の位置が流れる。</p>
       </div>
       <div class="field"><span>位置</span>
@@ -303,6 +316,7 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outli
             <div class="kind" id="kindLbl">快特</div>
             <div class="next" id="nextLbl"><small>次</small>上大岡</div>
             <div class="cars"><b class="num" id="carsLbl">8</b><span>ツーマン</span><small class="num" id="trainNo">1101A</small></div>
+            <div class="updkind" id="updKind" hidden><button type="button" class="updGo">更新</button><button type="button" id="updLater">あとで</button></div>
             <div class="hover" id="hStop" hidden>停車</div>
             <div class="hover" id="hCars" hidden>8両</div>
           </div>
@@ -335,6 +349,7 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outli
         <button id="plus">＋10秒</button>
         <button id="dbgBtn" aria-pressed="false">詳細</button>
         <button id="vtest">音声テスト</button>
+        <button id="updBtn" class="updGo" hidden>更新</button>
         <button id="back">設定へ</button>
         <span id="vstat" style="flex-basis:100%;font-size:12px;color:var(--muted)"></span>
       </div>
@@ -436,6 +451,34 @@ function planTimes(route,k){
   while(s.mode!=="end"&&n<400000){ step(s,route,k,DECEL,null,null); if(n%10===0) s.traj.push([s.t,s.x]); n++; }
   return {ev:s.events,traj:s.traj};
 }
+// ---- バージョン（変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする） ----
+const APP_VERSION='1.1.2';
+const isNewer=(a,b)=>{ const x=String(a).split(".").map(Number), y=String(b).split(".").map(Number); for(let i=0;i<3;i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0); } return false; };
+let upd=null; // {version, items}：新しい版が出ていたら入る。announced=放送済み
+async function checkUpdate(){
+  try{
+    const r=await fetch("changelog.json?t="+Date.now(),{cache:"no-store"}); if(!r.ok) return;
+    const top=(await r.json())[0]; if(!top||!isNewer(top.version,APP_VERSION)||(upd&&upd.version===top.version)) return;
+    upd={version:top.version,items:top.items||[],announced:false};
+    document.getElementById("updSetupTxt").textContent=`新しいバージョン v${top.version} があります：${(top.items||[]).join("／")}`;
+    document.getElementById("updSetup").hidden=false; document.getElementById("updBtn").hidden=false;
+  }catch(_){}
+}
+// 種別の欄を「更新／あとで」の2つに分け、次駅の欄に「新バージョン v○」を出す（停車中だけ。発車したら「あとで」扱い）
+function showUpdBar(){ upd.showing=true; document.getElementById("updKind").hidden=false; }
+function hideUpdBar(){ if(upd) upd.showing=false; document.getElementById("updKind").hidden=true; }
+function reloadToUpdate(){ location.replace(location.pathname+"?v="+(upd?upd.version:Date.now())); }
+// 乗務中は、停車中（または発車待ち）になったら放送する。走行中・駅に近づいているときは邪魔しない
+function announceUpdate(){
+  if(upd&&upd.showing&&G&&G.mode==="run"){ hideUpdBar(); upd.later=true; return; }
+  if(upd&&upd.later&&!upd.endShown&&G&&G.mode==="end"){ upd.endShown=true; showUpdBar(); return; }
+  if(!upd||upd.announced||!G||(G.mode!=="dwell"&&G.mode!=="end")) return;
+  upd.announced=true; showUpdBar();
+  speak(`お知らせします。タブレットの新しいバージョン、${upd.version.split(".").join("てん")}が出ています。停車中に、更新ボタンを押してください。`,"m");
+}
+setInterval(checkUpdate,60000); document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") checkUpdate(); });
+setTimeout(checkUpdate,3000);
+
 // ---- 種別・待避駅 ----
 const KINDS={
  kaitoku:{label:"快特",color:"var(--kind-kaitoku)",sub:"var(--sub-kaitoku)",stops:["品川","京急蒲田","京急川崎","横浜","上大岡","金沢文庫"],vmax:120,acc:0.85,dwell:35,long:{"横浜":45,"上大岡":40,"京急蒲田":40}},
@@ -686,7 +729,7 @@ function arrive(i,t,x,silent){
 }
 function depart(t,silent){
   const wasHalt=G.mode==="halt";
-  G.depFrom=G.mode; G.depAt=t; G.depAnchored=false; G.xHist=[];
+  G.depFrom=G.mode; G.depAt=t; G.depAnnAt=nowMs(); G.depAnchored=false; G.xHist=[];
   if(G.mode==="dwell"){
     (G.events[G.last]=G.events[G.last]||{}).dep=t;
     if(G.last===0&&!schedFixed){ planEpoch=t-plan.ev[0].dep*1000; schedFixed=true; G.depAnchored=true; renderList(); }
@@ -737,12 +780,17 @@ function checkApproach(e){
   if(G.relX!=null&&!G.announced[rk]&&x>=G.relX+(+cfg.cars)*20+120&&d>900){G.announced[rk]=1; flashMsg("解除長標確認",4500);}
   // 停車駅へのブレーキをかけ始める距離（今の速度で止まれる距離＋余裕）で「次は停車」×2 → ホーム手前で「○両、停車」
   const plat=Math.max(+cfg.cars,6)*20+60, nowR=performance.now();
-  if(!a.brake&&v>10/3.6&&d<=Math.max(plat+150,v*v/(2*0.9)+80)){a.brake=1; speak("次は、停車。　次は、停車。","f");}
-  if(!a.cars&&d<=plat){a.cars=1; a.brake=1;
-    if(cfg.weather==="rain"){ a.skid=1; skidUntil=nowR+2600/Math.max(1,mult); speak(`${cfg.cars}両、停車。　スキット注意。`,"f"); }
-    else speak(`${cfg.cars}両、停車。`,"f"); }
-  if(a.cars&&speechIdle()) stopPosLoop(key,v);
+  // 「次は停車」はホームの約350m手前（速いときは止まれる距離＋250m）。駅間が短いときは「次は○○停車」から8秒あける
+  if(!a.brake&&v>10/3.6&&d<=Math.max(plat+350,v*v/(2*0.9)+250)&&(d<=plat+150||nowMs()-(G.depAnnAt||0)>=8000)){a.brake=1; speak("次は、停車。　次は、停車。","f");}
+  // 「○両、停車」はホームの少し手前（列車長＋160m）で。そのあと 喋り終わり＋3秒 → スキット注意（雨）→ 3秒 → 停止位置 ○
+  if(!a.cars&&d<=plat+100){a.cars=1; a.brake=1; a.step=cfg.weather==="rain"?"skid":"pos"; a.readyAt=0; speak(`${cfg.cars}両、停車。`,"f");}
+  if(!a.cars) return;
+  if(!a.readyAt){ if(speechIdle()||cfg.voice!=="on") a.readyAt=nowR+ANN_GAP/Math.max(1,mult); return; }
+  if(nowR<a.readyAt) return;
+  if(a.step==="skid"){ a.skid=1; a.step="pos"; a.readyAt=0; skidUntil=nowR+2600/Math.max(1,mult); speak("スキット注意。","f"); return; }
+  if(speechIdle()) stopPosLoop(key,v);
 }
+const ANN_GAP=3000; // 読み上げの間の空白(ms)
 
 // ---- 遅延 ----
 function rawDelay(x,now){
@@ -786,6 +834,7 @@ function draw(e,now,dt){
   $("hStop").classList.toggle("blink",blink);
   const pdep=(plan.ev[G.last]||{}).dep, toDep=pdep!=null?Math.ceil((pt(pdep)-now)/1000):null;
   if(G.mode==="halt"){nl.className="next sec"+(blink?" blink":"");nl.textContent="セクション注意";}
+  else if(upd&&upd.showing){nl.className="next msg updmsg";nl.textContent=`新バージョン v${upd.version}`;}
   else if(skid){nl.className="next skid"+(blink?" blink":"");nl.textContent="！スキット注意！";}
   else if(G.mode==="dwell"&&G.taihiAt===G.last){nl.className="next taihi";nl.textContent=`待避　発車まで ${Math.max(0,toDep??0)}秒`;}
   else if(nowR<msgUntil&&running){nl.className="next msg"+(blink?" blink":"");nl.textContent=msgText;}
@@ -872,6 +921,7 @@ function loop(ts){
   const e=estimate(now,dt); lastEst=e;
   track(e,now); checkApproach(e);
   if(G.mode==="dwell"&&K.taihi&&route[G.last].taihiOK&&G.last>0&&now-G.dwellStart>=TAIHI_SEC*1000&&G.taihiAt!==G.last) applyTaihi(G.last);
+  announceUpdate();
   draw(e,now,dt);
   const row=$("r"+((G.mode==="dwell"||G.mode==="end"||G.target<0)?G.last:G.target));
   if(row&&row!==loop.lastRow){loop.lastRow=row;const L=$("list"); L.scrollTop=row.offsetTop-L.offsetTop-L.clientHeight/2+row.offsetHeight/2;}
@@ -952,6 +1002,10 @@ $("minus").addEventListener("click",()=>{offset-=10;});
 $("plus").addEventListener("click",()=>{offset+=10;});
 $("dbgBtn").addEventListener("click",e=>{showDbg=!showDbg; e.target.setAttribute("aria-pressed",showDbg); $("dbg").hidden=!showDbg;});
 $("vtest").addEventListener("click",()=>{ unlockAudio(); speak("音声テスト、停車","f"); setTimeout(()=>{ const ok=("speechSynthesis" in window); $("vstat").textContent= ok? `読み上げ機能あり・日本語の声 ${jaVoices.length}種類。聞こえなければマナーモードと音量を確認` : "この画面では読み上げが使えない。Safariで開くと声が出るかも"; },400); });
+document.querySelectorAll(".updGo").forEach(b=>b.addEventListener("click",reloadToUpdate));
+// あとで：バーを閉じる（下の「更新」ボタンは残す）。乗務終了のときにもう一度出す
+$("updLater").addEventListener("click",()=>{ hideUpdBar(); if(upd) upd.later=true; });
+$("appVer").textContent="v"+APP_VERSION;
 $("back").addEventListener("click",()=>{
   cancelAnimationFrame(raf); stopGeo(); try{speechSynthesis.cancel()}catch(_){}
   try{ wakeLock&&wakeLock.release(); }catch(_){} wakeLock=null;
