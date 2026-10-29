@@ -738,11 +738,15 @@ function checkApproach(e){
   // 停車駅へのブレーキをかけ始める距離（今の速度で止まれる距離＋余裕）で「次は停車」×2 → ホーム手前で「○両、停車」
   const plat=Math.max(+cfg.cars,6)*20+60, nowR=performance.now();
   if(!a.brake&&v>10/3.6&&d<=Math.max(plat+150,v*v/(2*0.9)+80)){a.brake=1; speak("次は、停車。　次は、停車。","f");}
-  if(!a.cars&&d<=plat){a.cars=1; a.brake=1;
-    if(cfg.weather==="rain"){ a.skid=1; skidUntil=nowR+2600/Math.max(1,mult); speak(`${cfg.cars}両、停車。　スキット注意。`,"f"); }
-    else speak(`${cfg.cars}両、停車。`,"f"); }
-  if(a.cars&&speechIdle()) stopPosLoop(key,v);
+  // 「○両、停車」はホームの少し手前（列車長＋160m）で。そのあと 喋り終わり＋3秒 → スキット注意（雨）→ 3秒 → 停止位置 ○
+  if(!a.cars&&d<=plat+100){a.cars=1; a.brake=1; a.step=cfg.weather==="rain"?"skid":"pos"; a.readyAt=0; speak(`${cfg.cars}両、停車。`,"f");}
+  if(!a.cars) return;
+  if(!a.readyAt){ if(speechIdle()||cfg.voice!=="on") a.readyAt=nowR+ANN_GAP/Math.max(1,mult); return; }
+  if(nowR<a.readyAt) return;
+  if(a.step==="skid"){ a.skid=1; a.step="pos"; a.readyAt=0; skidUntil=nowR+2600/Math.max(1,mult); speak("スキット注意。","f"); return; }
+  if(speechIdle()) stopPosLoop(key,v);
 }
+const ANN_GAP=3000; // 読み上げの間の空白(ms)
 
 // ---- 遅延 ----
 function rawDelay(x,now){
