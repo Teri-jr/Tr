@@ -896,10 +896,34 @@ const store = {
   keys() { const out = []; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith(PREFIX)) out.push(k.slice(PREFIX.length)); } } catch (e) {} return out; }
 };
 
+// 保存データ・読み込んだファイルの形を整える(壊れた値があっても起動できるように)
+const isObj = v => !!v && typeof v === 'object' && !Array.isArray(v);
+function cleanSettings(v) {
+  const st = { ...DEFAULT_SETTINGS, ...(isObj(v) ? v : {}) };
+  for (const k of ['start', 'deadline']) st[k] = Number.isFinite(+st[k]) && st[k] !== null && st[k] !== '' ? Math.min(29 * 60 + 55, Math.max(0, Math.round(+st[k]))) : DEFAULT_SETTINGS[k];
+  return st;
+}
+const numOrNull = v => Number.isFinite(v) ? v : null;
+// newIds=true(ファイルから読み込むとき)は、タスクの id を振り直す
+function cleanDay(d, newIds) {
+  const tasks = (Array.isArray(d.tasks) ? d.tasks : []).filter(t => isObj(t) && typeof t.name === 'string').map(t => {
+    const dur = Math.round(+t.dur);
+    return {
+      ...t,
+      id: newIds || typeof t.id !== 'string' || !t.id ? Date.now().toString(36) + Math.random().toString(36).slice(2, 9) : t.id,
+      name: t.name.slice(0, 60),
+      dur: Number.isFinite(dur) ? Math.min(600, Math.max(1, dur)) : 30,
+      adj: Number.isFinite(+t.adj) ? Math.round(+t.adj) : 0,
+      memo: typeof t.memo === 'string' ? t.memo : '',
+      actualStart: numOrNull(t.actualStart), actualEnd: numOrNull(t.actualEnd)
+    };
+  });
+  return { ...d, settings: cleanSettings(d.settings), tasks };
+}
 function loadDay(ds) {
   const d = store.get('day:' + ds);
-  if (d && Array.isArray(d.tasks)) return d;
-  return { settings: { ...(store.get('lastSettings') || DEFAULT_SETTINGS) }, tasks: [] };
+  if (isObj(d) && Array.isArray(d.tasks)) return cleanDay(d, false);
+  return { settings: cleanSettings(store.get('lastSettings')), tasks: [] };
 }
 function saveDay() {
   store.set('day:' + dayStr, data);
@@ -1378,7 +1402,7 @@ const armKey = (act, id) => act + ':' + id;
 const isArmed = key => armed && armed.key === key && nowMs() < armed.until;
 function armBtn(act, id, label, cls = '', armedLabel = 'もう一度押して確定') {
   const on = isArmed(armKey(act, id));
-  return `<button class="${cls} ${on ? 'armed' : ''}" data-act="${act}" data-id="${id}">${on ? armedLabel : label}</button>`;
+  return `<button class="${cls} ${on ? 'armed' : ''}" data-act="${act}" data-id="${esc(id)}">${on ? armedLabel : label}</button>`;
 }
 // 1回目は待機状態にしてfalse、4秒以内の2回目でtrue
 function confirmTap(act, t) {
@@ -1436,8 +1460,10 @@ function render() {
   }
 }
 
+// 就寝期限が開始時刻以前なら、翌日の時刻として扱う(開始 23:00・期限 1:00 → 25:00)
+const deadlineMin = () => data.settings.deadline <= data.settings.start ? data.settings.deadline + 1440 : data.settings.deadline;
 function renderBanner(sc) {
-  const dl = data.settings.deadline;
+  const dl = deadlineMin();
   if (!sc.rows.length) { setHTML('banner', ''); return; }
   const over = Math.floor(sc.end + 1e-6) - dl;
   if (over > 0) {
@@ -1478,16 +1504,16 @@ function renderCurrent(sc) {
         pill += ` <span class="pill brk">☕ ${ph.long ? '長休憩' : '休憩'}</span>`;
         phaseLine = `作業 ${Math.floor(sw.workMin)}分 ・ 休憩は ${fmt(ph.e)} まで`;
         extraBtns = `<div class="btnrow">
-          <button class="grow" data-act="skipbrk" data-id="${t.id}" data-bi="${ph.bi}">休憩を飛ばす</button>
-          <button class="grow" data-act="extbrk" data-id="${t.id}" data-bi="${ph.bi}">休憩を+5分</button>
+          <button class="grow" data-act="skipbrk" data-id="${esc(t.id)}" data-bi="${ph.bi}">休憩を飛ばす</button>
+          <button class="grow" data-act="extbrk" data-id="${esc(t.id)}" data-bi="${ph.bi}">休憩を+5分</button>
         </div>`;
       } else {
         if (sw.ask) pill += ` <span class="pill work">🍅 ${Math.round(swNextAsk(t))}分たちました</span>`;
         const overBy = Math.floor(sw.workMin - effDur(t));
         phaseLine = `目安 約${effDur(t)}分${sw.over ? ` を${Math.max(1, overBy)}分すぎています` : ''} ・ ${fmt(running.s)} 開始`;
         if (sw.ask) extraBtns = `<div class="btnrow">
-          <button class="grow brk-btn" data-act="swbreak" data-id="${t.id}">☕ 休憩する(${(t.swBreaks || []).length % cfgOf(t).every === cfgOf(t).every - 1 ? cfgOf(t).long : cfgOf(t).brk}分)</button>
-          <button class="grow" data-act="swcontinue" data-id="${t.id}">続ける</button>
+          <button class="grow brk-btn" data-act="swbreak" data-id="${esc(t.id)}">☕ 休憩する(${(t.swBreaks || []).length % cfgOf(t).every === cfgOf(t).every - 1 ? cfgOf(t).long : cfgOf(t).brk}分)</button>
+          <button class="grow" data-act="swcontinue" data-id="${esc(t.id)}">続ける</button>
         </div>`;
       }
     } else if (t.pomo && ph !== 'over') {
@@ -1499,8 +1525,8 @@ function renderCurrent(sc) {
         pill = `<span class="pill brk">☕ ${ph.long ? '長休憩' : '休憩'}</span>`;
         phaseLine = `休憩は ${fmt(ph.e)} まで(次の作業 ${fmt(ph.e)} 開始)`;
         extraBtns = `<div class="btnrow">
-          <button class="grow" data-act="skipbrk" data-id="${t.id}" data-bi="${ph.bi}">休憩を飛ばす</button>
-          <button class="grow" data-act="extbrk" data-id="${t.id}" data-bi="${ph.bi}">休憩を+5分</button>
+          <button class="grow" data-act="skipbrk" data-id="${esc(t.id)}" data-bi="${ph.bi}">休憩を飛ばす</button>
+          <button class="grow" data-act="extbrk" data-id="${esc(t.id)}" data-bi="${ph.bi}">休憩を+5分</button>
         </div>`;
       }
     }
@@ -1517,15 +1543,15 @@ function renderCurrent(sc) {
       ${extraBtns}
       <div class="btnrow">
         ${paused
-          ? `<button class="primary big grow" data-act="resume" data-id="${t.id}">▶ 再開</button>
-             <button class="big" data-act="finish" data-id="${t.id}">終了</button>`
-          : `<button class="primary big grow" data-act="finish" data-id="${t.id}">終了</button>
-             ${over || swBrk ? '' : `<button class="big" data-act="pause" data-id="${t.id}">⏸ 一時停止</button>`}`}
-        <button class="big" data-act="focus" data-id="${t.id}" aria-label="全画面">⛶</button>
+          ? `<button class="primary big grow" data-act="resume" data-id="${esc(t.id)}">▶ 再開</button>
+             <button class="big" data-act="finish" data-id="${esc(t.id)}">終了</button>`
+          : `<button class="primary big grow" data-act="finish" data-id="${esc(t.id)}">終了</button>
+             ${over || swBrk ? '' : `<button class="big" data-act="pause" data-id="${esc(t.id)}">⏸ 一時停止</button>`}`}
+        <button class="big" data-act="focus" data-id="${esc(t.id)}" aria-label="全画面">⛶</button>
       </div>
       <div class="btnrow">
-        ${sw ? '' : `<button class="grow" data-act="adj" data-v="-5" data-id="${t.id}" ${effDur(t) <= 5 ? 'disabled' : ''}>${t.pomo ? '作業 ' : ''}−5分</button>
-        <button class="grow" data-act="adj" data-v="5" data-id="${t.id}">${t.pomo ? '作業 ' : ''}+5分</button>`}
+        ${sw ? '' : `<button class="grow" data-act="adj" data-v="-5" data-id="${esc(t.id)}" ${effDur(t) <= 5 ? 'disabled' : ''}>${t.pomo ? '作業 ' : ''}−5分</button>
+        <button class="grow" data-act="adj" data-v="5" data-id="${esc(t.id)}">${t.pomo ? '作業 ' : ''}+5分</button>`}
         ${armBtn('unstart', t.id, '開始を取消', 'danger')}
       </div>
       ${t.pomo ? `<p class="note">${!soundOn() ? '🔇 音はOFFです(点滅と通知は出ます)。' : audio.ready ? '🔊 音は有効です。' : '🔇 音が無効です(「ポモドーロ」欄のボタンで有効化)。'}画面を閉じている間は音や通知が出ないことがあります。</p>` : ''}`;
@@ -1534,7 +1560,7 @@ function renderCurrent(sc) {
       <div class="cur-name">${next.t.sw ? '⏲ ' : ''}${next.t.pomo ? '🍅 ' : ''}${esc(next.t.name)}</div>
       <div class="cur-sub num">予定 ${fmt(next.ps)} 発 ・ 見込み ${fmt(next.s)} 発 ・ ${next.t.sw ? '約' : ''}${next.t.dur}分</div>
       <div class="btnrow">
-        <button class="primary big grow" data-act="start" data-id="${next.t.id}">開始</button>
+        <button class="primary big grow" data-act="start" data-id="${esc(next.t.id)}">開始</button>
         ${lastDone ? armBtn('unfinish', lastDone.t.id, '直前の終了を取消') : ''}
       </div>`;
   } else if (sc.rows.length) {
@@ -1603,19 +1629,19 @@ function renderTable(sc) {
         <div class="meta num">${durTxt}${pomoInfo}${label ? `<span>${label}</span>` : ''}${delayTxt}</div>
       </div>
       <div class="acts">
-        ${r.st === 'pending' && i > firstPending ? `<button class="now-btn" data-act="donow" data-id="${t.id}" ${anyRunning ? 'disabled' : ''}>▶今やる</button>` : ''}
-        <button data-act="up" data-id="${t.id}" aria-label="上へ" ${canMove && prevPending ? '' : 'disabled'}>↑</button>
-        <button data-act="down" data-id="${t.id}" aria-label="下へ" ${canMove && nextPending ? '' : 'disabled'}>↓</button>
-        <button class="pomo-btn ${t.pomo ? 'on' : ''}" data-act="pomo" data-id="${t.id}" aria-pressed="${!!t.pomo}" aria-label="ポモドーロ ${t.pomo ? 'ON' : 'OFF'}" ${r.st === 'pending' ? '' : 'disabled'}>🍅</button>
-        <button data-act="edit" data-id="${t.id}">${editingId === t.id ? '編集中' : '編集'}</button>
+        ${r.st === 'pending' && i > firstPending ? `<button class="now-btn" data-act="donow" data-id="${esc(t.id)}" ${anyRunning ? 'disabled' : ''}>▶今やる</button>` : ''}
+        <button data-act="up" data-id="${esc(t.id)}" aria-label="上へ" ${canMove && prevPending ? '' : 'disabled'}>↑</button>
+        <button data-act="down" data-id="${esc(t.id)}" aria-label="下へ" ${canMove && nextPending ? '' : 'disabled'}>↓</button>
+        <button class="pomo-btn ${t.pomo ? 'on' : ''}" data-act="pomo" data-id="${esc(t.id)}" aria-pressed="${!!t.pomo}" aria-label="ポモドーロ ${t.pomo ? 'ON' : 'OFF'}" ${r.st === 'pending' ? '' : 'disabled'}>🍅</button>
+        <button data-act="edit" data-id="${esc(t.id)}">${editingId === t.id ? '編集中' : '編集'}</button>
         ${armBtn('del', t.id, '削除', 'danger')}
       </div>
     </li>${segRows(r, sc.now)}`;
   }).join('');
-  const over = Math.floor(sc.end + 1e-6) - data.settings.deadline;
+  const over = Math.floor(sc.end + 1e-6) - deadlineMin();
   const endKo = sc.rows.some(x => x.t.sw && x.st !== 'done') ? '<small>頃</small>' : '';
   h += `<li class="row end"><div class="no">終</div><div class="t-exp num">${fmt(sc.end)}${endKo}</div>
-    <div class="name">終着 ・ 期限 ${fmt(data.settings.deadline)} ${over > 0 ? `<span class="delay late">${over}分超過</span>` : `<span class="delay ontime">余裕 ${-over}分</span>`}</div></li>`;
+    <div class="name">終着 ・ 期限 ${fmt(deadlineMin())} ${over > 0 ? `<span class="delay late">${over}分超過</span>` : `<span class="delay ontime">余裕 ${-over}分</span>`}</div></li>`;
   setHTML('tt', h);
 }
 
@@ -2091,13 +2117,13 @@ function focusInfo(r, now) {
       label += ` <span class="pill brk">☕ ${ph.long ? '長休憩' : '休憩'}</span>`; state = '休憩';
       sub = `${fmt(ph.e)} から作業に戻る ・ 作業 ${Math.floor(sw.workMin)}分`; next = `作業 ${fmt(ph.e)}`;
       from = ph.s; to = ph.e; toLabel = '休憩おわり';
-      btns = `<button data-act="skipbrk" data-id="${t.id}" data-bi="${ph.bi}">休憩を飛ばす</button><button data-act="extbrk" data-id="${t.id}" data-bi="${ph.bi}">休憩を+5分</button>`;
+      btns = `<button data-act="skipbrk" data-id="${esc(t.id)}" data-bi="${ph.bi}">休憩を飛ばす</button><button data-act="extbrk" data-id="${esc(t.id)}" data-bi="${ph.bi}">休憩を+5分</button>`;
     } else {
       state = sw.ask ? `${Math.round(swNextAsk(t))}分たちました` : '作業中';
       if (sw.ask) label += ` <span class="pill work">🍅 ${state}</span>`;
       sub = `目安 約${effDur(t)}分${sw.over ? ` を${Math.max(1, Math.floor(sw.workMin - effDur(t)))}分すぎています` : ''} ・ ${fmt(r.s)} 開始`;
       next = `目安 ${fmt(r.target)}頃`; to = Math.max(r.target, now + 1e-6); toLabel = '目安';
-      if (sw.ask) btns = `<button class="brk-btn" data-act="swbreak" data-id="${t.id}">☕ 休憩する</button><button data-act="swcontinue" data-id="${t.id}">続ける</button>`;
+      if (sw.ask) btns = `<button class="brk-btn" data-act="swbreak" data-id="${esc(t.id)}">☕ 休憩する</button><button data-act="swcontinue" data-id="${esc(t.id)}">続ける</button>`;
     }
   } else if (t.pomo && !over) {
     const ws = r.phases.filter(p => p.k === 'w');
@@ -2105,7 +2131,7 @@ function focusInfo(r, now) {
     if (brk) {
       label = `<span class="pill brk">☕ ${ph.long ? '長休憩' : '休憩'}</span>`; state = ph.long ? '長休憩' : '休憩';
       sub = `${fmt(ph.e)} から次の作業 ・ タスク終了見込み ${fmt(r.target)}`; next = `作業 ${fmt(ph.e)}`; toLabel = '休憩おわり';
-      btns = `<button data-act="skipbrk" data-id="${t.id}" data-bi="${ph.bi}">休憩を飛ばす</button><button data-act="extbrk" data-id="${t.id}" data-bi="${ph.bi}">休憩を+5分</button>`;
+      btns = `<button data-act="skipbrk" data-id="${esc(t.id)}" data-bi="${ph.bi}">休憩を飛ばす</button><button data-act="extbrk" data-id="${esc(t.id)}" data-bi="${ph.bi}">休憩を+5分</button>`;
     } else {
       state = `作業中 ${ws.findIndex(p => p.i === ph.i) + 1}/${ws.length}`;
       label = `<span class="pill work">🍅 ${state}</span>`;
@@ -2120,11 +2146,11 @@ function focusInfo(r, now) {
   if (paused) {
     label = '<span class="pill paused">⏸ 一時停止中</span>'; state = '一時停止中';
     sub = '<span id="focusPause"></span>';
-    btns = `<button class="primary" data-act="resume" data-id="${t.id}">▶ 再開</button>`;
+    btns = `<button class="primary" data-act="resume" data-id="${esc(t.id)}">▶ 再開</button>`;
   } else if (!over && !(sw && brk)) {
-    btns += `<button data-act="pause" data-id="${t.id}">⏸ 一時停止</button>`;
+    btns += `<button data-act="pause" data-id="${esc(t.id)}">⏸ 一時停止</button>`;
   }
-  btns += `<button class="${paused ? '' : 'primary'}" data-act="finish" data-id="${t.id}">終了</button>`;
+  btns += `<button class="${paused ? '' : 'primary'}" data-act="finish" data-id="${esc(t.id)}">終了</button>`;
   const main = sw ? (brk ? fmtSec(ph.e - now) : fmtUp(sw.workMin)) : over ? `+${fmtSec(now - r.target)}` : fmtSec((t.pomo ? ph.e : r.target) - now);
   const caption = sw && !brk ? '' : over ? '超過' : 'あと';
   const frac = to > from ? Math.max(0, Math.min(1, (now - from) / (to - from))) : 1;
@@ -2264,7 +2290,7 @@ document.addEventListener('keydown', e => {
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '3.4.2';
+const APP_VERSION = '3.4.3';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
@@ -2487,10 +2513,10 @@ const SAMPLE_TASKS = [
   { name: '今日の復習', dur: 20, memo: '間違えた問題だけ' }
 ];
 $('guideSample').addEventListener('click', () => {
-  const before = JSON.stringify(data.tasks);
+  const addedDay = dayStr, before = JSON.stringify(data.tasks);
   data.tasks.push(...SAMPLE_TASKS.map(t => planCopy({ memo: '', ...t })));
   saveDay(); closeGuide(); foldFormByDefault(); render();
-  showToast(`見本を${SAMPLE_TASKS.length}件入れました。自由に消したり直したりできます`, '元に戻す', () => { data.tasks = JSON.parse(before); saveDay(); render(); });
+  showToast(`見本を${SAMPLE_TASKS.length}件入れました。自由に消したり直したりできます`, '元に戻す', () => restoreTasks(addedDay, before));
 });
 
 /* ================= 勉強の記録(7日間) ================= */
@@ -2566,7 +2592,7 @@ $('importFile').addEventListener('change', async () => {
   try {
     const obj = JSON.parse(await f.text());
     if (!obj || obj.app !== APP_ID || typeof obj.data !== 'object') throw new Error('このアプリのデータではありません');
-    const entries = Object.entries(obj.data).filter(([k, v]) => VALID_KEY(k) && v !== null && (!k.startsWith('day:') || Array.isArray(v.tasks)));
+    const entries = Object.entries(obj.data).filter(([k, v]) => VALID_KEY(k) && v !== null && (!k.startsWith('day:') || (isObj(v) && Array.isArray(v.tasks))));
     const days = entries.map(([k]) => k).filter(k => k.startsWith('day:')).sort();
     if (!entries.length) throw new Error('読み込めるデータがありません');
     pendingImport = entries;
@@ -2583,7 +2609,7 @@ $('importFile').addEventListener('change', async () => {
 $('importConfirm').addEventListener('click', e => {
   if (e.target.id === 'importCancel') { pendingImport = null; $('importConfirm').innerHTML = ''; return; }
   if (e.target.id !== 'importDo' || !pendingImport) return;
-  for (const [k, v] of pendingImport) store.set(k, v);
+  for (const [k, v] of pendingImport) store.set(k, k.startsWith('day:') ? cleanDay(v, true) : k === 'lastSettings' ? cleanSettings(v) : v);
   const n = pendingImport.filter(([k]) => k.startsWith('day:')).length;
   pendingImport = null; $('importConfirm').innerHTML = '';
   data = loadDay(dayStr); pomoCfg = loadPomoCfg();
@@ -2597,8 +2623,15 @@ const mdLabel = ds => `${+ds.slice(5, 7)}/${+ds.slice(8)}`;
 const taskDurLabel = t => `${t.sw ? '約' : ''}${t.dur}分${t.pomo ? ' 🍅' : ''}${t.sw ? ' ⏲' : ''}`;
 // 予定として引き継ぐ項目だけを取り出した新しいタスク(実績は持たない)
 const planCopy = t => ({ id: uid() + Math.random().toString(36).slice(2, 5), name: t.name, dur: t.dur, memo: t.memo || '', pomo: !!t.pomo, sw: !!t.sw, adj: 0, actualStart: null, actualEnd: null, ...(SUBJECTS[t.subj] ? { subj: t.subj } : {}), ...(t.subj === 'ot' && t.subjText ? { subjText: t.subjText } : {}) });
-function prevDayTasks() { const d = store.get('day:' + shiftDay(dayStr, -1)); return d && Array.isArray(d.tasks) ? d.tasks : []; }
+function prevDayTasks() { const d = store.get('day:' + shiftDay(dayStr, -1)); return isObj(d) && Array.isArray(d.tasks) ? cleanDay(d, false).tasks : []; }
 
+// 「元に戻す」: 追加した日の予定を、追加する前の状態に戻す(日を移動していても、その日に戻す)
+function restoreTasks(ds, before) {
+  const tasks = JSON.parse(before);
+  if (ds === dayStr) { data.tasks = tasks; saveDay(); }
+  else { const d = loadDay(ds); d.tasks = tasks; store.set('day:' + ds, d); statsAt = 0; }
+  render();
+}
 let toastTimer = null;
 function showToast(msg, actLabel, onAct) {
   $('toastMsg').textContent = msg;
@@ -2616,10 +2649,10 @@ function copyPrevDay(confirmFirst) {
   const prev = prevDayTasks();
   if (!prev.length) return;
   const run = () => {
-    const before = JSON.stringify(data.tasks);
+    const addedDay = dayStr, before = JSON.stringify(data.tasks);
     data.tasks.push(...prev.map(planCopy));
     saveDay(); render();
-    showToast(`${prev.length}件をコピーしました`, '元に戻す', () => { data.tasks = JSON.parse(before); saveDay(); render(); });
+    showToast(`${prev.length}件をコピーしました`, '元に戻す', () => restoreTasks(addedDay, before));
   };
   if (!confirmFirst) { run(); return; }
   openOkModal({
@@ -2641,8 +2674,8 @@ $('carryOver').addEventListener('click', () => {
     body: `まだ始めていない <b>${moving.length}件</b> を、${mdLabel(next)} の時刻表の最後に移します。<ul>${moving.map(t => `<li>${esc(t.name)} ${taskDurLabel(t)}</li>`).join('')}</ul>`,
     ok: `${moving.length}件を翌日へ`, cancel: 'やめる',
     onOk: () => {
-      const nd = store.get('day:' + next) || { settings: { ...data.settings }, tasks: [] };
-      if (!Array.isArray(nd.tasks)) nd.tasks = [];
+      const raw = store.get('day:' + next);
+      const nd = isObj(raw) && Array.isArray(raw.tasks) ? cleanDay(raw, false) : { settings: { ...data.settings }, tasks: [] };
       nd.tasks.push(...moving.map(planCopy));
       store.set('day:' + next, nd);
       data.tasks = data.tasks.filter(t => !moving.includes(t));
@@ -2658,17 +2691,17 @@ function parseTaskLines(text) {
   for (let raw of String(text).split(/\r?\n/)) {
     let line = raw.trim().replace(/^[①-⑳❶-❿]\s*/, '').normalize('NFKC').trim(); // 丸数字は半角にする前に取る(①→1 にならないように)
     if (!line) continue;
-    line = line.replace(/^(?:[-*•・●○□■☐☑✓✔]|\d{1,2}[.)、]|\(\d{1,2}\)|[①-⑳])\s*/, '');           // 行頭の記号・番号
+    line = line.replace(/^(?:[-*•・●○□■☐☑✓✔]|\d{1,2}[.)、](?!\d)|\(\d{1,2}\)|[①-⑳])\s*/, '');           // 行頭の記号・番号
     line = line.replace(/^\d{1,2}:\d{2}\s*(?:[-~〜–—ー]\s*\d{1,2}:\d{2})?\s*[:：]?\s*/, '');     // 行頭の時刻「19:00〜19:30」
     let pomo = false, sw = false, dur = null;
     if (/(?:^|\s|[(\[])(?:ポモ(?:ドーロ)?|🍅)(?:[)\]]|\s|$)/.test(line)) { pomo = true; line = line.replace(/[(\[]?(?:ポモ(?:ドーロ)?|🍅)[)\]]?/g, ' '); }
     // 時間: 一番最後に出てくるものを使う
-    const re = /(約|およそ|だいたい|〜|~)?\s*(\d+(?:\.\d+)?)\s*(時間|h(?:ours?|r)?)(?:\s*(\d+)\s*(?:分|m(?:in)?))?|(約|およそ|だいたい|〜|~)?\s*(\d+)\s*(?:分|m(?:in(?:utes?)?)?)(?![a-z])/gi;
+    const re = /(約|およそ|だいたい|〜|~)?\s*(\d+(?:\.\d+)?)\s*(時間|h(?:ours?|r)?)(?:\s*(\d+)\s*(?:分|m(?:ins?)?))?|(約|およそ|だいたい|〜|~)?\s*(\d+(?:\.\d+)?)\s*(?:分|m(?:in(?:s|utes?)?)?)(?![a-z])/gi;
     let m, last = null;
     while ((m = re.exec(line))) last = m;
     if (last) {
       if (last[3]) { dur = Math.round(parseFloat(last[2]) * 60 + (last[4] ? +last[4] : 0)); sw = !!last[1]; }
-      else { dur = +last[6]; sw = !!last[5]; }
+      else { dur = Math.floor(+last[6]); sw = !!last[5]; } // 小数の分は切り捨て
       line = line.slice(0, last.index) + ' ' + line.slice(last.index + last[0].length);
     } else {
       const bare = line.match(/\s(\d{1,3})\s*$/); // 行末の数字だけ「数学 50」
@@ -2703,12 +2736,12 @@ function renderBulkPreview() {
 $('fBulk').addEventListener('input', renderBulkPreview);
 $('bulkAdd').addEventListener('click', () => {
   if (!bulkParsed.length) return;
-  const n = bulkParsed.length, before = JSON.stringify(data.tasks);
+  const n = bulkParsed.length, addedDay = dayStr, before = JSON.stringify(data.tasks);
   data.tasks.push(...bulkParsed.map(t => planCopy({ ...t, memo: '' })));
   for (const t of bulkParsed) if (t.subjText) rememberSubj(t.subjText);
   saveDay();
   $('fBulk').value = ''; renderBulkPreview(); render();
-  showToast(`${n}件を追加しました`, '元に戻す', () => { data.tasks = JSON.parse(before); saveDay(); render(); });
+  showToast(`${n}件を追加しました`, '元に戻す', () => restoreTasks(addedDay, before));
 });
 const AI_PROMPT = `受験勉強の今日の予定を作ってください。下の【わたしの情報】をもとに考えてください。
 
