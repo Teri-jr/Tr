@@ -276,6 +276,13 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outli
           <button aria-pressed="true" data-v="8">8</button>
           <button aria-pressed="false" data-v="12">12</button>
         </div></div>
+      <div class="field"><span>乗っている位置</span>
+        <div class="seg" data-k="pos">
+          <button aria-pressed="true" data-v="head">先頭</button>
+          <button aria-pressed="false" data-v="mid">中ほど</button>
+          <button aria-pressed="false" data-v="tail">最後尾</button>
+        </div>
+        <div class="hint">止まったときにスマホがある場所を、停止位置（ホームの進行方向の端）から逆算するのに使う。</div></div>
       <div class="field"><span>天候</span>
         <div class="seg" data-k="weather">
           <button aria-pressed="true" data-v="fine">晴れ</button>
@@ -410,7 +417,7 @@ function makeEnv(route,k,x0,x1,decel){
   return {x0,x1,e};
 }
 function envAt(env,x){ if(x>=env.x1) return 0; const f=(x-env.x0)/GRID,i=Math.max(0,Math.floor(f)),t=f-i; const a=env.e[i],b=env.e[Math.min(env.e.length-1,i+1)]; return a+(b-a)*t; }
-function newState(route){ return {x:0,v:0,mode:"dwell",remain:route[0].dwell,t:0,target:nextStop(route,0),last:0,events:{},halt:null,env:null,traj:[]}; }
+function newState(route){ return {x:route[0].x,v:0,mode:"dwell",remain:route[0].dwell,t:0,target:nextStop(route,0),last:0,events:{},halt:null,env:null,traj:[]}; }
 function step(s,route,k,decel,rand,onEvent){
   if(s.mode==="end") return;
   s.t+=DT;
@@ -452,7 +459,7 @@ function planTimes(route,k){
   return {ev:s.events,traj:s.traj};
 }
 // ---- バージョン（変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする） ----
-const APP_VERSION='1.1.2';
+const APP_VERSION='1.2.0';
 const isNewer=(a,b)=>{ const x=String(a).split(".").map(Number), y=String(b).split(".").map(Number); for(let i=0;i<3;i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0); } return false; };
 let upd=null; // {version, items}：新しい版が出ていたら入る。announced=放送済み
 async function checkUpdate(){
@@ -492,7 +499,12 @@ const MAJOR=new Set(["品川","京急蒲田","京急川崎","横浜","上大岡"
 const TAIHI={"鮫洲":"both","平和島":"both","京急蒲田":"both","京急川崎":"both","京急鶴見":"up","生麦":"down","子安":"up","神奈川新町":"both","南太田":"both","上大岡":"both"};
 const TAIHI_SEC=120;
 // GPS判定のしきい値
-const ZONE=200;          // 駅の半径。この中で止まったら停車
+const ZONE=200;          // 駅を過ぎたとみなす距離（ホームの端から）
+// 国土数値情報の駅の線の長さ(m)。実際のホームより短い駅が多いので、ホームの長さは「これ」と「列車長＋20m」の長いほうとする
+const PLAT_DATA={"大森海岸":119,"立会川":80,"青物横丁":124,"北品川":91,"品川":175,"新馬場":162,"鮫洲":101,"泉岳寺":162,"堀ノ内":148,"金沢八景":147,"京急川崎":107,"京急蒲田":301,"安針塚":92,"京急鶴見":164,"杉田":89,"南太田":117,"汐入":123,"逸見":112,"大森町":72,"京急新子安":98,"八丁畷":80,"追浜":164,"雑色":70,"生麦":111,"弘明寺":89,"花月総持寺":92,"横須賀中央":143,"能見台":155,"上大岡":204,"金沢文庫":108,"馬堀海岸":168,"神奈川":71,"浦賀":166,"黄金町":115,"戸部":111,"井土ヶ谷":123,"京急東神奈川":121,"屏風浦":131,"鶴見市場":106,"横浜":255,"京急富岡":116,"子安":134,"県立大学":163,"京急田浦":118,"神奈川新町":153,"京急大津":157,"梅屋敷":76,"六郷土手":76,"日ノ出町":82,"平和島":185};
+const trainLen=()=>(+cfg.cars)*20;
+// ホームに止まっているとみなす範囲（スマホの位置、ホームの両端から60m外まで）
+const inPlat=(r,x)=>x>=r.pLo-60&&x<=r.pHi+60;
 const STILL_V=0.8;       // これ未満(m/s、約3km/h)が続いたら止まったとみなす
 const STILL_MS=4000;
 const MOVE_V=1.5;        // これを超えて(約5km/h)続いたら動き出したとみなす
@@ -502,7 +514,7 @@ const MOVE_DIST=40;      // 止まった位置からこれ以上（精度が悪�
 const OFF_MAX=250;       // 線路からこれ以上離れた測位は使わない
 const STALE_MS=4000;     // これより古い測位しかなければ推定に切り替える
 
-let cfg={kind:"kaitoku",sec:"品川|上大岡",src:"gps",speed:"1",cars:"8",voice:"on",weather:"fine",disorder:"off",rate:"std"};
+let cfg={kind:"kaitoku",sec:"品川|上大岡",src:"gps",speed:"1",cars:"8",voice:"on",weather:"fine",disorder:"off",rate:"std",pos:"head"};
 const $=id=>document.getElementById(id);
 document.querySelectorAll(".seg[data-k]").forEach(seg=>{
   seg.addEventListener("click",e=>{
@@ -555,13 +567,16 @@ function buildRoute(){
   let st=STATIONS.slice(Math.min(a,b),Math.max(a,b)+1);
   if(!down) st.reverse();
   const o=st[0][1];
-  const r=st.map(([name,s])=>({
-    name, x:Math.abs(s-o),
-    stop: (k.stops? k.stops.includes(name):true) || name===from || name===to,
-    track: down?1:2,
-    taihiOK: !!TAIHI[name]&&(TAIHI[name]==="both"||TAIHI[name]===(down?"down":"up")),
-    dwell: k.long[name]||k.dwell
-  }));
+  // 停車駅の x は「止まったときのスマホの位置」：先頭がホームの進行方向の端から10m手前に止まるとして、乗っている位置のぶん後ろへ
+  const L=trainLen(), back={head:10,mid:L/2,tail:L-10}[cfg.pos]||10;
+  const r=st.map(([name,s])=>{
+    const cx=Math.abs(s-o), plen=Math.max(PLAT_DATA[name]||120,L+20), pLo=cx-plen/2, pHi=cx+plen/2;
+    const stop=(k.stops? k.stops.includes(name):true) || name===from || name===to;
+    return {name, cx, pLo, pHi, plen, x:stop?Math.max(pLo,pHi-10-back):cx, stop,
+      track: down?1:2,
+      taihiOK: !!TAIHI[name]&&(TAIHI[name]==="both"||TAIHI[name]===(down?"down":"up")),
+      dwell: k.long[name]||k.dwell};
+  });
   r.sAt=x=>down?o+x:o-x; r.xOf=s=>down?s-o:o-s;
   return r;
 }
@@ -661,7 +676,7 @@ function onFix(f){
 function initPosition(x,now){
   G.started=true;
   let j=-1;
-  route.forEach((r,i)=>{ if(r.stop&&Math.abs(r.x-x)<=ZONE&&(j<0||Math.abs(r.x-x)<Math.abs(route[j].x-x))) j=i; });
+  route.forEach((r,i)=>{ if(r.stop&&inPlat(r,x)&&(j<0||Math.abs(r.x-x)<Math.abs(route[j].x-x))) j=i; });
   if(j===0||(j<0&&x<0)){ G.mode="dwell"; G.last=0; G.target=nextStop(route,0); G.holdX=x; G.dwellStart=now; return; }
   if(j>0){
     G.last=j; G.target=nextStop(route,j); G.mode=j===route.length-1?"end":"dwell"; G.holdX=x; G.dwellStart=now;
@@ -701,13 +716,13 @@ function track(e,now){
     if(G.stillSince!=null&&now-G.stillSince>=STILL_MS){
       // 発車直後に同じ駅で止まり直した：GPSのぶれで発車と誤判定していたので取り消す
       const from=route[G.last];
-      if(G.depFrom==="dwell"&&now-G.depAt<=UNDO_MS&&Math.abs(x-from.x)<=ZONE&&Math.abs(x-from.x)<Math.abs(x-tg.x)){ undoDepart(x); return; }
-      if(Math.abs(x-tg.x)<=ZONE) arrive(G.target,G.stillSince,x);
+      if(G.depFrom==="dwell"&&now-G.depAt<=UNDO_MS&&inPlat(from,x)&&Math.abs(x-from.x)<Math.abs(x-tg.x)){ undoDepart(x); return; }
+      if(inPlat(tg,x)) arrive(G.target,G.stillSince,x);
       else { G.mode="halt"; G.holdX=x; G.haltStart=G.stillSince; G.moveSince=null; speak("セクション、注意。","f"); }
       return;
     }
     // 停車駅を過ぎてしまった（GPSが切れている間に停車・発車した等）：停車したことにして先へ進める
-    if(x>tg.x+ZONE){ arrive(G.target,now,x,true); if(G.mode==="dwell") depart(now,true); }
+    if(x>tg.pHi+ZONE){ arrive(G.target,now,x,true); if(G.mode==="dwell") depart(now,true); }
   } else if(G.mode==="dwell"||G.mode==="halt"){
     // 前へ進んだ分だけ見る（後ろへの跳びは無視）。端末の速度が取れればそれを使う
     const fwd=x-G.holdX, sp=(G.sp!=null&&now-G.lastSeen<=STALE_MS)?G.sp:v;
@@ -779,11 +794,12 @@ function checkApproach(e){
   const rk="rel"+G.last;
   if(G.relX!=null&&!G.announced[rk]&&x>=G.relX+(+cfg.cars)*20+120&&d>900){G.announced[rk]=1; flashMsg("解除長標確認",4500);}
   // 停車駅へのブレーキをかけ始める距離（今の速度で止まれる距離＋余裕）で「次は停車」×2 → ホーム手前で「○両、停車」
-  const plat=Math.max(+cfg.cars,6)*20+60, nowR=performance.now();
+  // 距離はどれも停止位置まで。「8両、停車」は先頭がホームに入る約130m手前、「次は停車」はさらに約250m手前（速いときは止まれる距離＋250m）
+  const plat=route[key].plen-10, nowR=performance.now();
   // 「次は停車」はホームの約350m手前（速いときは止まれる距離＋250m）。駅間が短いときは「次は○○停車」から8秒あける
-  if(!a.brake&&v>10/3.6&&d<=Math.max(plat+350,v*v/(2*0.9)+250)&&(d<=plat+150||nowMs()-(G.depAnnAt||0)>=8000)){a.brake=1; speak("次は、停車。　次は、停車。","f");}
+  if(!a.brake&&v>10/3.6&&d<=Math.max(plat+380,v*v/(2*0.9)+250)&&(d<=plat+180||nowMs()-(G.depAnnAt||0)>=8000)){a.brake=1; speak("次は、停車。　次は、停車。","f");}
   // 「○両、停車」はホームの少し手前（列車長＋160m）で。そのあと 喋り終わり＋3秒 → スキット注意（雨）→ 3秒 → 停止位置 ○
-  if(!a.cars&&d<=plat+100){a.cars=1; a.brake=1; a.step=cfg.weather==="rain"?"skid":"pos"; a.readyAt=0; speak(`${cfg.cars}両、停車。`,"f");}
+  if(!a.cars&&d<=plat+130){a.cars=1; a.brake=1; a.step=cfg.weather==="rain"?"skid":"pos"; a.readyAt=0; speak(`${cfg.cars}両、停車。`,"f");}
   if(!a.cars) return;
   if(!a.readyAt){ if(speechIdle()||cfg.voice!=="on") a.readyAt=nowR+ANN_GAP/Math.max(1,mult); return; }
   if(nowR<a.readyAt) return;
