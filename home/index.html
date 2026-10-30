@@ -321,7 +321,7 @@ body.editing .page .tile .tdel{pointer-events:auto}
 
 <script>
 'use strict';
-const APP_VERSION = '1.3.1'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.3.2'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -574,6 +574,7 @@ async function loadEvents() {
   // 読めなかったときは、よくある原因に合わせて理由を出す
   const u = cfg.gasUrl.trim();
   if (!/^https:\/\/script\.google(usercontent)?\.com\//.test(u)) { eventsErr = 'URLが Apps Script のものではありません(https://script.google.com/macros/s/…/exec)'; renderSched(); return; }
+  if (/\/macros\/library\//.test(u)) { eventsErr = 'これは「ライブラリ」のURLです。デプロイの種類を「ウェブアプリ」にして、/macros/s/…/exec のURLを使ってください'; renderSched(); return; }
   if (/\/dev(\?|$)/.test(u)) { eventsErr = 'URLの最後が /dev になっています。デプロイ後に出る /exec で終わるURLを使ってください'; renderSched(); return; }
   try {
     let r;
@@ -1424,7 +1425,7 @@ function renderSettings() {
     <ol class="note" style="margin-top:8px">
       <li>パソコンかiPadで <span class="mono">script.google.com</span> を開き、「新しいプロジェクト」を作る</li>
       <li>中身を全部消して、下のコードを貼り付けて保存</li>
-      <li>「デプロイ」→「新しいデプロイ」→ 種類「ウェブアプリ」。実行するユーザー「自分」、アクセスできるユーザー「全員」にしてデプロイ</li>
+      <li>「デプロイ」→「新しいデプロイ」→ 左の歯車で種類「<b>ウェブアプリ</b>」を選ぶ(「ライブラリ」ではありません)。実行するユーザー「自分」、アクセスできるユーザー「<b>全員</b>」にしてデプロイ</li>
       <li>カレンダーへのアクセスを許可する(「安全ではないページ」と出たら「詳細」→「移動」)</li>
       <li>表示された「ウェブアプリのURL」を上に貼り付けて「保存して読み込む」</li>
     </ol>
