@@ -6,9 +6,12 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="待機画面">
+<meta name="apple-mobile-web-app-title" content="Platform">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#141413">
-<title>待機画面</title>
+<title>Platform</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Barlow+Condensed:wght@300;400;500;600;700&display=swap">
 <style>
 /* 1180×820(iPad 第10世代 横向き)の画面を作り、画面サイズに合わせて拡大縮小する */
@@ -34,6 +37,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .chip .slc{color:var(--sl);font-weight:700}
 .bar .right{margin-left:auto;display:flex;align-items:center;gap:14px;font-size:12px;color:var(--sub);white-space:nowrap}
 .bar .right .warn{color:var(--red)}
+.logo{display:flex;align-items:center;gap:8px;margin-right:8px;font-family:var(--num);font-size:21px;font-weight:600;letter-spacing:.03em}
+.logo svg{display:block}
 .gear{border:1px solid var(--rule);padding:5px 12px;font-size:13px;color:var(--ink)}
 
 .page{position:absolute;left:0;right:0;top:52px;bottom:0;display:grid;grid-template-columns:300px 1fr 300px}
@@ -234,6 +239,7 @@ ul{list-style:none}
 <body>
 <div id="stage">
   <div class="bar" id="bar">
+    <div class="logo"><svg viewBox="0 0 512 512" width="26" height="26"><rect width="512" height="512" rx="112" fill="#141413"/><circle cx="256" cy="150" r="46" fill="#ff5b3a"/><circle cx="256" cy="290" r="46" fill="#ff5b3a"/><rect x="64" y="384" width="384" height="44" fill="#f5b301"/></svg><span>Platform</span></div>
     <div id="chips" style="display:flex;gap:8px"></div>
     <div class="right"><span id="stSound"></span><span id="stWake"></span><button class="gear" id="openSettings">設定</button></div>
   </div>
@@ -272,7 +278,7 @@ ul{list-style:none}
 
 <script>
 'use strict';
-const APP_VERSION = '1.0.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.1.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1187,7 +1193,7 @@ function renderSettings() {
   </section>
 
   <section id="s-about"><h2>このアプリ</h2>
-    <p>待機画面 v${APP_VERSION}</p>
+    <p><b>Platform</b> v${APP_VERSION}</p>
     ${changelog.slice(0, 5).map(e => `<p class="note"><b>v${esc(e.version)}</b> ${esc(e.date)}</p><ul class="l note">${(e.items || []).map(i => `<li>${esc(i)}</li>`).join('')}</ul>`).join('')}
     <p class="note" style="margin-top:10px">天気:Open-Meteo / 緊急地震速報:Wolfx / 地震情報:P2P地震情報(どちらも気象庁の発表をもとにしたもの)/ 地図:dataofjapan/land(地球地図日本 ©国土地理院)を簡略化 / 震度の色:気象庁の配色</p>
     <p class="note">StudyLine と記憶回路のデータは、同じ iPad・同じ開き方(どちらも Safari、またはどちらもホーム画面)で使っているときに読めます。</p>
