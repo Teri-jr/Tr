@@ -28,6 +28,32 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .n{font-family:var(--num);font-variant-numeric:tabular-nums;letter-spacing:.01em}
 [hidden]{display:none!important}
 #stage{position:absolute;left:0;top:0;width:1180px;height:820px;transform-origin:0 0;overflow:hidden;background:var(--bg)}
+/* 縦向き・スマホ(簡易表示) */
+.pnote{display:none}
+body.portrait{overflow:auto;height:auto}
+body.portrait #stage{position:relative;width:auto;height:auto;overflow:visible;padding-top:env(safe-area-inset-top)}
+body.portrait .bar{position:sticky;top:0;z-index:5;background:var(--bg);height:auto;min-height:52px;flex-wrap:wrap;padding:8px 12px;gap:6px}
+body.portrait .bar .right{gap:8px}
+body.portrait #chips{flex-wrap:wrap}
+body.portrait .pnote{display:block;font-size:12px;color:var(--sub);padding:8px 16px;border-bottom:1px solid var(--rule)}
+body.portrait .page{position:static;display:flex;flex-direction:column}
+body.portrait .col{border-left:0!important;border-bottom:1px solid var(--rule)}
+body.portrait #colC{order:1}body.portrait #colL{order:2}body.portrait #colR{order:3}
+body.portrait .col>.tile.grow{flex:none}
+body.portrait .tile{padding:16px}
+body.portrait .clockt{padding:22px 12px}
+body.portrait .pop{position:fixed;top:60px;width:calc(100% - 24px);left:12px;transform:none}
+body.portrait .addp{position:fixed;width:calc(100% - 24px);left:12px;transform:none;max-height:80vh}
+body.portrait .qb{position:fixed;height:auto;min-height:52px;flex-wrap:wrap;white-space:normal;padding:8px 12px;gap:6px 10px}
+body.portrait #eew{position:fixed;display:block;overflow:auto}
+body.portrait #eew .map{height:56vh}
+body.portrait #eew canvas{width:100%!important;height:100%!important;object-fit:cover}
+body.portrait #eew .p{border-left:0;border-top:4px solid #ff3b3b}
+body.portrait #eew .row1{flex-wrap:wrap}
+body.portrait #eew .hd{padding:10px 14px;gap:8px;align-items:center}body.portrait #eew .hd b{font-size:22px;white-space:nowrap}body.portrait #eew .hd span{font-size:13px;white-space:nowrap}body.portrait #eew .hd .x{white-space:nowrap}
+body.portrait #eew .bd{padding:16px}body.portrait #eew .act div{font-size:20px}
+body.portrait #eew .sh{font-size:100px;min-width:110px}
+body.portrait #eew .cd .v{font-size:64px}
 
 /* 上のバー */
 .bar{position:absolute;left:0;right:0;top:0;height:52px;border-bottom:1px solid var(--rule);display:flex;align-items:center;gap:8px;padding:0 16px}
@@ -284,6 +310,7 @@ body.editing .page .tile .tdel{pointer-events:auto}
     <div id="chips" style="display:flex;gap:8px"></div>
     <div class="right"><span class="stx" id="stSound"></span><span class="stx" id="stWake"></span><span class="edc">長押しで動かす ・ × で外す</span><button class="gear edc" id="editAdd">+ タイルを追加</button><button class="gear edc" id="editDone" style="border-color:var(--ink);font-weight:700">完了</button><button class="gear stx" id="openSettings">設定</button></div>
   </div>
+  <div class="pnote">縦向き・スマホ用の簡易表示です。iPad を横向きにして使うのがおすすめです。</div>
   <div class="qb" id="qb" hidden></div>
   <div class="page" id="page">
     <div class="col" id="colL"></div>
@@ -321,7 +348,7 @@ body.editing .page .tile .tdel{pointer-events:auto}
 
 <script>
 'use strict';
-const APP_VERSION = '1.4.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.5.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -411,10 +438,20 @@ const nextSchoolDay = d => { let x = addDays(d, 1); for (let i = 0; i < 30 && !i
 
 /* ================= 画面の大きさ ================= */
 // ホーム画面から開いたときは上に iPad の時刻・電池の表示が重なるので、その分だけ下げる
+// 横向き:1180×820 を基準に拡大縮小し、余った分は画面の形に合わせて広げる(すき間を作らない)
+// 縦向き・幅の狭い画面(スマホ):縦1列の簡易表示(おすすめはしない)
 function fit() {
-  const top = $('sai').offsetHeight || 0, h = innerHeight - top;
-  const s = Math.min(innerWidth / 1180, h / 820);
-  $('stage').style.transform = `translate(${(innerWidth - 1180 * s) / 2}px,${top + (h - 820 * s) / 2}px) scale(${s})`;
+  const top = $('sai').offsetHeight || 0, w = innerWidth, h = innerHeight - top;
+  const portrait = w < h || w < 760;
+  document.body.classList.toggle('portrait', portrait);
+  const st = $('stage');
+  if (portrait) { st.style.transform = ''; st.style.width = ''; st.style.height = ''; }
+  else {
+    const s = Math.min(w / 1180, h / 820);
+    st.style.width = (w / s) + 'px'; st.style.height = (h / s) + 'px';
+    st.style.transform = `translate(0px,${top}px) scale(${s})`;
+  }
+  if (typeof fitClock === 'function') requestAnimationFrame(fitClock);
 }
 addEventListener('resize', fit);
 
@@ -932,7 +969,7 @@ function renderLayout() {
 // 時計の大きさを、置いた場所の広さに合わせる
 function fitClock() {
   const el = $('clockTile'); if (!el.isConnected || !el.parentNode || el.parentNode.id === 'pool') return;
-  const w = el.clientWidth, h = el.clientHeight;
+  const w = el.clientWidth, h = document.body.classList.contains('portrait') ? 9999 : el.clientHeight;
   const f = Math.max(54, Math.min(220, (w - 50) / (cfg.showSec ? 3.1 : 2.6), (h - 150) / 0.92));
   $('clock').style.fontSize = f + 'px';
   const sec = $('clock').querySelector('.sec'); if (sec) sec.style.fontSize = (f * .2) + 'px';
