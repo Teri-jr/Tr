@@ -160,6 +160,25 @@ ul{list-style:none}
 .sched i{height:16px;background:var(--blue)}
 .sched .tx{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
+/* 列に置いたタイル(幅が狭い版) */
+.tiles{display:flex;flex-direction:column;flex:none}
+.tiles .tile{padding:16px 22px;border-top:1px solid var(--rule);border-bottom:0}
+.mini .card{flex-direction:column;align-items:flex-start;gap:6px;min-height:0;padding:12px 14px}
+.mini .cw{font-size:34px;max-width:100%}.mini .cw.jp{font-size:26px}
+.mini .flip{margin-left:0}.mini .cans .a{font-size:17px}
+.mini .grade{gap:4px;margin-top:8px}.mini .grade button{font-size:11.5px;padding:6px 0}
+.mini .subj3{gap:10px;font-size:11.5px;margin-bottom:8px}.mini .subj3 b{font-size:15px}
+.mini .big2 .v{font-size:46px}.mini .big2 .v small{font-size:14px}.mini .big2>div+div{padding-left:12px}.mini .big2 .d{font-size:11px}
+.mini .term .tw{font-size:22px}.mini .term .td2{font-size:12.5px;margin-top:5px}
+.mini .cal span{font-size:14px}
+.mini .slname{font-size:15px}.mini .slremain .n{font-size:28px}.mini .slsub{white-space:normal;font-size:12px}
+.slv li{display:grid;grid-template-columns:40px 12px 1fr;gap:8px;align-items:center;padding:4px 0;font-size:13.5px}
+.slv .tm{font-family:var(--num);font-size:15px;color:var(--sub)}
+.slv .dt{width:10px;height:10px;border-radius:50%;border:2px solid var(--dim)}
+.slv li.done{color:var(--sub)}.slv li.done .dt{background:var(--sl);border-color:var(--sl)}
+.slv li.cur{color:var(--sl);font-weight:700}.slv li.cur .dt{border-color:var(--sl);box-shadow:0 0 0 3px rgba(245,179,1,.3)}
+.slv .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini .slfoot{gap:10px;font-size:11.5px}
 /* 地震情報の帯 */
 .qb{position:absolute;left:0;right:0;top:0;height:52px;display:flex;align-items:center;gap:14px;padding:0 18px;font-size:14px;z-index:5;background:#2a1c10;color:#f3e7d9;border-bottom:2px solid #ff9a3a;white-space:nowrap;overflow:hidden}
 .qb .lb{background:#ff9a3a;color:#141413;font-weight:900;padding:2px 10px;font-size:13px}
@@ -195,6 +214,8 @@ ul{list-style:none}
 #eew .act{display:grid;gap:8px;margin-top:auto}
 #eew .act div{background:#fff;color:#0b0c0e;font-size:26px;font-weight:900;padding:10px 16px}
 #eew .ft{font-size:12px;color:#8a9097}
+#eew .sh.none{font-size:22px;background:#2a2d32;color:#b9bec5;display:flex;align-items:center;justify-content:center;height:150px;font-family:var(--jp)}
+#eew .p.info{border-left-color:#ff9a3a}#eew .p.info .hd{background:#ff9a3a;color:#141413}#eew .p.info .hd .x{border-color:#141413}
 #eew .demo{position:absolute;right:20px;top:86px;background:#fff;color:#000;font-weight:900;font-size:18px;padding:4px 14px}
 
 /* 下のお知らせ */
@@ -248,6 +269,7 @@ ul{list-style:none}
     <div class="col">
       <section class="tile tt" id="ttTile"></section>
       <section class="tile todo grow" id="todoTile"></section>
+      <div id="leftTiles" class="tiles"></div>
     </div>
     <div class="col">
       <section class="tile clockt" id="clockTile">
@@ -262,11 +284,12 @@ ul{list-style:none}
     <div class="col">
       <section class="tile" id="wxTile"></section>
       <section class="tile sched grow" id="schedTile"></section>
+      <div id="rightTiles" class="tiles"></div>
     </div>
   </div>
   <div id="eew" hidden>
     <div class="map"><canvas id="eewMap" width="1280" height="1640"></canvas>
-      <div class="wv"><b>━ P波</b> 小さな揺れ<br><b style="color:#ff6b6b">━ S波</b> 大きな揺れ</div>
+      <div class="wv" id="eewWave"><b>━ P波</b> 小さな揺れ<br><b style="color:#ff6b6b">━ S波</b> 大きな揺れ</div>
       <div class="lg" id="eewLegend"></div>
     </div>
     <div class="p" id="eewPanel"></div>
@@ -275,10 +298,11 @@ ul{list-style:none}
 </div>
 
 <div id="settings" hidden></div>
+<div id="sai" style="position:fixed;left:0;top:0;width:1px;height:env(safe-area-inset-top,0px);visibility:hidden;pointer-events:none"></div>
 
 <script>
 'use strict';
-const APP_VERSION = '1.1.1'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.2.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -318,9 +342,13 @@ const DEFAULT_CFG = {
   chips: [['studyline', true], ['kioku', true], ['count', true], ['holiday', true], ['terms', true], ['calendar', true]],
   countdowns: [{ name: '共通テスト', date: '2027-01-16' }, { name: '', date: '' }],
   termCats: ['日本史', '古文単語', '化学', '物理', '現代文', '四字熟語'],
-  qFull: 5, qBeep: 3 // 震度の段階(0〜9)。5 = 5弱
+  qFull: 5, qBeep: 3, // 震度の段階(0〜9)。5 = 5弱。qFull 0 = 緊急地震速報はすべて全画面
+  qiPref: 5, qiMax: 0, qiMag: 0, qiTsunami: true // 地震情報を全画面にする条件(0 = 使わない)
 };
 let cfg = Object.assign({}, DEFAULT_CFG, store.get('cfg') || {});
+// 上のバー・タイルの置き場所:'bar' 上のバー / 'left' 左の列 / 'right' 右の列 / 'off' 出さない
+cfg.chips = cfg.chips.map(([k, v]) => [k, v === true ? 'bar' : v === false ? 'off' : v]);
+for (const [k] of DEFAULT_CFG.chips) if (!cfg.chips.some(c => c[0] === k)) cfg.chips.push([k, 'off']);
 const saveCfg = () => store.set('cfg', cfg);
 let todos = store.get('todos') || [];
 const saveTodos = () => store.set('todos', todos);
@@ -340,9 +368,11 @@ const isSchoolDay = d => { const w = d.getDay(); return (w >= 1 && w <= 5 || (w 
 const nextSchoolDay = d => { let x = addDays(d, 1); for (let i = 0; i < 30 && !isSchoolDay(x); i++) x = addDays(x, 1); return x; };
 
 /* ================= 画面の大きさ ================= */
+// ホーム画面から開いたときは上に iPad の時刻・電池の表示が重なるので、その分だけ下げる
 function fit() {
-  const s = Math.min(innerWidth / 1180, innerHeight / 820);
-  $('stage').style.transform = `translate(${(innerWidth - 1180 * s) / 2}px,${(innerHeight - 820 * s) / 2}px) scale(${s})`;
+  const top = $('sai').offsetHeight || 0, h = innerHeight - top;
+  const s = Math.min(innerWidth / 1180, h / 820);
+  $('stage').style.transform = `translate(${(innerWidth - 1180 * s) / 2}px,${top + (h - 820 * s) / 2}px) scale(${s})`;
 }
 addEventListener('resize', fit);
 
@@ -590,7 +620,7 @@ function slSchedule() {
   });
   return { d, rows, start, planEnd: plan, end: cur, deadline, nm };
 }
-function renderStudyLine() {
+function renderStudyLine(mini) {
   const sc = slSchedule();
   const today = slDay(ymd(now())), yd = slDay(ymd(addDays(now(), -1)));
   if (yd) yd._ds = ymd(addDays(now(), -1));
@@ -617,6 +647,10 @@ function renderStudyLine() {
     const wait = start - nm;
     head = `<span class="pill g">発車前</span><span class="slname">${fmtMin(start)} 発　${rows.length}駅 ・ ${hm((planEnd - start) * 60000)}</span>${wait > 0 ? `<span class="slremain">発車まで <span class="n" style="color:var(--ink)">${Math.floor(wait / 60)}:${pad(Math.floor(wait % 60))}</span></span>` : ''}`;
     sub = `終点 ${fmtDay(planEnd)} 着予定${room == null ? '' : ` ・ 就寝期限 ${fmtDay(deadline)} まで <span class="okc">余裕 ${hm((deadline - planEnd) * 60000)}</span>`}`;
+  }
+  if (mini) { // 列に置いたときは縦の一覧にする
+    const list = rows.slice(0, 5).map(r => `<li class="${r.st === 'done' ? 'done' : r.st === 'run' ? 'cur' : ''}"><span class="tm">${fmtDay(r.s)}</span><span class="dt"></span><span class="nm">${esc(r.t.name)}</span></li>`).join('');
+    return `<h3><b style="color:var(--sl);letter-spacing:.06em">StudyLine</b> <span>${run ? '運行状況' : '今日のダイヤ'}</span></h3><div class="slhead">${head}</div><div class="slsub">${sub}</div><ul class="slv" style="margin:8px 0">${list}<li><span class="tm">${fmtDay(end)}</span><span class="dt" style="border-radius:2px;border-color:var(--ink)"></span><span class="nm">終点</span></li></ul>${foot}`;
   }
   // 路線図:駅の位置は時刻の割合。近すぎる駅は少し離す
   const t0 = rows[0].s, t1 = end, span = Math.max(1, t1 - t0);
@@ -669,7 +703,7 @@ function parseCsv(text) {
 }
 async function loadVocab() {
   await Promise.all(VOCAB.map(async v => { try { const r = await fetch(v.file, { cache: 'no-store' }); if (r.ok) kioku.words[v.id] = parseCsv(await r.text()); } catch (e) {} }));
-  kioku.loaded = true; renderSlot(); renderChips();
+  kioku.loaded = true; renderSlot(); renderTiles(); renderChips();
 }
 // 記憶回路と同じ決まり(朝4時で日付が変わる、同じ間隔の計算)
 const vToday = () => { const d = now(); return Math.floor((d.getTime() - d.getTimezoneOffset() * 60000 - 4 * 3600000) / 86400000); };
@@ -713,7 +747,7 @@ function renderKioku() {
   if (!list.length) return h + '<p class="empty">今日の復習はおわりです。新しい単語は記憶回路で覚えましょう。</p>';
   const c = kioku.cur, w = c.w, isK = c.sub === 'kanji', kana = isK && /^[゠-ヿ・ー]+$/.test(w.english);
   const tag = `${VOCAB.find(v => v.id === c.sub).name}${isK ? (kana ? ' ・ 書き' : ' ・ 読み') : ''}${isWeak(c.r) ? ' ・ 苦手' : ''}`;
-  h += `<div class="card" id="kCard"><div class="cside"><span class="ctag">${esc(tag)}</span></div><div class="cw ${isK ? 'jp' : ''}">${esc(w.english)}</div>`;
+  h += `<div class="card kcard"><div class="cside"><span class="ctag">${esc(tag)}</span></div><div class="cw ${isK ? 'jp' : ''}">${esc(w.english)}</div>`;
   h += kioku.shown ? `<div class="cans"><div class="a">${esc(w.japanese)}</div>${w.definition && !isK ? `<div class="def">${esc(w.definition)}</div>` : ''}</div>` : `<span class="flip">タップで答え</span>`;
   h += '</div>';
   if (kioku.shown) h += `<div class="grade" id="kGrade"><button data-g="0">✕ 全然</button><button data-g="1">△ 惜しい</button><button data-g="2">○ 正解</button><button data-g="3">◎ 余裕</button></div>`;
@@ -727,20 +761,20 @@ function kiokuClick(e) {
     let fresh = {}; try { fresh = JSON.parse(localStorage.getItem('vocabTest.srs.' + c.sub)) || {}; } catch (err) {}
     fresh[k] = vSchedule(fresh[k], +g.dataset.g, vToday()); kioku.db[c.sub] = fresh;
     try { localStorage.setItem('vocabTest.srs.' + c.sub, JSON.stringify(fresh)); } catch (err) {}
-    kioku.cur = null; renderSlot(); renderChips(); return;
+    kioku.cur = null; renderSlot(); renderTiles(); renderChips(); return;
   }
-  if (e.target.closest('#kCard')) { kioku.shown = !kioku.shown; renderSlot(); }
+  if (e.target.closest('.kcard')) { kioku.shown = !kioku.shown; renderSlot(); renderTiles(); }
 }
 
 /* ================= 受験の語句 ================= */
 let terms = [], termCur = null, termAt = 0;
-fetch('terms.json', { cache: 'no-store' }).then(r => r.json()).then(j => { terms = j; renderSlot(); }).catch(() => {});
+fetch('terms.json', { cache: 'no-store' }).then(r => r.json()).then(j => { terms = j; renderSlot(); renderTiles(); }).catch(() => {});
 function pickTerm() { const pool = terms.filter(t => cfg.termCats.includes(t.cat)); termCur = pool.length ? pool[Math.floor(Math.random() * pool.length)] : null; termAt = nowMs(); }
 function renderTerms() {
   if (!termCur || nowMs() - termAt > 5 * 60e3) pickTerm();
   if (!termCur) return '<h3>受験の語句</h3><p class="empty">設定で科目を選んでください。</p>';
   const t = termCur, left = Math.max(1, Math.ceil((5 * 60e3 - (nowMs() - termAt)) / 60e3));
-  return `<h3>受験の語句 <span>タップで次へ ・ 次まで ${left}分</span></h3><div class="term" id="termCard" style="flex:1">
+  return `<h3>受験の語句 <span>タップで次へ ・ 次まで ${left}分</span></h3><div class="term termcard" style="flex:1">
     <div style="display:flex;gap:10px;align-items:center"><span class="tcat">${esc(t.cat)}</span><span style="color:var(--sub);font-size:12px">${esc(t.note || '')}</span></div>
     <div class="tw">${esc(t.term)}</div>${t.yomi ? `<div class="tr">${esc(t.yomi)}</div>` : ''}<div class="td2">${esc(t.desc)}</div></div>`;
 }
@@ -789,7 +823,8 @@ const CHIP = {
   terms: { name: '受験の語句', render: renderTerms, chip: () => '受験の語句' },
   calendar: { name: 'カレンダー', render: renderCalendar, chip: () => `カレンダー` }
 };
-const enabledChips = () => cfg.chips.filter(([k, on]) => on && CHIP[k]).map(([k]) => k);
+const enabledChips = () => cfg.chips.filter(([k, at]) => at === 'bar' && CHIP[k]).map(([k]) => k);
+const tilesAt = side => cfg.chips.filter(([k, at]) => at === side && CHIP[k]).map(([k]) => k);
 let slotMode = null, slotTouched = 0;
 const homeSlot = () => enabledChips()[0] || null;
 function renderChips() {
@@ -809,13 +844,22 @@ function renderSlot() {
   S.hidden = false;
   S.innerHTML = CHIP[slotMode].render() + (slotMode !== homeSlot() ? `<div class="back">しばらく触らないと ${esc(CHIP[homeSlot()].name)} に戻ります</div>` : '');
 }
-$('slot').addEventListener('click', e => {
+function renderTiles() {
+  for (const side of ['left', 'right']) {
+    const box = $(side + 'Tiles'), ks = tilesAt(side);
+    box.innerHTML = ks.map(k => `<section class="tile mini" data-tile="${k}">${k === 'studyline' ? renderStudyLine(true) : CHIP[k].render()}</section>`).join('');
+  }
+}
+function slotClick(e) {
   slotTouched = nowMs();
-  if (slotMode === 'kioku') kiokuClick(e);
-  else if (slotMode === 'terms' && e.target.closest('#termCard')) { pickTerm(); renderSlot(); }
-});
+  if (e.target.closest('.kcard,[data-g]')) kiokuClick(e);
+  else if (e.target.closest('.termcard')) { pickTerm(); renderSlot(); renderTiles(); }
+}
+$('slot').addEventListener('click', slotClick);
+$('leftTiles').addEventListener('click', slotClick);
+$('rightTiles').addEventListener('click', slotClick);
 
-function renderAll() { const st = renderClock(); renderTT(st); renderTodo(); renderWeather(); renderSched(); renderChips(); renderSlot(); }
+function renderAll() { const st = renderClock(); renderTT(st); renderTodo(); renderWeather(); renderSched(); renderChips(); renderSlot(); renderTiles(); }
 
 /* ================= 音(タップするまで鳴らせない) ================= */
 let actx = null;
@@ -858,7 +902,7 @@ function renderStatus() {
 let JAPAN = null;
 fetch('japan.json').then(r => r.json()).then(j => {
   JAPAN = j.map(p => {
-    const rings = p.r.map(a => { const pts = []; for (let i = 0; i < a.length; i += 2) pts.push([a[i] / 100, a[i + 1] / 100]); return pts; });
+    const rings = p.r.map(a => { const pts = []; for (let i = 0; i < a.length; i += 2) pts.push([a[i] / 1000, a[i + 1] / 1000]); return pts; });
     let big = rings[0], ba = 0;
     for (const r of rings) { const a = Math.abs(r.reduce((s, q, i) => { const n = r[(i + 1) % r.length]; return s + q[0] * n[1] - n[0] * q[1]; }, 0)); if (a > ba) { ba = a; big = r; } }
     const c = big.reduce((s, q) => [s[0] + q[0] / big.length, s[1] + q[1] / big.length], [0, 0]);
@@ -912,6 +956,7 @@ function connectEEW() {
 function scheduleReconnect() { wsFails++; setTimeout(connectEEW, Math.min(60e3, 2000 * 2 ** Math.min(wsFails, 5))); }
 setInterval(() => { if (ws && ws.readyState === 1 && Date.now() - wsLast > 120e3) { try { ws.close(); } catch (e) {} } }, 30e3); // 2分なにも来なければつなぎ直す
 const jst = s => new Date(String(s).replace(/\//g, '-').replace(' ', 'T') + '+09:00').getTime();
+const eewAll = () => cfg.qFull === 0; // 「すべて全画面」モード
 
 function handleEEW(d, demo) {
   if (d.isTraining && !demo) return;
@@ -928,77 +973,123 @@ function handleEEW(d, demo) {
   for (const a of d.WarnArea || []) if (L.pref && String(a.Chiiki || '').startsWith(L.pref.replace(/[都府県]$/, ''))) local = Math.max(local, shindoIdx(a.Shindo2), 0);
   const origin = jst(d.OriginTime) + (demo ? timeOffset : 0);
   const hypo = Math.sqrt(kmBetween(lat, lon, L.lat, L.lon) ** 2 + depth ** 2);
-  const prev = eew;
+  const prev = eew, same = prev && prev.id === d.EventID;
   eew = { id: d.EventID, serial: +d.Serial || 0, d, demo, M, depth, lat, lon, maxI, local, origin, hypo, warn: !!d.isWarn, final: !!d.isFinal,
-    sAt: origin + hypo / VS * 1000, pAt: origin + hypo / VP * 1000, recv: nowMs(), view: prev && prev.id === d.EventID ? prev.view : null, alarmed: prev && prev.id === d.EventID ? prev.alarmed : 0 };
-  if (local < 1 && !d.isWarn && !demo) { eew = prev && prev.id !== d.EventID ? prev : null; return; } // ここではほぼ揺れない予報は出さない
-  showEEW();
-}
-function eewLevel() { if (!eew) return 0; return eew.local >= cfg.qFull ? 2 : 1; }
-function showEEW() {
-  const lv = eewLevel();
-  if (lv === 2) { $('eew').hidden = false; drawEEWPanel(); drawEEWMap(); }
-  else $('eew').hidden = true;
-  renderQBanner();
-  const want = lv === 2 ? 2 : eew.local >= cfg.qBeep ? 1 : 0;
+    sAt: origin + hypo / VS * 1000, pAt: origin + hypo / VP * 1000, recv: nowMs(), view: same ? prev.view : null, alarmed: same ? prev.alarmed : 0, closed: same ? prev.closed : false };
+  // ここではほぼ揺れない予報は出さない(「すべて全画面」のときは出す)
+  if (local < 1 && !d.isWarn && !demo && !eewAll()) { eew = prev && !same ? prev : null; updateFull(); renderQBanner(); return; }
+  updateFull(); renderQBanner();
+  const want = eewLevel() === 2 ? 2 : eew.local >= cfg.qBeep ? 1 : 0;
   if (want > (eew.alarmed || 0)) { eew.alarmed = want; want === 2 ? soundAlarm() : soundBeep(); }
 }
-function endEEW() { eew = null; $('eew').hidden = true; renderQBanner(); }
+function eewLevel() { if (!eew) return 0; return eewAll() || eew.local >= cfg.qFull ? 2 : 1; }
+function endEEW() { eew = null; updateFull(); renderQBanner(); }
+
+/* 全画面:緊急地震速報 > 地震情報 の順に出す */
+let fullMode = null;
+function updateFull() {
+  const m = eew && eewLevel() === 2 && !eew.closed ? 'eew' : quake && quake.full && !quake.fullClosed && nowMs() < quake.until && !eew ? 'info' : null;
+  fullMode = m;
+  $('eew').hidden = !m;
+  if (m) drawFull();
+}
+function drawFull() { if (fullMode === 'eew') { drawEEWPanel(); drawMap(eew); } else if (fullMode === 'info') { drawInfoPanel(); drawMap(quake); } }
 function eewTick() {
-  if (!eew) return;
   const t = nowMs();
-  if (t > Math.max(eew.origin + 180e3, eew.sAt + 90e3) || (eew.demo && t > eew.sAt + 25e3)) { const wasDemo = eew.demo; endEEW(); if (wasDemo) demoInfo(); else setTimeout(pollQuake, 30e3); return; }
-  if (!$('eew').hidden) { drawEEWPanel(); drawEEWMap(); if (eew.alarmed === 2 && t < eew.sAt + 5e3 && Math.floor(t / 2500) !== Math.floor((t - 250) / 2500)) soundAlarm(); }
-  renderQBanner();
+  if (eew && (t > Math.max(eew.origin + 180e3, eew.sAt + 90e3) || (eew.demo && t > eew.sAt + 25e3))) { const wasDemo = eew.demo; endEEW(); if (wasDemo) demoInfo(true); else setTimeout(pollQuake, 30e3); return; }
+  if (quake && quake.full && t > quake.until) updateFull();
+  if (fullMode) drawFull();
+  if (fullMode === 'eew' && eew.alarmed === 2 && t < eew.sAt + 5e3 && Math.floor(t / 2500) !== Math.floor((t - 250) / 2500)) soundAlarm();
+  if (eew) renderQBanner();
+}
+const tmS = ms => { const d = new Date(ms); return `${d.getHours()}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; };
+function bigShindo(i, note) {
+  if (i < 1) return `<div class="sh none"><span>${note || 'ほぼ揺れない見込み'}</span></div>`;
+  return `<div class="sh n" style="background:${SHINDO_COLOR[i]};color:${SHINDO_TEXT[i]}">${SHINDO[i].replace(/(弱|強)/, '<small>$1</small>')}</div>`;
 }
 function drawEEWPanel() {
   const e = eew, t = nowMs(), left = Math.ceil((e.sAt - t) / 1000);
-  const tm = ms => { const d = new Date(ms); return `${d.getHours()}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; };
-  $('eewPanel').innerHTML = `<div class="hd"><b>緊急地震速報</b><span>${e.warn ? '強い揺れに警戒' : '予報'}</span><button class="x" id="eewClose">閉じる</button></div>
+  $('eewPanel').className = 'p';
+  $('eewPanel').innerHTML = `<div class="hd"><b>緊急地震速報</b><span>${e.warn ? '強い揺れに警戒' : '予報'}</span><button class="x" data-close="eew">閉じる</button></div>
   <div class="bd">
     <div class="lab">現在地(${esc(loc().pref || '')}付近)の予想震度 ・ 推定</div>
-    <div class="row1"><div class="sh n" style="background:${SHINDO_COLOR[e.local]};color:${SHINDO_TEXT[e.local]}">${SHINDO[e.local].replace(/(弱|強)/, '<small>$1</small>')}</div>
+    <div class="row1">${bigShindo(e.local)}
       <div class="cd"><div class="u">${left > 0 ? '大きな揺れまで' : '大きな揺れ'}</div><div class="v n">${left > 0 ? left : '到達'}</div><div class="u">${left > 0 ? '秒(目安)' : 'おそれ'}</div></div></div>
     <div class="src">${esc(e.d.Hypocenter || '震源')} <span class="n" style="font-size:22px;color:#fff">M${e.M.toFixed(1)}</span><span>深さ ${e.depth}km ・ 最大 ${SHINDO[e.maxI] || '不明'}</span></div>
-    <div class="st2"><div><span>小さな揺れ(P波)</span><b class="n">${t >= e.pAt ? '到達' : tm(e.pAt) + ' ごろ'}</b></div><div><span>大きな揺れ(S波)</span><b class="n" style="color:#ffd23f">${tm(e.sAt)} ごろ</b></div><div><span>発生</span><b class="n">${tm(e.origin)}</b></div></div>
-    <div class="act"><div>頭を守る・机の下へ</div><div>窓や棚から離れる</div></div>
-    <div class="ft">${tm(e.recv)} 受信 ・ 第${e.serial}報${e.final ? '(最終)' : ''} ・ 予想震度は距離からの推定です ・ 学校の放送・先生の指示を優先</div>
+    <div class="st2"><div><span>小さな揺れ(P波)</span><b class="n">${t >= e.pAt ? '到達' : tmS(e.pAt) + ' ごろ'}</b></div><div><span>大きな揺れ(S波)</span><b class="n" style="color:#ffd23f">${tmS(e.sAt)} ごろ</b></div><div><span>発生</span><b class="n">${tmS(e.origin)}</b></div></div>
+    ${e.local >= 1 ? '<div class="act"><div>頭を守る・机の下へ</div><div>窓や棚から離れる</div></div>' : '<div class="act"></div>'}
+    <div class="ft">${tmS(e.recv)} 受信 ・ 第${e.serial}報${e.final ? '(最終)' : ''} ・ 予想震度は距離からの推定です ・ 学校の放送・先生の指示を優先</div>
   </div>${e.demo ? '<div class="demo">デモ</div>' : ''}`;
-  $('eewClose').onclick = () => { $('eew').hidden = true; eew.closed = true; };
 }
-function drawEEWMap() {
-  const cv = $('eewMap'), g = cv.getContext('2d'), W = 640, H = 820, e = eew, L = loc();
+function drawInfoPanel() {
+  const q = quake, E = q.q.earthquake, H = E.hypocenter || {}, t0 = jst(E.time) + (q.demo ? timeOffset : 0);
+  const ts = E.domesticTsunami, tsBad = ts === 'Watch' || ts === 'Warning';
+  $('eewPanel').className = 'p info';
+  $('eewPanel').innerHTML = `<div class="hd"><b>地震情報</b><span>${esc(q.why || '')}</span><button class="x" data-close="info">閉じる</button></div>
+  <div class="bd">
+    <div class="lab">${esc(loc().pref || '')}の震度</div>
+    <div class="row1">${bigShindo(q.mine, 'この県の観測なし')}
+      <div class="cd"><div class="u">最大震度</div><div class="v n" style="font-size:72px">${SHINDO[q.maxI] || '—'}</div><div class="u">${esc(q.maxPref || '')}</div></div></div>
+    <div class="src">${esc(H.name || '震源は調査中')} ${H.magnitude > 0 ? `<span class="n" style="font-size:22px;color:#fff">M${(+H.magnitude).toFixed(1)}</span>` : ''}<span>${H.depth > 0 ? `深さ ${H.depth}km` : H.depth === 0 ? 'ごく浅い' : ''}</span></div>
+    <div class="st2"><div><span>発生</span><b class="n">${tmS(t0)} ごろ</b></div><div><span>津波</span><b style="${tsBad ? 'color:#ff6b6b' : 'font-size:16px'}">${esc(TSUNAMI[ts] || '情報なし')}</b></div></div>
+    <div class="act">${tsBad ? '<div style="background:#ff3b3b;color:#fff">海や川から離れ、高いところへ</div>' : ''}<div>落ち着いて、先生の指示を待つ</div><div>割れたガラス・落下物に注意</div></div>
+    <div class="ft">${q.demo ? 'デモ' : '気象庁(P2P地震情報 経由)'} ・ 地図の色は都道府県ごとの最大震度</div>
+  </div>${q.demo ? '<div class="demo">デモ</div>' : ''}`;
+}
+$('eewPanel').addEventListener('click', e => {
+  const b = e.target.closest('[data-close]'); if (!b) return;
+  if (b.dataset.close === 'eew' && eew) eew.closed = true;
+  if (b.dataset.close === 'info' && quake) quake.fullClosed = true;
+  updateFull(); renderQBanner();
+});
+// 地図:緊急地震速報は推定震度とP波・S波、地震情報は都道府県ごとの観測震度
+function drawMap(src) {
+  const cv = $('eewMap'), g = cv.getContext('2d'), W = 640, H = 820, L = loc();
+  const isE = src === eew;
+  const E = isE ? null : src.q.earthquake.hypocenter || {};
+  const eLat = isE ? src.lat : (E.latitude > -90 ? E.latitude : null), eLon = isE ? src.lon : (E.longitude > -180 ? E.longitude : null);
   g.setTransform(2, 0, 0, 2, 0, 0);
   g.fillStyle = '#101418'; g.fillRect(0, 0, W, H);
-  if (!e.view) { // 震源と現在地が入るように。最低でも緯度3度ぶん
-    const lat0 = Math.min(e.lat, L.lat), lat1 = Math.max(e.lat, L.lat), lon0 = Math.min(e.lon, L.lon), lon1 = Math.max(e.lon, L.lon);
+  if (!src.view) { // 震源と現在地が入るように。最低でも緯度3度ぶん
+    const pts = [[L.lat, L.lon]]; if (eLat != null) pts.push([eLat, eLon]);
+    if (!isE) for (const p of JAPAN || []) if ((src.byPref || {})[p.name] >= 3) pts.push([p.c[1], p.c[0]]);
+    const lats = pts.map(p => p[0]), lons = pts.map(p => p[1]);
+    const lat0 = Math.min(...lats), lat1 = Math.max(...lats), lon0 = Math.min(...lons), lon1 = Math.max(...lons);
     const k = Math.cos((lat0 + lat1) / 2 * Math.PI / 180);
-    let span = Math.max(3, (lat1 - lat0) * 1.5, (lon1 - lon0) * k * 1.5 * H / W);
-    e.view = { cLat: (lat0 + lat1) / 2, cLon: (lon0 + lon1) / 2, span, k };
+    const span = Math.min(22, Math.max(3, (lat1 - lat0) * 1.4, (lon1 - lon0) * k * 1.4 * H / W));
+    src.view = { cLat: (lat0 + lat1) / 2, cLon: (lon0 + lon1) / 2, span, k };
   }
-  const v = e.view, ppd = H / v.span; // 1度あたりのピクセル(緯度方向)
+  const v = src.view, ppd = H / v.span;
   const P = (lon, lat) => [W / 2 + (lon - v.cLon) * v.k * ppd, H / 2 - (lat - v.cLat) * ppd];
   if (JAPAN) {
+    const key = isE ? src.id + ':' + src.serial : 'q' + src.id;
+    const shift = isE && src.demo ? src.local - estIntensity(src.M, src.depth, src.lat, src.lon, L.lat, L.lon) : 0;
+    g.lineJoin = 'round'; g.strokeStyle = '#0b0c0e'; g.lineWidth = 1;
     for (const p of JAPAN) {
-      if (p._est == null || p._for !== e.id + ':' + e.serial) {
-        // デモは現在地の震度を設定に合わせているので、地図の色も同じだけずらす
-        const shift = e.demo ? e.local - estIntensity(e.M, e.depth, e.lat, e.lon, L.lat, L.lon) : 0;
-        p._est = Math.max(0, Math.min(estIntensity(e.M, e.depth, e.lat, e.lon, p.c[1], p.c[0]) + shift, e.maxI || 9)); p._for = e.id + ':' + e.serial;
+      if (p._for !== key) {
+        p._lv = isE ? Math.max(0, Math.min(estIntensity(src.M, src.depth, src.lat, src.lon, p.c[1], p.c[0]) + shift, src.maxI || 9)) : (src.byPref[p.name] || 0);
+        p._for = key;
       }
-      g.fillStyle = p._est >= 1 ? SHINDO_COLOR[p._est] : '#2a2d32';
-      g.strokeStyle = '#0b0c0e'; g.lineWidth = .8;
+      g.fillStyle = p._lv >= 1 ? SHINDO_COLOR[p._lv] : '#2a2d32';
       g.beginPath();
       for (const r of p.rings) { r.forEach((q, i) => { const [x, y] = P(q[0], q[1]); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.closePath(); }
       g.fill(); g.stroke();
     }
   }
-  const t = (nowMs() - e.origin) / 1000, [ex, ey] = P(e.lon, e.lat), kmpx = ppd / 111;
-  const rad = vel => { const h = vel * t; return h > e.depth ? Math.sqrt(h * h - e.depth * e.depth) * kmpx : 0; };
-  const rp = rad(VP), rs = rad(VS);
-  if (rp > 0) { g.strokeStyle = '#ffffff'; g.lineWidth = 3; g.beginPath(); g.arc(ex, ey, rp, 0, 7); g.stroke(); }
-  if (rs > 0) { g.fillStyle = 'rgba(255,40,0,.2)'; g.strokeStyle = '#ff2800'; g.lineWidth = 4; g.beginPath(); g.arc(ex, ey, rs, 0, 7); g.fill(); g.stroke(); }
-  g.strokeStyle = '#fff'; g.lineWidth = 4; g.beginPath(); g.moveTo(ex - 11, ey - 11); g.lineTo(ex + 11, ey + 11); g.moveTo(ex + 11, ey - 11); g.lineTo(ex - 11, ey + 11); g.stroke();
+  if (eLat != null) {
+    const [ex, ey] = P(eLon, eLat);
+    if (isE) {
+      const t = (nowMs() - src.origin) / 1000, kmpx = ppd / 111;
+      const rad = vel => { const h = vel * t; return h > src.depth ? Math.sqrt(h * h - src.depth * src.depth) * kmpx : 0; };
+      const rp = rad(VP), rs = rad(VS);
+      if (rp > 0) { g.strokeStyle = '#ffffff'; g.lineWidth = 3; g.beginPath(); g.arc(ex, ey, rp, 0, 7); g.stroke(); }
+      if (rs > 0) { g.fillStyle = 'rgba(255,40,0,.2)'; g.strokeStyle = '#ff2800'; g.lineWidth = 4; g.beginPath(); g.arc(ex, ey, rs, 0, 7); g.fill(); g.stroke(); }
+    }
+    g.strokeStyle = '#000'; g.lineWidth = 8; g.beginPath(); g.moveTo(ex - 11, ey - 11); g.lineTo(ex + 11, ey + 11); g.moveTo(ex + 11, ey - 11); g.lineTo(ex - 11, ey + 11); g.stroke();
+    g.strokeStyle = isE ? '#fff' : '#ff2800'; g.lineWidth = 4; g.stroke();
+  }
   const [hx, hy] = P(L.lon, L.lat); g.fillStyle = '#fff'; g.strokeStyle = '#000'; g.lineWidth = 2; g.beginPath(); g.arc(hx, hy, 7, 0, 7); g.fill(); g.stroke();
+  $('eewWave').hidden = !isE;
   if (!$('eewLegend').innerHTML) $('eewLegend').innerHTML = SHINDO.slice(1).reverse().map((s, i) => `<span><i style="background:${SHINDO_COLOR[9 - i]}"></i>${s}</span>`).join('');
 }
 
@@ -1011,20 +1102,26 @@ async function pollQuake() {
     const q = j && j[0];
     if (!q || !q.earthquake) return;
     const at = jst(q.earthquake.time);
-    if (nowMs() - timeOffset - at > 30 * 60e3) { if (quake && !quake.demo) { quake = null; renderQBanner(); } return; }
+    if (nowMs() - timeOffset - at > 30 * 60e3) { if (quake && !quake.demo) { quake = null; updateFull(); renderQBanner(); } return; }
     showQuakeInfo(q, false);
   } catch (e) {}
 }
-function showQuakeInfo(q, demo) {
-  const L = loc(), E = q.earthquake, pts = q.points || [];
-  const mine = pts.filter(p => p.pref === L.pref).reduce((m, p) => Math.max(m, P2P_SCALE[p.scale] || 0), 0);
-  const maxI = P2P_SCALE[E.maxScale] || 0;
-  if (!demo && mine < 1 && maxI < 5) return; // 自分の県で揺れていない小さな地震は出さない
+function showQuakeInfo(q, demo, forceFull) {
+  const L = loc(), E = q.earthquake, pts = q.points || [], H = E.hypocenter || {};
+  const byPref = {};
+  for (const p of pts) { const i = P2P_SCALE[p.scale] || 0; if (p.pref && i > (byPref[p.pref] || 0)) byPref[p.pref] = i; }
+  const mine = byPref[L.pref] || 0, maxI = P2P_SCALE[E.maxScale] || 0;
+  const maxPref = Object.keys(byPref).filter(k => byPref[k] === maxI).slice(0, 2).join('・');
+  const ts = E.domesticTsunami, tsBad = ts === 'Watch' || ts === 'Warning';
+  const big = (cfg.qiMax && maxI >= cfg.qiMax) || (cfg.qiMag && H.magnitude >= cfg.qiMag) || (cfg.qiTsunami && tsBad);
+  if (!demo && mine < 1 && maxI < 5 && !big) return; // 自分の県で揺れていない小さな地震は出さない
   if (!demo && quakeSeen === q.id + ':closed') return;
-  const isNew = !quake || quake.id !== q.id;
-  quake = { id: q.id, q, demo, mine, maxI, until: nowMs() + 15 * 60e3 };
-  if (isNew && mine >= cfg.qBeep) soundBeep();
-  renderQBanner();
+  const why = forceFull ? '' : cfg.qiPref && mine >= cfg.qiPref ? `${L.pref} 震度${SHINDO[mine]}` : cfg.qiMax && maxI >= cfg.qiMax ? `最大震度${SHINDO[maxI]}` : cfg.qiMag && H.magnitude >= cfg.qiMag ? `M${(+H.magnitude).toFixed(1)}` : tsBad && cfg.qiTsunami ? TSUNAMI[ts] : '';
+  const full = forceFull || !!why;
+  const prev = quake, same = prev && prev.id === q.id;
+  quake = { id: q.id, q, demo, mine, maxI, maxPref, byPref, why, full, fullClosed: same ? prev.fullClosed : false, view: same ? prev.view : null, until: nowMs() + 15 * 60e3 };
+  if (!same && (full || mine >= cfg.qBeep)) full ? soundAlarm() : soundBeep();
+  updateFull(); renderQBanner();
 }
 const TSUNAMI = { None: 'この地震による津波の心配はありません', Unknown: '津波の有無は不明', Checking: '津波の有無を調査中', NonEffective: '若干の海面変動の可能性(被害の心配なし)', Watch: '津波注意報 発表中', Warning: '津波警報 発表中' };
 function renderQBanner() {
@@ -1032,42 +1129,52 @@ function renderQBanner() {
   if (eew && (eewLevel() === 1 || eew.closed)) {
     const left = Math.ceil((eew.sAt - nowMs()) / 1000);
     B.className = 'qb eew'; B.hidden = false;
-    B.innerHTML = `${eew.demo ? '<span class="demo-tag">デモ</span>' : ''}<span class="lb">緊急地震速報${eew.warn ? '' : '(予報)'}</span><b>${esc(eew.d.Hypocenter || '')}</b><span class="s">M${eew.M.toFixed(1)} ・ 最大 ${SHINDO[eew.maxI] || '不明'}</span><span>現在地 ${shindoChip(eew.local)}</span><b style="color:#ffd23f">${left > 0 ? `揺れまで 約${left}秒` : '揺れに注意'}</b><span class="r">推定 ・ 第${eew.serial}報</span>`;
+    B.innerHTML = `${eew.demo ? '<span class="demo-tag">デモ</span>' : ''}<span class="lb">緊急地震速報${eew.warn ? '' : '(予報)'}</span><b>${esc(eew.d.Hypocenter || '')}</b><span class="s">M${eew.M.toFixed(1)} ・ 最大 ${SHINDO[eew.maxI] || '不明'}</span><span>現在地 ${eew.local ? shindoChip(eew.local) : 'ほぼ揺れない'}</span><b style="color:#ffd23f">${left > 0 ? `揺れまで 約${left}秒` : '揺れに注意'}</b><span class="r">推定 ・ 第${eew.serial}報${eew.closed ? ' ・ タップで開く' : ''}</span>`;
     return;
   }
   if (quake && nowMs() < quake.until) {
     const E = quake.q.earthquake, H = E.hypocenter || {}, t = new Date(jst(E.time) + (quake.demo ? timeOffset : 0));
     const ago = Math.max(0, Math.round((nowMs() - t.getTime()) / 60e3));
     B.className = 'qb'; B.hidden = false;
-    B.innerHTML = `${quake.demo ? '<span class="demo-tag">デモ</span>' : ''}<span class="lb">地震</span><b>${t.getHours()}:${pad(t.getMinutes())} ごろ　${esc(H.name || '震源は調査中')}</b>${H.magnitude > 0 ? `<span class="s">M${(+H.magnitude).toFixed(1)}${H.depth > 0 ? ` ・ 深さ ${H.depth}km` : H.depth === 0 ? ' ・ ごく浅い' : ''}</span>` : ''}<span>最大 ${shindoChip(quake.maxI)}</span>${quake.mine ? `<span>${esc(loc().pref)} ${shindoChip(quake.mine)}</span>` : ''}<span class="s">${esc(TSUNAMI[E.domesticTsunami] || '')}</span><span class="r">${quake.demo ? 'デモ' : '気象庁'} ・ ${ago ? ago + '分前' : 'いま'} ・ タップで閉じる</span>`;
+    B.innerHTML = `${quake.demo ? '<span class="demo-tag">デモ</span>' : ''}<span class="lb">地震</span><b>${t.getHours()}:${pad(t.getMinutes())} ごろ　${esc(H.name || '震源は調査中')}</b>${H.magnitude > 0 ? `<span class="s">M${(+H.magnitude).toFixed(1)}${H.depth > 0 ? ` ・ 深さ ${H.depth}km` : H.depth === 0 ? ' ・ ごく浅い' : ''}</span>` : ''}<span>最大 ${shindoChip(quake.maxI)}</span>${quake.mine ? `<span>${esc(loc().pref)} ${shindoChip(quake.mine)}</span>` : ''}<span class="s">${esc(TSUNAMI[E.domesticTsunami] || '')}</span><span class="r">${quake.demo ? 'デモ' : '気象庁'} ・ ${ago ? ago + '分前' : 'いま'} ・ ${quake.full ? 'タップで地図' : 'タップで閉じる'}</span>`;
     return;
   }
   B.hidden = true;
 }
 $('qb').addEventListener('click', () => {
-  if (eew && eew.closed) { eew.closed = false; showEEW(); return; }
-  if (quake && !eew) { if (!quake.demo) { quakeSeen = quake.id + ':closed'; store.set('quakeSeen', quakeSeen); } quake = null; renderQBanner(); }
+  if (eew && eew.closed) { eew.closed = false; updateFull(); renderQBanner(); return; }
+  if (quake && !eew) {
+    if (quake.full && quake.fullClosed) { quake.fullClosed = false; updateFull(); return; }
+    if (!quake.demo) { quakeSeen = quake.id + ':closed'; store.set('quakeSeen', quakeSeen); }
+    quake = null; updateFull(); renderQBanner();
+  }
 });
 
 /* ================= デモ ================= */
 let demoTimers = [];
-function demoEEW(strong) {
+function demoEEW(kind) { // 'strong' / 'weak' / 'far'(遠くの地震。「すべて全画面」のときの見え方)
   demoTimers.forEach(clearTimeout); demoTimers = [];
   const L = loc(), o = nowMs() - timeOffset - 3000;
   const ts = ms => { const d = new Date(ms + 9 * 3600e3); return d.toISOString().slice(0, 19).replace('T', ' ').replace(/-/g, '/'); };
-  const lat = +(L.lat + (strong ? .38 : 1.6)).toFixed(1), lon = +(L.lon + (strong ? .32 : 1.4)).toFixed(1);
+  const off = { strong: [.38, .32], weak: [1.6, 1.4], far: [4.5, 3.5] }[kind] || [1.6, 1.4];
+  const lat = +(L.lat + off[0]).toFixed(1), lon = +(L.lon + off[1]).toFixed(1);
   const full = Math.max(4, cfg.qFull), beep = Math.min(4, Math.max(1, cfg.qBeep > 9 ? 2 : cfg.qBeep));
-  const steps = strong
+  const steps = kind === 'strong'
     ? [[0, 5.6, '4', false, false, full - 1], [1500, 6.3, '5弱', true, false, full], [4000, 6.6, '5強', true, false, full], [9000, 6.6, '5強', true, true, full]]
-    : [[0, 4.6, '3', false, false, beep], [3000, 4.8, '3', false, true, beep]];
+    : kind === 'far' ? [[0, 5.2, '4', false, false, 0], [3000, 5.5, '4', false, true, 0]]
+      : [[0, 4.6, '3', false, false, beep], [3000, 4.8, '3', false, true, beep]];
   steps.forEach(([at, M, mx, warn, fin, lc], i) => demoTimers.push(setTimeout(() => handleEEW({ _local: lc,
     Title: warn ? '緊急地震速報(警報)' : '緊急地震速報(予報)', EventID: 'DEMO' + o, Serial: i + 1, OriginTime: ts(o), Hypocenter: 'デモ震源', Latitude: lat, Longitude: lon,
-    Magnitude: M, Depth: strong ? 40 : 30, MaxIntensity: mx, WarnArea: [], isWarn: warn, isFinal: !!fin, isCancel: false, isTraining: false
+    Magnitude: M, Depth: kind === 'strong' ? 40 : 30, MaxIntensity: mx, WarnArea: [], isWarn: warn, isFinal: !!fin, isCancel: false, isTraining: false
   }, true), at)));
 }
-function demoInfo() {
+function demoInfo(full) {
   const L = loc(), t = new Date(nowMs() - timeOffset - 60e3 + 9 * 3600e3).toISOString().slice(0, 19).replace('T', ' ').replace(/-/g, '/');
-  showQuakeInfo({ id: 'demo', earthquake: { time: t, hypocenter: { name: 'デモ震源', magnitude: 6.2, depth: 40 }, maxScale: 50, domesticTsunami: 'None' }, points: [{ pref: L.pref, scale: 45 }] }, true);
+  // 現在地の県とその周りの県に震度を入れる
+  const near = (JAPAN || []).map(p => ({ p, d: (p.c[0] - L.lon) ** 2 + (p.c[1] - L.lat) ** 2 })).sort((a, b) => a.d - b.d).slice(0, 9);
+  const sc = [50, 45, 45, 40, 40, 40, 30, 30, 20];
+  const points = near.length ? near.map((x, i) => ({ pref: x.p.name, scale: sc[i] })) : [{ pref: L.pref, scale: 45 }];
+  showQuakeInfo({ id: 'demo' + Date.now(), earthquake: { time: t, hypocenter: { name: 'デモ震源', magnitude: 6.6, depth: 40, latitude: +(L.lat + .38).toFixed(1), longitude: +(L.lon + .32).toFixed(1) }, maxScale: 50, domesticTsunami: 'None' }, points }, true, !!full);
 }
 
 /* ================= お知らせ・更新 ================= */
@@ -1124,7 +1231,7 @@ function renderSettings() {
   const days = cfg.sat ? [1, 2, 3, 4, 5, 6] : [1, 2, 3, 4, 5];
   $('settings').innerHTML = `<div class="sx">
   <header><h1>設定</h1><button class="done" id="sDone">完了</button></header>
-  <nav><a href="#s-view">表示</a><a href="#s-chips">上のバー</a><a href="#s-tt">時間割</a><a href="#s-todo">やること</a><a href="#s-cd">カウントダウン</a><a href="#s-loc">場所</a><a href="#s-gcal">Googleカレンダー</a><a href="#s-quake">地震</a><a href="#s-terms">受験の語句</a><a href="#s-about">このアプリ</a></nav>
+  <nav><a href="#s-view">表示</a><a href="#s-chips">上のバー・タイル</a><a href="#s-tt">時間割</a><a href="#s-todo">やること</a><a href="#s-cd">カウントダウン</a><a href="#s-loc">場所</a><a href="#s-gcal">Googleカレンダー</a><a href="#s-quake">地震</a><a href="#s-terms">受験の語句</a><a href="#s-about">このアプリ</a></nav>
 
   <section id="s-view"><h2>表示</h2>
     <div class="row">${['dark', 'light', 'auto'].map(v => `<label><input type="radio" name="theme" value="${v}" ${cfg.theme === v ? 'checked' : ''}>${{ dark: 'ダーク', light: 'ライト', auto: '時間で自動' }[v]}</label>`).join('')}</div>
@@ -1133,9 +1240,10 @@ function renderSettings() {
     <p class="note">置きっぱなしにするときは、充電しながら使ってください。開いている間は画面が自動で消えないようにしています(iPadOS 16.4 以降)。</p>
   </section>
 
-  <section id="s-chips"><h2>上のバー</h2>
-    <p class="note">押すと時計の下に開きます。一番上にあるものが、しばらく触らないときに戻る表示です。</p>
-    ${cfg.chips.map(([k, on], i) => `<div class="chiprow"><input type="checkbox" data-chip="${k}" ${on ? 'checked' : ''}><span class="nm"><b>${CHIP[k].name}</b> <span class="note">${CHIP_DESC[k]}</span></span><button data-up="${i}" ${i ? '' : 'disabled'}>↑</button><button data-down="${i}" ${i < cfg.chips.length - 1 ? '' : 'disabled'}>↓</button></div>`).join('')}
+  <section id="s-chips"><h2>上のバー・タイル</h2>
+    <p class="note">「上のバー」は押すと時計の下に開きます(上のバーの中で一番上のものが、しばらく触らないときに戻る表示)。「左の列」「右の列」はタイルとしていつも表示します。並び順は ↑↓ で変えられます。</p>
+    ${cfg.chips.map(([k, at], i) => `<div class="chiprow"><span class="nm"><b>${CHIP[k].name}</b> <span class="note">${CHIP_DESC[k]}</span></span><select data-chip="${k}">${[['bar', '上のバー'], ['left', '左の列'], ['right', '右の列'], ['off', '出さない']].map(([v, l]) => opt(v, at, l)).join('')}</select><button data-up="${i}" ${i ? '' : 'disabled'}>↑</button><button data-down="${i}" ${i < cfg.chips.length - 1 ? '' : 'disabled'}>↓</button></div>`).join('')}
+    <p class="note">列にたくさん置くと、やること・予定の欄が狭くなります。
   </section>
 
   <section id="s-tt"><h2>時間割</h2>
@@ -1182,9 +1290,18 @@ function renderSettings() {
   </section>
 
   <section id="s-quake"><h2>地震</h2>
-    <div class="row">全画面で知らせる:現在地の予想震度が <select id="qFull">${[4, 5, 6, 7].map(i => opt(i, cfg.qFull, SHINDO[i] + ' 以上')).join('')}</select></div>
+    <h2 style="font-size:14px">緊急地震速報</h2>
+    <div class="row">全画面で知らせる:<select id="qFull">${opt(0, cfg.qFull, 'すべて(予報も、どこの地震でも)')}${[3, 4, 5, 6, 7].map(i => opt(i, cfg.qFull, `現在地の予想震度が ${SHINDO[i]} 以上`)).join('')}</select></div>
     <div class="row">音を鳴らす:<select id="qBeep">${[1, 2, 3, 4, 5, 10].map(i => opt(i, cfg.qBeep, i === 10 ? '鳴らさない' : SHINDO[i] + ' 以上')).join('')}</select></div>
-    <div class="row"><button class="btn red" id="demoStrong">デモ:強い揺れ(全画面)</button><button class="btn" id="demoWeak">デモ:弱い揺れ(上の帯)</button><button class="btn sub" id="demoInfo">デモ:地震情報</button><button class="btn sub" id="soundTest">音のテスト</button></div>
+    <h2 style="font-size:14px;margin-top:14px">地震情報(揺れたあと)</h2>
+    <div class="row">全画面で知らせる(どれか1つに当てはまったら):</div>
+    <div class="row">${esc(loc().pref || '現在地の県')}の震度が <select id="qiPref">${opt(0, cfg.qiPref, '使わない')}${[1, 2, 3, 4, 5, 6, 7].map(i => opt(i, cfg.qiPref, SHINDO[i] + ' 以上')).join('')}</select></div>
+    <div class="row">全国のどこかの最大震度が <select id="qiMax">${opt(0, cfg.qiMax, '使わない')}${[4, 5, 6, 7, 8, 9].map(i => opt(i, cfg.qiMax, SHINDO[i] + ' 以上')).join('')}</select></div>
+    <div class="row">マグニチュードが <select id="qiMag">${opt(0, cfg.qiMag, '使わない')}${[5, 5.5, 6, 6.5, 7, 7.5].map(m => opt(m, cfg.qiMag, 'M' + m.toFixed(1) + ' 以上')).join('')}</select></div>
+    <div class="row"><label><input type="checkbox" id="qiTsunami" ${cfg.qiTsunami ? 'checked' : ''}>津波注意報・津波警報が出たとき</label></div>
+    <h2 style="font-size:14px;margin-top:14px">デモ</h2>
+    <div class="row"><button class="btn red" data-demo="strong">強い揺れ(全画面)</button><button class="btn" data-demo="weak">弱い揺れ(上の帯)</button><button class="btn" data-demo="far">遠くの地震</button><button class="btn" data-demo="infofull">地震情報(全画面)</button><button class="btn sub" data-demo="info">地震情報(上の帯)</button><button class="btn sub" id="soundTest">音のテスト</button></div>
+    <p class="note">「遠くの地震」は、現在地ではほぼ揺れない予報です。「すべて」にしていると全画面、そうでなければ何も出ません。</p>
     <p class="note">緊急地震速報は Wolfx、地震情報は P2P地震情報 から受け取ります。どちらも気象庁の発表を中継する無料のサービスで、数秒遅れることがあります。<b>公式の警報の代わりにはなりません。</b>学校の放送や先生の指示を優先してください。<br>現在地の予想震度は、震源・規模・距離からの推定です(気象庁の地域ごとの予想とずれることがあります)。<br>音は、ページを開いたあと画面を一度タップすると鳴らせるようになります。</p>
   </section>
 
@@ -1226,8 +1343,7 @@ $('settings').addEventListener('click', e => {
   }
   if (t.id === 'gasTest') { cfg.gasUrl = $('gasUrl').value.trim(); saveCfg(); $('gasMsg').textContent = '読み込み中…'; loadEvents().then(() => { $('gasMsg').innerHTML = eventsErr ? '<span class="ng">読めませんでした。URLと「アクセスできるユーザー:全員」を確認してください。</span>' : `<span class="ok">${events ? events.length : 0}件 読み込みました</span>`; }); return; }
   if (t.id === 'gasCopy') { navigator.clipboard?.writeText(GAS_CODE).then(() => { t.textContent = 'コピーしました'; }, () => { const r = document.createRange(); r.selectNodeContents($('gasCode')); getSelection().removeAllRanges(); getSelection().addRange(r); }); return; }
-  if (t.id === 'demoStrong' || t.id === 'demoWeak') { unlockAudio(); closeSettings(); demoEEW(t.id === 'demoStrong'); return; }
-  if (t.id === 'demoInfo') { unlockAudio(); closeSettings(); demoInfo(); return; }
+  if (t.dataset.demo) { unlockAudio(); closeSettings(); const k = t.dataset.demo; k === 'info' || k === 'infofull' ? demoInfo(k === 'infofull') : demoEEW(k); return; }
   if (t.id === 'soundTest') { unlockAudio(); setTimeout(soundAlarm, 100); return; }
 });
 $('settings').addEventListener('change', e => {
@@ -1236,7 +1352,7 @@ $('settings').addEventListener('change', e => {
   else if (t.id === 'lightFrom') cfg.lightFrom = t.value;
   else if (t.id === 'darkFrom') cfg.darkFrom = t.value;
   else if (t.id === 'showSec') cfg.showSec = t.checked;
-  else if (t.dataset.chip) { cfg.chips.find(c => c[0] === t.dataset.chip)[1] = t.checked; }
+  else if (t.dataset.chip) { cfg.chips.find(c => c[0] === t.dataset.chip)[1] = t.value; }
   else if (t.dataset.tts != null || t.dataset.ttr != null) {
     const i = +(t.dataset.tts ?? t.dataset.ttr), arr = cfg.tt[ttDay] = cfg.tt[ttDay] || [];
     arr[i] = Object.assign({ s: '', r: '' }, arr[i]); arr[i][t.dataset.tts != null ? 's' : 'r'] = t.value.trim().slice(0, 20);
@@ -1250,6 +1366,10 @@ $('settings').addEventListener('change', e => {
   else if (t.dataset.cdd != null) cfg.countdowns[+t.dataset.cdd].date = t.value;
   else if (t.id === 'prefSel' && t.value) { const p = JAPAN.find(x => x.name === t.value); cfg.loc = { lat: +p.c[1].toFixed(3), lon: +p.c[0].toFixed(3), pref: p.name, how: 'pref' }; saveCfg(); loadWeather(); renderSettings(); return; }
   else if (t.id === 'qFull') cfg.qFull = +t.value;
+  else if (t.id === 'qiPref') cfg.qiPref = +t.value;
+  else if (t.id === 'qiMax') cfg.qiMax = +t.value;
+  else if (t.id === 'qiMag') cfg.qiMag = +t.value;
+  else if (t.id === 'qiTsunami') cfg.qiTsunami = t.checked;
   else if (t.id === 'qBeep') cfg.qBeep = +t.value;
   else if (t.dataset.tcat) { const c = t.dataset.tcat; cfg.termCats = t.checked ? [...new Set([...cfg.termCats, c])] : cfg.termCats.filter(x => x !== c); termCur = null; }
   else return;
@@ -1266,7 +1386,7 @@ function tick(force) {
     lastMin = d.getMinutes();
     applyTheme(); renderTT(st); renderTodo(); renderSched(); renderChips();
     if (slotMode !== homeSlot() && nowMs() - slotTouched > 90e3) slotMode = homeSlot();
-    if (!(slotMode === 'kioku' && kioku.shown)) renderSlot();
+    if (!kioku.shown) { renderSlot(); renderTiles(); }
     if (d.getMinutes() % 30 === 0) loadWeather();
     if (d.getMinutes() % 10 === 5) loadEvents();
     if (d.getMinutes() % 2 === 0) renderWeather();
@@ -1281,8 +1401,8 @@ renderAll();
 loadWeather(); loadEvents(); loadVocab(); pollQuake(); checkVersion(); requestWake();
 connectEEW();
 loop();
-// 地震のデモを URL で始められる(確認用): ?demo=strong / weak / info
-{ const dm = new URLSearchParams(location.search).get('demo'); if (dm) setTimeout(() => dm === 'info' ? demoInfo() : demoEEW(dm === 'strong'), 1500); }
+// 地震のデモを URL で始められる(確認用): ?demo=strong / weak / far / info / infofull
+{ const dm = new URLSearchParams(location.search).get('demo'); if (dm) setTimeout(() => dm === 'info' || dm === 'infofull' ? demoInfo(dm === 'infofull') : demoEEW(dm), 1500); }
 </script>
 </body>
 </html>
