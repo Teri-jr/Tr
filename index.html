@@ -977,8 +977,10 @@ function baseOf(ds) { const [y, m, d] = ds.split('-').map(Number); return new Da
 function shiftDay(ds, n) { const [y, m, d] = ds.split('-').map(Number); return ymd(new Date(y, m - 1, d + n)); }
 // その日(論理日付)の0時からの分。翌日0:00〜1:59は1440〜1559になるので、24:00をまたいでも単調に増える
 const msToMin = ms => (ms - baseOf(dayStr)) / 60000;
-// 24:00 はそのまま、それより後(0時をまたいで実行中のとき)は 0:10 のように表示する
-function fmt(min) { const m = Math.floor(min + 1e-6); const h = Math.floor(m / 60); return `${h > 24 || (h === 24 && m % 60) ? h - 24 : h}:${pad(((m % 60) + 60) % 60)}`; }
+// 24:00 ちょうど(就寝期限など)はそのまま、それより後は 0:10 のように24時間で折り返す(何日またいでも)
+function fmt(min) { const m = Math.floor(min + 1e-6); const h = Math.floor(m / 60); return `${m === 1440 ? 24 : ((h % 24) + 24) % 24}:${pad(((m % 60) + 60) % 60)}`; }
+// 超過などの長さ: 60分以上は「1時間50分」
+const lenTxt = m => m >= 60 ? `${Math.floor(m / 60)}時間${m % 60 ? (m % 60) + '分' : ''}` : `${m}分`;
 function fmtSec(min) { const s = Math.max(0, Math.ceil(min * 60 - 1e-6)); return s >= 3600 ? `${Math.floor(s / 3600)}:${pad(Math.floor(s / 60) % 60)}:${pad(s % 60)}` : `${Math.floor(s / 60)}:${pad(s % 60)}`; }
 // ストップウォッチ用(切り捨てで数える)
 function fmtUp(min) { const s = Math.max(0, Math.floor(min * 60 + 1e-6)); return s >= 3600 ? `${Math.floor(s / 3600)}:${pad(Math.floor(s / 60) % 60)}:${pad(s % 60)}` : `${Math.floor(s / 60)}:${pad(s % 60)}`; }
@@ -1459,8 +1461,8 @@ $('clockFull').addEventListener('click', () => { $('clockFull').hidden = true; r
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('clockFull').hidden) { $('clockFull').hidden = true; render(); } });
 
 function delayHTML(d) {
-  if (d > 0) return `<span class="delay late">+${d}分 遅れ</span>`;
-  if (d < 0) return `<span class="delay early">${-d}分 早い</span>`;
+  if (d > 0) return `<span class="delay late">+${lenTxt(d)} 遅れ</span>`;
+  if (d < 0) return `<span class="delay early">${lenTxt(-d)} 早い</span>`;
   return `<span class="delay ontime">定刻</span>`;
 }
 
@@ -1487,7 +1489,7 @@ function render() {
     : `実時刻で動作中 ・ 論理日付 ${logicalToday()}`);
   const [y, m, d] = dayStr.split('-').map(Number);
   const wd = '日月火水木金土'[new Date(y, m - 1, d).getDay()];
-  setHTML('dateLabel', `${m}月${d}日(${wd})<small>${isToday() ? '今日' : isLive() && dayStr === shiftDay(logicalToday(), -1) ? '昨日の続き' : dayStr < logicalToday() ? '過去の日' : '先の日'}</small>`);
+  setHTML('dateLabel', `${m}月${d}日(${wd})<small>${isToday() ? '今日' : isLive() && dayStr < logicalToday() ? (dayStr === shiftDay(logicalToday(), -1) && continuesYesterday(dayStr, data) ? '昨日の続き' : '実行中のタスクあり') : dayStr < logicalToday() ? '過去の日' : '先の日'}</small>`);
 
   if (!data.tasks.length && $('formCard').classList.contains('collapsed')) setFormCollapsed(false); // 0件なら追加欄を開く
   const sc = computeSchedule();
@@ -1517,7 +1519,7 @@ function renderBanner(sc) {
   if (!sc.rows.length) { setHTML('banner', ''); return; }
   const over = Math.floor(sc.end + 1e-6) - dl;
   if (over > 0) {
-    setHTML('banner', `<div class="warn">⚠ 就寝期限 ${fmt(dl)} を <span class="num">${over}分</span> 超える見込みです(最終見込み <span class="num">${fmt(sc.end)}</span>)</div>`);
+    setHTML('banner', `<div class="warn">⚠ 就寝期限 ${fmt(dl)} を <span class="num">${lenTxt(over)}</span> 超える見込みです(最終見込み <span class="num">${fmt(sc.end)}</span>)</div>`);
   } else {
     setHTML('banner', `<div class="okstrip">最終見込み <span class="num">${fmt(sc.end)}${sc.rows.some(x => x.t.sw && x.st !== 'done') ? '頃' : ''}</span> ・ 就寝期限 ${fmt(dl)} まで <b class="num">余裕 ${-over}分</b></div>`);
   }
@@ -1527,7 +1529,7 @@ function renderBanner(sc) {
 function timerText(r, now) {
   if (r.sw) return r.curPh.k === 'b' ? `あと ${fmtSec(r.curPh.e - now)}` : fmtUp(r.sw.workMin);
   const overMin = Math.floor(now + 1e-6) - Math.floor(r.target + 1e-6); // 時計表示と揃える
-  if (r.curPh === 'over') return overMin < 1 ? '時間です' : `${overMin}分 超過`;
+  if (r.curPh === 'over') return overMin < 1 ? '時間です' : `${lenTxt(overMin)} 超過`;
   if (r.t.pomo) return `あと ${fmtSec(r.curPh.e - now)}`;
   return `あと ${Math.ceil(r.target - now - 1e-6)}分`;
 }
@@ -1693,7 +1695,7 @@ function renderTable(sc) {
   const over = Math.floor(sc.end + 1e-6) - deadlineMin();
   const endKo = sc.rows.some(x => x.t.sw && x.st !== 'done') ? '<small>頃</small>' : '';
   h += `<li class="row end"><div class="no">終</div><div class="t-exp num">${fmt(sc.end)}${endKo}</div>
-    <div class="name">終着 ・ 期限 ${fmt(deadlineMin())} ${over > 0 ? `<span class="delay late">${over}分超過</span>` : `<span class="delay ontime">余裕 ${-over}分</span>`}</div></li>`;
+    <div class="name">終着 ・ 期限 ${fmt(deadlineMin())} ${over > 0 ? `<span class="delay late">${lenTxt(over)}超過</span>` : `<span class="delay ontime">余裕 ${-over}分</span>`}</div></li>`;
   setHTML('tt', h);
 }
 
@@ -2345,7 +2347,7 @@ document.addEventListener('keydown', e => {
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '3.4.4';
+const APP_VERSION = '3.4.5';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
