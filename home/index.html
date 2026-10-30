@@ -321,7 +321,7 @@ body.editing .page .tile .tdel{pointer-events:auto}
 
 <script>
 'use strict';
-const APP_VERSION = '1.3.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.3.1'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -571,14 +571,24 @@ const umbrella = p => p >= 50 ? '傘を持っていく' : p >= 30 ? '折りた�
 let events = store.get('events') || null, eventsAt = store.get('eventsAt') || 0, eventsErr = '';
 async function loadEvents() {
   if (!cfg.gasUrl) { renderSched(); return; }
+  // 読めなかったときは、よくある原因に合わせて理由を出す
+  const u = cfg.gasUrl.trim();
+  if (!/^https:\/\/script\.google(usercontent)?\.com\//.test(u)) { eventsErr = 'URLが Apps Script のものではありません(https://script.google.com/macros/s/…/exec)'; renderSched(); return; }
+  if (/\/dev(\?|$)/.test(u)) { eventsErr = 'URLの最後が /dev になっています。デプロイ後に出る /exec で終わるURLを使ってください'; renderSched(); return; }
   try {
-    const r = await fetch(cfg.gasUrl, { cache: 'no-store' });
-    const j = await r.json();
-    if (!Array.isArray(j)) throw new Error('形式が違います');
+    let r;
+    try { r = await fetch(u, { cache: 'no-store' }); }
+    catch (err) { throw new Error('つながりませんでした。「アクセスできるユーザー」が「全員」になっていないか、学校のネットワークで script.google.com が使えない可能性があります'); }
+    const text = await r.text();
+    if (!r.ok) throw new Error(`サーバーが ${r.status} を返しました。URLが古い(デプロイし直した)可能性があります`);
+    if (/^\s*</.test(text)) throw new Error(/ログイン|Sign in|accounts\.google/i.test(text) ? 'Googleのログイン画面が返ってきました。デプロイの「アクセスできるユーザー」を「全員」にしてください(学校のアカウントだと「全員」を選べないことがあります。その場合は個人のGoogleアカウントで作ってください)' : 'JSONではなくページが返ってきました。コードの貼り付けとデプロイの種類(ウェブアプリ)を確認してください');
+    let j; try { j = JSON.parse(text); } catch (err) { throw new Error('返ってきた内容が読めませんでした'); }
+    if (j && j.error) throw new Error('スクリプトでエラー: ' + j.error);
+    if (!Array.isArray(j)) throw new Error('形式が違います。コードを貼り付け直してください');
     events = j.filter(e => e && e.title && e.start).map(e => ({ title: String(e.title), start: e.start, end: e.end || e.start, allDay: !!e.allDay, color: e.color || '' }));
     eventsAt = Date.now(); eventsErr = '';
     store.set('events', events); store.set('eventsAt', eventsAt);
-  } catch (e) { eventsErr = '読めませんでした'; }
+  } catch (e) { eventsErr = e.message || '読めませんでした'; }
   renderSched();
 }
 function upcoming() {
@@ -590,7 +600,7 @@ const EV_COLORS = { 1: '#7986cb', 2: '#33b679', 3: '#8e24aa', 4: '#e67c73', 5: '
 function renderSched() {
   if (editing) return; // 並べ替え中は中身を描き直さない(× ボタンが消えないように)
   const T = $('schedTile');
-  let h = `<h3>予定 <span>${cfg.gasUrl ? (eventsErr ? '<span style="color:var(--red)">更新できません</span>' : 'Googleカレンダー') : ''}</span></h3>`;
+  let h = `<h3>予定 <span>${cfg.gasUrl ? (eventsErr ? '<span style="color:var(--red)">読めません(設定に理由)</span>' : 'Googleカレンダー') : ''}</span></h3>`;
   if (!cfg.gasUrl) h += '<p class="empty">「設定」→「Googleカレンダー」で連携すると、ここに予定が出ます。</p>';
   else {
     const list = upcoming().slice(0, 6);
@@ -1409,7 +1419,8 @@ function renderSettings() {
 
   <section id="s-gcal"><h2>Googleカレンダー</h2>
     <div class="row"><input type="url" id="gasUrl" value="${esc(cfg.gasUrl)}" placeholder="https://script.google.com/macros/s/…/exec" style="flex:1;min-width:260px"><button class="btn" id="gasTest">保存して読み込む</button></div>
-    <p id="gasMsg" class="note">${cfg.gasUrl ? (eventsErr ? '<span class="ng">読めませんでした</span>' : events ? `<span class="ok">${events.length}件 読み込み済み</span>` : '') : ''}</p>
+    ${cfg.gasUrl ? `<p class="note">うまくいかないときは <a href="${esc(cfg.gasUrl)}" target="_blank" rel="noopener" style="color:var(--blue)">このURLを直接開いて</a>、[{"title": … のような文字が出るか見てください。ログイン画面や「権限が必要」が出たら、デプロイの設定が原因です。</p>` : ''}
+    <p id="gasMsg" class="note">${cfg.gasUrl ? (eventsErr ? `<span class="ng">読めませんでした:${esc(eventsErr)}</span>` : events ? `<span class="ok">${events.length}件 読み込み済み</span>` : '') : ''}</p>
     <ol class="note" style="margin-top:8px">
       <li>パソコンかiPadで <span class="mono">script.google.com</span> を開き、「新しいプロジェクト」を作る</li>
       <li>中身を全部消して、下のコードを貼り付けて保存</li>
@@ -1474,7 +1485,7 @@ $('settings').addEventListener('click', e => {
     }, err => { $('gpsMsg').textContent = '位置を取れませんでした(' + (err.code === 1 ? '許可されていません' : '取得できません') + ')。都道府県を選んでください。'; }, { enableHighAccuracy: false, timeout: 15000, maximumAge: 600000 });
     return;
   }
-  if (t.id === 'gasTest') { cfg.gasUrl = $('gasUrl').value.trim(); saveCfg(); $('gasMsg').textContent = '読み込み中…'; loadEvents().then(() => { $('gasMsg').innerHTML = eventsErr ? '<span class="ng">読めませんでした。URLと「アクセスできるユーザー:全員」を確認してください。</span>' : `<span class="ok">${events ? events.length : 0}件 読み込みました</span>`; }); return; }
+  if (t.id === 'gasTest') { cfg.gasUrl = $('gasUrl').value.trim(); saveCfg(); $('gasMsg').textContent = '読み込み中…'; loadEvents().then(() => { $('gasMsg').innerHTML = eventsErr ? `<span class="ng">読めませんでした:${esc(eventsErr)}</span>` : `<span class="ok">${events ? events.length : 0}件 読み込みました</span>`; }); return; }
   if (t.id === 'gasCopy') { navigator.clipboard?.writeText(GAS_CODE).then(() => { t.textContent = 'コピーしました'; }, () => { const r = document.createRange(); r.selectNodeContents($('gasCode')); getSelection().removeAllRanges(); getSelection().addRange(r); }); return; }
   if (t.dataset.demo) { const k = t.dataset.demo; try { unlockAudio(); } catch (err) {} closeSettings(); toast(`地震のデモを始めます(${t.textContent})`); setTimeout(() => k === 'info' || k === 'infofull' ? demoInfo(k === 'infofull') : demoEEW(k), 300); return; }
   if (t.id === 'soundTest') { unlockAudio(); setTimeout(soundAlarm, 100); return; }
