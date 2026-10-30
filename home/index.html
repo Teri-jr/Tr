@@ -321,7 +321,7 @@ body.editing .page .tile .tdel{pointer-events:auto}
 
 <script>
 'use strict';
-const APP_VERSION = '1.3.2'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.4.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -355,8 +355,7 @@ const DEFAULT_CFG = {
   theme: 'dark', lightFrom: '06:30', darkFrom: '18:00', showSec: true,
   loc: null, // {lat, lon, pref, how}
   gasUrl: '',
-  periods: [['8:50', '9:40'], ['9:50', '10:40'], ['10:50', '11:40'], ['11:50', '12:40'], ['13:25', '14:15'], ['14:25', '15:15']],
-  shr: ['15:20', '15:35'], sat: false,
+  days: null, satWeeks: [1, 3, 5], // 曜日ごとの時刻(fixDays で初期値を入れる)。土曜は第何週に授業があるか
   tt: { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] }, // 曜日ごと [{s:教科, r:教室}]
   layout: null, bar: null, // タイルの置き場所(fixLayout で初期の配置を入れる)
   countdowns: [{ name: '共通テスト', date: '2027-01-16' }, { name: '', date: '' }],
@@ -380,7 +379,34 @@ const HOLIDAYS = {
   '2027-07-19': '海の日', '2027-08-11': '山の日', '2027-09-20': '敬老の日', '2027-09-23': '秋分の日', '2027-10-11': 'スポーツの日',
   '2027-11-03': '文化の日', '2027-11-23': '勤労感謝の日'
 };
-const isSchoolDay = d => { const w = d.getDay(); return (w >= 1 && w <= 5 || (w === 6 && cfg.sat)) && !HOLIDAYS[ymd(d)]; };
+// 曜日ごとの1日の流れ:p = 時限 [はじまり, おわり]、pre = 朝(読書・HR など)、post = 帰り(掃除・HR など)
+const WEEKDAY_DAY = { pre: [['読書', '8:35', '8:45'], ['HR', '8:45', '8:50']], p: [['8:55', '9:45'], ['9:55', '10:45'], ['10:55', '11:45'], ['11:55', '12:45'], ['13:25', '14:15'], ['14:25', '15:15']], post: ['掃除・HR', '15:15', '15:35'] };
+const DEFAULT_DAYS = {
+  1: WEEKDAY_DAY, 3: WEEKDAY_DAY, 4: WEEKDAY_DAY, 5: WEEKDAY_DAY,
+  2: { pre: [['勤行・HR', '8:35', '9:00']], p: [['9:15', '10:05'], ['10:15', '11:05'], ['11:15', '12:05'], ['12:45', '13:35'], ['13:45', '14:35'], ['14:45', '15:35']], post: ['HR・掃除', '15:35', '15:55'] },
+  6: { pre: [['読書', '9:00', '9:15']], p: [['9:20', '10:10'], ['10:20', '11:10']], post: ['HR', '11:10', '11:25'] }
+};
+const DEFAULT_TT = {
+  1: ['論理・表現Ⅲ', '公民特講', '化学研究', 'リスニング', '物理|物理室', '英語コミュニケーションⅢ'],
+  2: ['数学C', '国語特講Ⅱ', '地理総合', '物理|物理室', '総合的な探究', 'LHR'],
+  3: ['化学研究', '国語特講Ⅱ', '数学Ⅲ|大教室', '物理|物理室', '数学B', '体育'],
+  4: ['公民特講', '英語コミュニケーションⅢ', '物理|物理室', '数学Ⅲ|大教室', '英語コミュニケーションⅢ', '仏教'],
+  5: ['論理・表現Ⅲ', '公民特講', '地理総合', '数学Ⅲ|大教室', 'リスニング', '体育'],
+  6: ['英語コミュニケーションⅢ', '英語コミュニケーションⅢ']
+};
+function fixDays() {
+  if (!cfg.days) cfg.days = JSON.parse(JSON.stringify(DEFAULT_DAYS));
+  const empty = !Object.values(cfg.tt || {}).some(a => (a || []).some(x => x && x.s));
+  if (empty) cfg.tt = Object.fromEntries(Object.entries(DEFAULT_TT).map(([d, a]) => [d, a.map(x => { const [sub, r] = x.split('|'); return { s: sub, r: r || '' }; })]));
+}
+fixDays();
+const dayCfg = d => cfg.days[d.getDay()] || null;
+const nthWeek = d => Math.ceil(d.getDate() / 7);
+const isSchoolDay = d => {
+  const w = d.getDay(), dc = cfg.days[w];
+  if (!dc || !dc.p || !dc.p.length || HOLIDAYS[ymd(d)]) return false;
+  return w === 6 ? (cfg.satWeeks || []).includes(nthWeek(d)) : w >= 1 && w <= 5;
+};
 const nextSchoolDay = d => { let x = addDays(d, 1); for (let i = 0; i < 30 && !isSchoolDay(x); i++) x = addDays(x, 1); return x; };
 
 /* ================= 画面の大きさ ================= */
@@ -401,19 +427,25 @@ function applyTheme() {
 }
 
 /* ================= 学校の1日 ================= */
-function periodsMin() { return cfg.periods.map(([s, e]) => [toMin(s), toMin(e)]).filter(([s, e]) => s != null && e != null && e > s); }
+const rng = (s, e) => [toMin(s), toMin(e)];
+function periodsMin(d) { const dc = dayCfg(d); return dc ? dc.p.map(([s, e]) => rng(s, e)).filter(([s, e]) => s != null && e != null && e > s) : []; }
+function preMin(d) { const dc = dayCfg(d); return dc && dc.pre ? dc.pre.map(([n, s, e]) => [n, ...rng(s, e)]).filter(x => x[1] != null && x[2] > x[1]) : []; }
+function postMin(d) { const dc = dayCfg(d); if (!dc || !dc.post) return null; const [n, s, e] = dc.post; const r = rng(s, e); return r[0] != null && r[1] > r[0] ? [n || 'HR', ...r] : null; }
 function schoolState(d) {
-  const ps = periodsMin(), m = minOfDay(d), shr = [toMin(cfg.shr[0]), toMin(cfg.shr[1])];
-  if (!isSchoolDay(d) || !ps.length) return { mode: 'off', ps };
-  const endAll = Math.max(ps[ps.length - 1][1], shr[1] ?? 0);
-  if (m < ps[0][0]) return { mode: 'before', ps, next: 0, left: ps[0][0] - m };
+  const ps = periodsMin(d), pre = preMin(d), post = postMin(d), m = minOfDay(d);
+  if (!isSchoolDay(d) || !ps.length) return { mode: 'off', ps, pre, post };
+  const base = { ps, pre, post };
+  const start = pre.length ? pre[0][1] : ps[0][0];
+  if (m < start) return { ...base, mode: 'before', left: start - m, label: pre.length ? pre[0][0] : '1限' };
+  for (const [n, s, e] of pre) if (m >= s && m < e) return { ...base, mode: 'pre', name: n, left: e - m };
+  if (m < ps[0][0]) return { ...base, mode: 'break', next: 0, left: ps[0][0] - m };
   for (let i = 0; i < ps.length; i++) {
-    if (m >= ps[i][0] && m < ps[i][1]) return { mode: 'class', ps, i, left: ps[i][1] - m, frac: (m - ps[i][0]) / (ps[i][1] - ps[i][0]) };
-    if (i + 1 < ps.length && m >= ps[i][1] && m < ps[i + 1][0]) return { mode: 'break', ps, next: i + 1, left: ps[i + 1][0] - m };
+    if (m >= ps[i][0] && m < ps[i][1]) return { ...base, mode: 'class', i, left: ps[i][1] - m };
+    if (i + 1 < ps.length && m >= ps[i][1] && m < ps[i + 1][0]) return { ...base, mode: 'break', next: i + 1, left: ps[i + 1][0] - m };
   }
-  if (shr[0] != null && m >= shr[0] && m < shr[1]) return { mode: 'shr', ps, left: shr[1] - m, frac: (m - shr[0]) / (shr[1] - shr[0]) };
-  if (m < endAll) return { mode: 'break', ps, next: -1, left: (shr[0] ?? endAll) - m };
-  return { mode: 'after', ps };
+  if (post && m < post[1]) return { ...base, mode: 'break', next: -1, left: post[1] - m };
+  if (post && m < post[2]) return { ...base, mode: 'shr', name: post[0], left: post[2] - m };
+  return { ...base, mode: 'after' };
 }
 const ttOf = d => (cfg.tt[d.getDay()] || []);
 const subjOf = (d, i) => (ttOf(d)[i] || {}).s || '';
@@ -428,13 +460,15 @@ function renderClock() {
   let t = '';
   const sub = (dd, i) => { const s = subjOf(dd, i); return s ? `<b>${esc(s)}</b>${roomOf(dd, i) ? `(${esc(roomOf(dd, i))})` : ''}` : `<b>${i + 1}限</b>`; };
   const left = m => `<span class="n">${Math.ceil(m)}</span> 分`;
-  if (st.mode === 'before') t = `1限まで ${left(st.left)}　／　${sub(d, 0)}`;
-  else if (st.mode === 'class') t = `${st.i + 1}限 終わりまで ${left(st.left)}　／　次は ${st.i + 1 < st.ps.length ? sub(d, st.i + 1) : '<b>帰りのSHR</b>'}`;
-  else if (st.mode === 'break') t = st.next >= 0 ? `${st.next + 1}限まで ${left(st.left)}　／　${sub(d, st.next)}` : `帰りのSHRまで ${left(st.left)}`;
-  else if (st.mode === 'shr') t = `帰りのSHR　あと ${left(st.left)}`;
+  const postName = st.post ? esc(st.post[0]) : '帰り';
+  if (st.mode === 'before') t = `${esc(st.label)}まで ${left(st.left)}　／　1限は ${sub(d, 0)} <span class="n" style="color:var(--sub);font-size:20px">${fmtMin(st.ps[0][0])}</span>`;
+  else if (st.mode === 'pre') t = `${esc(st.name)}　あと ${left(st.left)}　／　1限は ${sub(d, 0)} <span class="n" style="color:var(--sub);font-size:20px">${fmtMin(st.ps[0][0])}</span>`;
+  else if (st.mode === 'class') t = `${st.i + 1}限 終わりまで ${left(st.left)}　／　次は ${st.i + 1 < st.ps.length ? sub(d, st.i + 1) : `<b>${postName}</b>`}`;
+  else if (st.mode === 'break') t = st.next >= 0 ? `${st.next + 1}限まで ${left(st.left)}　／　${sub(d, st.next)}` : `${postName}まで ${left(st.left)}`;
+  else if (st.mode === 'shr') t = `${postName}　あと ${left(st.left)}`;
   else {
     const nd = st.mode === 'after' ? nextSchoolDay(d) : (isSchoolDay(d) ? d : nextSchoolDay(d));
-    const s0 = subjOf(nd, 0), p0 = periodsMin()[0];
+    const s0 = subjOf(nd, 0), p0 = periodsMin(nd)[0];
     t = `${st.mode === 'after' ? '今日の授業はおわり' : '今日はお休み'}　／　${dayLabel(d, nd)} 1限は ${s0 ? `<b>${esc(s0)}</b>` : '—'} ${p0 ? `<span class="n" style="color:var(--sub);font-size:20px">${fmtMin(p0[0])}</span>` : ''}`;
   }
   $('next').innerHTML = t;
@@ -443,18 +477,19 @@ function renderClock() {
   $('pbar').hidden = $('ticks').hidden = !show;
   if (show) {
     const ps = st.ps, m = minOfDay(d);
-    let h = '';
+    const seg = (s, e, lab, flex) => m >= e ? `<div class="done" style="flex:${flex}">${lab}</div>` : m >= s ? `<div class="cur" style="flex:${flex}"><i style="width:${((m - s) / (e - s) * 100).toFixed(1)}%"></i><span>${lab}</span></div>` : `<div style="flex:${flex}">${lab}</div>`;
+    let h = st.pre.length ? seg(st.pre[0][1], st.pre[st.pre.length - 1][2], '朝', .6) : '';
     ps.forEach(([s, e], i) => {
       if (i > 0 && s - ps[i - 1][1] >= 30) h += '<div class="brk"></div>';
       if (m >= e) h += `<div class="done">${i + 1}</div>`;
       else if (m >= s) h += `<div class="cur"><i style="width:${((m - s) / (e - s) * 100).toFixed(1)}%"></i><span>${i + 1}</span></div>`;
       else h += `<div>${i + 1}</div>`;
     });
-    const shr = [toMin(cfg.shr[0]), toMin(cfg.shr[1])];
-    if (shr[0] != null && shr[1] > shr[0]) h += m >= shr[1] ? '<div class="done" style="flex:.6">SHR</div>' : m >= shr[0] ? `<div class="cur" style="flex:.6"><i style="width:${((m - shr[0]) / (shr[1] - shr[0]) * 100).toFixed(1)}%"></i><span>SHR</span></div>` : '<div style="flex:.6">SHR</div>';
+    if (st.post) h += seg(st.post[1], st.post[2], 'HR', .6);
     $('pbar').innerHTML = h;
     const lunch = ps.findIndex((p, i) => i > 0 && p[0] - ps[i - 1][1] >= 30);
-    $('ticks').innerHTML = `<span class="n">${fmtMin(ps[0][0])}</span>${lunch > 0 ? `<span><span class="n">${fmtMin(ps[lunch - 1][1])}</span> 昼休み</span>` : ''}<span class="n">${fmtMin(shr[1] || ps[ps.length - 1][1])}</span>`;
+    const t0 = st.pre.length ? st.pre[0][1] : ps[0][0], t1 = st.post ? st.post[2] : ps[ps.length - 1][1];
+    $('ticks').innerHTML = `<span class="n">${fmtMin(t0)}</span>${lunch > 0 ? `<span><span class="n">${fmtMin(ps[lunch - 1][1])}</span> 昼休み</span>` : ''}<span class="n">${fmtMin(t1)}</span>`;
   }
   return st;
 }
@@ -465,7 +500,7 @@ function renderTT(st) {
   const d = now();
   let day = d, title = '今日の時間割';
   if (st.mode === 'after' || st.mode === 'off') { day = st.mode === 'off' && isSchoolDay(d) ? d : nextSchoolDay(d); title = `${dayLabel(d, day) === '明日' ? '明日' : dayLabel(d, day)}の時間割`; }
-  const ps = periodsMin(), list = ttOf(day), m = minOfDay(d), today = day === d;
+  const ps = periodsMin(day), list = ttOf(day), m = minOfDay(d), today = day === d;
   let h = `<h3>${title} <span>${WD[day.getDay()]}曜</span></h3>`;
   if (!list.some(x => x && x.s)) h += `<p class="empty">時間割がまだありません。<br>右上の「設定」→「時間割」で入れてください。</p>`;
   else {
@@ -549,7 +584,8 @@ function renderWeather() {
   const di = after ? 1 : 0;
   let say;
   if (!after) {
-    const goHome = Math.floor((toMin(cfg.shr[1]) ?? 960) / 60);
+    const pm = postMin(d), pl = periodsMin(d);
+    const goHome = Math.floor((pm ? pm[2] : pl.length ? pl[pl.length - 1][1] : 960) / 60);
     const idx = H.time.findIndex(t => t.startsWith(ymd(d)) && +t.slice(11, 13) === goHome);
     const p = idx >= 0 ? H.precipitation_probability[idx] : D.precipitation_probability_max[0];
     const k = idx >= 0 ? WCODE(H.weather_code[idx])[0] : '';
@@ -1369,10 +1405,9 @@ $('openSettings').addEventListener('click', () => openSettings());
 function renderSettings() {
   const L = cfg.loc;
   const prefs = JAPAN ? JAPAN.map(p => p.name) : [];
-  const ps = cfg.periods;
+  const dc = cfg.days[ttDay] = cfg.days[ttDay] || { pre: [], p: [], post: ['HR', '', ''] };
   const tt = cfg.tt[ttDay] || [];
   const opt = (v, cur, lab) => `<option value="${v}" ${String(v) === String(cur) ? 'selected' : ''}>${esc(lab)}</option>`;
-  const days = cfg.sat ? [1, 2, 3, 4, 5, 6] : [1, 2, 3, 4, 5];
   $('settings').innerHTML = `<div class="sx">
   <header><h1>設定</h1><span class="note">v${APP_VERSION}</span><button class="done" id="sDone">完了</button></header>
   <nav><a href="#s-view">表示</a><a href="#s-chips">タイル</a><a href="#s-tt">時間割</a><a href="#s-todo">やること</a><a href="#s-cd">カウントダウン</a><a href="#s-loc">場所</a><a href="#s-gcal">Googleカレンダー</a><a href="#s-quake">地震</a><a href="#s-terms">受験の語句</a><a href="#s-about">このアプリ</a></nav>
@@ -1390,15 +1425,18 @@ function renderSettings() {
   </section>
 
   <section id="s-tt"><h2>時間割</h2>
-    <div class="tabs">${days.map(d => `<button data-ttday="${d}" class="${d === ttDay ? 'on' : ''}">${WD[d]}</button>`).join('')}</div>
-    <table><tr><th style="width:3em">時限</th><th>教科</th><th style="width:30%">教室(空でOK)</th></tr>
-    ${ps.map((p, i) => `<tr><td class="n">${i + 1}</td><td><input type="text" data-tts="${i}" value="${esc((tt[i] || {}).s || '')}" placeholder="教科"></td><td><input type="text" data-ttr="${i}" value="${esc((tt[i] || {}).r || '')}"></td></tr>`).join('')}</table>
-    <h2 style="margin-top:18px">時刻</h2>
-    <table><tr><th style="width:3em">時限</th><th>はじまり</th><th>おわり</th></tr>
-    ${ps.map((p, i) => `<tr><td class="n">${i + 1}</td><td><input type="time" data-ps="${i}" value="${esc(pad5(p[0]))}"></td><td><input type="time" data-pe="${i}" value="${esc(pad5(p[1]))}"></td></tr>`).join('')}
-    <tr><td>SHR</td><td><input type="time" id="shrS" value="${esc(pad5(cfg.shr[0]))}"></td><td><input type="time" id="shrE" value="${esc(pad5(cfg.shr[1]))}"></td></tr></table>
-    <div class="row"><button class="btn sub" id="pAdd">時限を増やす</button><button class="btn sub" id="pDel" ${ps.length > 1 ? '' : 'disabled'}>時限を減らす</button><label><input type="checkbox" id="sat" ${cfg.sat ? 'checked' : ''}>土曜も授業</label></div>
-    <p class="note">30分以上あいたところは昼休みとして表示します。</p>
+    <div class="tabs">${[1, 2, 3, 4, 5, 6].map(d => `<button data-ttday="${d}" class="${d === ttDay ? 'on' : ''}">${WD[d]}</button>`).join('')}</div>
+    ${ttDay === 6 ? `<div class="row">授業がある週:${[1, 2, 3, 4, 5].map(n => `<label><input type="checkbox" data-satw="${n}" ${(cfg.satWeeks || []).includes(n) ? 'checked' : ''}>第${n}</label>`).join('')}</div>` : ''}
+    <h2 style="font-size:14px;margin-top:6px">朝</h2>
+    <table>${(dc.pre || []).map((x, i) => `<tr><td><input type="text" data-pren="${i}" value="${esc(x[0])}"></td><td style="width:8em"><input type="time" data-pres="${i}" value="${esc(pad5(x[1]))}"></td><td style="width:8em"><input type="time" data-pree="${i}" value="${esc(pad5(x[2]))}"></td><td style="width:3em"><button class="btn sub" data-predel="${i}">×</button></td></tr>`).join('')}</table>
+    <button class="btn sub" id="preAdd">朝の予定を足す</button>
+    <h2 style="font-size:14px;margin-top:12px">授業</h2>
+    <table><tr><th style="width:2.5em">時限</th><th>教科</th><th style="width:22%">教室(空でOK)</th><th style="width:7.5em">はじまり</th><th style="width:7.5em">おわり</th></tr>
+    ${dc.p.map((p, i) => `<tr><td class="n">${i + 1}</td><td><input type="text" data-tts="${i}" value="${esc((tt[i] || {}).s || '')}" placeholder="教科"></td><td><input type="text" data-ttr="${i}" value="${esc((tt[i] || {}).r || '')}"></td><td><input type="time" data-ps="${i}" value="${esc(pad5(p[0]))}"></td><td><input type="time" data-pe="${i}" value="${esc(pad5(p[1]))}"></td></tr>`).join('')}</table>
+    <div class="row"><button class="btn sub" id="pAdd">時限を増やす</button><button class="btn sub" id="pDel" ${dc.p.length ? '' : 'disabled'}>時限を減らす</button></div>
+    <h2 style="font-size:14px;margin-top:12px">帰り</h2>
+    <div class="row"><input type="text" id="postN" value="${esc((dc.post || [])[0] || '')}" placeholder="掃除・HR"><input type="time" id="postS" value="${esc(pad5((dc.post || [])[1]))}"> 〜 <input type="time" id="postE" value="${esc(pad5((dc.post || [])[2]))}"></div>
+    <p class="note">30分以上あいたところは昼休みとして表示します。時限を0にすると、その曜日は授業なしになります。祝日はお休みとして扱います。</p>
   </section>
 
   <section id="s-todo"><h2>やること</h2>
@@ -1469,8 +1507,10 @@ $('settings').addEventListener('click', e => {
   if (t.id === 'editStart') { closeSettings(); enterEdit(); return; }
   if (t.id === 'layoutReset') { cfg.layout = null; fixLayout(); saveCfg(); renderLayout(); renderAll(); t.textContent = '戻しました'; return; }
   if (t.dataset.ttday) { ttDay = +t.dataset.ttday; return renderSettings(); }
-  if (t.id === 'pAdd') { const last = cfg.periods[cfg.periods.length - 1], e0 = toMin(last[1]) + 10; cfg.periods.push([fmtMin(e0), fmtMin(e0 + 50)]); return rs(); }
-  if (t.id === 'pDel') { cfg.periods.pop(); return rs(); }
+  if (t.id === 'pAdd') { const P = cfg.days[ttDay].p, last = P[P.length - 1], e0 = last ? toMin(last[1]) + 10 : 530; P.push([fmtMin(e0), fmtMin(e0 + 50)]); return rs(); }
+  if (t.id === 'pDel') { cfg.days[ttDay].p.pop(); return rs(); }
+  if (t.id === 'preAdd') { (cfg.days[ttDay].pre = cfg.days[ttDay].pre || []).push(['', '', '']); return rs(); }
+  if (t.dataset.predel != null) { cfg.days[ttDay].pre.splice(+t.dataset.predel, 1); return rs(); }
   if (t.id === 'tdAdd') {
     const text = $('tdText').value.trim(); if (!text) return;
     todos.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), text: text.slice(0, 40), bring: $('tdBring').checked, due: $('tdDue').value || '', done: false });
@@ -1501,11 +1541,13 @@ $('settings').addEventListener('change', e => {
     const i = +(t.dataset.tts ?? t.dataset.ttr), arr = cfg.tt[ttDay] = cfg.tt[ttDay] || [];
     arr[i] = Object.assign({ s: '', r: '' }, arr[i]); arr[i][t.dataset.tts != null ? 's' : 'r'] = t.value.trim().slice(0, 20);
   }
-  else if (t.dataset.ps != null) cfg.periods[+t.dataset.ps][0] = unpad(t.value);
-  else if (t.dataset.pe != null) cfg.periods[+t.dataset.pe][1] = unpad(t.value);
-  else if (t.id === 'shrS') cfg.shr[0] = unpad(t.value);
-  else if (t.id === 'shrE') cfg.shr[1] = unpad(t.value);
-  else if (t.id === 'sat') { cfg.sat = t.checked; saveCfg(); renderSettings(); return; }
+  else if (t.dataset.ps != null) cfg.days[ttDay].p[+t.dataset.ps][0] = unpad(t.value);
+  else if (t.dataset.pe != null) cfg.days[ttDay].p[+t.dataset.pe][1] = unpad(t.value);
+  else if (t.dataset.pren != null) cfg.days[ttDay].pre[+t.dataset.pren][0] = t.value.trim().slice(0, 12);
+  else if (t.dataset.pres != null) cfg.days[ttDay].pre[+t.dataset.pres][1] = unpad(t.value);
+  else if (t.dataset.pree != null) cfg.days[ttDay].pre[+t.dataset.pree][2] = unpad(t.value);
+  else if (t.id === 'postN' || t.id === 'postS' || t.id === 'postE') { const P = cfg.days[ttDay].post = cfg.days[ttDay].post || ['', '', '']; if (t.id === 'postN') P[0] = t.value.trim().slice(0, 12); else P[t.id === 'postS' ? 1 : 2] = unpad(t.value); }
+  else if (t.dataset.satw) { const n = +t.dataset.satw; cfg.satWeeks = t.checked ? [...new Set([...(cfg.satWeeks || []), n])].sort() : (cfg.satWeeks || []).filter(x => x !== n); }
   else if (t.dataset.cdn != null) cfg.countdowns[+t.dataset.cdn].name = t.value.trim().slice(0, 12);
   else if (t.dataset.cdd != null) cfg.countdowns[+t.dataset.cdd].date = t.value;
   else if (t.id === 'prefSel' && t.value) { const p = JAPAN.find(x => x.name === t.value); cfg.loc = { lat: +p.c[1].toFixed(3), lon: +p.c[0].toFixed(3), pref: p.name, how: 'pref' }; saveCfg(); loadWeather(); renderSettings(); return; }
