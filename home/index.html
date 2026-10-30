@@ -302,7 +302,7 @@ ul{list-style:none}
 
 <script>
 'use strict';
-const APP_VERSION = '1.2.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.2.1'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1117,7 +1117,7 @@ function showQuakeInfo(q, demo, forceFull) {
   if (!demo && mine < 1 && maxI < 5 && !big) return; // 自分の県で揺れていない小さな地震は出さない
   if (!demo && quakeSeen === q.id + ':closed') return;
   const why = forceFull ? '' : cfg.qiPref && mine >= cfg.qiPref ? `${L.pref} 震度${SHINDO[mine]}` : cfg.qiMax && maxI >= cfg.qiMax ? `最大震度${SHINDO[maxI]}` : cfg.qiMag && H.magnitude >= cfg.qiMag ? `M${(+H.magnitude).toFixed(1)}` : tsBad && cfg.qiTsunami ? TSUNAMI[ts] : '';
-  const full = forceFull || !!why;
+  const full = forceFull || (!!why && !demo); // 帯のデモは帯だけ
   const prev = quake, same = prev && prev.id === q.id;
   quake = { id: q.id, q, demo, mine, maxI, maxPref, byPref, why, full, fullClosed: same ? prev.fullClosed : false, view: same ? prev.view : null, until: nowMs() + 15 * 60e3 };
   if (!same && (full || mine >= cfg.qBeep)) full ? soundAlarm() : soundBeep();
@@ -1230,7 +1230,7 @@ function renderSettings() {
   const opt = (v, cur, lab) => `<option value="${v}" ${String(v) === String(cur) ? 'selected' : ''}>${esc(lab)}</option>`;
   const days = cfg.sat ? [1, 2, 3, 4, 5, 6] : [1, 2, 3, 4, 5];
   $('settings').innerHTML = `<div class="sx">
-  <header><h1>設定</h1><button class="done" id="sDone">完了</button></header>
+  <header><h1>設定</h1><span class="note">v${APP_VERSION}</span><button class="done" id="sDone">完了</button></header>
   <nav><a href="#s-view">表示</a><a href="#s-chips">上のバー・タイル</a><a href="#s-tt">時間割</a><a href="#s-todo">やること</a><a href="#s-cd">カウントダウン</a><a href="#s-loc">場所</a><a href="#s-gcal">Googleカレンダー</a><a href="#s-quake">地震</a><a href="#s-terms">受験の語句</a><a href="#s-about">このアプリ</a></nav>
 
   <section id="s-view"><h2>表示</h2>
@@ -1343,7 +1343,7 @@ $('settings').addEventListener('click', e => {
   }
   if (t.id === 'gasTest') { cfg.gasUrl = $('gasUrl').value.trim(); saveCfg(); $('gasMsg').textContent = '読み込み中…'; loadEvents().then(() => { $('gasMsg').innerHTML = eventsErr ? '<span class="ng">読めませんでした。URLと「アクセスできるユーザー:全員」を確認してください。</span>' : `<span class="ok">${events ? events.length : 0}件 読み込みました</span>`; }); return; }
   if (t.id === 'gasCopy') { navigator.clipboard?.writeText(GAS_CODE).then(() => { t.textContent = 'コピーしました'; }, () => { const r = document.createRange(); r.selectNodeContents($('gasCode')); getSelection().removeAllRanges(); getSelection().addRange(r); }); return; }
-  if (t.dataset.demo) { unlockAudio(); closeSettings(); const k = t.dataset.demo; k === 'info' || k === 'infofull' ? demoInfo(k === 'infofull') : demoEEW(k); return; }
+  if (t.dataset.demo) { const k = t.dataset.demo; try { unlockAudio(); } catch (err) {} closeSettings(); toast(`地震のデモを始めます(${t.textContent})`); setTimeout(() => k === 'info' || k === 'infofull' ? demoInfo(k === 'infofull') : demoEEW(k), 300); return; }
   if (t.id === 'soundTest') { unlockAudio(); setTimeout(soundAlarm, 100); return; }
 });
 $('settings').addEventListener('change', e => {
@@ -1377,6 +1377,9 @@ $('settings').addEventListener('change', e => {
 });
 
 /* ================= 動かす ================= */
+// 思わぬエラーが起きたら画面の下に出す(原因を伝えてもらえるように)
+addEventListener('error', e => toast(`エラー: ${e.message || e} (${(e.filename || '').split('/').pop()}:${e.lineno || '?'}) v${APP_VERSION}`));
+addEventListener('unhandledrejection', e => { const m = String(e.reason && e.reason.message || e.reason || ''); if (!/fetch|network|Load failed|abort/i.test(m)) toast(`エラー: ${m} v${APP_VERSION}`); });
 let lastMin = -1;
 function tick(force) {
   const d = now();
