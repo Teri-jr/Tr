@@ -23,7 +23,7 @@
 body.light{--bg:#eceeef;--ink:#16181b;--sub:#656a70;--dim:#a6abb0;--rule:#d3d7db;--card:#f7f8f9;--track:#d6dadd;--seg:#dde1e4;--segdone:#c7ccd1;
   --red:#e0431f;--blue:#2f78c4;--yel:#a87a05;--grn:#2f9a55;--sl:#c98a00;--onpill:#fff}
 html,body{height:100%;background:var(--bg);overflow:hidden}
-body{color:var(--ink);font-family:var(--jp);font-size:14px;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+body{-webkit-touch-callout:none;color:var(--ink);font-family:var(--jp);font-size:14px;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .n{font-family:var(--num);font-variant-numeric:tabular-nums;letter-spacing:.01em}
 [hidden]{display:none!important}
@@ -88,8 +88,10 @@ ul{list-style:none}
 .ticks{width:100%;display:flex;justify-content:space-between;margin-top:5px;color:var(--dim);font-size:12px}
 
 /* 時計の下の枠 */
-.slot{height:250px;flex:none;padding:18px 26px;display:flex;flex-direction:column}
-.slot .back{font-size:11px;color:var(--dim);text-align:right;margin-top:auto;padding-top:6px}
+.col>.tile{flex:none}
+.col>.tile.grow{flex:1 1 0;min-height:0}
+.pop{position:absolute;top:60px;left:50%;transform:translateX(-50%);width:620px;max-height:320px;background:var(--bg);border:1px solid var(--ink);box-shadow:0 18px 40px rgba(0,0,0,.45);z-index:4;padding:18px 26px;display:flex;flex-direction:column}
+.pop .back{font-size:11px;color:var(--dim);text-align:right;margin-top:auto;padding-top:6px}
 .slhead{display:flex;align-items:baseline;gap:12px;min-width:0}
 .pill{font-size:11.5px;font-weight:700;padding:1px 8px;background:var(--sl);color:var(--onpill);white-space:nowrap}
 .pill.g{background:transparent;border:1px solid var(--sub);color:var(--sub);font-weight:500}
@@ -161,8 +163,26 @@ ul{list-style:none}
 .sched .tx{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* 列に置いたタイル(幅が狭い版) */
-.tiles{display:flex;flex-direction:column;flex:none}
-.tiles .tile{padding:16px 22px;border-top:1px solid var(--rule);border-bottom:0}
+.mini{padding:16px 22px}
+.side .clockt{padding:12px 16px}.side .next{font-size:13px}.side .next .n{font-size:18px}.side .ticks{font-size:10px}
+/* 並べ替えモード */
+.bar .edc{display:none}
+body.editing .bar .edc{display:inline-block}
+body.editing .bar .stx,body.editing #chips{display:none!important}
+body.editing .page{touch-action:none}
+body.editing .page .tile{position:relative;outline:2px dashed var(--sub);outline-offset:-5px;cursor:grab}
+body.editing .page .tile *{pointer-events:none}
+body.editing .page .tile .tdel{pointer-events:auto}
+.tdel{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;background:var(--red);color:#fff;font-size:20px;line-height:28px;text-align:center;z-index:3;font-weight:700}
+.tile.dragging{opacity:.3}
+.ph{height:8px;background:var(--sl);flex:none;margin:3px 10px}
+#dragTag{position:fixed;z-index:60;background:var(--sl);color:#141413;font-weight:700;padding:6px 14px;pointer-events:none;transform:translate(-50%,-140%);font-size:15px}
+.addp{position:absolute;left:50%;top:70px;transform:translateX(-50%);width:640px;max-height:700px;overflow:auto;background:var(--bg);border:1px solid var(--ink);box-shadow:0 18px 40px rgba(0,0,0,.5);z-index:8;padding:18px 24px}
+.addp h2{font-size:16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.addp .r{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--rule);font-size:15px}
+.addp .r .nm{flex:1}.addp .r .d{font-size:12px;color:var(--sub);margin-left:8px}
+.addp button{border:1px solid var(--rule);padding:5px 12px;font-size:13px}
+.addp button.on{border-color:var(--ink);font-weight:700}
 .mini .card{flex-direction:column;align-items:flex-start;gap:6px;min-height:0;padding:12px 14px}
 .mini .cw{font-size:34px;max-width:100%}.mini .cw.jp{font-size:26px}
 .mini .flip{margin-left:0}.mini .cans .a{font-size:17px}
@@ -262,31 +282,30 @@ ul{list-style:none}
   <div class="bar" id="bar">
     <div class="logo"><img src="logo-64.png" width="28" height="28" alt=""><span>Platform</span></div>
     <div id="chips" style="display:flex;gap:8px"></div>
-    <div class="right"><span id="stSound"></span><span id="stWake"></span><button class="gear" id="openSettings">設定</button></div>
+    <div class="right"><span class="stx" id="stSound"></span><span class="stx" id="stWake"></span><span class="edc">長押しで動かす ・ × で外す</span><button class="gear edc" id="editAdd">+ タイルを追加</button><button class="gear edc" id="editDone" style="border-color:var(--ink);font-weight:700">完了</button><button class="gear stx" id="openSettings">設定</button></div>
   </div>
   <div class="qb" id="qb" hidden></div>
-  <div class="page">
-    <div class="col">
-      <section class="tile tt" id="ttTile"></section>
-      <section class="tile todo grow" id="todoTile"></section>
-      <div id="leftTiles" class="tiles"></div>
-    </div>
-    <div class="col">
-      <section class="tile clockt" id="clockTile">
-        <div class="date" id="date"></div>
-        <div class="clock n" id="clock"></div>
-        <div class="next" id="next"></div>
-        <div class="pbar" id="pbar"></div>
-        <div class="ticks" id="ticks"></div>
-      </section>
-      <section class="tile slot" id="slot"></section>
-    </div>
-    <div class="col">
-      <section class="tile" id="wxTile"></section>
-      <section class="tile sched grow" id="schedTile"></section>
-      <div id="rightTiles" class="tiles"></div>
-    </div>
+  <div class="page" id="page">
+    <div class="col" id="colL"></div>
+    <div class="col" id="colC"></div>
+    <div class="col" id="colR"></div>
   </div>
+  <div id="pool" hidden>
+    <section class="tile tt" id="ttTile"></section>
+    <section class="tile todo" id="todoTile"></section>
+    <section class="tile clockt" id="clockTile">
+      <div class="date" id="date"></div>
+      <div class="clock n" id="clock"></div>
+      <div class="next" id="next"></div>
+      <div class="pbar" id="pbar"></div>
+      <div class="ticks" id="ticks"></div>
+    </section>
+    <section class="tile" id="wxTile"></section>
+    <section class="tile sched" id="schedTile"></section>
+  </div>
+  <section class="pop" id="slot" hidden></section>
+  <div class="addp" id="addPanel" hidden></div>
+  <div id="dragTag" hidden></div>
   <div id="eew" hidden>
     <div class="map"><canvas id="eewMap" width="1280" height="1640"></canvas>
       <div class="wv" id="eewWave"><b>━ P波</b> 小さな揺れ<br><b style="color:#ff6b6b">━ S波</b> 大きな揺れ</div>
@@ -302,7 +321,7 @@ ul{list-style:none}
 
 <script>
 'use strict';
-const APP_VERSION = '1.2.1'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.3.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -339,16 +358,13 @@ const DEFAULT_CFG = {
   periods: [['8:50', '9:40'], ['9:50', '10:40'], ['10:50', '11:40'], ['11:50', '12:40'], ['13:25', '14:15'], ['14:25', '15:15']],
   shr: ['15:20', '15:35'], sat: false,
   tt: { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] }, // 曜日ごと [{s:教科, r:教室}]
-  chips: [['studyline', true], ['kioku', true], ['count', true], ['holiday', true], ['terms', true], ['calendar', true]],
+  layout: null, bar: null, // タイルの置き場所(fixLayout で初期の配置を入れる)
   countdowns: [{ name: '共通テスト', date: '2027-01-16' }, { name: '', date: '' }],
   termCats: ['日本史', '古文単語', '化学', '物理', '現代文', '四字熟語'],
   qFull: 5, qBeep: 3, // 震度の段階(0〜9)。5 = 5弱。qFull 0 = 緊急地震速報はすべて全画面
   qiPref: 5, qiMax: 0, qiMag: 0, qiTsunami: true // 地震情報を全画面にする条件(0 = 使わない)
 };
 let cfg = Object.assign({}, DEFAULT_CFG, store.get('cfg') || {});
-// 上のバー・タイルの置き場所:'bar' 上のバー / 'left' 左の列 / 'right' 右の列 / 'off' 出さない
-cfg.chips = cfg.chips.map(([k, v]) => [k, v === true ? 'bar' : v === false ? 'off' : v]);
-for (const [k] of DEFAULT_CFG.chips) if (!cfg.chips.some(c => c[0] === k)) cfg.chips.push([k, 'off']);
 const saveCfg = () => store.set('cfg', cfg);
 let todos = store.get('todos') || [];
 const saveTodos = () => store.set('todos', todos);
@@ -445,6 +461,7 @@ function renderClock() {
 
 /* ================= 時間割タイル ================= */
 function renderTT(st) {
+  if (editing) return; // 並べ替え中は中身を描き直さない(× ボタンが消えないように)
   const d = now();
   let day = d, title = '今日の時間割';
   if (st.mode === 'after' || st.mode === 'off') { day = st.mode === 'off' && isSchoolDay(d) ? d : nextSchoolDay(d); title = `${dayLabel(d, day) === '明日' ? '明日' : dayLabel(d, day)}の時間割`; }
@@ -477,6 +494,7 @@ function cleanTodos() {
   if (todos.length !== before) saveTodos();
 }
 function renderTodo() {
+  if (editing) return; // 並べ替え中は中身を描き直さない(× ボタンが消えないように)
   cleanTodos();
   const list = [...todos].sort((a, b) => (a.done - b.done) || (dueInfo(a).ord - dueInfo(b).ord));
   const open = todos.filter(t => !t.done).length;
@@ -520,6 +538,7 @@ async function loadWeather() {
   renderWeather();
 }
 function renderWeather() {
+  if (editing) return; // 並べ替え中は中身を描き直さない(× ボタンが消えないように)
   const T = $('wxTile');
   if (!wx) { T.innerHTML = `<h3>天気 <span>${esc(loc().pref)}</span></h3><p class="empty">${wxFail ? '天気を取得できませんでした。しばらくしてもう一度試します。' : '天気を読み込み中…'}</p>`; return; }
   const d = now(), st = schoolState(d);
@@ -569,6 +588,7 @@ function upcoming() {
 }
 const EV_COLORS = { 1: '#7986cb', 2: '#33b679', 3: '#8e24aa', 4: '#e67c73', 5: '#f6bf26', 6: '#f4511e', 7: '#039be5', 8: '#616161', 9: '#3f51b5', 10: '#0b8043', 11: '#d50000' };
 function renderSched() {
+  if (editing) return; // 並べ替え中は中身を描き直さない(× ボタンが消えないように)
   const T = $('schedTile');
   let h = `<h3>予定 <span>${cfg.gasUrl ? (eventsErr ? '<span style="color:var(--red)">更新できません</span>' : 'Googleカレンダー') : ''}</span></h3>`;
   if (!cfg.gasUrl) h += '<p class="empty">「設定」→「Googleカレンダー」で連携すると、ここに予定が出ます。</p>';
@@ -814,52 +834,166 @@ function renderCalendar() {
   return h + '</div>';
 }
 
-/* ================= 上のバーと時計の下の枠 ================= */
+/* ================= タイルの配置と上のバー ================= */
 const CHIP = {
-  studyline: { name: 'StudyLine', render: renderStudyLine, chip: () => `<span class="slc">StudyLine</span> ${slChip()}` },
+  studyline: { name: 'StudyLine', render: () => renderStudyLine(false), chip: () => `<span class="slc">StudyLine</span> ${slChip()}` },
   kioku: { name: '記憶回路', render: renderKioku, chip: () => `記憶回路 <b>${kioku.loaded ? dueList().length : '…'}</b>` },
   count: { name: 'カウントダウン', render: renderCount, chip: () => { const c = cdList()[0]; return c ? `${esc(c.name)} <b>${c.days}</b>日` : 'カウントダウン'; } },
   holiday: { name: '次の休み', render: renderHoliday, chip: () => { const o = nextOff(); return o.today ? '今日は休み' : `次の休み <b>${o.days}</b>日後`; } },
   terms: { name: '受験の語句', render: renderTerms, chip: () => '受験の語句' },
   calendar: { name: 'カレンダー', render: renderCalendar, chip: () => `カレンダー` }
 };
-const enabledChips = () => cfg.chips.filter(([k, at]) => at === 'bar' && CHIP[k]).map(([k]) => k);
-const tilesAt = side => cfg.chips.filter(([k, at]) => at === side && CHIP[k]).map(([k]) => k);
+const FIXED = { tt: 'ttTile', todo: 'todoTile', clock: 'clockTile', weather: 'wxTile', sched: 'schedTile' };
+const TILE_NAME = { tt: '時間割', todo: 'やること', clock: '時計', weather: '天気', sched: '予定', ...Object.fromEntries(Object.entries(CHIP).map(([k, v]) => [k, v.name])) };
+const TILE_DESC = { tt: '今日(放課後は明日)の時間割', todo: '課題と持ちもの', clock: '時計と時限バー', weather: '気温・降水確率・傘', sched: 'Googleカレンダーの予定', studyline: '今日のダイヤ・運行状況', kioku: '今日の復習を1語ずつ採点', count: '共通テストなどまでの日数', holiday: '次の連休・今年の残り', terms: '受験の語句をランダムに', calendar: '4週間分のカレンダー' };
+const GROW = new Set(['clock', 'todo', 'sched']);
+const SIDES = { left: 'colL', center: 'colC', right: 'colR' };
+const DEFAULT_LAYOUT = { left: ['tt', 'todo', 'kioku'], center: ['clock', 'studyline'], right: ['weather', 'count', 'calendar', 'sched'] };
+const DEFAULT_BAR = ['holiday', 'terms'];
+function fixLayout() {
+  if (!cfg.layout || typeof cfg.layout !== 'object') { cfg.layout = JSON.parse(JSON.stringify(DEFAULT_LAYOUT)); cfg.bar = DEFAULT_BAR.slice(); }
+  const seen = new Set();
+  for (const side of Object.keys(SIDES)) cfg.layout[side] = (Array.isArray(cfg.layout[side]) ? cfg.layout[side] : []).filter(k => TILE_NAME[k] && !seen.has(k) && seen.add(k));
+  if (!seen.has('clock')) cfg.layout.center.unshift('clock'); // 時計はかならず置く
+  cfg.bar = (Array.isArray(cfg.bar) ? cfg.bar : []).filter(k => CHIP[k] && !seen.has(k));
+}
+fixLayout();
+const inLayout = k => Object.values(cfg.layout).some(a => a.includes(k));
+let editing = false;
+
+function renderLayout() {
+  document.querySelectorAll('.tdel').forEach(x => x.remove());
+  const pool = $('pool');
+  for (const id of Object.values(SIDES)) [...$(id).children].forEach(el => { if (Object.values(FIXED).includes(el.id)) pool.appendChild(el); else el.remove(); });
+  for (const [side, id] of Object.entries(SIDES)) {
+    const col = $(id); col.classList.toggle('side', side !== 'center');
+    let grow = false;
+    for (const k of cfg.layout[side]) {
+      let el = FIXED[k] ? $(FIXED[k]) : null;
+      if (!el) { el = document.createElement('section'); el.className = 'tile'; el.dataset.tile = k; }
+      el.dataset.k = k;
+      el.classList.toggle('grow', GROW.has(k)); if (GROW.has(k)) grow = true;
+      el.classList.toggle('mini', side !== 'center' && !FIXED[k]);
+      col.appendChild(el);
+    }
+    if (!grow && col.lastElementChild) col.lastElementChild.classList.add('grow');
+  }
+  renderTiles();
+  if (editing) document.querySelectorAll('#page .tile').forEach(el => { if (el.dataset.k !== 'clock') el.insertAdjacentHTML('beforeend', '<button class="tdel" aria-label="外す">×</button>'); });
+  requestAnimationFrame(fitClock);
+}
+// 時計の大きさを、置いた場所の広さに合わせる
+function fitClock() {
+  const el = $('clockTile'); if (!el.isConnected || !el.parentNode || el.parentNode.id === 'pool') return;
+  const w = el.clientWidth, h = el.clientHeight;
+  const f = Math.max(54, Math.min(220, (w - 50) / (cfg.showSec ? 3.1 : 2.6), (h - 150) / 0.92));
+  $('clock').style.fontSize = f + 'px';
+  const sec = $('clock').querySelector('.sec'); if (sec) sec.style.fontSize = (f * .2) + 'px';
+}
+function renderTiles() {
+  document.querySelectorAll('#page [data-tile]').forEach(el => {
+    const k = el.dataset.tile, side = el.parentNode.id !== 'colC';
+    el.innerHTML = k === 'studyline' ? renderStudyLine(side) : CHIP[k].render();
+  });
+}
 let slotMode = null, slotTouched = 0;
-const homeSlot = () => enabledChips()[0] || null;
 function renderChips() {
-  $('chips').innerHTML = enabledChips().map(k => `<button class="chip ${k === slotMode ? 'on' : ''}" data-k="${k}">${CHIP[k].chip()}</button>`).join('');
+  $('chips').innerHTML = cfg.bar.map(k => `<button class="chip ${k === slotMode ? 'on' : ''}" data-k="${k}">${CHIP[k].chip()}</button>`).join('');
 }
 $('chips').addEventListener('click', e => {
   const b = e.target.closest('[data-k]'); if (!b) return;
-  slotMode = b.dataset.k; slotTouched = nowMs();
-  if (slotMode === 'terms' && termCur) { /* そのまま */ }
+  slotMode = slotMode === b.dataset.k ? null : b.dataset.k; slotTouched = nowMs();
   renderChips(); renderSlot();
 });
 function renderSlot() {
-  const en = enabledChips();
-  if (!en.includes(slotMode)) slotMode = homeSlot();
   const S = $('slot');
-  if (!slotMode) { S.hidden = true; return; }
+  if (!slotMode || !cfg.bar.includes(slotMode)) { slotMode = null; S.hidden = true; return; }
   S.hidden = false;
-  S.innerHTML = CHIP[slotMode].render() + (slotMode !== homeSlot() ? `<div class="back">しばらく触らないと ${esc(CHIP[homeSlot()].name)} に戻ります</div>` : '');
+  S.innerHTML = CHIP[slotMode].render() + '<div class="back">外をタップするか、しばらくすると閉じます</div>';
 }
-function renderTiles() {
-  for (const side of ['left', 'right']) {
-    const box = $(side + 'Tiles'), ks = tilesAt(side);
-    box.innerHTML = ks.map(k => `<section class="tile mini" data-tile="${k}">${k === 'studyline' ? renderStudyLine(true) : CHIP[k].render()}</section>`).join('');
-  }
-}
+function closeSlot() { if (slotMode) { slotMode = null; renderChips(); renderSlot(); } }
 function slotClick(e) {
   slotTouched = nowMs();
   if (e.target.closest('.kcard,[data-g]')) kiokuClick(e);
   else if (e.target.closest('.termcard')) { pickTerm(); renderSlot(); renderTiles(); }
 }
 $('slot').addEventListener('click', slotClick);
-$('leftTiles').addEventListener('click', slotClick);
-$('rightTiles').addEventListener('click', slotClick);
+$('page').addEventListener('click', e => { if (!editing && e.target.closest('[data-tile]')) slotClick(e); });
+// ポップアップの外をタップしたら閉じる
+$('stage').addEventListener('pointerdown', e => { if (slotMode && !e.target.closest('#slot,#chips')) closeSlot(); });
 
-function renderAll() { const st = renderClock(); renderTT(st); renderTodo(); renderWeather(); renderSched(); renderChips(); renderSlot(); renderTiles(); }
+/* ---- 並べ替えモード(タイルを長押し) ---- */
+let lp = null, drag = null;
+$('stage').addEventListener('pointerdown', e => {
+  if (editing || !e.target.closest('#page .tile')) return;
+  lp = { x: e.clientX, y: e.clientY, t: setTimeout(() => { lp = null; enterEdit(); }, 650) };
+});
+addEventListener('pointermove', e => { if (lp && Math.hypot(e.clientX - lp.x, e.clientY - lp.y) > 12) { clearTimeout(lp.t); lp = null; } });
+addEventListener('pointerup', () => { if (lp) { clearTimeout(lp.t); lp = null; } });
+addEventListener('pointercancel', () => { if (lp) { clearTimeout(lp.t); lp = null; } });
+// 並べ替え中は、タイルの中身(やることのチェックなど)を押せないようにする
+$('page').addEventListener('click', e => { if (editing && !e.target.closest('.tdel')) { e.stopPropagation(); e.preventDefault(); } }, true);
+function enterEdit() { closeSlot(); editing = true; document.body.classList.add('editing'); renderLayout(); if (navigator.vibrate) navigator.vibrate(20); }
+function exitEdit() { editing = false; document.body.classList.remove('editing'); $('addPanel').hidden = true; saveCfg(); renderLayout(); renderAll(); }
+$('editDone').addEventListener('click', exitEdit);
+$('editAdd').addEventListener('click', () => { renderAddPanel(); $('addPanel').hidden = false; });
+$('page').addEventListener('click', e => {
+  const d = e.target.closest('.tdel'); if (!d) return;
+  const k = d.parentNode.dataset.k;
+  for (const side in cfg.layout) cfg.layout[side] = cfg.layout[side].filter(x => x !== k);
+  saveCfg(); renderLayout();
+});
+$('page').addEventListener('pointerdown', e => {
+  if (!editing || e.target.closest('.tdel')) return;
+  const t = e.target.closest('#page .tile'); if (!t) return;
+  e.preventDefault();
+  drag = { el: t, k: t.dataset.k, x: e.clientX, y: e.clientY, moved: false, ph: null };
+});
+addEventListener('pointermove', e => {
+  if (!drag) return;
+  if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 8) return;
+  if (!drag.moved) { drag.moved = true; drag.el.classList.add('dragging'); $('dragTag').textContent = TILE_NAME[drag.k]; $('dragTag').hidden = false; drag.ph = document.createElement('div'); drag.ph.className = 'ph'; }
+  $('dragTag').style.left = e.clientX + 'px'; $('dragTag').style.top = e.clientY + 'px';
+  // 指の下の列と、入れる位置を探す
+  for (const id of Object.values(SIDES)) {
+    const col = $(id), r = col.getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX > r.right) continue;
+    const kids = [...col.children].filter(c => c !== drag.ph && c !== drag.el);
+    const before = kids.find(c => { const b = c.getBoundingClientRect(); return e.clientY < b.top + b.height / 2; });
+    if (before) { if (drag.ph.nextSibling !== before) col.insertBefore(drag.ph, before); }
+    else if (col.lastElementChild !== drag.ph) col.appendChild(drag.ph);
+    break;
+  }
+});
+function endDrag() {
+  if (!drag) return;
+  const d = drag; drag = null; $('dragTag').hidden = true; d.el.classList.remove('dragging');
+  if (d.moved && d.ph && d.ph.parentNode) {
+    d.ph.parentNode.insertBefore(d.el, d.ph); d.ph.remove();
+    for (const [side, id] of Object.entries(SIDES)) cfg.layout[side] = [...$(id).children].map(c => c.dataset.k).filter(Boolean);
+    saveCfg(); renderLayout();
+  } else if (d.ph) d.ph.remove();
+}
+addEventListener('pointerup', endDrag);
+addEventListener('pointercancel', endDrag);
+
+function renderAddPanel() {
+  const keys = Object.keys(TILE_NAME);
+  const free = keys.filter(k => !inLayout(k));
+  $('addPanel').innerHTML = `<h2>タイルを追加<button id="addClose">閉じる</button></h2>
+    ${free.length ? free.map(k => `<div class="r"><span class="nm">${TILE_NAME[k]}<span class="d">${TILE_DESC[k] || ''}</span></span><button data-add="left" data-k="${k}">左に</button><button data-add="center" data-k="${k}">真ん中に</button><button data-add="right" data-k="${k}">右に</button></div>`).join('') : '<p class="empty">ぜんぶ置いてあります。</p>'}
+    <h2 style="margin-top:18px">上のバーに出す</h2>
+    <p class="empty" style="margin-bottom:6px">押すとポップアップで開きます。タイルとして置いているものは出せません。</p>
+    ${Object.keys(CHIP).map(k => `<div class="r"><span class="nm">${CHIP[k].name}</span>${inLayout(k) ? '<span class="d">タイルとして表示中</span>' : `<button data-bar="${k}" class="${cfg.bar.includes(k) ? 'on' : ''}">${cfg.bar.includes(k) ? '出している' : '出さない'}</button>`}</div>`).join('')}`;
+}
+$('addPanel').addEventListener('click', e => {
+  const t = e.target;
+  if (t.id === 'addClose') { $('addPanel').hidden = true; return; }
+  if (t.dataset.add) { const k = t.dataset.k; cfg.bar = cfg.bar.filter(x => x !== k); cfg.layout[t.dataset.add].push(k); saveCfg(); renderLayout(); renderAddPanel(); return; }
+  if (t.dataset.bar) { const k = t.dataset.bar; cfg.bar = cfg.bar.includes(k) ? cfg.bar.filter(x => x !== k) : [...cfg.bar, k]; saveCfg(); renderChips(); renderAddPanel(); }
+});
+
+function renderAll() { const st = renderClock(); renderTT(st); renderTodo(); renderWeather(); renderSched(); renderChips(); renderSlot(); renderTiles(); requestAnimationFrame(fitClock); }
 
 /* ================= 音(タップするまで鳴らせない) ================= */
 let actx = null;
@@ -1214,7 +1348,6 @@ const GAS_CODE = `function doGet() {
     .setMimeType(ContentService.MimeType.JSON);
 }`;
 let ttDay = 1;
-const CHIP_DESC = { studyline: '今日のダイヤ・運行状況', kioku: '今日の復習を1語ずつ採点', count: '共通テストなどまでの日数', holiday: '次の連休・今年の残り', terms: '受験の語句をランダムに', calendar: '4週間分のカレンダー' };
 function openSettings(anchor) {
   renderSettings();
   $('settings').hidden = false;
@@ -1231,7 +1364,7 @@ function renderSettings() {
   const days = cfg.sat ? [1, 2, 3, 4, 5, 6] : [1, 2, 3, 4, 5];
   $('settings').innerHTML = `<div class="sx">
   <header><h1>設定</h1><span class="note">v${APP_VERSION}</span><button class="done" id="sDone">完了</button></header>
-  <nav><a href="#s-view">表示</a><a href="#s-chips">上のバー・タイル</a><a href="#s-tt">時間割</a><a href="#s-todo">やること</a><a href="#s-cd">カウントダウン</a><a href="#s-loc">場所</a><a href="#s-gcal">Googleカレンダー</a><a href="#s-quake">地震</a><a href="#s-terms">受験の語句</a><a href="#s-about">このアプリ</a></nav>
+  <nav><a href="#s-view">表示</a><a href="#s-chips">タイル</a><a href="#s-tt">時間割</a><a href="#s-todo">やること</a><a href="#s-cd">カウントダウン</a><a href="#s-loc">場所</a><a href="#s-gcal">Googleカレンダー</a><a href="#s-quake">地震</a><a href="#s-terms">受験の語句</a><a href="#s-about">このアプリ</a></nav>
 
   <section id="s-view"><h2>表示</h2>
     <div class="row">${['dark', 'light', 'auto'].map(v => `<label><input type="radio" name="theme" value="${v}" ${cfg.theme === v ? 'checked' : ''}>${{ dark: 'ダーク', light: 'ライト', auto: '時間で自動' }[v]}</label>`).join('')}</div>
@@ -1240,10 +1373,9 @@ function renderSettings() {
     <p class="note">置きっぱなしにするときは、充電しながら使ってください。開いている間は画面が自動で消えないようにしています(iPadOS 16.4 以降)。</p>
   </section>
 
-  <section id="s-chips"><h2>上のバー・タイル</h2>
-    <p class="note">「上のバー」は押すと時計の下に開きます(上のバーの中で一番上のものが、しばらく触らないときに戻る表示)。「左の列」「右の列」はタイルとしていつも表示します。並び順は ↑↓ で変えられます。</p>
-    ${cfg.chips.map(([k, at], i) => `<div class="chiprow"><span class="nm"><b>${CHIP[k].name}</b> <span class="note">${CHIP_DESC[k]}</span></span><select data-chip="${k}">${[['bar', '上のバー'], ['left', '左の列'], ['right', '右の列'], ['off', '出さない']].map(([v, l]) => opt(v, at, l)).join('')}</select><button data-up="${i}" ${i ? '' : 'disabled'}>↑</button><button data-down="${i}" ${i < cfg.chips.length - 1 ? '' : 'disabled'}>↓</button></div>`).join('')}
-    <p class="note">列にたくさん置くと、やること・予定の欄が狭くなります。
+  <section id="s-chips"><h2>タイル</h2>
+    <p>画面のタイルを<b>長押し</b>すると並べ替えモードになります。ドラッグで動かす、× で外す、「+ タイルを追加」で追加・上のバーに出す、ができます。</p>
+    <div class="row"><button class="btn" id="editStart">並べ替えを始める</button><button class="btn sub" id="layoutReset">初期の配置に戻す</button></div>
   </section>
 
   <section id="s-tt"><h2>時間割</h2>
@@ -1322,7 +1454,8 @@ const unpad = s => { const m = toMin(s); return m == null ? '' : `${Math.floor(m
 $('settings').addEventListener('click', e => {
   const t = e.target, rs = () => { saveCfg(); renderSettings(); };
   if (t.id === 'sDone') return closeSettings();
-  if (t.dataset.up != null || t.dataset.down != null) { const i = +(t.dataset.up ?? t.dataset.down), j = t.dataset.up != null ? i - 1 : i + 1; [cfg.chips[i], cfg.chips[j]] = [cfg.chips[j], cfg.chips[i]]; return rs(); }
+  if (t.id === 'editStart') { closeSettings(); enterEdit(); return; }
+  if (t.id === 'layoutReset') { cfg.layout = null; fixLayout(); saveCfg(); renderLayout(); renderAll(); t.textContent = '戻しました'; return; }
   if (t.dataset.ttday) { ttDay = +t.dataset.ttday; return renderSettings(); }
   if (t.id === 'pAdd') { const last = cfg.periods[cfg.periods.length - 1], e0 = toMin(last[1]) + 10; cfg.periods.push([fmtMin(e0), fmtMin(e0 + 50)]); return rs(); }
   if (t.id === 'pDel') { cfg.periods.pop(); return rs(); }
@@ -1352,7 +1485,6 @@ $('settings').addEventListener('change', e => {
   else if (t.id === 'lightFrom') cfg.lightFrom = t.value;
   else if (t.id === 'darkFrom') cfg.darkFrom = t.value;
   else if (t.id === 'showSec') cfg.showSec = t.checked;
-  else if (t.dataset.chip) { cfg.chips.find(c => c[0] === t.dataset.chip)[1] = t.value; }
   else if (t.dataset.tts != null || t.dataset.ttr != null) {
     const i = +(t.dataset.tts ?? t.dataset.ttr), arr = cfg.tt[ttDay] = cfg.tt[ttDay] || [];
     arr[i] = Object.assign({ s: '', r: '' }, arr[i]); arr[i][t.dataset.tts != null ? 's' : 'r'] = t.value.trim().slice(0, 20);
@@ -1388,8 +1520,8 @@ function tick(force) {
   if (force || d.getMinutes() !== lastMin) {
     lastMin = d.getMinutes();
     applyTheme(); renderTT(st); renderTodo(); renderSched(); renderChips();
-    if (slotMode !== homeSlot() && nowMs() - slotTouched > 90e3) slotMode = homeSlot();
-    if (!kioku.shown) { renderSlot(); renderTiles(); }
+    if (slotMode && nowMs() - slotTouched > 60e3) closeSlot();
+    if (!kioku.shown && !editing) { renderSlot(); renderTiles(); requestAnimationFrame(fitClock); }
     if (d.getMinutes() % 30 === 0) loadWeather();
     if (d.getMinutes() % 10 === 5) loadEvents();
     if (d.getMinutes() % 2 === 0) renderWeather();
@@ -1400,7 +1532,7 @@ setInterval(eewTick, 250);
 setInterval(pollQuake, 60e3);
 
 fit(); applyTheme(); renderStatus();
-renderAll();
+renderLayout(); renderAll();
 loadWeather(); loadEvents(); loadVocab(); pollQuake(); checkVersion(); requestWake();
 connectEEW();
 loop();
