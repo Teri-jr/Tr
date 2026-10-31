@@ -243,7 +243,8 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outli
 }
 .trk.tbk{background:var(--warn);border-color:var(--warn);color:#111}
 .zn{font-size:13px;fill:#e9eef6}
-.zn.pass{fill:#8b97a8}
+.ztk{font-size:11px;font-weight:700;fill:#c3cad6;stroke:#05080d;stroke-width:4px;paint-order:stroke;font-family:var(--f-num)}
+.zn.zpass{fill:#8b97a8}
 .zn.past{fill:#56606e}
 .zn.tgt{fill:#fff;font-weight:700;font-size:16px}
 </style>
@@ -522,7 +523,7 @@ function planTimes(route,k){
   return {ev:s.events,traj:s.traj};
 }
 // ---- バージョン（変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする） ----
-const APP_VERSION='1.4.0';
+const APP_VERSION='1.4.1';
 const isNewer=(a,b)=>{ const x=String(a).split(".").map(Number), y=String(b).split(".").map(Number); for(let i=0;i<3;i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0); } return false; };
 let upd=null; // {version, items}：新しい版が出ていたら入る。announced=放送済み
 async function checkUpdate(){
@@ -562,10 +563,10 @@ const ALL_STOP_LINES=new Set(["大師線","逗子線"]), ALL_STOP_ST=new Set(["�
 // 通過駅でも時刻を書く駅（主要駅・待避駅）
 const MAJOR=new Set(["泉岳寺","品川","京急蒲田","京急川崎","横浜","上大岡","金沢文庫","金沢八景","横須賀中央","堀ノ内","京急久里浜","三崎口","浦賀","羽田空港第1・第2ターミナル","逗子・葉山","小島新田"]);
 // ---- 駅の配線と番線（Wikipedia 各駅記事の「駅構造」「のりば」をもとに作成。※は線の並びを推定） ----
-// 上り側→下り側の順に：= ホーム、U/D 上り・下りの本線（数字は番線。X はホームのない通過線）、
+// 上り側→下り側の順に（< は泉岳寺側が行き止まり）：= ホーム、U/D 上り・下りの本線（数字は番線。X はホームのない通過線）、
 // u/d 上り・下りの待避線（副本線）、a 空港線へ行き来する線、c 中線、o 他社の線
 const SOTAI="=,U2,D1,=", SHIMA="U2,=,D1", SHIMA4="u4,=,U3,D2,=,d1";
-const LAYOUT={"泉岳寺":"U4,=,o3,o2,=,D1","品川":"d3,=,U2,D1,=","鮫洲":"UX,u2,=,d1,DX","平和島":SHIMA4,
+const LAYOUT={"泉岳寺":"U4,=,o3,o2,=,D1","品川":"d3<,=,U2,D1,=","鮫洲":"UX,u2,=,d1,DX","平和島":SHIMA4,
  "京急蒲田":"a4,=,u5,U6,D3,d2,=,a1","京急川崎":"u7,=,U6,D5,=,d4","京急鶴見":"U3,=,u2,D1,=","生麦":"U3,=,d2,D1,=",
  "子安":SHIMA4,"神奈川新町":SHIMA4,"戸部":SHIMA,"黄金町":SHIMA,"南太田":"=,u2,UX,DX,d1,=","上大岡":SHIMA4,
  "京急富岡":"U3,=,u2,D1,=","金沢文庫":SHIMA4,"金沢八景":"u4,=,U3,d2,=,D1","逸見":"=,u2,UX,DX,d1,=","県立大学":SHIMA,
@@ -574,7 +575,8 @@ const LAYOUT={"泉岳寺":"U4,=,o3,o2,=,D1","品川":"d3,=,U2,D1,=","鮫洲":"UX
 // 京急蒲田は上下2階建て（上り4〜6番線・下り1〜3番線）を、上り側・下り側に分けて描く
 // ※推定：京急蒲田・京急鶴見・京急富岡・金沢八景・堀ノ内の線の並び、2面4線の駅で内側が本線であること
 const TERMINAL=new Set(["浦賀","三崎口","羽田空港第1・第2ターミナル","小島新田","逗子・葉山","泉岳寺"]);
-function parseLayout(str){ return str.split(",").map(t=>t==="="?{t:"="}:{t:t[0],n:t.slice(1)==="X"?"":t.slice(1),pass:t.slice(1)==="X"}); }
+function parseLayout(str){ return str.split(",").map(t=>{ if(t==="=") return {t:"="}; const end=t.endsWith("<"), v=t.slice(1).replace("<","");
+  return {t:t[0],n:v==="X"?"":v,pass:v==="X",endQ:end}; }); }
 // 待避駅（up=泉岳寺方面の上りのみ、down=下りのみ）
 const TAIHI={"鮫洲":"both","平和島":"both","京急蒲田":"both","京急川崎":"both","京急鶴見":"up","生麦":"down","子安":"both","神奈川新町":"both","南太田":"both","上大岡":"both","京急富岡":"up","金沢文庫":"both","金沢八景":"both","逸見":"both","堀ノ内":"up"};
 const TAIHI_SEC=120;
@@ -1017,7 +1019,7 @@ let Z=null;
 const zVisible=()=>getComputedStyle($("zaisen")).display!=="none";
 function buildZaisen(){
   Z=null; const svg=$("zsvg"); if(!route||!zVisible()) { svg.innerHTML=""; return; }
-  const W=$("zbody").clientWidth||600, padL=70, padR=60, per=Math.max(2,Math.floor((W-padL-padR)/175)), step=(W-padL-padR)/per, GAP=15;
+  const W=$("zbody").clientWidth||600, padL=96, padR=70, per=Math.max(2,Math.floor((W-padL-padR)/175)), step=(W-padL-padR)/per, GAP=15;
   const n=route.length, rows=Math.max(1,Math.ceil((n-1)/per));
   // 上り本線より上・本線の間・下り本線より下に並ぶ線とホームの数（区間でいちばん多い駅に合わせる）
   let above=1,between=1,below=1;
@@ -1033,33 +1035,35 @@ function buildZaisen(){
   let o="";
   for(let row=0;row<rows;row++){
     const top=row*rowH, UY=top+UY0, DY=top+DY0, i0=row*per, i1=Math.min(n-1,i0+per);
-    // 本線（駅と駅の間）
-    for(let i=i0;i<i1;i++){ const a=route[i],b=route[i+1],xa=padL+(i-i0)*step, xb=xa+step;
-      const hasU=r=>r.lay.some(x=>x.t==="U");
-      const ua=hasU(a)?xa:xa+w/2+10, ub=hasU(b)?xb:xb-w/2-10;
-      o+=`<line x1="${ua}" y1="${UY}" x2="${ub}" y2="${UY}" stroke="#3a4352" stroke-width="5"/><line x1="${xa}" y1="${DY}" x2="${xb}" y2="${DY}" stroke="#4b86d6" stroke-width="5"/>`; }
-    if(row===0) o+=`<line x1="${padL-24}" y1="${UY}" x2="${padL}" y2="${UY}" stroke="#3a4352" stroke-width="5"/><line x1="${padL-24}" y1="${DY}" x2="${padL}" y2="${DY}" stroke="#4b86d6" stroke-width="5"/>`;
+    // 本線：行の左端の駅の手前から右端の駅の先まで通す（終点・始発の駅と、上り線のない駅では止める）
+    const hasU=r=>r.lay.some(x=>x.t==="U"), Xa=padL, Xb=padL+(i1-i0)*step, endL=i0===0&&TERMINAL.has(route[0].name), endR=i1===n-1&&TERMINAL.has(route[n-1].name);
+    const dl=endL?Xa-w/2-4:Xa-w/2-30, dr=endR?Xb+w/2+4:Xb+w/2+30;
+    const ul=hasU(route[i0])?dl:Xa+w/2+10, ur=hasU(route[i1])?dr:Xb-w/2-10;
+    o+=`<line x1="${ul}" y1="${UY}" x2="${ur}" y2="${UY}" stroke="#3a4352" stroke-width="5"/><line x1="${dl}" y1="${DY}" x2="${dr}" y2="${DY}" stroke="#4b86d6" stroke-width="5"/>`;
     o+=`<text x="6" y="${UY+4}" font-size="11" fill="#8b97a8">上り</text><text x="6" y="${DY+4}" font-size="11" fill="#8b97a8">下り</text>`;
     // 駅
     for(let i=i0;i<=i1;i++){ const r=route[i], X=padL+(i-i0)*step, Y=ys(r,top), x1=X-w/2, x2=X+w/2;
       r.lay.forEach((t,j)=>{ const y=Y[j];
         if(t.t==="="){ o+=`<rect x="${x1}" y="${y-4}" width="${w}" height="8" rx="2" fill="${r.stop?"#d9dde4":"#4a5260"}"/>`; return; }
-        if(t.t==="U"||t.t==="D"){ if(t.n) o+=`<text x="${x2+6}" y="${y-5}" font-size="10" fill="#8b97a8">${t.n}</text>`; return; }
+        if(t.t==="U"||t.t==="D"){ if(t.n) o+=`<text class="ztk" x="${x2+5}" y="${y+4}">${t.n}</text>`; return; }
         // 本線から分かれる線（待避線・空港線・中線）。他社の線はつながない
         const toU=t.t==="u"||(t.t==="a"&&+t.n>=4)||t.t==="c", my=toU?Y[r.lay.findIndex(x=>x.t==="U")]:Y[r.lay.findIndex(x=>x.t==="D")];
         const col=t.t==="o"?"#2c3646":t.t==="a"?"#6aa5e6":(toU?"#3a4352":"#4b86d6");
         if(t.t==="o"||my==null) o+=`<line x1="${x1-6}" y1="${y}" x2="${x2+6}" y2="${y}" stroke="${col}" stroke-width="4"/>`;
+        else if(t.endQ){ // 泉岳寺側が行き止まり：下りの区間なら左、上りの区間なら右が行き止まり
+          o+=r.down?`<path d="M${x1} ${y} L${x2} ${y} L${x2+18} ${my}" fill="none" stroke="${col}" stroke-width="4"/><line x1="${x1}" y1="${y-6}" x2="${x1}" y2="${y+6}" stroke="${col}" stroke-width="3"/>`
+                   :`<path d="M${x1-18} ${my} L${x1} ${y} L${x2} ${y}" fill="none" stroke="${col}" stroke-width="4"/><line x1="${x2}" y1="${y-6}" x2="${x2}" y2="${y+6}" stroke="${col}" stroke-width="3"/>`; }
         else o+=`<path d="M${x1-18} ${my} L${x1} ${y} L${x2} ${y} L${x2+18} ${my}" fill="none" stroke="${col}" stroke-width="4"/>`;
-        o+=`<text x="${x2+6}" y="${y+4}" font-size="10" fill="#8b97a8">${t.t==="c"?"2・3":t.n}</text>`; });
+        o+=`<text class="ztk" x="${x2+5}" y="${y+4}">${t.t==="c"?"2・3":t.n}</text>`; });
       // 長い駅名が枠からはみ出さないよう、端では内側に寄せる
       const tw=(r.name.length+2)*14, anc=X+tw/2>W-4?"end":X-tw/2<4?"start":"middle", tx=anc==="end"?W-4:anc==="start"?4:X;
-      o+=`<text class="zn${r.stop?"":" pass"}" id="zn${i}" x="${tx}" y="${top+18}" text-anchor="${anc}">${r.name}</text>`; }
+      o+=`<text class="zn${r.stop?"":" zpass"}" id="zn${i}" x="${tx}" y="${top+18}" text-anchor="${anc}">${r.name}</text>`; }
   }
   // 自列車（白い車体と黄色い先頭）と札
   o+=`<g id="ztr"><rect x="-34" y="-8" width="56" height="16" rx="3" fill="#f2f2ee" stroke="#111" stroke-width="2"/><polygon points="22,-8 34,0 22,8" fill="#ffe23a"/>`+
-     `<rect x="-46" y="14" width="92" height="22" rx="4" fill="#1c2431" stroke="#ffe23a"/><text id="ztl" x="0" y="30" text-anchor="middle" font-size="13" font-weight="700" fill="#ffe23a"></text></g>`;
+     `<g id="ztlg"><rect x="-50" y="14" width="100" height="22" rx="4" fill="#1c2431" stroke="#ffe23a"/><text id="ztl" x="0" y="30" text-anchor="middle" font-size="13" font-weight="700" fill="#ffe23a"></text></g></g>`;
   svg.setAttribute("viewBox",`0 0 ${W} ${rows*rowH}`); svg.setAttribute("height",rows*rowH); svg.innerHTML=o;
-  Z={per,step,padL,rowH,rows,ys,pos,lastRow:-1};
+  Z={per,step,padL,rowH,rows,ys,pos,W,lastRow:-1};
   $("zh").textContent=`在線　${route[0].name} → ${route[route.length-1].name}`;
 }
 function updateZaisen(e){
@@ -1077,6 +1081,8 @@ function updateZaisen(e){
   if(j<0) j=r.lay.findIndex(t=>t.t===(r.down?"D":"U"));
   const y=j>=0?Y[j]:top+(r.down?Z.ys(r,0)[0]:0);
   $("ztr").setAttribute("transform",`translate(${X},${y})`);
+  // 札は枠からはみ出さないように左右へずらす
+  $("ztlg").setAttribute("transform",`translate(${Math.min(Z.W-54-X,Math.max(54-X,0))},0)`);
   $("ztl").textContent=`${K.label} `+(G.mode==="dwell"&&G.taihiAt===G.last?"待避中":G.mode==="dwell"?"停車中":G.mode==="halt"?"駅間停車":Math.round(e.v*3.6)+"km/h");
   route.forEach((s,i)=>{ const t=$("zn"+i); if(!t) return; const tg=(G.mode==="run"||G.mode==="halt")?i===G.target:i===G.last;
     t.classList.toggle("tgt",tg); t.classList.toggle("past",!tg&&i<(G.mode==="run"?k+1:G.last)); t.textContent=(tg?"▶ ":"")+s.name; });
