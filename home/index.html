@@ -227,6 +227,7 @@ body.editing .page .tile .tdel{pointer-events:auto}
 .mini .slfoot{gap:10px;font-size:11.5px}
 /* 地震情報の帯 */
 .qb{position:absolute;left:0;right:0;top:0;height:52px;display:flex;align-items:center;gap:14px;padding:0 18px;font-size:14px;z-index:5;background:#2a1c10;color:#f3e7d9;border-bottom:2px solid #ff9a3a;white-space:nowrap;overflow:hidden}
+.qset{flex:none;border:1px solid currentColor;padding:4px 12px;font-size:13px;font-weight:700;color:inherit;margin-left:4px}
 .qb .lb{background:#ff9a3a;color:#141413;font-weight:900;padding:2px 10px;font-size:13px}
 .qb .s{color:#c9b9a6}.qb .r{margin-left:auto;color:#c9b9a6;font-size:12px}
 .qb .si{padding:1px 8px;font-weight:700;color:#111}
@@ -244,6 +245,7 @@ body.editing .page .tile .tdel{pointer-events:auto}
 #eew .hd{background:#ff3b3b;padding:14px 24px;display:flex;align-items:baseline;gap:14px}
 #eew .hd b{font-size:30px;font-weight:900;letter-spacing:.04em}
 #eew .hd span{font-size:16px;font-weight:700}
+#eew .hd .x+.x{margin-left:8px}
 #eew .hd .x{margin-left:auto;border:2px solid #fff;padding:2px 12px;font-size:14px;font-weight:700}
 #eew .bd{padding:22px 28px;display:flex;flex-direction:column;gap:16px;flex:1;min-height:0}
 #eew .lab{font-size:15px;color:#b9bec5;font-weight:700}
@@ -269,7 +271,7 @@ body.editing .page .tile .tdel{pointer-events:auto}
 .toast button{border:1px solid var(--bg);padding:3px 12px;font-weight:700}
 
 /* 設定(拡大縮小しない、ふつうにスクロールする画面) */
-#settings{position:fixed;inset:0;z-index:50;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;user-select:text;-webkit-user-select:text}
+#settings{position:fixed;inset:0;z-index:100;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;user-select:text;-webkit-user-select:text}
 .sx{max-width:860px;margin:0 auto;padding:max(20px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) 80px max(18px,env(safe-area-inset-left))}
 .sx header{display:flex;align-items:center;gap:12px;position:sticky;top:0;background:var(--bg);padding:10px 0;border-bottom:1px solid var(--rule);z-index:2}
 .sx header h1{font-size:20px}
@@ -348,7 +350,7 @@ body.editing .page .tile .tdel{pointer-events:auto}
 
 <script>
 'use strict';
-const APP_VERSION = '1.5.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.5.1'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1228,7 +1230,7 @@ function bigShindo(i, note) {
 function drawEEWPanel() {
   const e = eew, t = nowMs(), left = Math.ceil((e.sAt - t) / 1000);
   $('eewPanel').className = 'p';
-  $('eewPanel').innerHTML = `<div class="hd"><b>緊急地震速報</b><span>${e.warn ? '強い揺れに警戒' : '予報'}</span><button class="x" data-close="eew">閉じる</button></div>
+  $('eewPanel').innerHTML = `<div class="hd"><b>緊急地震速報</b><span>${e.warn ? '強い揺れに警戒' : '予報'}</span><button class="x" data-set="1">設定</button><button class="x" data-close="eew">閉じる</button></div>
   <div class="bd">
     <div class="lab">現在地(${esc(loc().pref || '')}付近)の予想震度 ・ 推定</div>
     <div class="row1">${bigShindo(e.local)}
@@ -1243,7 +1245,7 @@ function drawInfoPanel() {
   const q = quake, E = q.q.earthquake, H = E.hypocenter || {}, t0 = jst(E.time) + (q.demo ? timeOffset : 0);
   const ts = E.domesticTsunami, tsBad = ts === 'Watch' || ts === 'Warning';
   $('eewPanel').className = 'p info';
-  $('eewPanel').innerHTML = `<div class="hd"><b>地震情報</b><span>${esc(q.why || '')}</span><button class="x" data-close="info">閉じる</button></div>
+  $('eewPanel').innerHTML = `<div class="hd"><b>地震情報</b><span>${esc(q.why || '')}</span><button class="x" data-set="1">設定</button><button class="x" data-close="info">閉じる</button></div>
   <div class="bd">
     <div class="lab">${esc(loc().pref || '')}の震度</div>
     <div class="row1">${bigShindo(q.mine, 'この県の観測なし')}
@@ -1255,6 +1257,7 @@ function drawInfoPanel() {
   </div>${q.demo ? '<div class="demo">デモ</div>' : ''}`;
 }
 $('eewPanel').addEventListener('click', e => {
+  if (e.target.closest('[data-set]')) { openSettings('s-quake'); return; }
   const b = e.target.closest('[data-close]'); if (!b) return;
   if (b.dataset.close === 'eew' && eew) eew.closed = true;
   if (b.dataset.close === 'info' && quake) quake.fullClosed = true;
@@ -1347,19 +1350,20 @@ function renderQBanner() {
   if (eew && (eewLevel() === 1 || eew.closed)) {
     const left = Math.ceil((eew.sAt - nowMs()) / 1000);
     B.className = 'qb eew'; B.hidden = false;
-    B.innerHTML = `${eew.demo ? '<span class="demo-tag">デモ</span>' : ''}<span class="lb">緊急地震速報${eew.warn ? '' : '(予報)'}</span><b>${esc(eew.d.Hypocenter || '')}</b><span class="s">M${eew.M.toFixed(1)} ・ 最大 ${SHINDO[eew.maxI] || '不明'}</span><span>現在地 ${eew.local ? shindoChip(eew.local) : 'ほぼ揺れない'}</span><b style="color:#ffd23f">${left > 0 ? `揺れまで 約${left}秒` : '揺れに注意'}</b><span class="r">推定 ・ 第${eew.serial}報${eew.closed ? ' ・ タップで開く' : ''}</span>`;
+    B.innerHTML = `${eew.demo ? '<span class="demo-tag">デモ</span>' : ''}<span class="lb">緊急地震速報${eew.warn ? '' : '(予報)'}</span><b>${esc(eew.d.Hypocenter || '')}</b><span class="s">M${eew.M.toFixed(1)} ・ 最大 ${SHINDO[eew.maxI] || '不明'}</span><span>現在地 ${eew.local ? shindoChip(eew.local) : 'ほぼ揺れない'}</span><b style="color:#ffd23f">${left > 0 ? `揺れまで 約${left}秒` : '揺れに注意'}</b><span class="r">推定 ・ 第${eew.serial}報${eew.closed ? ' ・ タップで開く' : ''}</span><button class="qset" data-set="1">設定</button>`;
     return;
   }
   if (quake && nowMs() < quake.until) {
     const E = quake.q.earthquake, H = E.hypocenter || {}, t = new Date(jst(E.time) + (quake.demo ? timeOffset : 0));
     const ago = Math.max(0, Math.round((nowMs() - t.getTime()) / 60e3));
     B.className = 'qb'; B.hidden = false;
-    B.innerHTML = `${quake.demo ? '<span class="demo-tag">デモ</span>' : ''}<span class="lb">地震</span><b>${t.getHours()}:${pad(t.getMinutes())} ごろ　${esc(H.name || '震源は調査中')}</b>${H.magnitude > 0 ? `<span class="s">M${(+H.magnitude).toFixed(1)}${H.depth > 0 ? ` ・ 深さ ${H.depth}km` : H.depth === 0 ? ' ・ ごく浅い' : ''}</span>` : ''}<span>最大 ${shindoChip(quake.maxI)}</span>${quake.mine ? `<span>${esc(loc().pref)} ${shindoChip(quake.mine)}</span>` : ''}<span class="s">${esc(TSUNAMI[E.domesticTsunami] || '')}</span><span class="r">${quake.demo ? 'デモ' : '気象庁'} ・ ${ago ? ago + '分前' : 'いま'} ・ ${quake.full ? 'タップで地図' : 'タップで閉じる'}</span>`;
+    B.innerHTML = `${quake.demo ? '<span class="demo-tag">デモ</span>' : ''}<span class="lb">地震</span><b>${t.getHours()}:${pad(t.getMinutes())} ごろ　${esc(H.name || '震源は調査中')}</b>${H.magnitude > 0 ? `<span class="s">M${(+H.magnitude).toFixed(1)}${H.depth > 0 ? ` ・ 深さ ${H.depth}km` : H.depth === 0 ? ' ・ ごく浅い' : ''}</span>` : ''}<span>最大 ${shindoChip(quake.maxI)}</span>${quake.mine ? `<span>${esc(loc().pref)} ${shindoChip(quake.mine)}</span>` : ''}<span class="s">${esc(TSUNAMI[E.domesticTsunami] || '')}</span><span class="r">${quake.demo ? 'デモ' : '気象庁'} ・ ${ago ? ago + '分前' : 'いま'} ・ ${quake.full ? 'タップで地図' : 'タップで閉じる'}</span><button class="qset" data-set="1">設定</button>`;
     return;
   }
   B.hidden = true;
 }
-$('qb').addEventListener('click', () => {
+$('qb').addEventListener('click', e => {
+  if (e.target.closest('[data-set]')) { openSettings('s-quake'); return; }
   if (eew && eew.closed) { eew.closed = false; updateFull(); renderQBanner(); return; }
   if (quake && !eew) {
     if (quake.full && quake.fullClosed) { quake.fullClosed = false; updateFull(); return; }
