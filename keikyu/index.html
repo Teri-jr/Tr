@@ -222,7 +222,7 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outli
 .zaisen{display:none}
 @media (orientation:landscape) and (min-width:1100px) and (min-height:640px){
   .device{max-width:none}
-  .run{grid-template-columns:140px minmax(0,600px) minmax(0,1fr)}
+  .run{grid-template-columns:120px minmax(0,42vw) minmax(0,1fr)}
   .zaisen{display:flex;flex-direction:column;min-height:0;min-width:0;background:#05080d;border:1px solid var(--line);border-radius:6px;overflow:hidden}
   .zh{font-size:13px;color:var(--muted);padding:8px 12px 4px}
   .zbody{flex:1;min-height:0;overflow-y:auto;scroll-behavior:smooth}
@@ -231,9 +231,10 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outli
   .trk{width:30px;height:30px;font-size:15px}
   .listhead{font-size:16px}
   .ctrl button{font-size:15px;padding:10px 12px}
-  #clock{width:130px;height:130px}
-  .head{grid-template-columns:1fr 170px}
-  #hStop{right:170px}
+  #clock{width:110px;height:110px}
+  .head{grid-template-columns:1fr 150px}
+  #hStop{right:150px}
+  .row{font-size:18px;padding:11px 6px;grid-template-columns:minmax(0,1fr) 96px 32px 96px}
   .kind{font-size:min(160px,19cqw)!important;line-height:1.05;letter-spacing:.25em;padding-left:.25em;white-space:nowrap}
   .next{font-size:min(110px,12cqw)!important}
   .cars b{font-size:96px}
@@ -523,7 +524,7 @@ function planTimes(route,k){
   return {ev:s.events,traj:s.traj};
 }
 // ---- バージョン（変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする） ----
-const APP_VERSION='1.4.1';
+const APP_VERSION='1.4.2';
 const isNewer=(a,b)=>{ const x=String(a).split(".").map(Number), y=String(b).split(".").map(Number); for(let i=0;i<3;i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0); } return false; };
 let upd=null; // {version, items}：新しい版が出ていたら入る。announced=放送済み
 async function checkUpdate(){
@@ -715,8 +716,8 @@ function renderList(){
     row.className="row"+(r.stop?"":" pass-row"); row.id="r"+i;
     const arr=i===0?"":(r.stop?fmt(pt(e.arr)):((MAJOR.has(r.name)||r.taihiOK)?fmt(pt(e.pass)):""));
     const dep=r.stop?(i===route.length-1?"--:--:--":fmt(pt(e.dep))):"";
-    row.innerHTML=`<span class="nm">${r.name}${(G&&G.taihiAt===i)?'<span class="tb">待避</span>':''}</span><span class="t num">${arr}</span>`+
-      (r.stop?(G&&G.taihiAt===i&&r.side?`<span class="trk num tbk">${r.side}</span>`:`<span class="trk num">${r.track}</span>`):`<span class="pass" title="通過"></span>`)+
+    row.innerHTML=`<span class="nm">${r.name}${taihiHere(i)?'<span class="tb">待避</span>':''}</span><span class="t num">${arr}</span>`+
+      (r.stop?(taihiHere(i)&&r.side?`<span class="trk num tbk">${r.side}</span>`:`<span class="trk num">${r.track}</span>`):`<span class="pass" title="通過"></span>`)+
       `<span class="t num dep">${dep}</span>`;
     L.appendChild(row);
   });
@@ -873,6 +874,9 @@ function undoDepart(x){
   if(G.target>=0) G.announced[G.target]={};
   delete G.announced["rel"+G.last];
 }
+// 待避を予約中なら、待避する駅（この先で最初に止まる待避駅）
+function taihiIdx(){ if(!G||!G.taihiPending||!K.taihi) return -1; for(let i=G.last+1;i<route.length-1;i++) if(route[i].stop&&route[i].taihiOK) return i; return -1; }
+const taihiHere=i=>!!G&&(G.taihiAt===i||taihiIdx()===i);
 // 待避：停車を合計2分に延ばし、予定時刻もその分後ろにずらす（待避はダイヤ上の予定なので遅延にしない）
 function applyTaihi(i){
   if(G.taihiAt===i) return;
@@ -1019,14 +1023,14 @@ let Z=null;
 const zVisible=()=>getComputedStyle($("zaisen")).display!=="none";
 function buildZaisen(){
   Z=null; const svg=$("zsvg"); if(!route||!zVisible()) { svg.innerHTML=""; return; }
-  const W=$("zbody").clientWidth||600, padL=96, padR=70, per=Math.max(2,Math.floor((W-padL-padR)/175)), step=(W-padL-padR)/per, GAP=15;
+  const W=$("zbody").clientWidth||600, padL=84, padR=56, per=Math.max(2,Math.floor((W-padL-padR)/135)), step=(W-padL-padR)/per, GAP=13;
   const n=route.length, rows=Math.max(1,Math.ceil((n-1)/per));
   // 上り本線より上・本線の間・下り本線より下に並ぶ線とホームの数（区間でいちばん多い駅に合わせる）
   let above=1,between=1,below=1;
   route.forEach(r=>{ const iu=r.lay.findIndex(x=>x.t==="U"), id=r.lay.findIndex(x=>x.t==="D");
     above=Math.max(above,iu<0?0:iu); between=Math.max(between,(id<0?r.lay.length:id)-(iu<0?-1:iu)-1); below=Math.max(below,id<0?0:r.lay.length-1-id); });
-  const UY0=30+above*GAP+6, DY0=UY0+(between+1)*GAP, rowH=DY0+below*GAP+56;
-  const w=Math.min(step*0.42,78);
+  const UY0=28+above*GAP+4, DY0=UY0+Math.max(2,between+1)*GAP, rowH=DY0+below*GAP+46;
+  const w=Math.min(step*0.46,78);
   const pos=i=>{ const r=Math.min(rows-1,Math.floor(i/per)); return {row:r,X:padL+(i-r*per)*step}; };
   // 駅の中の線・ホームの高さ
   const ys=(r,top)=>{ const L=r.lay, iu=L.findIndex(x=>x.t==="U"), id=L.findIndex(x=>x.t==="D"), UY=top+UY0, DY=top+DY0;
@@ -1037,10 +1041,10 @@ function buildZaisen(){
     const top=row*rowH, UY=top+UY0, DY=top+DY0, i0=row*per, i1=Math.min(n-1,i0+per);
     // 本線：行の左端の駅の手前から右端の駅の先まで通す（終点・始発の駅と、上り線のない駅では止める）
     const hasU=r=>r.lay.some(x=>x.t==="U"), Xa=padL, Xb=padL+(i1-i0)*step, endL=i0===0&&TERMINAL.has(route[0].name), endR=i1===n-1&&TERMINAL.has(route[n-1].name);
-    const dl=endL?Xa-w/2-4:Xa-w/2-30, dr=endR?Xb+w/2+4:Xb+w/2+30;
+    const dl=endL?Xa-w/2-4:Xa-w/2-22, dr=endR?Xb+w/2+4:Xb+w/2+30;
     const ul=hasU(route[i0])?dl:Xa+w/2+10, ur=hasU(route[i1])?dr:Xb-w/2-10;
     o+=`<line x1="${ul}" y1="${UY}" x2="${ur}" y2="${UY}" stroke="#3a4352" stroke-width="5"/><line x1="${dl}" y1="${DY}" x2="${dr}" y2="${DY}" stroke="#4b86d6" stroke-width="5"/>`;
-    o+=`<text x="6" y="${UY+4}" font-size="11" fill="#8b97a8">上り</text><text x="6" y="${DY+4}" font-size="11" fill="#8b97a8">下り</text>`;
+    o+=`<text x="2" y="${UY+4}" font-size="11" fill="#8b97a8">上り</text><text x="2" y="${DY+4}" font-size="11" fill="#8b97a8">下り</text>`;
     // 駅
     for(let i=i0;i<=i1;i++){ const r=route[i], X=padL+(i-i0)*step, Y=ys(r,top), x1=X-w/2, x2=X+w/2;
       r.lay.forEach((t,j)=>{ const y=Y[j];
@@ -1076,7 +1080,7 @@ function updateZaisen(e){
   // 乗る線：駅のホームにいて止まる駅ならその番線（待避なら待避線）、それ以外は本線
   const near=Math.abs(x-a.cx)<=a.plen/2+40?k:(Math.abs(x-b.cx)<=b.plen/2+40?k+1:-1), st=near>=0?route[near]:null;
   const r=st||a, Y=Z.ys(r,top);
-  let no=null; if(st&&st.stop&&(G.mode!=="run"||Math.abs(x-st.x)<st.plen)) no=(G.taihiAt===near&&st.side)?st.side:st.track;
+  let no=null; if(st&&st.stop&&(G.mode!=="run"||Math.abs(x-st.x)<st.plen)) no=(taihiHere(near)&&st.side)?st.side:st.track;
   let j=no!=null?r.lay.findIndex(t=>t.n===no||(t.t==="c"&&(no==="2"||no==="3"))):-1;
   if(j<0) j=r.lay.findIndex(t=>t.t===(r.down?"D":"U"));
   const y=j>=0?Y[j]:top+(r.down?Z.ys(r,0)[0]:0);
@@ -1202,7 +1206,7 @@ $("arrNow").addEventListener("click",()=>{
 $("taihiBtn").addEventListener("click",()=>{
   if(!G||!K.taihi) return;
   if(G.mode==="dwell"&&G.last>0&&route[G.last].taihiOK&&G.taihiAt!==G.last){ applyTaihi(G.last); return; }
-  G.taihiPending=!G.taihiPending; $("taihiBtn").setAttribute("aria-pressed",G.taihiPending);
+  G.taihiPending=!G.taihiPending; $("taihiBtn").setAttribute("aria-pressed",G.taihiPending); renderList();
 });
 $("haltBtn").addEventListener("click",()=>{ if(testMode) insertHalt(SIM,route,K,simDecel(),40+Math.random()*50); });
 $("gapBtn").addEventListener("click",()=>{ if(testMode) SIM.gap={from:SIM.t,len:60}; });
