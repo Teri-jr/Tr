@@ -265,6 +265,7 @@ body.editing .page .tile .tdel{pointer-events:auto}
 #eew .act{display:grid;gap:8px;margin-top:auto}
 #eew .act div{background:#fff;color:#0b0c0e;font-size:26px;font-weight:900;padding:10px 16px}
 #eew .ft{font-size:12px;color:#8a9097}
+#eew .sh.plain{background:transparent;color:#fff;border:3px solid #fff}
 #eew .sh.none{font-size:22px;background:#2a2d32;color:#b9bec5;display:flex;align-items:center;justify-content:center;height:150px;font-family:var(--jp)}
 #eew .p.info{border-left-color:#ff9a3a}#eew .p.info .hd{background:#ff9a3a;color:#141413}#eew .p.info .hd .x{border-color:#141413}
 /* 緊急地震速報の段階:strong 強い / mid 中くらい / weak 弱い / far 遠く(ほぼ揺れない) */
@@ -376,7 +377,7 @@ body.editing .page .tile .tdel{pointer-events:auto}
 
 <script>
 'use strict';
-const APP_VERSION = '1.6.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.6.1'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1249,8 +1250,9 @@ function eewTick() {
   if (eew) renderQBanner();
 }
 const tmS = ms => { const d = new Date(ms); return `${d.getHours()}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; };
-function bigShindo(i, note) {
+function bigShindo(i, note, plain) {
   if (i < 1) return `<div class="sh none"><span>${note || 'ほぼ揺れない見込み'}</span></div>`;
+  if (plain) return `<div class="sh n plain">${SHINDO[i].replace(/(弱|強)/, '<small>$1</small>')}</div>`;
   return `<div class="sh n" style="background:${SHINDO_COLOR[i]};color:${SHINDO_TEXT[i]}">${SHINDO[i].replace(/(弱|強)/, '<small>$1</small>')}</div>`;
 }
 function eewClass(e) { return e.local >= 5 || (e.warn && e.local >= 4) ? 'strong' : e.local >= 3 ? 'mid' : e.local >= 1 ? 'weak' : 'far'; }
@@ -1284,12 +1286,12 @@ function drawInfoPanel() {
   $('eewPanel').innerHTML = `<div class="hd"><b>地震情報</b><span>${esc(q.why || '')}</span><button class="x" data-set="1">設定</button><button class="x" data-close="info">閉じる</button></div>
   <div class="bd">
     <div class="lab">${esc(loc().pref || '')}の震度</div>
-    <div class="row1">${bigShindo(q.mine, 'この県の観測なし')}
+    <div class="row1">${bigShindo(q.mine, 'この県の観測なし', true)}
       <div class="cd"><div class="u">最大震度</div><div class="v n" style="font-size:72px">${SHINDO[q.maxI] || '—'}</div><div class="u">${esc(q.maxPref || '')}</div></div></div>
     <div class="src">${esc(H.name || '震源は調査中')} ${H.magnitude > 0 ? `<span class="n" style="font-size:22px;color:#fff">M${(+H.magnitude).toFixed(1)}</span>` : ''}<span>${H.depth > 0 ? `深さ ${H.depth}km` : H.depth === 0 ? 'ごく浅い' : ''}</span></div>
     <div class="st2"><div><span>発生</span><b class="n">${tmS(t0)} ごろ</b></div><div><span>津波</span><b style="${tsBad ? 'color:#ff6b6b' : 'font-size:16px'}">${esc(TSUNAMI[ts] || '情報なし')}</b></div></div>
     <div class="act">${tsBad ? '<div style="background:#ff3b3b;color:#fff">海や川から離れ、高いところへ</div>' : ''}<div>落ち着いて、先生の指示を待つ</div><div>割れたガラス・落下物に注意</div></div>
-    <div class="ft">${q.demo ? 'デモ' : '気象庁(P2P地震情報 経由)'} ・ 地図の色は都道府県ごとの最大震度</div>
+    <div class="ft">${q.demo ? 'デモ' : '気象庁(P2P地震情報 経由)'} ・ 地図の数字は都道府県ごとの最大震度</div>
   </div>${q.demo ? '<div class="demo">デモ</div>' : ''}`;
 }
 $('eewPanel').addEventListener('click', e => {
@@ -1328,7 +1330,7 @@ function drawMap(src) {
         p._lv = isE ? (est >= 1 ? Math.max(1, Math.min(est + shift, src.maxI || 9)) : 0) : (src.byPref[p.name] || 0);
         p._for = key;
       }
-      g.fillStyle = p._lv >= 1 ? SHINDO_COLOR[p._lv] : '#2a2d32';
+      g.fillStyle = isE ? (p._lv >= 1 ? SHINDO_COLOR[p._lv] : '#2a2d32') : (p._lv >= 1 ? '#3a3f47' : '#24272c');
       g.beginPath();
       for (const r of p.rings) { r.forEach((q, i) => { const [x, y] = P(q[0], q[1]); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.closePath(); }
       g.fill(); g.stroke();
@@ -1347,7 +1349,20 @@ function drawMap(src) {
     g.strokeStyle = isE ? '#fff' : '#ff2800'; g.lineWidth = 4; g.stroke();
   }
   const [hx, hy] = P(L.lon, L.lat); g.fillStyle = '#fff'; g.strokeStyle = '#000'; g.lineWidth = 2; g.beginPath(); g.arc(hx, hy, 7, 0, 7); g.fill(); g.stroke();
-  $('eewWave').hidden = !isE;
+  if (!isE && JAPAN) { // 地震情報:県ごとの震度を文字で書く(色は使わない)
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    for (const p of JAPAN) {
+      if (p._lv < 1) continue;
+      const [x, y] = P(p.c[0], p.c[1]); if (x < -20 || x > W + 20 || y < -20 || y > H + 20) continue;
+      const t = SHINDO[p._lv], big = p._lv >= 5;
+      g.font = `700 ${big ? 26 : 22}px "Barlow Condensed","Zen Kaku Gothic New",sans-serif`;
+      const w = g.measureText(t).width + 14, h = big ? 34 : 30;
+      g.fillStyle = big ? '#fff' : '#0b0c0e'; g.strokeStyle = '#fff'; g.lineWidth = 2;
+      g.fillRect(x - w / 2, y - h / 2, w, h); g.strokeRect(x - w / 2, y - h / 2, w, h);
+      g.fillStyle = big ? '#0b0c0e' : '#fff'; g.fillText(t, x, y + 1);
+    }
+  }
+  $('eewWave').hidden = !isE; $('eewLegend').hidden = !isE;
   if (!$('eewLegend').innerHTML) $('eewLegend').innerHTML = SHINDO.slice(1).reverse().map((s, i) => `<span><i style="background:${SHINDO_COLOR[9 - i]}"></i>${s}</span>`).join('');
 }
 
