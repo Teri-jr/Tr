@@ -175,15 +175,15 @@ main {
   display: grid; gap: 12px; padding: 12px 16px 40px;
   grid-template-columns: minmax(0, 1fr);
   /* 1カラム(スマホ・タブレット縦): 運行状況 → 時刻表 → タスク追加 → ダイヤ設定 → ポモドーロ・音 → データ → リセット → デザイン */
-  grid-template-areas: "debug" "news" "current" "banner" "table" "form" "settings" "pomo" "stats" "data" "reset" "logo";
+  grid-template-areas: "debug" "news" "current" "banner" "table" "form" "settings" "pomo" "goal" "stats" "data" "reset" "logo";
   max-width: 760px; margin: 0 auto;
 }
 @media (min-width: 900px) and (orientation: landscape) {
   main {
     max-width: 1400px;
     grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr);
-    grid-template-areas: "debug debug" "news news" "table current" "table banner" "table form" "table settings" "table pomo" "table stats" "table data" "table reset" "table logo" "table .";
-    grid-template-rows: auto auto auto auto auto auto auto auto auto auto auto 1fr;
+    grid-template-areas: "debug debug" "news news" "table current" "table banner" "table form" "table settings" "table pomo" "table goal" "table stats" "table data" "table reset" "table logo" "table .";
+    grid-template-rows: auto auto auto auto auto auto auto auto auto auto auto auto 1fr;
     align-items: start;
   }
   #tableCard { position: sticky; top: 12px; max-height: calc(100vh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow: auto; }
@@ -254,6 +254,50 @@ main {
 #pomoCard { grid-area: pomo; }
 #dataCard { grid-area: data; }
 #statsCard { grid-area: stats; }
+#goalCard { grid-area: goal; }
+/* ---------- 週の目標 ---------- */
+.g-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.g-head small { font-size: 12px; color: var(--sub); font-weight: 400; }
+.g-big { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.g-big b { font-size: 26px; }
+.g-big span { color: var(--sub); font-size: 14px; }
+.g-bar { position: relative; height: 14px; background: var(--panel-2); border-radius: 7px; overflow: hidden; margin: 6px 0 4px; }
+.g-bar i { display: block; height: 100%; border-radius: 7px; background: var(--sc, var(--accent)); }
+.g-bar .pace { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--text); }
+.g-line { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; color: var(--sub); flex-wrap: wrap; }
+.g-ok { color: var(--accent); font-weight: 800; } .g-late { color: var(--late); font-weight: 800; }
+.g-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 8px; text-align: center; font-size: 11px; color: var(--sub); }
+.g-days i { display: block; height: 34px; border-radius: 5px; background: var(--panel-2); position: relative; overflow: hidden; margin-bottom: 3px; }
+.g-days i u { position: absolute; left: 0; right: 0; bottom: 0; background: var(--accent); opacity: 0.8; }
+.g-days .today i { outline: 2px solid var(--text); }
+.g-mat { margin-top: 14px; }
+.g-mat .g-t { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 14px; }
+.g-mat .g-t b { font-size: 15px; } .g-mat .g-v { white-space: nowrap; } .g-mat .g-v b { font-size: 18px; } .g-mat .g-v small { color: var(--sub); }
+.g-sum { background: var(--panel-2); border-radius: 8px; padding: 8px 10px; font-size: 13px; font-weight: 700; margin-top: 12px; }
+.g-edit { display: grid; gap: 10px; }
+.g-edit .g-row { display: grid; grid-template-columns: 1fr 1fr 40px; gap: 6px; align-items: center; }
+.g-edit .g-row [data-gname] { grid-column: 1 / -1; }
+.g-edit .g-row select, .g-edit .g-row input { min-height: 40px; padding: 0 8px; font-size: 15px; }
+.g-edit .g-row .gdel { min-width: 0; padding: 0; min-height: 40px; }
+.g-edit .g-sub { grid-column: 1 / -1; display: flex; gap: 4px; flex-wrap: wrap; }
+.g-edit .g-sub button { min-height: 32px; padding: 0 8px; font-size: 12.5px; min-width: 0; }
+.g-edit .g-sub button[aria-pressed="true"] { background: var(--sc, var(--accent)); color: #fff; border-color: transparent; }
+.g-hours { display: flex; align-items: center; gap: 8px; font-size: 15px; }
+.g-hours input { width: 90px; }
+.g-mats { display: grid; gap: 12px; }
+.g-matbox { border: 1px solid var(--line); border-radius: 10px; padding: 8px; display: grid; gap: 6px; }
+#fMatBox[hidden], #fAmtRow[hidden] { display: none; }
+#fMat button { min-width: 0; padding: 0 12px; }
+#fMat button[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); border-color: transparent; }
+#fAmtRow { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+#fAmtRow input { width: 90px; }
+.amt-chips { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
+.amt-chips button { min-height: 36px; padding: 0 10px; font-size: 14px; min-width: 0; }
+.amt-in { display: flex; align-items: center; gap: 8px; }
+.amt-in input { font-size: 22px; font-weight: 800; width: 120px; }
+.amt-rate { font-size: 13px; color: var(--sub); margin-top: 6px; min-height: 1.2em; }
+.mat-tag { display: inline-block; border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; }
+.mat-tag b { color: var(--text); }
 /* ---------- 教科 ---------- */
 :root { --s-en: #2f6fdb; --s-ma: #d64545; --s-ph: #d9822b; --s-in: #8a4fd1; --s-ot: #6b7684; }
 .subj { display: inline-block; font-size: 12px; font-weight: 800; line-height: 1; padding: 4px 7px; border-radius: 6px; color: #fff; background: var(--sc, var(--s-ot)); vertical-align: 2px; margin-right: 6px; white-space: nowrap; }
@@ -713,6 +757,11 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
             <div class="chips" id="subjRecent"></div>
           </div>
         </div>
+        <div id="fMatBox" hidden>
+          <label>教材(任意・週の目標の量に数える)</label>
+          <div class="chips" id="fMat" role="group" aria-label="教材"></div>
+          <div id="fAmtRow" hidden><label for="fAmt" style="margin:0">今日やる量</label><input id="fAmt" type="number" inputmode="decimal" min="0" max="99999" step="any" class="num"><span id="fAmtUnit"></span><span class="note" id="fAmtHint" style="margin:0"></span></div>
+        </div>
         <label class="toggle"><input type="checkbox" id="fPomo"> 🍅 ポモドーロで区切る</label>
         <div>
           <label for="fMemo">メモ(任意)</label>
@@ -779,6 +828,11 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
       <div class="cur-sub" id="notifyState"></div>
       <p class="note">※ 画面を閉じている間や消音モードでは鳴らないことがあります。詳しくは <button type="button" class="linkbtn" data-guide="1">使い方</button> の「音・通知について」へ。</p>
       <p class="note" id="wakeState"></p>
+    </section>
+
+    <section class="card" id="goalCard">
+      <h2 class="g-head">今週の目標 <small id="goalRange"></small></h2>
+      <div id="goalBody"></div>
     </section>
 
     <section class="card" id="statsCard">
@@ -939,6 +993,10 @@ function cleanDay(d, newIds) {
       pomo: !!t.pomo, sw: !!t.sw,
       subj: hasSubj(t.subj) ? t.subj : undefined,
       subjText: t.subj === 'ot' && typeof t.subjText === 'string' && t.subjText.trim() ? t.subjText.trim().slice(0, 10) : undefined,
+      mat: typeof t.mat === 'string' && t.mat ? t.mat.slice(0, 40) : undefined,
+      amtPlan: Number.isFinite(t.amtPlan) && t.amtPlan >= 0 ? Math.min(99999, t.amtPlan) : undefined,
+      amt: Number.isFinite(t.amt) && t.amt >= 0 ? Math.min(99999, t.amt) : undefined,
+      range: typeof t.range === 'string' && t.range.trim() ? t.range.trim().slice(0, 40) : undefined,
       ...cleanRecords(t)
     };
   }).map(t => { for (const k of Object.keys(t)) if (t[k] === undefined) delete t[k]; return t; });
@@ -1025,6 +1083,21 @@ function subjInfo(key) {
 }
 const subjTagOf = key => { if (!key) return ''; const i = subjInfo(key); return `<span class="subj ${i.cls}" style="${i.style}">${esc(i.label)}</span>`; };
 const subjTag = t => subjTagOf(subjKey(t));
+// 週の目標: { hours: 週の勉強時間(時間), mats: [{ id, name, unit, target(週の量), subj, subjText }] }。教材の目標は毎週同じ
+const UNITS = ['問', 'ページ', '語', '題', '章', '回'];
+function cleanGoals(v) {
+  const g = isObj(v) ? v : {};
+  const mats = (Array.isArray(g.mats) ? g.mats : []).filter(m => isObj(m) && typeof m.id === 'string' && typeof m.name === 'string' && m.name.trim()).slice(0, 20).map(m => ({
+    id: m.id.slice(0, 40), name: m.name.trim().slice(0, 30), unit: UNITS.includes(m.unit) ? m.unit : '問',
+    target: clampN(m.target, 0, 99999, 0), ...(hasSubj(m.subj) ? { subj: m.subj } : {}), ...(m.subj === 'ot' && typeof m.subjText === 'string' && m.subjText.trim() ? { subjText: m.subjText.trim().slice(0, 10) } : {})
+  }));
+  return { hours: Math.min(168, Math.max(0, Math.round(numOr(g.hours, 0) * 2) / 2)), mats };
+}
+const goals = () => cleanGoals(store.get('goals'));
+const matOf = id => id ? goals().mats.find(m => m.id === id) || null : null;
+const amtTxt = n => String(Math.round(n * 10) / 10);
+// 月曜はじまりの週の7日(論理日付)
+function weekDays(ds) { const d = new Date(baseOf(ds)), dow = (d.getDay() + 6) % 7; return [...Array(7)].map((_, i) => shiftDay(ds, i - dow)); }
 // 開始済みのタスクは開始時点の設定で固定(途中で設定を変えても過去の時刻がずれない)
 const cfgOf = t => t.cfg || pomoCfg;
 
@@ -1460,6 +1533,12 @@ $('clockOpen').addEventListener('click', () => { $('clockFull').hidden = false; 
 $('clockFull').addEventListener('click', () => { $('clockFull').hidden = true; render(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('clockFull').hidden) { $('clockFull').hidden = true; render(); } });
 
+// 時刻表の行に出す教材と量(終えたら記録した量、まだなら予定の量)
+function matMeta(t) {
+  const m = matOf(t.mat); if (!m) return '';
+  const v = Number.isFinite(t.amt) ? `<b>${amtTxt(t.amt)}${m.unit}</b>` : Number.isFinite(t.amtPlan) ? `${amtTxt(t.amtPlan)}${m.unit}${t.actualEnd ? '(量 未記録)' : ''}` : t.actualEnd ? '量 未記録' : '';
+  return `<span class="mat-tag">${esc(m.name)}${v ? ' ' + v : ''}</span>`;
+}
 function delayHTML(d) {
   if (d > 0) return `<span class="delay late">+${lenTxt(d)} 遅れ</span>`;
   if (d < 0) return `<span class="delay early">${lenTxt(-d)} 早い</span>`;
@@ -1680,13 +1759,14 @@ function renderTable(sc) {
       <div>
         <div class="name">${subjTag(t)}${esc(t.name)}</div>
         ${t.memo ? `<div class="memo">${esc(t.memo)}</div>` : ''}
-        <div class="meta num">${durTxt}${pomoInfo}${label ? `<span>${label}</span>` : ''}${delayTxt}</div>
+        <div class="meta num">${durTxt}${pomoInfo}${matMeta(t)}${label ? `<span>${label}</span>` : ''}${delayTxt}</div>
       </div>
       <div class="acts">
         ${r.st === 'pending' && i > firstPending ? `<button class="now-btn" data-act="donow" data-id="${esc(t.id)}" ${anyRunning ? 'disabled' : ''}>▶今やる</button>` : ''}
         <button data-act="up" data-id="${esc(t.id)}" aria-label="上へ" ${canMove && prevPending ? '' : 'disabled'}>↑</button>
         <button data-act="down" data-id="${esc(t.id)}" aria-label="下へ" ${canMove && nextPending ? '' : 'disabled'}>↓</button>
         <button class="pomo-btn ${t.pomo ? 'on' : ''}" data-act="pomo" data-id="${esc(t.id)}" aria-pressed="${!!t.pomo}" aria-label="ポモドーロ ${t.pomo ? 'ON' : 'OFF'}" ${r.st === 'pending' ? '' : 'disabled'}>🍅</button>
+        ${r.st === 'done' && matOf(t.mat) ? `<button data-act="amt" data-id="${esc(t.id)}">${Number.isFinite(t.amt) ? '量' : '📝量'}</button>` : ''}
         <button data-act="edit" data-id="${esc(t.id)}">${editingId === t.id ? '編集中' : '編集'}</button>
         ${armBtn('del', t.id, '削除', 'danger')}
       </div>
@@ -1928,6 +2008,7 @@ function resetForm() {
   $('fPomo').checked = !!store.get('lastPomo');
   $('fPomo').disabled = false;
   setSubj('', '');
+  setMat('', undefined); $('fAmt').value = '';
   setFormMode(store.get('lastSw') ? 'sw' : 'timer');
   $('formTitle').textContent = 'タスクを追加';
   $('fSubmit').textContent = '追加';
@@ -1950,15 +2031,46 @@ $('taskForm').addEventListener('submit', e => {
     if (t) {
       Object.assign(t, { name, dur, memo });
       delete t.subj; delete t.subjText; Object.assign(t, subjFields());
+      delete t.mat; delete t.amtPlan; Object.assign(t, matFields());
       if (taskState(t) === 'pending') { t.pomo = pomo; t.sw = formMode === 'sw'; } // 開始後はポモドーロ・計り方を変えない
     }
   } else {
-    data.tasks.push({ id: uid(), name, dur, memo, pomo, sw: formMode === 'sw', adj: 0, actualStart: null, actualEnd: null, ...subjFields() });
+    data.tasks.push({ id: uid(), name, dur, memo, pomo, sw: formMode === 'sw', adj: 0, actualStart: null, actualEnd: null, ...subjFields(), ...matFields() });
     store.set('lastPomo', pomo); store.set('lastSw', formMode === 'sw');
   }
   saveDay(); resetForm(); render();
 });
 $('fCancel').addEventListener('click', resetForm);
+// 教材(週の目標で決めたもの)。選ぶと「今日やる量」を入れられる
+let formMat = '';
+function renderMatChips() {
+  const mats = goals().mats;
+  $('fMatBox').hidden = !mats.length;
+  $('fMat').innerHTML = `<button type="button" data-mat="" aria-pressed="${!formMat}">なし</button>` + mats.map(m => `<button type="button" data-mat="${esc(m.id)}" aria-pressed="${formMat === m.id}">${esc(m.name)}</button>`).join('');
+  const m = matOf(formMat);
+  $('fAmtRow').hidden = !m;
+  if (m) { $('fAmtUnit').textContent = m.unit; const prev = lastRange(m.id, editingId); $('fAmtHint').textContent = prev ? `前回は「${prev}」まで` : ''; }
+}
+function setMat(id, amt) {
+  formMat = matOf(id) ? id : '';
+  if (amt !== undefined) $('fAmt').value = Number.isFinite(amt) ? amt : '';
+  renderMatChips();
+}
+function matFields() {
+  if (!formMat) return {};
+  const n = parseFloat($('fAmt').value);
+  return { mat: formMat, ...(Number.isFinite(n) && n >= 0 ? { amtPlan: Math.min(99999, n) } : {}) };
+}
+$('fMat').addEventListener('click', e => {
+  const b = e.target.closest('[data-mat]'); if (!b) return;
+  setMat(b.dataset.mat);
+  const m = matOf(formMat);
+  if (m) {
+    if (!$('fName').value.trim()) $('fName').value = m.name; // 名前が空なら教材名を入れる
+    if (!formSubj && m.subj) setSubj(m.subj, m.subjText || '');
+    $('fAmt').focus();
+  }
+});
 let formSubj = '';
 function setSubj(v, text) {
   formSubj = hasSubj(v) ? v : '';
@@ -2015,6 +2127,7 @@ const actions = {
     const now = nowMs();
     (t.pauses || []).forEach(p => { if (p.e == null) p.e = now; }); // 停止中に終了したら停止もそこで終わり
     t.actualEnd = now;
+    if (matOf(t.mat)) setTimeout(() => askAmount(t.id), 0); // 教材を選んだタスクは、どれだけ進んだかを聞く
   },
   pause(t) {
     if (!canPause(t.id)) return false;
@@ -2074,6 +2187,7 @@ const actions = {
     t.swNextAsk = Math.max(swNextAsk(t), Math.floor(row.sw.workMin / w + 1e-9) * w) + w;
   },
   focus() { openFocus(); return false; },
+  amt(t) { askAmount(t.id); return false; },
   extbrk(t, btn) {
     if (taskState(t) !== 'running') return false;
     if (t.sw) { const b = (t.swBreaks || [])[+btn.dataset.bi]; if (!b) return false; b.ext = (b.ext || 0) + 5; return; }
@@ -2094,7 +2208,7 @@ const actions = {
     setInputMode('one');
     editingId = t.id;
     setFormCollapsed(false);
-    $('fName').value = t.name; $('fDur').value = t.dur; $('fMemo').value = t.memo || ''; setSubj(t.subj || '', t.subjText || '');
+    $('fName').value = t.name; $('fDur').value = t.dur; $('fMemo').value = t.memo || ''; setSubj(t.subj || '', t.subjText || ''); setMat(t.mat || '', Number.isFinite(t.amtPlan) ? t.amtPlan : undefined);
     $('fPomo').checked = !!t.pomo;
     $('fPomo').disabled = taskState(t) !== 'pending';
     setFormMode(t.sw ? 'sw' : 'timer', taskState(t) !== 'pending');
@@ -2347,7 +2461,7 @@ document.addEventListener('keydown', e => {
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '3.4.5';
+const APP_VERSION = '3.5.0';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
@@ -2500,7 +2614,7 @@ $('resetUndo').addEventListener('click', () => {
 });
 
 /* ================= export / import ================= */
-const VALID_KEY = k => /^day:\d{4}-\d{2}-\d{2}$/.test(k) || ['lastSettings', 'pomo', 'lastPomo', 'sound', 'sounds', 'clockSize', 'lastSw', 'logoAnim', 'timerDesign', 'inMode', 'subjList'].includes(k);
+const VALID_KEY = k => /^day:\d{4}-\d{2}-\d{2}$/.test(k) || ['lastSettings', 'pomo', 'lastPomo', 'sound', 'sounds', 'clockSize', 'lastSw', 'logoAnim', 'timerDesign', 'inMode', 'subjList', 'goals'].includes(k);
 function buildExport() {
   const out = {};
   for (const k of store.keys()) if (VALID_KEY(k)) out[k] = store.get(k);
@@ -2592,13 +2706,15 @@ function workedMin(r) {
 // ある日の予定と実績(教科ごと)。表示中の日以外は一時的に切り替えて計算する
 function dayStats(ds) {
   const keepDay = dayStr, keepData = data;
-  const out = { plan: 0, act: 0, subj: {} };
+  const out = { plan: 0, act: 0, subj: {}, mat: {} };
   try {
     if (ds !== dayStr) { dayStr = ds; data = loadDay(ds); }
     for (const r of computeSchedule().rows) {
       const k = subjKey(r.t), w = workedMin(r);
       const o = out.subj[k] = out.subj[k] || { plan: 0, act: 0 };
       o.plan += r.t.dur; o.act += w; out.plan += r.t.dur; out.act += w;
+      // 教材ごとの量(記録した分だけ)と、量を記録したタスクの勉強時間(1単位あたりの分に使う)
+      if (r.t.mat && Number.isFinite(r.t.amt)) { const m = out.mat[r.t.mat] = out.mat[r.t.mat] || { amt: 0, min: 0 }; m.amt += r.t.amt; m.min += w; }
     }
   } finally { dayStr = keepDay; data = keepData; }
   return out;
@@ -2638,8 +2754,130 @@ function renderStats() {
     <h3 class="sub-h">教科ごと</h3><div class="st-subj">${subjRows}</div>
     <p class="st-legend">棒 = 実際に勉強した時間(一時停止・休憩を除く)、点線 = 予定。右の数字は「実際 / 予定」(時間:分)。</p>`);
 }
+/* ================= 今週の目標(時間と量) ================= */
+let goalDraft = null; // 目標を決めている途中の内容(null なら表示中)
+function renderGoals() {
+  if (goalDraft) return; // 入力中は描き直さない
+  const g = goals(), today = logicalToday(), days = weekDays(today), dow = days.indexOf(today);
+  const f = d => `${+d.slice(5, 7)}/${+d.slice(8)}`;
+  $('goalRange').textContent = `${f(days[0])}(月)〜${f(days[6])}(日) ・ あと${7 - dow}日`;
+  if (!g.hours && !g.mats.length) {
+    setHTML('goalBody', `<p class="note" style="margin:0 0 10px">1週間に勉強する時間と、教材ごとに進める量(青チャート 60問、ターゲット 600語 など)を決めると、達成したか・ペースに合っているかが出ます。時間だけでなく「どれだけ進んだか」も見られます。</p><button class="primary" id="goalEdit">🎯 週の目標を決める</button>`);
+    return;
+  }
+  const st = days.map(d => d <= today ? dayStats(d) : { act: 0, mat: {} });
+  const act = st.reduce((a, x) => a + x.act, 0), pace = dow / 7; // 黒い線 = 今日が始まる時点で進んでいたい位置
+  let h = '';
+  if (g.hours) {
+    const target = g.hours * 60, left = Math.max(0, target - act), behind = target * pace - act;
+    const state = act >= target ? '<span class="g-ok">🎉 達成</span>' : behind <= 1 ? '<span class="g-ok">ペースどおり</span>' : `<span class="g-late">遅れ ${hm(behind)}</span>`;
+    const dayMax = Math.max(target / 7, ...st.map(x => x.act), 1);
+    h += `<div class="g-line"><b style="color:var(--text);font-size:14px">⏱ 勉強時間</b>${state}</div>
+      <div class="g-big"><b class="num">${hm(act)}</b><span>/ 目標 ${amtTxt(g.hours)}時間(${Math.round(act / target * 100)}%)</span></div>
+      <div class="g-bar"><i style="width:${Math.min(100, act / target * 100)}%"></i><div class="pace" style="left:${pace * 100}%"></div></div>
+      ${act < target ? `<div class="g-line"><span>あと ${hm(left)} ・ 1日 ${hm(left / (7 - dow))} ペース</span></div>` : ''}
+      <div class="g-days">${st.map((x, i) => `<div class="${i === dow ? 'today' : ''}"><i><u style="height:${Math.min(100, x.act / dayMax * 100)}%"></u></i>${i === dow ? '今日' : '月火水木金土日'[i]}</div>`).join('')}</div>`;
+  }
+  const amt = {}; for (const x of st) for (const [id, m] of Object.entries(x.mat)) { const a = amt[id] = amt[id] || { amt: 0, min: 0 }; a.amt += m.amt; a.min += m.min; }
+  for (const m of g.mats) {
+    const a = amt[m.id] || { amt: 0, min: 0 }, info = subjInfo(m.subj ? (m.subj === 'ot' && m.subjText ? 'ot:' + m.subjText : m.subj) : '');
+    const tag = m.subj ? `<span class="subj ${info.cls}" style="${info.style}">${esc(info.label)}</span>` : '';
+    const rate = a.amt > 0 && a.min > 0 ? ` ・ 平均 ${amtTxt(a.min / a.amt)}分/${m.unit}` : '';
+    if (!m.target) { h += `<div class="g-mat"><div class="g-t"><span>${tag}<b>${esc(m.name)}</b></span><span class="g-v"><b class="num">${amtTxt(a.amt)}</b><small> ${m.unit}</small></span></div><div class="g-line"><span>目標なし${rate}</span></div></div>`; continue; }
+    const diff = a.amt - m.target * pace, left = Math.max(0, m.target - a.amt);
+    const state = a.amt >= m.target ? '<span class="g-ok">🎉 達成</span>' : diff >= 0.5 ? `<span class="g-ok">✓ 先行 +${amtTxt(diff)}${m.unit}</span>` : diff > -0.5 ? '<span class="g-ok">ペースどおり</span>' : `<span class="g-late">遅れ −${amtTxt(-diff)}${m.unit}</span>`;
+    h += `<div class="g-mat"><div class="g-t"><span>${tag}<b>${esc(m.name)}</b></span><span class="g-v"><b class="num">${amtTxt(a.amt)}</b><small> / ${amtTxt(m.target)}${m.unit}</small></span></div>
+      <div class="g-bar" style="--sc:${m.subj ? `var(--s-${m.subj})` : 'var(--accent)'};${info.style}"><i style="width:${Math.min(100, a.amt / m.target * 100)}%"></i>${a.amt < m.target ? `<div class="pace" style="left:${pace * 100}%"></div>` : ''}</div>
+      <div class="g-line"><span>${a.amt >= m.target ? '達成!' : `あと${amtTxt(left)}${m.unit} ・ 1日${amtTxt(Math.ceil(left / (7 - dow) * 10) / 10)}${m.unit}ペース`}${rate}</span>${state}</div></div>`;
+  }
+  // 量のまとめ(単位ごと)と、先週との時間の比較
+  const byUnit = {}; for (const m of g.mats) { const a = amt[m.id]; if (a && a.amt) byUnit[m.unit] = (byUnit[m.unit] || 0) + a.amt; }
+  const units = Object.entries(byUnit).map(([u, n]) => `${amtTxt(n)}${u}`).join(' + ');
+  const last = weekDays(shiftDay(today, -7)).reduce((a, d) => a + dayStats(d).act, 0);
+  h += units || last > 0 ? `<div class="g-sum">📈 ${units ? `今週は ${units} 進みました` : '今週の量はまだ記録がありません'}${last > 0 ? ` ・ 先週は合計 ${hm(last)}` : ''}</div>` : '';
+  h += `<p class="note">黒い線 = 今日の始まりまでに進んでいたい位置。量は、教材を選んだタスクを終えたときに記録します。</p><div class="btnrow"><button id="goalEdit" class="grow">🎯 目標を変える</button></div>`;
+  setHTML('goalBody', h);
+}
+function renderGoalEditor() {
+  const d = goalDraft, last = weekDays(shiftDay(logicalToday(), -7)).reduce((a, x) => a + dayStats(x).act, 0);
+  const subjBtns = (m, i) => ['', ...SUBJECT_KEYS].map(k => `<button type="button" data-gsubj="${k}" data-i="${i}" class="${k ? 'subj-' + k : ''}" aria-pressed="${(m.subj || '') === k}">${k ? SUBJECTS[k] : 'なし'}</button>`).join('');
+  setHTML('goalBody', `<div class="g-edit">
+    <div class="g-hours"><label for="gHours" style="margin:0">勉強時間</label><input id="gHours" type="number" inputmode="decimal" min="0" max="168" step="0.5" class="num" value="${d.hours || ''}" placeholder="0">時間 / 週</div>
+    <p class="note" style="margin:0">${last > 0 ? `先週は ${hm(last)} でした。` : ''}0 か空なら時間の目標はなし。</p>
+    <label style="margin:4px 0 0">教材ごとの量(1週間に進める量)</label>
+    <div class="g-mats">${d.mats.map((m, i) => `<div class="g-matbox"><div class="g-row"><input data-gname="${i}" maxlength="30" placeholder="教材名(例: 青チャート 例題)" value="${esc(m.name)}"><input data-gtarget="${i}" type="number" inputmode="decimal" min="0" class="num" placeholder="量" value="${m.target || ''}"><select data-gunit="${i}">${UNITS.map(u => `<option ${u === m.unit ? 'selected' : ''}>${u}</option>`).join('')}</select><button type="button" class="gdel danger" data-gdel="${i}" aria-label="この教材を消す">✕</button></div><div class="g-sub">${subjBtns(m, i)}</div></div>`).join('')}</div>
+    <button type="button" id="gAdd">＋ 教材を追加</button>
+    <div class="msg err" id="gMsg"></div>
+    <div class="btnrow" style="margin-top:0"><button class="primary grow" id="gSave">保存</button><button id="gCancel">やめる</button></div></div>`);
+}
+$('goalBody').addEventListener('click', e => {
+  const t = e.target;
+  if (t.closest('#goalEdit')) { goalDraft = JSON.parse(JSON.stringify(goals())); if (!goalDraft.mats.length) goalDraft.mats.push({ id: 'm' + uid(), name: '', unit: '問', target: 0 }); renderGoalEditor(); return; }
+  if (!goalDraft) return;
+  if (t.id === 'gAdd') { goalDraft.mats.push({ id: 'm' + uid(), name: '', unit: '問', target: 0 }); renderGoalEditor(); return; }
+  if (t.dataset.gdel != null) { goalDraft.mats.splice(+t.dataset.gdel, 1); renderGoalEditor(); return; }
+  if (t.dataset.gsubj != null) { const m = goalDraft.mats[+t.dataset.i]; if (t.dataset.gsubj) m.subj = t.dataset.gsubj; else delete m.subj; renderGoalEditor(); return; }
+  if (t.id === 'gCancel') { goalDraft = null; lastHTML.goalBody = null; renderGoals(); return; }
+  if (t.id === 'gSave') {
+    goalDraft.mats = goalDraft.mats.filter(m => m.name.trim());
+    store.set('goals', cleanGoals(goalDraft)); goalDraft = null; lastHTML.goalBody = null;
+    renderGoals(); renderMatChips(); render();
+  }
+});
+$('goalBody').addEventListener('input', e => {
+  if (!goalDraft) return;
+  const t = e.target;
+  if (t.id === 'gHours') goalDraft.hours = +t.value || 0;
+  else if (t.dataset.gname != null) goalDraft.mats[+t.dataset.gname].name = t.value;
+  else if (t.dataset.gtarget != null) goalDraft.mats[+t.dataset.gtarget].target = +t.value || 0;
+  else if (t.dataset.gunit != null) goalDraft.mats[+t.dataset.gunit].unit = t.value;
+});
+$('goalBody').addEventListener('change', e => { if (goalDraft && e.target.dataset.gunit != null) goalDraft.mats[+e.target.dataset.gunit].unit = e.target.value; });
+
+// タスクを終えたとき(または後から)、どれだけ進んだかを記録する
+function lastRange(matId, exceptId) {
+  for (let i = 0; i < 60; i++) { const ds = shiftDay(dayStr, -i), d = ds === dayStr ? data : loadDay(ds); for (const t of [...d.tasks].reverse()) if (t.mat === matId && t.id !== exceptId && t.range) return t.range; }
+  return '';
+}
+function askAmount(id) {
+  const t = data.tasks.find(x => x.id === id), m = t && matOf(t.mat); if (!t || !m) return;
+  const row = lastSc && lastSc.rows.find(r => r.t.id === id), min = row ? workedMin(row) : 0;
+  const v = Number.isFinite(t.amt) ? t.amt : Number.isFinite(t.amtPlan) ? t.amtPlan : '';
+  const prev = lastRange(m.id, t.id);
+  openOkModal({
+    title: '✓ おつかれさま!どこまで進んだ?',
+    body: `<p style="margin:0 0 10px">${esc(m.name)} ・ ${Math.round(min)}分</p>
+      <label for="amtIn">今日やった量</label><div class="amt-in"><input id="amtIn" type="number" inputmode="decimal" min="0" max="99999" step="any" class="num" value="${v}"><span>${m.unit}</span></div>
+      <div class="amt-chips">${Number.isFinite(t.amtPlan) ? `<button type="button" data-amtq="=${t.amtPlan}">予定どおり ${amtTxt(t.amtPlan)}${m.unit}</button><button type="button" data-amtq="=${t.amtPlan / 2}">半分</button>` : ''}<button type="button" data-amtq="+1">+1</button><button type="button" data-amtq="-1">−1</button><button type="button" data-amtq="+5">+5</button></div>
+      <label for="amtRange">どこまで(任意・次回の目安に)</label><input id="amtRange" maxlength="40" placeholder="${prev ? `前回は「${esc(prev)}」まで` : '例: 例題 20〜35'}" value="${esc(t.range || '')}">
+      <div class="amt-rate" id="amtRate" data-min="${min}" data-unit="${m.unit}"></div>`,
+    ok: '記録する', cancel: 'あとで',
+    valid: () => data.tasks.some(x => x.id === id),
+    onOk: () => {
+      const cur = data.tasks.find(x => x.id === id); if (!cur) return;
+      const n = parseFloat($('amtIn') ? $('amtIn').value : '');
+      if (Number.isFinite(n) && n >= 0) cur.amt = Math.min(99999, n); else delete cur.amt;
+      const rg = ($('amtRange') ? $('amtRange').value : '').trim();
+      if (rg) cur.range = rg.slice(0, 40); else delete cur.range;
+      saveDay(); render(); maybeRenderStats(true);
+    }
+  });
+  updateAmtRate();
+}
+function updateAmtRate() {
+  const el = $('amtRate'), inp = $('amtIn'); if (!el || !inp) return;
+  const n = parseFloat(inp.value), min = +el.dataset.min;
+  el.textContent = n > 0 && min > 0 ? `⏱ 1${el.dataset.unit}あたり ${amtTxt(min / n)}分` : '';
+}
+$('modalBody').addEventListener('input', e => { if (e.target.id === 'amtIn') updateAmtRate(); });
+$('modalBody').addEventListener('click', e => {
+  const b = e.target.closest('[data-amtq]'); if (!b) return;
+  const inp = $('amtIn'), q = b.dataset.amtq, cur = parseFloat(inp.value) || 0;
+  inp.value = amtTxt(Math.max(0, q[0] === '=' ? +q.slice(1) : cur + +q)); updateAmtRate();
+});
+
 var statsAt = 0; // saveDay() から先に触られることがあるので var
-function maybeRenderStats(force) { if (force || nowMs() - statsAt > 20000 || nowMs() < statsAt) { statsAt = nowMs(); renderStats(); } }
+function maybeRenderStats(force) { if (force || nowMs() - statsAt > 20000 || nowMs() < statsAt) { statsAt = nowMs(); renderStats(); renderGoals(); } }
 
 let pendingImport = null;
 $('importBtn').addEventListener('click', () => { $('importFile').value = ''; $('importFile').click(); });
@@ -2666,7 +2904,7 @@ $('importFile').addEventListener('change', async () => {
 $('importConfirm').addEventListener('click', e => {
   if (e.target.id === 'importCancel') { pendingImport = null; $('importConfirm').innerHTML = ''; return; }
   if (e.target.id !== 'importDo' || !pendingImport) return;
-  for (const [k, v] of pendingImport) store.set(k, k.startsWith('day:') ? cleanDay(v, true) : k === 'lastSettings' ? cleanSettings(v) : k === 'pomo' ? cleanPomo(v) : k === 'subjList' ? (Array.isArray(v) ? v.filter(x => typeof x === 'string').map(x => x.slice(0, 10)).slice(0, 8) : []) : v);
+  for (const [k, v] of pendingImport) store.set(k, k.startsWith('day:') ? cleanDay(v, true) : k === 'lastSettings' ? cleanSettings(v) : k === 'pomo' ? cleanPomo(v) : k === 'goals' ? cleanGoals(v) : k === 'subjList' ? (Array.isArray(v) ? v.filter(x => typeof x === 'string').map(x => x.slice(0, 10)).slice(0, 8) : []) : v);
   const n = pendingImport.filter(([k]) => k.startsWith('day:')).length;
   pendingImport = null; $('importConfirm').innerHTML = '';
   data = loadDay(dayStr); pomoCfg = loadPomoCfg();
@@ -2679,7 +2917,7 @@ $('importConfirm').addEventListener('click', e => {
 const mdLabel = ds => `${+ds.slice(5, 7)}/${+ds.slice(8)}`;
 const taskDurLabel = t => `${t.sw ? '約' : ''}${t.dur}分${t.pomo ? ' 🍅' : ''}${t.sw ? ' ⏲' : ''}`;
 // 予定として引き継ぐ項目だけを取り出した新しいタスク(実績は持たない)
-const planCopy = t => ({ id: uid() + Math.random().toString(36).slice(2, 5), name: t.name, dur: t.dur, memo: t.memo || '', pomo: !!t.pomo, sw: !!t.sw, adj: 0, actualStart: null, actualEnd: null, ...(hasSubj(t.subj) ? { subj: t.subj } : {}), ...(t.subj === 'ot' && t.subjText ? { subjText: t.subjText } : {}) });
+const planCopy = t => ({ id: uid() + Math.random().toString(36).slice(2, 5), name: t.name, dur: t.dur, memo: t.memo || '', pomo: !!t.pomo, sw: !!t.sw, adj: 0, actualStart: null, actualEnd: null, ...(hasSubj(t.subj) ? { subj: t.subj } : {}), ...(t.subj === 'ot' && t.subjText ? { subjText: t.subjText } : {}), ...(t.mat ? { mat: t.mat } : {}), ...(Number.isFinite(t.amtPlan) ? { amtPlan: t.amtPlan } : {}) });
 function prevDayTasks() { const d = store.get('day:' + shiftDay(dayStr, -1)); return isObj(d) && Array.isArray(d.tasks) ? cleanDay(d, false).tasks : []; }
 
 // 「元に戻す」: 追加した日の予定を、追加する前の状態に戻す(日を移動していても、その日に戻す)
@@ -2890,6 +3128,7 @@ if (DEBUG) {
 
 syncSettingsUI();
 syncPomoUI();
+renderMatChips();
 foldFormByDefault(); // スマホはタスクがあれば畳む。タブレット・PCは実行中なら畳む
 $('fPomo').checked = !!store.get('lastPomo');
 setFormMode(formMode);
