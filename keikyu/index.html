@@ -524,7 +524,7 @@ function planTimes(route,k){
   return {ev:s.events,traj:s.traj};
 }
 // ---- バージョン（変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする） ----
-const APP_VERSION='1.4.2';
+const APP_VERSION='1.4.3';
 const isNewer=(a,b)=>{ const x=String(a).split(".").map(Number), y=String(b).split(".").map(Number); for(let i=0;i<3;i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0); } return false; };
 let upd=null; // {version, items}：新しい版が出ていたら入る。announced=放送済み
 async function checkUpdate(){
@@ -1077,10 +1077,10 @@ function updateZaisen(e){
   const a=route[k], b=route[Math.min(n-1,k+1)], f=b.cx>a.cx?Math.max(0,Math.min(1,(x-a.cx)/(b.cx-a.cx))):0;
   // 行の右端の駅を過ぎたら次の行
   let row=Math.min(Z.rows-1,Math.floor(k/Z.per)); const X=Z.padL+((k-row*Z.per)+f)*Z.step, top=row*Z.rowH;
-  // 乗る線：駅のホームにいて止まる駅ならその番線（待避なら待避線）、それ以外は本線
+  // 走る線：基本は本線。待避する駅（待避を押した駅・待避中の駅）だけ待避線
   const near=Math.abs(x-a.cx)<=a.plen/2+40?k:(Math.abs(x-b.cx)<=b.plen/2+40?k+1:-1), st=near>=0?route[near]:null;
   const r=st||a, Y=Z.ys(r,top);
-  let no=null; if(st&&st.stop&&(G.mode!=="run"||Math.abs(x-st.x)<st.plen)) no=(taihiHere(near)&&st.side)?st.side:st.track;
+  let no=null; if(st&&st.side&&taihiHere(near)&&(G.mode!=="run"||Math.abs(x-st.x)<st.plen)) no=st.side;
   let j=no!=null?r.lay.findIndex(t=>t.n===no||(t.t==="c"&&(no==="2"||no==="3"))):-1;
   if(j<0) j=r.lay.findIndex(t=>t.t===(r.down?"D":"U"));
   const y=j>=0?Y[j]:top+(r.down?Z.ys(r,0)[0]:0);
