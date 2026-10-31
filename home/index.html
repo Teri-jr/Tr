@@ -198,7 +198,19 @@ body.editing .bar .stx,body.editing #chips{display:none!important}
 body.editing .page{touch-action:none}
 body.editing .page .tile{position:relative;outline:2px dashed var(--sub);outline-offset:-5px;cursor:grab}
 body.editing .page .tile *{pointer-events:none}
-body.editing .page .tile .tdel{pointer-events:auto}
+body.editing .page .tile .openapp{border:1px solid var(--sub);color:var(--ink);font-size:11.5px;padding:1px 10px;margin-left:6px;letter-spacing:0;font-weight:700}
+#appView{position:fixed;inset:0;z-index:95;background:var(--bg);display:flex;flex-direction:column}
+#appView .ah{display:flex;align-items:center;gap:12px;padding:calc(env(safe-area-inset-top) + 8px) 14px 8px;border-bottom:1px solid var(--rule);background:var(--bg)}
+#appView .ah button{border:1px solid var(--ink);padding:6px 16px;font-weight:700;font-size:15px}
+#appView .ah b{font-size:16px}
+#appView iframe{flex:1;border:0;width:100%;background:#fff}
+.tdel{pointer-events:auto}
+.openapp{border:1px solid var(--sub);color:var(--ink);font-size:11.5px;padding:1px 10px;margin-left:6px;letter-spacing:0;font-weight:700}
+#appView{position:fixed;inset:0;z-index:95;background:var(--bg);display:flex;flex-direction:column}
+#appView .ah{display:flex;align-items:center;gap:12px;padding:calc(env(safe-area-inset-top) + 8px) 14px 8px;border-bottom:1px solid var(--rule);background:var(--bg)}
+#appView .ah button{border:1px solid var(--ink);padding:6px 16px;font-weight:700;font-size:15px}
+#appView .ah b{font-size:16px}
+#appView iframe{flex:1;border:0;width:100%;background:#fff}
 .tdel{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;background:var(--red);color:#fff;font-size:20px;line-height:28px;text-align:center;z-index:3;font-weight:700}
 .tile.dragging{opacity:.3}
 .ph{height:8px;background:var(--sl);flex:none;margin:3px 10px}
@@ -373,11 +385,12 @@ body.editing .page .tile .tdel{pointer-events:auto}
 </div>
 
 <div id="settings" hidden></div>
+<div id="appView" hidden><div class="ah"><button id="appBack">← Platform に戻る</button><b id="appName"></b></div><iframe id="appFrame" title="アプリ" allow="screen-wake-lock; autoplay; fullscreen"></iframe></div>
 <div id="sai" style="position:fixed;left:0;top:0;width:1px;height:env(safe-area-inset-top,0px);visibility:hidden;pointer-events:none"></div>
 
 <script>
 'use strict';
-const APP_VERSION = '1.6.1'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.7.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -759,7 +772,7 @@ function renderStudyLine(mini) {
   if (yd) yd._ds = ymd(addDays(now(), -1));
   let week = 0; for (let i = 0; i < 7; i++) { const x = slDay(ymd(addDays(now(), -i))); if (x) { x._ds = ymd(addDays(now(), -i)); week += slStudied(x); } }
   const foot = `<div class="slfoot"><span>今日 <b>${hm(slStudied(today && Object.assign(today, { _ds: ymd(now()) })) * 60000)}</b></span><span>昨日 <b>${hm(slStudied(yd) * 60000)}</b></span><span style="margin-left:auto">7日で <b>${(week / 60).toFixed(1)}時間</b></span></div>`;
-  if (!sc) return `<h3><b style="color:var(--sl);letter-spacing:.06em">StudyLine</b> <span>今日のダイヤ</span></h3><p class="empty" style="flex:1">今日のダイヤはまだありません。StudyLine で作るとここに出ます。<br>(StudyLine と同じ iPad・同じ開き方で使ってください)</p>${foot}`;
+  if (!sc) return `<h3><b style="color:var(--sl);letter-spacing:.06em">StudyLine</b> <span>今日のダイヤ <button class="openapp" data-app="studyline">開く</button></span></h3><p class="empty" style="flex:1">今日のダイヤはまだありません。右上の「開く」から StudyLine を開いて作ると、ここに出ます。</p>${foot}`;
   const { rows, start, planEnd, end, deadline, nm } = sc;
   const run = rows.find(r => r.st === 'run'), nextR = rows.find(r => r.st === 'wait'), allDone = rows.every(r => r.st === 'done');
   const delay = Math.round(end - planEnd);
@@ -783,7 +796,7 @@ function renderStudyLine(mini) {
   }
   if (mini) { // 列に置いたときは縦の一覧にする
     const list = rows.slice(0, 5).map(r => `<li class="${r.st === 'done' ? 'done' : r.st === 'run' ? 'cur' : ''}"><span class="tm">${fmtDay(r.s)}</span><span class="dt"></span><span class="nm">${esc(r.t.name)}</span></li>`).join('');
-    return `<h3><b style="color:var(--sl);letter-spacing:.06em">StudyLine</b> <span>${run ? '運行状況' : '今日のダイヤ'}</span></h3><div class="slhead">${head}</div><div class="slsub">${sub}</div><ul class="slv" style="margin:8px 0">${list}<li><span class="tm">${fmtDay(end)}</span><span class="dt" style="border-radius:2px;border-color:var(--ink)"></span><span class="nm">終点</span></li></ul>${foot}`;
+    return `<h3><b style="color:var(--sl);letter-spacing:.06em">StudyLine</b> <span>${run ? '運行状況' : '今日のダイヤ'} <button class="openapp" data-app="studyline">開く</button></span></h3><div class="slhead">${head}</div><div class="slsub">${sub}</div><ul class="slv" style="margin:8px 0">${list}<li><span class="tm">${fmtDay(end)}</span><span class="dt" style="border-radius:2px;border-color:var(--ink)"></span><span class="nm">終点</span></li></ul>${foot}`;
   }
   // 路線図:駅の位置は時刻の割合。近すぎる駅は少し離す
   const t0 = rows[0].s, t1 = end, span = Math.max(1, t1 - t0);
@@ -802,7 +815,7 @@ function renderStudyLine(mini) {
   });
   if (run) route += `<div class="train" style="left:${Math.min(97, Math.max(1, (nm - t0) / span * 100)).toFixed(1)}%">▶</div>`;
   route += `<div class="st end" style="left:100%"><div class="dot"></div><div class="nm">終点</div><div class="tm n">${fmtDay(end)}</div></div>`;
-  return `<h3><b style="color:var(--sl);letter-spacing:.06em">StudyLine</b> <span>${run ? '運行状況' : '今日のダイヤ'}</span></h3><div class="slhead">${head}</div><div class="slsub">${sub}</div><div class="route">${route}</div>${foot}`;
+  return `<h3><b style="color:var(--sl);letter-spacing:.06em">StudyLine</b> <span>${run ? '運行状況' : '今日のダイヤ'} <button class="openapp" data-app="studyline">開く</button></span></h3><div class="slhead">${head}</div><div class="slsub">${sub}</div><div class="route">${route}</div>${foot}`;
 }
 function slChip() {
   const sc = slSchedule();
@@ -813,6 +826,19 @@ function slChip() {
   if (!sc.rows.some(r => r.st === 'done')) return `<b>${fmtMin(sc.start)}</b>発`;
   return `終点 <b>${fmtDay(sc.end)}</b>`;
 }
+/* ---- StudyLine・記憶回路を Platform の中で開く ----
+   ホーム画面に追加したアプリは、アプリごとに保存場所が分かれる。Platform の中(同じサイトの iframe)で開けば
+   保存場所が同じになり、ダイヤや復習の記録がそのまま Platform に出る */
+const APPS = { studyline: { name: 'StudyLine', url: '../' }, kioku: { name: '記憶回路', url: '../vocab/' } };
+function openApp(k) {
+  const a = APPS[k]; if (!a) return;
+  closeSlot();
+  $('appName').textContent = a.name;
+  if ($('appFrame').dataset.k !== k) { $('appFrame').src = a.url; $('appFrame').dataset.k = k; }
+  $('appView').hidden = false;
+}
+$('appBack').addEventListener('click', () => { $('appView').hidden = true; kioku.db = {}; renderAll(); });
+document.addEventListener('click', e => { const b = e.target.closest('.openapp'); if (b && !editing) { e.stopPropagation(); openApp(b.dataset.app); } }, true);
 addEventListener('storage', e => { if (e.key && (e.key.startsWith('ttable:') || e.key.startsWith('vocabTest.'))) { kioku.db = {}; renderAll(); } });
 
 /* ================= 記憶回路(同じサイトの単語と記録を使う) ================= */
@@ -870,12 +896,12 @@ function dueList() {
   return out.sort((a, b) => (isWeak(b.r) - isWeak(a.r)) || (a.r.due - b.r.due));
 }
 function renderKioku() {
-  if (!kioku.loaded) return '<h3>記憶回路</h3><p class="empty">単語を読み込み中…</p>';
+  if (!kioku.loaded) return '<h3>記憶回路 <span><button class="openapp" data-app="kioku">開く</button></span></h3><p class="empty">単語を読み込み中…</p>';
   const list = dueList();
   const cnt = id => list.filter(x => x.sub === id).length;
   if (kioku.cur && !list.some(x => x.sub === kioku.cur.sub && x.w === kioku.cur.w)) kioku.cur = null;
   if (!kioku.cur && list.length) { kioku.cur = list[0]; kioku.shown = false; }
-  let h = `<h3>記憶回路 <span>今日の復習 <b class="n" style="font-size:16px;color:var(--ink)">${list.length}</b></span></h3>
+  let h = `<h3>記憶回路 <span>今日の復習 <b class="n" style="font-size:16px;color:var(--ink)">${list.length}</b> <button class="openapp" data-app="kioku">開く</button></span></h3>
     <div class="subj3">${VOCAB.map(v => `<span>${v.name} <b class="n">${cnt(v.id)}</b></span>`).join('')}</div>`;
   if (!list.length) return h + '<p class="empty">今日の復習はおわりです。新しい単語は記憶回路で覚えましょう。</p>';
   const c = kioku.cur, w = c.w, isK = c.sub === 'kanji', kana = isK && /^[゠-ヿ・ー]+$/.test(w.english);
@@ -1503,7 +1529,7 @@ function renderSettings() {
   const opt = (v, cur, lab) => `<option value="${v}" ${String(v) === String(cur) ? 'selected' : ''}>${esc(lab)}</option>`;
   $('settings').innerHTML = `<div class="sx">
   <header><h1>設定</h1><span class="note">v${APP_VERSION}</span><button class="done" id="sDone">完了</button></header>
-  <nav><a href="#s-view">表示</a><a href="#s-chips">タイル</a><a href="#s-tt">時間割</a><a href="#s-todo">やること</a><a href="#s-cd">カウントダウン</a><a href="#s-loc">場所</a><a href="#s-gcal">Googleカレンダー</a><a href="#s-quake">地震</a><a href="#s-terms">受験の語句</a><a href="#s-about">このアプリ</a></nav>
+  <nav><a href="#s-view">表示</a><a href="#s-chips">タイル</a><a href="#s-tt">時間割</a><a href="#s-todo">やること</a><a href="#s-cd">カウントダウン</a><a href="#s-loc">場所</a><a href="#s-gcal">Googleカレンダー</a><a href="#s-quake">地震</a><a href="#s-terms">受験の語句</a><a href="#s-apps">StudyLine・記憶回路</a><a href="#s-about">このアプリ</a></nav>
 
   <section id="s-view"><h2>表示</h2>
     <div class="row">${['dark', 'light', 'auto'].map(v => `<label><input type="radio" name="theme" value="${v}" ${cfg.theme === v ? 'checked' : ''}>${{ dark: 'ダーク', light: 'ライト', auto: '時間で自動' }[v]}</label>`).join('')}</div>
@@ -1584,6 +1610,13 @@ function renderSettings() {
     <div class="row">${[...new Set(terms.map(t => t.cat))].map(c => `<label><input type="checkbox" data-tcat="${esc(c)}" ${cfg.termCats.includes(c) ? 'checked' : ''}>${esc(c)}</label>`).join('')}</div>
   </section>
 
+  <section id="s-apps"><h2>StudyLine・記憶回路</h2>
+    <p>ホーム画面に追加したアプリは、アプリごとにデータの保存場所が分かれます。<b>StudyLine と記憶回路は、Platform の中の「開く」から使ってください。</b>そうすると、ダイヤや復習の記録がそのまま Platform に出ます。</p>
+    <div class="row"><button class="btn" data-openapp="studyline">StudyLine を開く</button><button class="btn" data-openapp="kioku">記憶回路を開く</button></div>
+    <p class="note">いま Platform から見えているデータ:StudyLine ${slDaysCount()}日分 ・ 記憶回路 ${vocabRecCount()}語の記録</p>
+    <p class="note">ホーム画面の StudyLine アプリで使っていたデータを移すには:そのアプリの「データの書き出し」で書き出す → Platform の中で StudyLine を開いて「読み込む」でそのファイルを選ぶ。</p>
+  </section>
+
   <section id="s-about"><h2>このアプリ</h2>
     <p><b>Platform</b> v${APP_VERSION}</p>
     ${changelog.slice(0, 5).map(e => `<p class="note"><b>v${esc(e.version)}</b> ${esc(e.date)}</p><ul class="l note">${(e.items || []).map(i => `<li>${esc(i)}</li>`).join('')}</ul>`).join('')}
@@ -1592,11 +1625,14 @@ function renderSettings() {
   </section>
   </div>`;
 }
+function slDaysCount() { let n = 0; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith('ttable:day:')) n++; } } catch (e) {} return n; }
+function vocabRecCount() { let n = 0; for (const v of VOCAB) { try { n += Object.keys(JSON.parse(localStorage.getItem('vocabTest.srs.' + v.id)) || {}).length; } catch (e) {} } return n; }
 const pad5 = s => { const m = toMin(s); return m == null ? '' : `${pad(Math.floor(m / 60))}:${pad(m % 60)}`; };
 const unpad = s => { const m = toMin(s); return m == null ? '' : `${Math.floor(m / 60)}:${pad(m % 60)}`; };
 $('settings').addEventListener('click', e => {
   const t = e.target, rs = () => { saveCfg(); renderSettings(); };
   if (t.id === 'sDone') return closeSettings();
+  if (t.dataset.openapp) { closeSettings(); openApp(t.dataset.openapp); return; }
   if (t.id === 'editStart') { closeSettings(); enterEdit(); return; }
   if (t.id === 'layoutReset') { cfg.layout = null; fixLayout(); saveCfg(); renderLayout(); renderAll(); t.textContent = '戻しました'; return; }
   if (t.dataset.ttday) { ttDay = +t.dataset.ttday; return renderSettings(); }
