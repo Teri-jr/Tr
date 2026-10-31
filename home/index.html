@@ -232,6 +232,9 @@ body.editing .page .tile .tdel{pointer-events:auto}
 .qb .s{color:#c9b9a6}.qb .r{margin-left:auto;color:#c9b9a6;font-size:12px}
 .qb .si{padding:1px 8px;font-weight:700;color:#111}
 .qb.eew{background:#3a0d0d;border-bottom-color:#ff3b3b}.qb.eew .lb{background:#ff3b3b;color:#fff}
+.qb.eew.lv-mid{background:#3a240d;border-bottom-color:#ff9a3a}.qb.eew.lv-mid .lb{background:#ff9a3a;color:#141413}
+.qb.eew.lv-weak{background:#0d2238;border-bottom-color:#2f78c4}.qb.eew.lv-weak .lb{background:#2f78c4}
+.qb.eew.lv-far{background:#1f2227;border-bottom-color:#6b7280}.qb.eew.lv-far .lb{background:#4a4f57}
 .demo-tag{background:#fff;color:#000;font-weight:900;padding:1px 8px;font-size:12px}
 
 /* 緊急地震速報 全画面 */
@@ -243,10 +246,10 @@ body.editing .page .tile .tdel{pointer-events:auto}
 #eew .wv{position:absolute;left:14px;top:14px;background:rgba(11,12,14,.85);padding:8px 12px;font-size:13px;line-height:1.7}
 #eew .p{display:flex;flex-direction:column;border-left:4px solid #ff3b3b;min-width:0}
 #eew .hd{background:#ff3b3b;padding:14px 24px;display:flex;align-items:baseline;gap:14px}
-#eew .hd b{font-size:30px;font-weight:900;letter-spacing:.04em}
-#eew .hd span{font-size:16px;font-weight:700}
+#eew .hd b{font-size:30px;font-weight:900;letter-spacing:.04em;white-space:nowrap}
+#eew .hd span{font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 #eew .hd .x+.x{margin-left:8px}
-#eew .hd .x{margin-left:auto;border:2px solid #fff;padding:2px 12px;font-size:14px;font-weight:700}
+#eew .hd .x{white-space:nowrap;flex:none;margin-left:auto;border:2px solid #fff;padding:2px 12px;font-size:14px;font-weight:700}
 #eew .bd{padding:22px 28px;display:flex;flex-direction:column;gap:16px;flex:1;min-height:0}
 #eew .lab{font-size:15px;color:#b9bec5;font-weight:700}
 #eew .row1{display:flex;align-items:flex-end;gap:20px}
@@ -264,6 +267,29 @@ body.editing .page .tile .tdel{pointer-events:auto}
 #eew .ft{font-size:12px;color:#8a9097}
 #eew .sh.none{font-size:22px;background:#2a2d32;color:#b9bec5;display:flex;align-items:center;justify-content:center;height:150px;font-family:var(--jp)}
 #eew .p.info{border-left-color:#ff9a3a}#eew .p.info .hd{background:#ff9a3a;color:#141413}#eew .p.info .hd .x{border-color:#141413}
+/* 緊急地震速報の段階:strong 強い / mid 中くらい / weak 弱い / far 遠く(ほぼ揺れない) */
+#eew .p{--lv:#ff3b3b;--lvtx:#fff;border-left-color:var(--lv)}
+#eew .p .hd{background:var(--lv);color:var(--lvtx)}#eew .p .hd .x{border-color:var(--lvtx);color:var(--lvtx)}
+#eew .p.lv-mid{--lv:#ff9a3a;--lvtx:#141413}
+#eew .p.lv-weak{--lv:#2f78c4;--lvtx:#fff}
+#eew .p.lv-far{--lv:#4a4f57;--lvtx:#fff}
+#eew .p.lv-strong .hd{animation:eewblink 1s steps(2) infinite}
+@keyframes eewblink{50%{background:#a8001c}}
+@media (prefers-reduced-motion:reduce){#eew .p.lv-strong .hd{animation:none}}
+#eew .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+#eew .ebox{display:flex;flex-direction:column;align-items:center;justify-content:center;height:210px;text-align:center}
+#eew .ebox .u{font-size:15px;font-weight:700}
+#eew .ebox.si{font-family:var(--num)}
+#eew .ebox.si .v{font-size:170px;line-height:.85;font-weight:700}
+#eew .ebox.si .v small{font-size:72px;font-family:var(--jp);font-weight:900}
+#eew .ebox.cd2{border:4px solid #ffd23f;color:#ffd23f}
+#eew .ebox.cd2 .v{font-family:var(--num);font-size:140px;line-height:.85;font-weight:700}
+#eew .ebox.cd2.sm .v{font-size:96px}
+#eew .meta{font-size:15px;color:#b9bec5;display:flex;flex-wrap:wrap;gap:4px 18px}
+#eew .meta b{color:#fff;font-family:var(--num);font-size:19px;font-weight:600}
+#eew .msg{background:#1c1f24;border-left:4px solid var(--lv);padding:14px 16px;font-size:20px;font-weight:700;line-height:1.5}
+#eew .farbig{font-size:44px;font-weight:900;line-height:1.25}
+#eew .farbig small{display:block;font-size:18px;color:#b9bec5;font-weight:500;margin-top:8px}
 #eew .demo{position:absolute;right:20px;top:86px;background:#fff;color:#000;font-weight:900;font-size:18px;padding:4px 14px}
 
 /* 下のお知らせ */
@@ -350,7 +376,7 @@ body.editing .page .tile .tdel{pointer-events:auto}
 
 <script>
 'use strict';
-const APP_VERSION = '1.5.1'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.6.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1227,17 +1253,27 @@ function bigShindo(i, note) {
   if (i < 1) return `<div class="sh none"><span>${note || 'ほぼ揺れない見込み'}</span></div>`;
   return `<div class="sh n" style="background:${SHINDO_COLOR[i]};color:${SHINDO_TEXT[i]}">${SHINDO[i].replace(/(弱|強)/, '<small>$1</small>')}</div>`;
 }
+function eewClass(e) { return e.local >= 5 || (e.warn && e.local >= 4) ? 'strong' : e.local >= 3 ? 'mid' : e.local >= 1 ? 'weak' : 'far'; }
 function drawEEWPanel() {
-  const e = eew, t = nowMs(), left = Math.ceil((e.sAt - t) / 1000);
-  $('eewPanel').className = 'p';
-  $('eewPanel').innerHTML = `<div class="hd"><b>緊急地震速報</b><span>${e.warn ? '強い揺れに警戒' : '予報'}</span><button class="x" data-set="1">設定</button><button class="x" data-close="eew">閉じる</button></div>
-  <div class="bd">
-    <div class="lab">現在地(${esc(loc().pref || '')}付近)の予想震度 ・ 推定</div>
-    <div class="row1">${bigShindo(e.local)}
-      <div class="cd"><div class="u">${left > 0 ? '大きな揺れまで' : '大きな揺れ'}</div><div class="v n">${left > 0 ? left : '到達'}</div><div class="u">${left > 0 ? '秒(目安)' : 'おそれ'}</div></div></div>
-    <div class="src">${esc(e.d.Hypocenter || '震源')} <span class="n" style="font-size:22px;color:#fff">M${e.M.toFixed(1)}</span><span>深さ ${e.depth}km ・ 最大 ${SHINDO[e.maxI] || '不明'}</span></div>
-    <div class="st2"><div><span>小さな揺れ(P波)</span><b class="n">${t >= e.pAt ? '到達' : tmS(e.pAt) + ' ごろ'}</b></div><div><span>大きな揺れ(S波)</span><b class="n" style="color:#ffd23f">${tmS(e.sAt)} ごろ</b></div><div><span>発生</span><b class="n">${tmS(e.origin)}</b></div></div>
-    ${e.local >= 1 ? '<div class="act"><div>頭を守る・机の下へ</div><div>窓や棚から離れる</div></div>' : '<div class="act"></div>'}
+  const e = eew, t = nowMs(), left = Math.ceil((e.sAt - t) / 1000), lv = eewClass(e);
+  const dist = Math.round(kmBetween(e.lat, e.lon, loc().lat, loc().lon));
+  const head = { strong: '強い揺れに警戒', mid: '揺れに注意', weak: '弱い揺れ', far: '遠くの地震' }[lv];
+  const cd = left > 0 ? `<div class="u">${lv === 'weak' ? '揺れまで' : '大きな揺れまで'}</div><div class="v">${left}</div><div class="u">秒(目安)</div>` : `<div class="u">揺れが</div><div class="v" style="font-size:72px">到達</div><div class="u">しているおそれ</div>`;
+  const si = `<div class="ebox si" style="background:${SHINDO_COLOR[e.local]};color:${SHINDO_TEXT[e.local]}"><div class="u">予想震度</div><div class="v">${SHINDO[e.local].replace(/(弱|強)/, '<small>$1</small>')}</div><div class="u">推定</div></div>`;
+  const meta = `<div class="meta"><span>震源 <b style="font-family:var(--jp)">${esc(e.d.Hypocenter || '不明')}</b></span><span>M<b>${e.M.toFixed(1)}</b></span><span>深さ <b>${e.depth}</b>km</span><span>最大 <b>${SHINDO[e.maxI] || '不明'}</b></span><span>ここまで <b>${dist}</b>km</span></div>`;
+  const times = `<div class="meta"><span>発生 <b>${tmS(e.origin)}</b></span><span>P波 <b>${t >= e.pAt ? '到達' : tmS(e.pAt)}</b></span><span>S波 <b style="color:#ffd23f">${tmS(e.sAt)}</b></span></div>`;
+  const acts = {
+    strong: '<div class="act"><div>頭を守る・机の下へ</div><div>窓や棚から離れる</div><div>あわてて外に出ない</div></div>',
+    mid: '<div class="act"><div>机の近くで身構える</div><div>落ちてくる物に注意</div></div>',
+    weak: '<div class="msg" style="margin-top:auto">大きな揺れにはならない見込みです。落ち着いて様子を見てください。</div>',
+    far: '<div class="msg" style="margin-top:auto">ここではほとんど揺れない見込みです。ほかの地域で強い揺れのおそれがあります。</div>'
+  }[lv];
+  const main = lv === 'far'
+    ? `<div class="lab">現在地(${esc(loc().pref || '')}付近)</div><div class="farbig">ほぼ揺れない見込み<small>震源は ${esc(e.d.Hypocenter || '不明')}、ここから約 ${dist}km 離れています</small></div>`
+    : `<div class="lab">現在地(${esc(loc().pref || '')}付近)</div><div class="grid2">${si}<div class="ebox cd2 ${lv === 'weak' ? 'sm' : ''}">${cd}</div></div>`;
+  $('eewPanel').className = 'p lv-' + lv;
+  $('eewPanel').innerHTML = `<div class="hd"><b>緊急地震速報</b><span>${head}${e.warn ? '' : '(予報)'}</span><button class="x" data-set="1">設定</button><button class="x" data-close="eew">閉じる</button></div>
+  <div class="bd">${main}${meta}${times}${acts}
     <div class="ft">${tmS(e.recv)} 受信 ・ 第${e.serial}報${e.final ? '(最終)' : ''} ・ 予想震度は距離からの推定です ・ 学校の放送・先生の指示を優先</div>
   </div>${e.demo ? '<div class="demo">デモ</div>' : ''}`;
 }
@@ -1288,7 +1324,8 @@ function drawMap(src) {
     g.lineJoin = 'round'; g.strokeStyle = '#0b0c0e'; g.lineWidth = 1;
     for (const p of JAPAN) {
       if (p._for !== key) {
-        p._lv = isE ? Math.max(0, Math.min(estIntensity(src.M, src.depth, src.lat, src.lon, p.c[1], p.c[0]) + shift, src.maxI || 9)) : (src.byPref[p.name] || 0);
+        const est = isE ? estIntensity(src.M, src.depth, src.lat, src.lon, p.c[1], p.c[0]) : 0;
+        p._lv = isE ? (est >= 1 ? Math.max(1, Math.min(est + shift, src.maxI || 9)) : 0) : (src.byPref[p.name] || 0);
         p._for = key;
       }
       g.fillStyle = p._lv >= 1 ? SHINDO_COLOR[p._lv] : '#2a2d32';
@@ -1349,7 +1386,7 @@ function renderQBanner() {
   const B = $('qb');
   if (eew && (eewLevel() === 1 || eew.closed)) {
     const left = Math.ceil((eew.sAt - nowMs()) / 1000);
-    B.className = 'qb eew'; B.hidden = false;
+    B.className = 'qb eew lv-' + eewClass(eew); B.hidden = false;
     B.innerHTML = `${eew.demo ? '<span class="demo-tag">デモ</span>' : ''}<span class="lb">緊急地震速報${eew.warn ? '' : '(予報)'}</span><b>${esc(eew.d.Hypocenter || '')}</b><span class="s">M${eew.M.toFixed(1)} ・ 最大 ${SHINDO[eew.maxI] || '不明'}</span><span>現在地 ${eew.local ? shindoChip(eew.local) : 'ほぼ揺れない'}</span><b style="color:#ffd23f">${left > 0 ? `揺れまで 約${left}秒` : '揺れに注意'}</b><span class="r">推定 ・ 第${eew.serial}報${eew.closed ? ' ・ タップで開く' : ''}</span><button class="qset" data-set="1">設定</button>`;
     return;
   }
@@ -1380,7 +1417,7 @@ function demoEEW(kind) { // 'strong' / 'weak' / 'far'(遠くの地震。「す�
   const ts = ms => { const d = new Date(ms + 9 * 3600e3); return d.toISOString().slice(0, 19).replace('T', ' ').replace(/-/g, '/'); };
   const off = { strong: [.38, .32], weak: [1.6, 1.4], far: [4.5, 3.5] }[kind] || [1.6, 1.4];
   const lat = +(L.lat + off[0]).toFixed(1), lon = +(L.lon + off[1]).toFixed(1);
-  const full = Math.max(4, cfg.qFull), beep = Math.min(4, Math.max(1, cfg.qBeep > 9 ? 2 : cfg.qBeep));
+  const full = Math.max(5, cfg.qFull), beep = 2; // 強い揺れのデモは5弱以上、弱い揺れのデモは震度2
   const steps = kind === 'strong'
     ? [[0, 5.6, '4', false, false, full - 1], [1500, 6.3, '5弱', true, false, full], [4000, 6.6, '5強', true, false, full], [9000, 6.6, '5強', true, true, full]]
     : kind === 'far' ? [[0, 5.2, '4', false, false, 0], [3000, 5.5, '4', false, true, 0]]
