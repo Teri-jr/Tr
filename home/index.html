@@ -156,6 +156,31 @@ ul{list-style:none}
 .grade button{font-size:13px;border:1px solid var(--rule);padding:7px 0;color:var(--sub)}
 .subj3{display:flex;gap:16px;font-size:12.5px;color:var(--sub);margin-bottom:10px}.subj3 b{color:var(--ink);font-size:17px;font-weight:500;margin-left:3px}
 .term .tw{font-size:30px;font-weight:700;letter-spacing:.02em}
+/* 語句のカード(めくる) */
+.tnext{border:1px solid var(--rule);padding:2px 10px;font-size:12px;color:var(--ink)}
+.termcard.fc{perspective:1200px;min-height:150px;cursor:pointer}
+.fc-in{position:relative;width:100%;height:100%;min-height:inherit;transition:transform .5s;transform-style:preserve-3d}
+.fc.flipped .fc-in{transform:rotateY(180deg)}
+.fc-face{position:absolute;inset:0;border:1px solid var(--rule);background:var(--card);padding:14px 18px;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden}
+.fc-front{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center}
+.fc-front .tcat{position:absolute;left:14px;top:12px}.fc-front .flip{position:absolute;right:12px;bottom:10px}
+.fc-front .tw{font-size:38px;font-weight:700;line-height:1.2}
+.fc-back{transform:rotateY(180deg)}
+.fc-back .tw2{font-size:22px;font-weight:700;margin-top:8px}.fc-back .tw2 .tr{font-size:13px;color:var(--sub);font-weight:400;margin-left:10px}
+.fc-back .td2{font-size:14.5px;line-height:1.65;margin-top:6px}
+.mini .termcard.fc{min-height:130px}.mini .fc-front .tw{font-size:26px}.mini .fc-back .tw2{font-size:17px}.mini .fc-back .td2{font-size:12.5px}
+/* タイルの全画面 */
+#full{position:absolute;inset:0;z-index:9;background:var(--bg);display:flex;flex-direction:column}
+#full[hidden]{display:none}
+.fhead{height:52px;flex:none;display:flex;align-items:center;gap:12px;padding:0 18px;border-bottom:1px solid var(--rule)}
+.fhead b{font-size:17px;margin-right:auto}.fhead .fhint{font-size:12px;color:var(--sub)}
+.fbody{flex:1;min-height:0;display:flex;overflow:auto}
+#full .tile{flex:1;border:0;zoom:1.6;padding:20px 28px;overflow:auto;display:flex;flex-direction:column}
+#full .clockt{zoom:1;align-items:center;justify-content:center}
+#full .clockt .date{font-size:26px}#full .clockt .next{font-size:24px}#full .clockt .next .n{font-size:36px}#full .clockt .pbar{height:34px}#full .clockt .pbar div{font-size:14px}
+#full .termcard.fc{flex:1;min-height:220px}
+#full .fc-front .tw{font-size:52px}#full .fc-back .tw2{font-size:28px}#full .fc-back .td2{font-size:18px}
+body.portrait #full .tile{zoom:1.15}
 .term .tr{font-size:12px;color:var(--sub);margin-top:2px}
 .term .td2{font-size:14px;line-height:1.65;margin-top:8px}
 .tcat{font-size:10.5px;color:var(--blue);border:1px solid var(--blue);padding:0 6px}
@@ -361,6 +386,7 @@ body.editing .page .tile .tdel{pointer-events:auto}
   </div>
   <section class="pop" id="slot" hidden></section>
   <div class="addp" id="addPanel" hidden></div>
+  <div id="full" hidden><div class="fhead"><b id="fullName"></b><span class="fhint">3分さわらないと元に戻ります</span><button class="gear" id="fullSet">設定</button><button class="gear" id="fullClose">✕ 閉じる</button></div><div class="fbody" id="fullBody"></div></div>
   <div id="dragTag" hidden></div>
   <div id="eew" hidden>
     <div class="map"><canvas id="eewMap" width="1280" height="1640"></canvas>
@@ -377,7 +403,7 @@ body.editing .page .tile .tdel{pointer-events:auto}
 
 <script>
 'use strict';
-const APP_VERSION = '1.6.1'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.7.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -580,7 +606,6 @@ function renderTT(st) {
   }
   $('ttTile').innerHTML = h;
 }
-$('ttTile').addEventListener('click', () => openSettings('s-tt'));
 
 /* ================= やること ================= */
 function dueInfo(t) {
@@ -900,16 +925,41 @@ function kiokuClick(e) {
 }
 
 /* ================= 受験の語句 ================= */
-let terms = [], termCur = null, termAt = 0;
-fetch('terms.json', { cache: 'no-store' }).then(r => r.json()).then(j => { terms = j; renderSlot(); renderTiles(); }).catch(() => {});
-function pickTerm() { const pool = terms.filter(t => cfg.termCats.includes(t.cat)); termCur = pool.length ? pool[Math.floor(Math.random() * pool.length)] : null; termAt = nowMs(); }
+let terms = [], termCur = null, termAt = 0, termShown = false;
+// 前に無かった科目(情報・数学・英単語など)が増えたら、最初は表示する科目に入れておく
+const TERM_CATS_V1 = ['日本史', '古文単語', '化学', '物理', '現代文', '四字熟語'];
+fetch('terms.json', { cache: 'no-store' }).then(r => r.json()).then(j => {
+  terms = j;
+  const cats = [...new Set(terms.map(t => t.cat))], known = Array.isArray(cfg.termKnown) ? cfg.termKnown : TERM_CATS_V1;
+  const fresh = cats.filter(c => !known.includes(c));
+  if (fresh.length || !Array.isArray(cfg.termKnown)) { cfg.termCats = [...new Set([...cfg.termCats, ...fresh])]; cfg.termKnown = cats; saveCfg(); }
+  renderSlot(); renderTiles();
+}).catch(() => {});
+// 直前と同じ語句が続かないように選ぶ
+function pickTerm() {
+  const pool = terms.filter(t => cfg.termCats.includes(t.cat) && t !== termCur);
+  termCur = pool.length ? pool[Math.floor(Math.random() * pool.length)] : terms.find(t => cfg.termCats.includes(t.cat)) || null;
+  termAt = nowMs(); termShown = false;
+}
+// カードめくり: 表は語句だけ。タップでめくると読み・説明。「次へ」で次の語句(5分たっても次へ)
 function renderTerms() {
   if (!termCur || nowMs() - termAt > 5 * 60e3) pickTerm();
   if (!termCur) return '<h3>受験の語句</h3><p class="empty">設定で科目を選んでください。</p>';
-  const t = termCur, left = Math.max(1, Math.ceil((5 * 60e3 - (nowMs() - termAt)) / 60e3));
-  return `<h3>受験の語句 <span>タップで次へ ・ 次まで ${left}分</span></h3><div class="term termcard" style="flex:1">
-    <div style="display:flex;gap:10px;align-items:center"><span class="tcat">${esc(t.cat)}</span><span style="color:var(--sub);font-size:12px">${esc(t.note || '')}</span></div>
-    <div class="tw">${esc(t.term)}</div>${t.yomi ? `<div class="tr">${esc(t.yomi)}</div>` : ''}<div class="td2">${esc(t.desc)}</div></div>`;
+  const t = termCur, n = terms.filter(x => cfg.termCats.includes(x.cat)).length;
+  return `<h3>受験の語句 <span>${n}語 ・ <button class="tnext" data-tnext="1">次へ →</button></span></h3>
+    <div class="termcard fc ${termShown ? 'flipped' : ''}"><div class="fc-in">
+      <div class="fc-face fc-front"><span class="tcat">${esc(t.cat)}</span><div class="tw">${esc(t.term)}</div><span class="flip">タップでめくる</span></div>
+      <div class="fc-face fc-back"><div style="display:flex;gap:10px;align-items:center"><span class="tcat">${esc(t.cat)}</span><span style="color:var(--sub);font-size:12px">${esc(t.note || '')}</span></div>
+        <div class="tw2">${esc(t.term)}${t.yomi ? `<span class="tr">${esc(t.yomi)}</span>` : ''}</div><div class="td2">${esc(t.desc)}</div></div>
+    </div></div>`;
+}
+function termClick(e) {
+  if (e.target.closest('[data-tnext]')) { pickTerm(); renderSlot(); renderTiles(); return true; }
+  const c = e.target.closest('.termcard'); if (!c) return false;
+  termShown = !termShown;
+  // 描き直さずにクラスだけ変えて、めくる動きを見せる(同じ語句のカードが複数あれば全部)
+  document.querySelectorAll('.termcard').forEach(x => x.classList.toggle('flipped', termShown));
+  return true;
 }
 
 /* ================= カウントダウン・次の休み・カレンダー ================= */
@@ -958,7 +1008,7 @@ const CHIP = {
 };
 const FIXED = { tt: 'ttTile', todo: 'todoTile', clock: 'clockTile', weather: 'wxTile', sched: 'schedTile' };
 const TILE_NAME = { tt: '時間割', todo: 'やること', clock: '時計', weather: '天気', sched: '予定', ...Object.fromEntries(Object.entries(CHIP).map(([k, v]) => [k, v.name])) };
-const TILE_DESC = { tt: '今日(放課後は明日)の時間割', todo: '課題と持ちもの', clock: '時計と時限バー', weather: '気温・降水確率・傘', sched: 'Googleカレンダーの予定', studyline: '今日のダイヤ・運行状況', kioku: '今日の復習を1語ずつ採点', count: '共通テストなどまでの日数', holiday: '次の連休・今年の残り', terms: '受験の語句をランダムに', calendar: '4週間分のカレンダー' };
+const TILE_DESC = { tt: '今日(放課後は明日)の時間割', todo: '課題と持ちもの', clock: '時計と時限バー', weather: '気温・降水確率・傘', sched: 'Googleカレンダーの予定', studyline: '今日のダイヤ・運行状況', kioku: '今日の復習を1語ずつ採点', count: '共通テストなどまでの日数', holiday: '次の連休・今年の残り', terms: '受験の語句をカードでめくる', calendar: '4週間分のカレンダー' };
 const GROW = new Set(['clock', 'todo', 'sched']);
 const SIDES = { left: 'colL', center: 'colC', right: 'colR' };
 const DEFAULT_LAYOUT = { left: ['tt', 'todo', 'kioku'], center: ['clock', 'studyline'], right: ['weather', 'count', 'calendar', 'sched'] };
@@ -999,13 +1049,13 @@ function renderLayout() {
 function fitClock() {
   const el = $('clockTile'); if (!el.isConnected || !el.parentNode || el.parentNode.id === 'pool') return;
   const w = el.clientWidth, h = document.body.classList.contains('portrait') ? 9999 : el.clientHeight;
-  const f = Math.max(54, Math.min(220, (w - 50) / (cfg.showSec ? 3.1 : 2.6), (h - 150) / 0.92));
+  const f = Math.max(54, Math.min(el.closest('#full') ? 560 : 220, (w - 50) / (cfg.showSec ? 3.1 : 2.6), (h - 150) / 0.92));
   $('clock').style.fontSize = f + 'px';
   const sec = $('clock').querySelector('.sec'); if (sec) sec.style.fontSize = (f * .2) + 'px';
 }
 function renderTiles() {
-  document.querySelectorAll('#page [data-tile]').forEach(el => {
-    const k = el.dataset.tile, side = el.parentNode.id !== 'colC';
+  document.querySelectorAll('#page [data-tile], #full [data-tile]').forEach(el => {
+    const k = el.dataset.tile, side = !el.closest('#full') && el.parentNode.id !== 'colC';
     el.innerHTML = k === 'studyline' ? renderStudyLine(side) : CHIP[k].render();
   });
 }
@@ -1028,10 +1078,48 @@ function closeSlot() { if (slotMode) { slotMode = null; renderChips(); renderSlo
 function slotClick(e) {
   slotTouched = nowMs();
   if (e.target.closest('.kcard,[data-g]')) kiokuClick(e);
-  else if (e.target.closest('.termcard')) { pickTerm(); renderSlot(); renderTiles(); }
+  else termClick(e);
 }
 $('slot').addEventListener('click', slotClick);
-$('page').addEventListener('click', e => { if (!editing && e.target.closest('[data-tile]')) slotClick(e); });
+$('page').addEventListener('click', e => {
+  if (editing) return;
+  if (e.target.closest('[data-tile]')) slotClick(e);
+  // ボタン・チェック・カード以外の所を押したら、そのタイルを全画面で開く
+  const t = e.target.closest('.tile');
+  if (t && !e.target.closest('button,a,input,select,li[data-id],.kcard,.termcard,[data-g]')) openFull(t);
+});
+
+/* ---- タイルの全画面表示 ---- */
+// タイルの要素そのものを全画面の枠へ移す(毎分の描き直しもそのまま効く)。閉じたら元の場所へ戻す
+const FULL_SETTINGS = { tt: 's-tt', todo: 's-todo', count: 's-cd', weather: 's-loc', sched: 's-gcal', terms: 's-terms' };
+let fullTile = null, fullPh = null, fullCls = '', fullTouched = 0;
+function openFull(t) {
+  if (fullTile) closeFull();
+  closeSlot();
+  fullTile = t; fullCls = t.className; fullTouched = nowMs();
+  fullPh = document.createElement('div'); fullPh.className = 'fullph'; t.before(fullPh);
+  t.classList.remove('mini', 'grow');
+  $('fullBody').appendChild(t);
+  const k = t.dataset.k;
+  $('fullName').textContent = TILE_NAME[k] || '';
+  $('fullSet').hidden = !FULL_SETTINGS[k];
+  $('full').querySelector('.fhint').hidden = k === 'clock';
+  $('full').hidden = false;
+  renderTiles(); requestAnimationFrame(fitClock);
+}
+function closeFull() {
+  if (!fullTile) return;
+  const t = fullTile; fullTile = null;
+  t.className = fullCls;
+  if (fullPh && fullPh.parentNode) fullPh.replaceWith(t); else $('pool').appendChild(t);
+  fullPh = null; $('full').hidden = true;
+  renderTiles(); requestAnimationFrame(fitClock);
+}
+$('fullClose').addEventListener('click', closeFull);
+$('fullSet').addEventListener('click', () => { const k = fullTile && fullTile.dataset.k; closeFull(); if (FULL_SETTINGS[k]) openSettings(FULL_SETTINGS[k]); });
+$('full').addEventListener('pointerdown', () => { fullTouched = nowMs(); });
+$('fullBody').addEventListener('click', e => { if (e.target.closest('[data-tile]')) slotClick(e); });
+addEventListener('keydown', e => { if (e.key === 'Escape' && fullTile) closeFull(); });
 // ポップアップの外をタップしたら閉じる
 $('stage').addEventListener('pointerdown', e => { if (slotMode && !e.target.closest('#slot,#chips')) closeSlot(); });
 
@@ -1046,7 +1134,7 @@ addEventListener('pointerup', () => { if (lp) { clearTimeout(lp.t); lp = null; }
 addEventListener('pointercancel', () => { if (lp) { clearTimeout(lp.t); lp = null; } });
 // 並べ替え中は、タイルの中身(やることのチェックなど)を押せないようにする
 $('page').addEventListener('click', e => { if (editing && !e.target.closest('.tdel')) { e.stopPropagation(); e.preventDefault(); } }, true);
-function enterEdit() { closeSlot(); editing = true; document.body.classList.add('editing'); renderLayout(); if (navigator.vibrate) navigator.vibrate(20); }
+function enterEdit() { closeSlot(); closeFull(); editing = true; document.body.classList.add('editing'); renderLayout(); if (navigator.vibrate) navigator.vibrate(20); }
 function exitEdit() { editing = false; document.body.classList.remove('editing'); $('addPanel').hidden = true; saveCfg(); renderLayout(); renderAll(); }
 $('editDone').addEventListener('click', exitEdit);
 $('editAdd').addEventListener('click', () => { renderAddPanel(); $('addPanel').hidden = false; });
@@ -1489,6 +1577,7 @@ const GAS_CODE = `function doGet() {
 }`;
 let ttDay = 1;
 function openSettings(anchor) {
+  closeFull();
   renderSettings();
   $('settings').hidden = false;
   if (anchor) setTimeout(() => { const el = $(anchor); if (el) el.scrollIntoView(); }, 0); else $('settings').scrollTop = 0;
@@ -1668,6 +1757,7 @@ function tick(force) {
     lastMin = d.getMinutes();
     applyTheme(); renderTT(st); renderTodo(); renderSched(); renderChips();
     if (slotMode && nowMs() - slotTouched > 60e3) closeSlot();
+    if (fullTile && fullTile.dataset.k !== 'clock' && nowMs() - fullTouched > 180e3) closeFull(); // 時計以外は3分さわらなければ戻る
     if (!kioku.shown && !editing) { renderSlot(); renderTiles(); requestAnimationFrame(fitClock); }
     if (d.getMinutes() % 30 === 0) loadWeather();
     if (d.getMinutes() % 10 === 5) loadEvents();
