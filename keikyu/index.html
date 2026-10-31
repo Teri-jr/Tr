@@ -255,11 +255,16 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outli
 
     <section class="setup" id="setup">
       <div>
-        <h1>京急線 運転士タブレット（GPS連動）</h1>
+        <h1 id="appTitle">京急線 運転士タブレット（GPS連動）</h1>
         <div class="upd" id="updSetup" hidden><span id="updSetupTxt"></span><button type="button" class="updGo">更新する</button></div>
         <div class="hint">バージョン <span id="appVer"></span></div>
         <p>時刻表は使わず、スマホのGPSと駅・線路のデータだけで動く。次の停車駅までの距離を線路に沿って測り、停車・通過・駅間停車・待避を自動で判定して読み上げる。トンネルでGPSが切れたら最後の位置と速度から走行を推定し、次にGPSが入ったところで直す。家で試すときは「テスト走行」にすると、GPSの代わりに模擬の位置が流れる。</p>
       </div>
+      <div class="field"><span>路線</span>
+        <div class="seg" data-k="net">
+          <button aria-pressed="true" data-v="keikyu">京急線</button>
+          <button aria-pressed="false" data-v="jr">JR横須賀線（品川〜戸塚）</button>
+        </div></div>
       <div class="field"><span>位置</span>
         <div class="seg" data-k="src">
           <button aria-pressed="true" data-v="gps">GPS（実際に乗る）</button>
@@ -280,14 +285,7 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outli
           <button type="button" id="secSwap">入れ替え</button>
           <button type="button" id="secHere">現在地から</button>
         </div>
-        <div class="seg" id="secPresets">
-          <button data-p="品川|上大岡">品川 → 上大岡</button>
-          <button data-p="横浜|上大岡">横浜 → 上大岡</button>
-          <button data-p="上大岡|横浜">上大岡 → 横浜</button>
-          <button data-p="上大岡|品川">上大岡 → 品川</button>
-          <button data-p="品川|羽田空港第1・第2ターミナル">品川 → 羽田空港</button>
-          <button data-p="品川|三崎口">品川 → 三崎口</button>
-        </div>
+        <div class="seg" id="secPresets"></div>
         <div id="secErr" style="color:var(--bad);font-size:12px" hidden>乗車駅と降車駅が同じ。どちらかを変えて</div>
         <div class="hint" id="hereMsg" hidden></div></div>
       <div class="field"><span>乗車駅の発車時刻（なくてもよい）</span>
@@ -303,12 +301,7 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outli
           <button aria-pressed="false" data-v="20">20倍速</button>
         </div></div>
       <div class="field"><span>両数</span>
-        <div class="seg" data-k="cars">
-          <button aria-pressed="false" data-v="4">4</button>
-          <button aria-pressed="false" data-v="6">6</button>
-          <button aria-pressed="true" data-v="8">8</button>
-          <button aria-pressed="false" data-v="12">12</button>
-        </div></div>
+        <div class="seg" data-k="cars"></div></div>
       <div class="field"><span>乗っている位置</span>
         <div class="seg" data-k="pos">
           <button aria-pressed="true" data-v="head">先頭</button>
@@ -438,15 +431,19 @@ function cutGeom(g,s0,s1){
   for(let i=0;i<g.S.length;i++) if(g.S[i]>lo&&g.S[i]<hi) out.push(g.pts[i]);
   out.push(latLonOn(g,hi)); return s0<=s1?out:out.reverse();
 }
-const LINE_ORDER=["本線","空港線","大師線","逗子線","久里浜線"];
-const LINES={};
-for(const ln of LINE_ORDER){ const g=makeGeom(GEO[ln].track); LINES[ln]={g,st:GEO[ln].stations.map(([name,lat,lon,len])=>({name,lat,lon,len,s:projectOn(g,lat,lon).s}))}; }
+// JR横須賀線（品川〜戸塚、西大井・武蔵小杉・新川崎経由）。国土数値情報の東海道線・横須賀線から作成
+const GEO_JR={"横須賀線":{"track":[[35.62849,139.73939],[35.62724,139.73934],[35.6265,139.73903],[35.62049,139.73762],[35.61901,139.73695],[35.61828,139.73634],[35.61761,139.7356],[35.61729,139.73508],[35.61691,139.73399],[35.61677,139.7328],[35.61655,139.73205],[35.61596,139.73072],[35.61565,139.73019],[35.61528,139.72972],[35.61479,139.72928],[35.61002,139.72636],[35.60774,139.72452],[35.60622,139.7236],[35.59706,139.71953],[35.59611,139.71861],[35.59542,139.71779],[35.59486,139.7169],[35.59455,139.71619],[35.59237,139.70858],[35.59208,139.70808],[35.58802,139.6935],[35.58658,139.68883],[35.58334,139.67752],[35.58081,139.6702],[35.57934,139.66628],[35.57888,139.66538],[35.57851,139.66481],[35.57777,139.66411],[35.57707,139.66367],[35.57633,139.66339],[35.57549,139.66325],[35.57486,139.66332],[35.57406,139.66352],[35.56828,139.66539],[35.5619,139.66756],[35.55505,139.67004],[35.5539,139.67049],[35.54805,139.67326],[35.54455,139.67445],[35.54145,139.67529],[35.53811,139.67636],[35.53577,139.67686],[35.53091,139.6785],[35.52709,139.67969],[35.52371,139.68039],[35.52152,139.68112],[35.52066,139.68134],[35.51959,139.68132],[35.51891,139.68109],[35.51851,139.68088],[35.5176,139.68024],[35.51611,139.67884],[35.51491,139.67809],[35.5116,139.67699],[35.50637,139.67578],[35.50387,139.67512],[35.50326,139.6749],[35.50182,139.67385],[35.50082,139.67291],[35.49327,139.66385],[35.49232,139.66313],[35.49122,139.66181],[35.48994,139.65986],[35.48835,139.65687],[35.48695,139.6544],[35.48624,139.65288],[35.48574,139.65129],[35.48558,139.65049],[35.48546,139.64819],[35.48515,139.64568],[35.48472,139.64482],[35.48294,139.6388],[35.48263,139.63812],[35.48198,139.63711],[35.48151,139.63657],[35.48049,139.6356],[35.4735,139.62911],[35.46732,139.62376],[35.46536,139.62217],[35.46681,139.62335],[35.46692,139.6232],[35.46475,139.62133],[35.46421,139.62073],[35.45657,139.61374],[35.45515,139.61213],[35.45462,139.61129],[35.45374,139.6096],[35.45071,139.60425],[35.45,139.6033],[35.4458,139.59884],[35.44516,139.59752],[35.44498,139.59692],[35.44483,139.59605],[35.44485,139.595],[35.44708,139.57892],[35.44709,139.57836],[35.44701,139.57782],[35.44663,139.57669],[35.44566,139.5749],[35.44474,139.57288],[35.44178,139.56687],[35.43933,139.56073],[35.4388,139.55956],[35.43804,139.55838],[35.43734,139.55753],[35.43671,139.55706],[35.43598,139.55665],[35.43507,139.55643],[35.42876,139.55652],[35.42805,139.55642],[35.42676,139.55595],[35.42438,139.55493],[35.42317,139.55409],[35.42258,139.55357],[35.422,139.55292],[35.42128,139.55183],[35.41596,139.54168],[35.41386,139.5379],[35.41287,139.53663],[35.41168,139.53568],[35.41048,139.53499],[35.40956,139.53459],[35.40812,139.53433],[35.40375,139.53373],[35.40252,139.53379],[35.4017,139.53392],[35.3999,139.53448]],"stations":[["品川",35.62814,139.73854,253],["西大井",35.60177,139.72164,200],["武蔵小杉",35.57487,139.66338,302],["新川崎",35.55159,139.6716,327],["横浜",35.46567,139.62211,281],["保土ケ谷",35.44722,139.60037,363],["東戸塚",35.43001,139.5565,266],["戸塚",35.4001,139.53441,290]]}};
+let LINE_ORDER,LINES,PLAT_DATA,ADJ;
+function buildLines(geo,order){
+LINE_ORDER=order; LINES={};
+for(const ln of LINE_ORDER){ const g=makeGeom(geo[ln].track); LINES[ln]={g,st:geo[ln].stations.map(([name,lat,lon,len])=>({name,lat,lon,len,s:projectOn(g,lat,lon).s}))}; }
 // 駅の線の長さ(m)。実際のホームより短い駅が多いので、ホームの長さは「これ」と「列車長＋20m」の長いほうとする
-const PLAT_DATA={}; for(const ln of LINE_ORDER) for(const t of LINES[ln].st) PLAT_DATA[t.name]=Math.max(PLAT_DATA[t.name]||0,t.len);
+PLAT_DATA={}; for(const ln of LINE_ORDER) for(const t of LINES[ln].st) PLAT_DATA[t.name]=Math.max(PLAT_DATA[t.name]||0,t.len);
 // 駅のつながり（隣どうし）。区間はこの上の最短経路
-const ADJ={};
+ADJ={};
 for(const ln of LINE_ORDER){ const st=LINES[ln].st; for(let i=0;i+1<st.length;i++){ const a=st[i],b=st[i+1],w=Math.abs(b.s-a.s);
   (ADJ[a.name]=ADJ[a.name]||[]).push({to:b.name,line:ln,w}); (ADJ[b.name]=ADJ[b.name]||[]).push({to:a.name,line:ln,w}); } }
+}
 // 最短経路：[{from,to,line}] の並び
 function findPath(a,b){
   const dist={[a]:0},prev={},done=new Set();
@@ -524,7 +521,7 @@ function planTimes(route,k){
   return {ev:s.events,traj:s.traj};
 }
 // ---- バージョン（変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする） ----
-const APP_VERSION='1.4.4';
+const APP_VERSION='1.5.0';
 const isNewer=(a,b)=>{ const x=String(a).split(".").map(Number), y=String(b).split(".").map(Number); for(let i=0;i<3;i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0); } return false; };
 let upd=null; // {version, items}：新しい版が出ていたら入る。announced=放送済み
 async function checkUpdate(){
@@ -552,7 +549,7 @@ setInterval(checkUpdate,60000); document.addEventListener("visibilitychange",()=
 setTimeout(checkUpdate,3000);
 
 // ---- 種別・待避駅 ----
-const KINDS={
+const KINDS_KQ={
  kaitoku:{label:"快特",color:"var(--kind-kaitoku)",sub:"var(--sub-kaitoku)",stops:["泉岳寺","品川","京急蒲田","京急川崎","横浜","上大岡","金沢文庫","金沢八景","横須賀中央","堀ノ内","京急久里浜","YRP野比","京急長沢","津久井浜","三浦海岸","三崎口","羽田空港第3ターミナル","羽田空港第1・第2ターミナル"],vmax:120,acc:0.85,dwell:35,long:{"横浜":45,"上大岡":40,"京急蒲田":40}},
  tokkyu:{label:"特急",color:"var(--kind-tokkyu)",sub:"var(--sub-tokkyu)",stops:["泉岳寺","品川","青物横丁","平和島","京急蒲田","京急川崎","神奈川新町","横浜","上大岡","金沢文庫","金沢八景","追浜","汐入","横須賀中央","県立大学","堀ノ内","新大津","北久里浜","京急久里浜","YRP野比","京急長沢","津久井浜","三浦海岸","三崎口","糀谷","大鳥居","穴守稲荷","天空橋","羽田空港第3ターミナル","羽田空港第1・第2ターミナル"],vmax:110,acc:0.9,dwell:30,long:{"横浜":40,"上大岡":35}},
  kyuko:{label:"急行",color:"var(--kind-kyuko)",sub:"var(--sub-kyuko)",taihi:true,stops:["泉岳寺","品川","青物横丁","平和島","京急蒲田","京急川崎","京急鶴見","神奈川新町","京急東神奈川","横浜","日ノ出町","井土ヶ谷","弘明寺","上大岡","杉田","能見台","金沢文庫","金沢八景","追浜","京急田浦","安針塚","逸見","汐入","横須賀中央","県立大学","堀ノ内","新大津","北久里浜","京急久里浜","YRP野比","京急長沢","津久井浜","三浦海岸","三崎口","糀谷","大鳥居","穴守稲荷","天空橋","羽田空港第3ターミナル","羽田空港第1・第2ターミナル"],vmax:110,acc:0.9,dwell:25,long:{"横浜":40,"上大岡":35}},
@@ -560,14 +557,14 @@ const KINDS={
 };
 // 停車駅は品川〜金沢文庫は実際のもの。それより先と空港線はおおよそ（急行の品川〜京急蒲田・金沢八景以南は仮）
 // 大師線・逗子線、本線の堀ノ内〜浦賀はどの種別も全駅に止まる
-const ALL_STOP_LINES=new Set(["大師線","逗子線"]), ALL_STOP_ST=new Set(["京急大津","馬堀海岸","浦賀"]);
+const ALL_STOP_LINES_KQ=new Set(["大師線","逗子線"]), ALL_STOP_ST_KQ=new Set(["京急大津","馬堀海岸","浦賀"]);
 // 通過駅でも時刻を書く駅（主要駅・待避駅）
-const MAJOR=new Set(["泉岳寺","品川","京急蒲田","京急川崎","横浜","上大岡","金沢文庫","金沢八景","横須賀中央","堀ノ内","京急久里浜","三崎口","浦賀","羽田空港第1・第2ターミナル","逗子・葉山","小島新田"]);
+const MAJOR_KQ=new Set(["泉岳寺","品川","京急蒲田","京急川崎","横浜","上大岡","金沢文庫","金沢八景","横須賀中央","堀ノ内","京急久里浜","三崎口","浦賀","羽田空港第1・第2ターミナル","逗子・葉山","小島新田"]);
 // ---- 駅の配線と番線（Wikipedia 各駅記事の「駅構造」「のりば」をもとに作成。※は線の並びを推定） ----
 // 上り側→下り側の順に（< は泉岳寺側が行き止まり）：= ホーム、U/D 上り・下りの本線（数字は番線。X はホームのない通過線）、
 // u/d 上り・下りの待避線（副本線）、a 空港線へ行き来する線、c 中線、o 他社の線
 const SOTAI="=,U2,D1,=", SHIMA="U2,=,D1", SHIMA4="u4,=,U3,D2,=,d1";
-const LAYOUT={"泉岳寺":"U4,=,o3,o2,=,D1","品川":"d3<,=,U2,D1,=","鮫洲":"UX,u2,=,d1,DX","平和島":SHIMA4,
+const LAYOUT_KQ={"泉岳寺":"U4,=,o3,o2,=,D1","品川":"d3<,=,U2,D1,=","鮫洲":"UX,u2,=,d1,DX","平和島":SHIMA4,
  "京急蒲田":"a4,=,u5,U6,D3,d2,=,a1","京急川崎":"u7,=,U6,D5,=,d4","京急鶴見":"U3,=,u2,D1,=","生麦":"U3,=,d2,D1,=",
  "子安":SHIMA4,"神奈川新町":SHIMA4,"戸部":SHIMA,"黄金町":SHIMA,"南太田":"=,u2,UX,DX,d1,=","上大岡":SHIMA4,
  "京急富岡":"U3,=,u2,D1,=","金沢文庫":SHIMA4,"金沢八景":"u4,=,U3,d2,=,D1","逸見":"=,u2,UX,DX,d1,=","県立大学":SHIMA,
@@ -575,12 +572,24 @@ const LAYOUT={"泉岳寺":"U4,=,o3,o2,=,D1","品川":"d3<,=,U2,D1,=","鮫洲":"U
  "京急久里浜":"U4,=,c3,=,D1","京急長沢":SHIMA,"大師線:京急川崎":"U2,=,D3"};
 // 京急蒲田は上下2階建て（上り4〜6番線・下り1〜3番線）を、上り側・下り側に分けて描く
 // ※推定：京急蒲田・京急鶴見・京急富岡・金沢八景・堀ノ内の線の並び、2面4線の駅で内側が本線であること
-const TERMINAL=new Set(["浦賀","三崎口","羽田空港第1・第2ターミナル","小島新田","逗子・葉山","泉岳寺"]);
+const TERMINAL_KQ=new Set(["浦賀","三崎口","羽田空港第1・第2ターミナル","小島新田","逗子・葉山","泉岳寺"]);
 function parseLayout(str){ return str.split(",").map(t=>{ if(t==="=") return {t:"="}; const end=t.endsWith("<"), v=t.slice(1).replace("<","");
   return {t:t[0],n:v==="X"?"":v,pass:v==="X",endQ:end}; }); }
 // 待避駅（up=泉岳寺方面の上りのみ、down=下りのみ）
-const TAIHI={"鮫洲":"both","平和島":"both","京急蒲田":"both","京急川崎":"both","京急鶴見":"up","生麦":"down","子安":"both","神奈川新町":"both","南太田":"both","上大岡":"both","京急富岡":"up","金沢文庫":"both","金沢八景":"both","逸見":"both","堀ノ内":"up"};
+const TAIHI_KQ={"鮫洲":"both","平和島":"both","京急蒲田":"both","京急川崎":"both","京急鶴見":"up","生麦":"down","子安":"both","神奈川新町":"both","南太田":"both","上大岡":"both","京急富岡":"up","金沢文庫":"both","金沢八景":"both","逸見":"both","堀ノ内":"up"};
 const TAIHI_SEC=120;
+// ---- JR横須賀線（品川〜戸塚）：普通のみ。番線と配線は Wikipedia 各駅記事の「のりば」「駅構造」から（上り側→下り側） ----
+const KINDS_JR={futsu:{label:"普通",color:"#1b4f9c",sub:"#efe4c0",subFg:"#1b1b1b",stops:null,vmax:120,acc:0.64,dwell:30,long:{"横浜":40,"武蔵小杉":40}}};
+const LAYOUT_JR={"品川":"U13,=,D15,=","西大井":"=,U2,D1,=","武蔵小杉":"=,U4,D3,=","新川崎":"U1,=,D2","横浜":"U10,=,D9","保土ケ谷":"U1,=,D2","東戸塚":"U1,=,D2","戸塚":"U1,=,o2,o3,=,D4"};
+// ---- 路線ごとの設定 ----
+const NETS={
+  keikyu:{title:"京急線",geo:GEO,order:["本線","空港線","大師線","逗子線","久里浜線"],kinds:KINDS_KQ,layout:LAYOUT_KQ,taihi:TAIHI_KQ,terminal:TERMINAL_KQ,major:MAJOR_KQ,allLines:ALL_STOP_LINES_KQ,allSt:ALL_STOP_ST_KQ,
+    cars:["4","6","8","12"],defCars:"8",defSec:"品川|上大岡",presets:["品川|上大岡","横浜|上大岡","上大岡|横浜","上大岡|品川","品川|羽田空港第1・第2ターミナル","品川|三崎口"]},
+  jr:{title:"JR横須賀線",geo:GEO_JR,order:["横須賀線"],kinds:KINDS_JR,layout:LAYOUT_JR,taihi:{},terminal:new Set(),major:new Set(["品川","武蔵小杉","横浜","戸塚"]),allLines:new Set(),allSt:new Set(),
+    cars:["11","15"],defCars:"11",defSec:"品川|戸塚",presets:["品川|戸塚","戸塚|品川","品川|横浜","横浜|品川","武蔵小杉|横浜","横浜|武蔵小杉"]}
+};
+let KINDS,LAYOUT,TAIHI,TERMINAL,MAJOR,ALL_STOP_LINES,ALL_STOP_ST;
+function useNet(id){ const n=NETS[id]; buildLines(n.geo,n.order); KINDS=n.kinds; LAYOUT=n.layout; TAIHI=n.taihi; TERMINAL=n.terminal; MAJOR=n.major; ALL_STOP_LINES=n.allLines; ALL_STOP_ST=n.allSt; }
 // GPS判定のしきい値
 const ZONE=200;          // 駅を過ぎたとみなす距離（ホームの端から）
 const trainLen=()=>(+cfg.cars)*20;
@@ -595,7 +604,7 @@ const MOVE_DIST=40;      // 止まった位置からこれ以上（精度が悪�
 const OFF_MAX=250;       // 線路からこれ以上離れた測位は使わない
 const STALE_MS=4000;     // これより古い測位しかなければ推定に切り替える
 
-let cfg={kind:"kaitoku",sec:"品川|上大岡",src:"gps",speed:"1",cars:"8",voice:"on",weather:"fine",disorder:"off",rate:"std",pos:"head"};
+let cfg={net:"keikyu",kind:"kaitoku",sec:"品川|上大岡",src:"gps",speed:"1",cars:"8",voice:"on",weather:"fine",disorder:"off",rate:"std",pos:"head"};
 const $=id=>document.getElementById(id);
 document.querySelectorAll(".seg[data-k]").forEach(seg=>{
   seg.addEventListener("click",e=>{
@@ -603,6 +612,7 @@ document.querySelectorAll(".seg[data-k]").forEach(seg=>{
     seg.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));
     cfg[seg.dataset.k]=b.dataset.v;
     if(seg.dataset.k==="src") srcSync();
+    if(seg.dataset.k==="net") netSync();
   });
 });
 function srcSync(){
@@ -615,15 +625,29 @@ srcSync();
 // 区間選択
 function secSync(){ const f=$("secFrom").value, t=$("secTo").value; cfg.sec=f+"|"+t; $("secErr").hidden=f!==t; $("start").disabled=f===t;
   document.querySelectorAll("#secPresets button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.p===cfg.sec)); }
-(function initSec(){
+function fillStations(){
   const seen=new Set(), opts=LINE_ORDER.map(ln=>`<optgroup label="${ln}">`+LINES[ln].st.filter(t=>!seen.has(t.name)&&seen.add(t.name)).map(t=>`<option value="${t.name}">${t.name}</option>`).join("")+"</optgroup>").join("");
   $("secFrom").innerHTML=opts; $("secTo").innerHTML=opts;
   const [f,t]=cfg.sec.split("|"); $("secFrom").value=f; $("secTo").value=t;
+}
+// 路線を切り替えたら、駅・よく使う区間・種別・両数・題名を入れ替える
+function netSync(){
+  const n=NETS[cfg.net]; useNet(cfg.net); cfg.sec=n.defSec; fillStations();
+  $("secPresets").innerHTML=n.presets.map(p=>`<button data-p="${p}">${p.replace("|"," → ").replace("羽田空港第1・第2ターミナル","羽田空港")}</button>`).join("");
+  document.querySelectorAll('[data-k="kind"] button').forEach(b=>b.hidden=!KINDS[b.dataset.v]);
+  if(!KINDS[cfg.kind]){ cfg.kind=Object.keys(KINDS)[0]; }
+  document.querySelectorAll('[data-k="kind"] button').forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===cfg.kind));
+  if(!n.cars.includes(cfg.cars)) cfg.cars=n.defCars;
+  document.querySelector('[data-k="cars"]').innerHTML=n.cars.map(c=>`<button aria-pressed="${c===cfg.cars}" data-v="${c}">${c}</button>`).join("");
+  $("appTitle").textContent=`${n.title} 運転士タブレット（GPS連動）`;
+  secSync();
+}
+(function initSec(){
   $("secFrom").addEventListener("change",secSync); $("secTo").addEventListener("change",secSync);
   $("secSwap").addEventListener("click",()=>{ const a=$("secFrom").value; $("secFrom").value=$("secTo").value; $("secTo").value=a; secSync(); });
-  document.querySelectorAll("#secPresets button").forEach(b=>b.addEventListener("click",()=>{ const [a,c]=b.dataset.p.split("|"); $("secFrom").value=a; $("secTo").value=c; secSync(); }));
+  $("secPresets").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return; const [a,c]=b.dataset.p.split("|"); $("secFrom").value=a; $("secTo").value=c; secSync(); });
   $("schedClr").addEventListener("click",()=>{ $("sched").value=""; });
-  secSync();
+  netSync();
 })();
 function geoErrText(e){ return e&&e.code===1?"位置情報が許可されていない。ブラウザの設定で許可して":e&&e.code===3?"位置情報の取得に時間がかかっている":"位置情報が取れない"; }
 // 現在地にいちばん近い駅を乗車駅にする
@@ -736,7 +760,7 @@ function unlockAudio(){
   try{ const u=new SpeechSynthesisUtterance(" "); u.volume=0; u.lang="ja-JP"; speechSynthesis.speak(u); }catch(_){}
 }
 // 駅名の読み（読み上げ用）。弘明寺はひらがなだと「ぐみようじ」になるので漢字のまま
-const YOMI={"泉岳寺":"せんがくじ","糀谷":"こうじや","大鳥居":"おおとりい","穴守稲荷":"あなもりいなり","天空橋":"てんくうばし","羽田空港第3ターミナル":"はねだくうこう、だいさんたーみなる","羽田空港第1・第2ターミナル":"はねだくうこう、だいいち、だいにたーみなる","港町":"みなとちょう","鈴木町":"すずきちょう","川崎大師":"かわさきだいし","東門前":"ひがしもんぜん","大師橋":"だいしばし","小島新田":"こじましんでん","金沢八景":"かなざわはっけい","追浜":"おっぱま","京急田浦":"けいきゅうたうら","安針塚":"あんじんづか","逸見":"へみ","汐入":"しおいり","横須賀中央":"よこすかちゅうおう","県立大学":"けんりつだいがく","堀ノ内":"ほりのうち","京急大津":"けいきゅうおおつ","馬堀海岸":"まぼりかいがん","浦賀":"うらが","新大津":"しんおおつ","北久里浜":"きたくりはま","京急久里浜":"けいきゅうくりはま","YRP野比":"わいあーるぴーのび","京急長沢":"けいきゅうながさわ","津久井浜":"つくいはま","三浦海岸":"みうらかいがん","三崎口":"みさきぐち","六浦":"むつうら","神武寺":"じんむじ","逗子・葉山":"ずしはやま","品川":"しながわ","北品川":"きたしながわ","新馬場":"しんばんば","青物横丁":"あおものよこちょう","鮫洲":"さめず","立会川":"たちあいがわ","大森海岸":"おおもりかいがん","平和島":"へいわじま","大森町":"おおもりまち","梅屋敷":"うめやしき","京急蒲田":"けいきゅうかまた","雑色":"ぞうしき","六郷土手":"ろくごうどて","京急川崎":"けいきゅうかわさき","八丁畷":"はっちょうなわて","鶴見市場":"つるみいちば","京急鶴見":"けいきゅうつるみ","花月総持寺":"かげつそうじじ","生麦":"なまむぎ","京急新子安":"けいきゅうしんこやす","子安":"こやす","神奈川新町":"かながわしんまち","京急東神奈川":"けいきゅうひがしかながわ","神奈川":"かながわ","横浜":"よこはま","戸部":"とべ","日ノ出町":"ひのでちょう","黄金町":"こがねちょう","南太田":"みなみおおた","井土ヶ谷":"いどがや","上大岡":"かみおおおか","屏風浦":"びょうぶがうら","杉田":"すぎた","京急富岡":"けいきゅうとみおか","能見台":"のうけんだい","金沢文庫":"かなざわぶんこ","快特":"かいとく","待避":"たいひ","停止位置":"ていしいち"};
+const YOMI={"西大井":"にしおおい","武蔵小杉":"むさしこすぎ","新川崎":"しんかわさき","保土ケ谷":"ほどがや","東戸塚":"ひがしとつか","戸塚":"とつか","泉岳寺":"せんがくじ","糀谷":"こうじや","大鳥居":"おおとりい","穴守稲荷":"あなもりいなり","天空橋":"てんくうばし","羽田空港第3ターミナル":"はねだくうこう、だいさんたーみなる","羽田空港第1・第2ターミナル":"はねだくうこう、だいいち、だいにたーみなる","港町":"みなとちょう","鈴木町":"すずきちょう","川崎大師":"かわさきだいし","東門前":"ひがしもんぜん","大師橋":"だいしばし","小島新田":"こじましんでん","金沢八景":"かなざわはっけい","追浜":"おっぱま","京急田浦":"けいきゅうたうら","安針塚":"あんじんづか","逸見":"へみ","汐入":"しおいり","横須賀中央":"よこすかちゅうおう","県立大学":"けんりつだいがく","堀ノ内":"ほりのうち","京急大津":"けいきゅうおおつ","馬堀海岸":"まぼりかいがん","浦賀":"うらが","新大津":"しんおおつ","北久里浜":"きたくりはま","京急久里浜":"けいきゅうくりはま","YRP野比":"わいあーるぴーのび","京急長沢":"けいきゅうながさわ","津久井浜":"つくいはま","三浦海岸":"みうらかいがん","三崎口":"みさきぐち","六浦":"むつうら","神武寺":"じんむじ","逗子・葉山":"ずしはやま","品川":"しながわ","北品川":"きたしながわ","新馬場":"しんばんば","青物横丁":"あおものよこちょう","鮫洲":"さめず","立会川":"たちあいがわ","大森海岸":"おおもりかいがん","平和島":"へいわじま","大森町":"おおもりまち","梅屋敷":"うめやしき","京急蒲田":"けいきゅうかまた","雑色":"ぞうしき","六郷土手":"ろくごうどて","京急川崎":"けいきゅうかわさき","八丁畷":"はっちょうなわて","鶴見市場":"つるみいちば","京急鶴見":"けいきゅうつるみ","花月総持寺":"かげつそうじじ","生麦":"なまむぎ","京急新子安":"けいきゅうしんこやす","子安":"こやす","神奈川新町":"かながわしんまち","京急東神奈川":"けいきゅうひがしかながわ","神奈川":"かながわ","横浜":"よこはま","戸部":"とべ","日ノ出町":"ひのでちょう","黄金町":"こがねちょう","南太田":"みなみおおた","井土ヶ谷":"いどがや","上大岡":"かみおおおか","屏風浦":"びょうぶがうら","杉田":"すぎた","京急富岡":"けいきゅうとみおか","能見台":"のうけんだい","金沢文庫":"かなざわぶんこ","快特":"かいとく","待避":"たいひ","停止位置":"ていしいち"};
 const YOMI_KEYS=Object.keys(YOMI).sort((a,b)=>b.length-a.length);
 const YOMI_RE=new RegExp(YOMI_KEYS.join("|"),"g");
 function yomi(t){return t.replace(YOMI_RE,m=>YOMI[m]);}
