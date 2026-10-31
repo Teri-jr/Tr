@@ -524,7 +524,7 @@ function planTimes(route,k){
   return {ev:s.events,traj:s.traj};
 }
 // ---- バージョン（変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする） ----
-const APP_VERSION='1.4.3';
+const APP_VERSION='1.4.4';
 const isNewer=(a,b)=>{ const x=String(a).split(".").map(Number), y=String(b).split(".").map(Number); for(let i=0;i<3;i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0); } return false; };
 let upd=null; // {version, items}：新しい版が出ていたら入る。announced=放送済み
 async function checkUpdate(){
@@ -710,6 +710,7 @@ function planTimeAt(x){
 }
 
 function renderList(){
+  Z=null; // 在線図も描き直す（待避の線など）
   const L=$("list"); L.innerHTML="";
   route.forEach((r,i)=>{
     const e=plan.ev[i]||{}, row=document.createElement("div");
@@ -1043,7 +1044,12 @@ function buildZaisen(){
     const hasU=r=>r.lay.some(x=>x.t==="U"), Xa=padL, Xb=padL+(i1-i0)*step, endL=i0===0&&TERMINAL.has(route[0].name), endR=i1===n-1&&TERMINAL.has(route[n-1].name);
     const dl=endL?Xa-w/2-4:Xa-w/2-22, dr=endR?Xb+w/2+4:Xb+w/2+30;
     const ul=hasU(route[i0])?dl:Xa+w/2+10, ur=hasU(route[i1])?dr:Xb-w/2-10;
-    o+=`<line x1="${ul}" y1="${UY}" x2="${ur}" y2="${UY}" stroke="#3a4352" stroke-width="5"/><line x1="${dl}" y1="${DY}" x2="${dr}" y2="${DY}" stroke="#4b86d6" stroke-width="5"/>`;
+    o+=`<line x1="${ul}" y1="${UY}" x2="${ur}" y2="${UY}" stroke="#3a4352" stroke-width="5"/><line x1="${dl}" y1="${DY}" x2="${dr}" y2="${DY}" stroke="#3a4352" stroke-width="5"/>`;
+    // 走る道すじ（青）：駅と駅の間は、出発する駅の進行方向の本線
+    const seg=(xa,xb,down)=>{ const y=down?DY:UY; o+=`<line x1="${xa}" y1="${y}" x2="${xb}" y2="${y}" stroke="#4b86d6" stroke-width="5"/>`; };
+    if(i0>0||!endL) seg(dl,Xa,route[i0].down);
+    for(let i=i0;i<i1;i++) seg(Xa+(i-i0)*step,Xa+(i-i0+1)*step,route[i].down);
+    if(i1<n-1||!endR) seg(Xb,dr,route[Math.max(0,i1-1)].down);
     o+=`<text x="2" y="${UY+4}" font-size="11" fill="#8b97a8">上り</text><text x="2" y="${DY+4}" font-size="11" fill="#8b97a8">下り</text>`;
     // 駅
     for(let i=i0;i<=i1;i++){ const r=route[i], X=padL+(i-i0)*step, Y=ys(r,top), x1=X-w/2, x2=X+w/2;
@@ -1052,7 +1058,9 @@ function buildZaisen(){
         if(t.t==="U"||t.t==="D"){ if(t.n) o+=`<text class="ztk" x="${x2+5}" y="${y+4}">${t.n}</text>`; return; }
         // 本線から分かれる線（待避線・空港線・中線）。他社の線はつながない
         const toU=t.t==="u"||(t.t==="a"&&+t.n>=4)||t.t==="c", my=toU?Y[r.lay.findIndex(x=>x.t==="U")]:Y[r.lay.findIndex(x=>x.t==="D")];
-        const col=t.t==="o"?"#2c3646":t.t==="a"?"#6aa5e6":(toU?"#3a4352":"#4b86d6");
+        const onPath=t.n&&t.n===r.side&&taihiHere(i)&&(t.t==="u"||t.t==="d");
+        if(onPath){ const mainY=my; o+=`<line x1="${x1-18}" y1="${mainY}" x2="${x2+18}" y2="${mainY}" stroke="#3a4352" stroke-width="5"/>`; }
+        const col=t.t==="o"?"#2c3646":onPath?"#4b86d6":"#3a4352";
         if(t.t==="o"||my==null) o+=`<line x1="${x1-6}" y1="${y}" x2="${x2+6}" y2="${y}" stroke="${col}" stroke-width="4"/>`;
         else if(t.endQ){ // 泉岳寺側が行き止まり：下りの区間なら左、上りの区間なら右が行き止まり
           o+=r.down?`<path d="M${x1} ${y} L${x2} ${y} L${x2+18} ${my}" fill="none" stroke="${col}" stroke-width="4"/><line x1="${x1}" y1="${y-6}" x2="${x1}" y2="${y+6}" stroke="${col}" stroke-width="3"/>`
