@@ -435,7 +435,7 @@ body.editing .page .tile .openapp{border:1px solid var(--sub);color:var(--ink);f
   <div class="bar" id="bar">
     <div class="logo"><img src="logo-64.png" width="28" height="28" alt=""><span>Platform</span></div>
     <div id="chips" style="display:flex;gap:8px"></div>
-    <div class="right"><span class="stx" id="stSound"></span><span class="stx" id="stWake"></span><span class="edc">長押しで動かす ・ × で外す</span><button class="gear edc" id="editAdd">+ タイルを追加</button><button class="gear edc" id="editDone" style="border-color:var(--ink);font-weight:700">完了</button><button class="gear stx" id="openSettings">設定</button></div>
+    <div class="right"><span class="stx" id="stSound"></span><span class="stx" id="stWake"></span><span class="edc">長押しで動かす ・ × で外す</span><button class="gear edc" id="editAdd">+ タイルを追加</button><button class="gear edc" id="editDone" style="border-color:var(--ink);font-weight:700">完了</button><button class="gear stx" id="fsBtn" hidden>全画面</button><button class="gear stx" id="openSettings">設定</button></div>
   </div>
   <div class="pnote">縦向き・スマホ用の簡易表示です。iPad を横向きにして使うのがおすすめです。</div>
   <div class="qb" id="qb" hidden></div>
@@ -477,7 +477,7 @@ body.editing .page .tile .openapp{border:1px solid var(--sub);color:var(--ink);f
 
 <script>
 'use strict';
-const APP_VERSION = '1.9.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.10.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1862,6 +1862,21 @@ function openSettings(anchor) {
 }
 function closeSettings() { $('settings').hidden = true; saveCfg(); applyTheme(); renderAll(); }
 $('openSettings').addEventListener('click', () => openSettings());
+// 全画面(Android の Chrome など。ホーム画面から開いたときは最初から全画面なので出さない)
+(() => {
+  const d = document, el = d.documentElement, b = $('fsBtn');
+  const req = el.requestFullscreen || el.webkitRequestFullscreen;
+  const standalone = matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone;
+  if (!req || standalone) return;
+  const cur = () => d.fullscreenElement || d.webkitFullscreenElement;
+  const upd = () => { b.textContent = cur() ? '全画面を終了' : '全画面'; };
+  b.hidden = false; upd();
+  b.addEventListener('click', () => {
+    if (cur()) (d.exitFullscreen || d.webkitExitFullscreen).call(d);
+    else { const r = req.call(el, { navigationUI: 'hide' }); if (r && r.catch) r.catch(() => toast('全画面にできませんでした')); }
+  });
+  d.addEventListener('fullscreenchange', upd); d.addEventListener('webkitfullscreenchange', upd);
+})();
 function renderSettings() {
   const L = cfg.loc;
   const prefs = JAPAN ? JAPAN.map(p => p.name) : [];
