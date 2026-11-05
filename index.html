@@ -174,16 +174,16 @@ header.board {
 main {
   display: grid; gap: 12px; padding: 12px 16px 40px;
   grid-template-columns: minmax(0, 1fr);
-  /* 1カラム(スマホ・タブレット縦): 運行状況 → 時刻表 → タスク追加 → ダイヤ設定 → ポモドーロ・音 → データ → リセット → デザイン */
-  grid-template-areas: "debug" "news" "current" "banner" "table" "form" "settings" "pomo" "goal" "stats" "data" "reset" "logo";
+  /* 1カラム(スマホ・タブレット縦): 運行状況 → 時刻表 → タスク追加 → 目標・記録(タブ)。設定は右上の ⚙ にまとめる */
+  grid-template-areas: "debug" "news" "current" "banner" "table" "form" "side";
   max-width: 760px; margin: 0 auto;
 }
 @media (min-width: 900px) and (orientation: landscape) {
   main {
     max-width: 1400px;
     grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr);
-    grid-template-areas: "debug debug" "news news" "table current" "table banner" "table form" "table settings" "table pomo" "table goal" "table stats" "table data" "table reset" "table logo" "table .";
-    grid-template-rows: auto auto auto auto auto auto auto auto auto auto auto auto 1fr;
+    grid-template-areas: "debug debug" "news news" "table current" "table banner" "table form" "table side" "table .";
+    grid-template-rows: auto auto auto auto auto auto 1fr;
     align-items: start;
   }
   #tableCard { position: sticky; top: 12px; max-height: calc(100vh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow: auto; }
@@ -254,7 +254,83 @@ main {
 #pomoCard { grid-area: pomo; }
 #dataCard { grid-area: data; }
 #statsCard { grid-area: stats; }
-#goalCard { grid-area: goal; }
+#sideCard { grid-area: side; }
+/* ---------- 右の列(目標・記録・🍅 をタブで切り替え) ---------- */
+.side-tabs { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin-bottom: 12px; }
+.side-tabs button { flex: 1; border: 0; border-radius: 0; min-height: 40px; font-size: 14px; font-weight: 700; background: var(--panel); padding: 0 4px; min-width: 0; white-space: nowrap; }
+.side-tabs button[aria-selected="true"] { background: var(--accent); color: var(--accent-text); }
+.side-panel[hidden] { display: none; }
+/* ---------- ダイヤの1行(時刻表の上) ---------- */
+.dia-line { display: flex; align-items: center; gap: 6px; width: 100%; text-align: left; background: var(--panel-2); border: 0; border-radius: 10px; padding: 8px 12px; margin-bottom: 10px; font-size: 14px; min-height: 0; font-weight: 400; color: var(--text); }
+.dia-line b { font-size: 16px; }
+.dia-line span { margin-left: auto; color: var(--accent); font-weight: 800; font-size: 13px; }
+/* ---------- ⚙ 設定 ---------- */
+.gear-btn { position: relative; background: #1f2630; color: #e8ecf2; border-color: #2b3440; min-height: 40px; padding: 0 12px; font-size: 15px; font-weight: 800; }
+.gear-btn .dot, .set-nav .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #ff6b5e; }
+.gear-btn .dot { position: absolute; top: -3px; right: -3px; border: 2px solid var(--board); }
+.gear-btn .dot[hidden], .set-nav .dot[hidden] { display: none; }
+@media (max-width: 599px) { .gear-btn .gear-txt { display: none; } .gear-btn { padding: 0 11px; } }
+/* 実行中のボタン(終了・一時停止・中断・全画面)は、スマホでも1段に収める */
+@media (max-width: 599px) {
+  #currentCard .btnrow { flex-wrap: nowrap; gap: 6px; }
+  #currentCard .btnrow button.big { padding: 0 8px; font-size: 15px; min-width: 0; white-space: nowrap; }
+  #currentCard .btnrow button.big.grow { flex: 1.3 1 0; }
+  #currentCard .btnrow button.big:not(.grow):not([data-act=focus]) { flex: 1 1 0; }
+}
+#setPanel { position: fixed; inset: 0; z-index: 90; background: var(--bg); display: flex; flex-direction: column; }
+#setPanel[hidden] { display: none; }
+/* 設定を開いている間は、後ろの画面がいっしょにスクロールしないようにする */
+html.set-open, html.set-open body { overflow: hidden; overscroll-behavior: none; }
+.set-nav, .set-body, #setPanel { overscroll-behavior: contain; }
+/* デザインの見本(ロゴのアニメーションを設定の中で流す) */
+.logo-prev { position: relative; background: var(--board); border-radius: 10px; height: 50px; margin-top: 10px; overflow: hidden; display: flex; align-items: center; padding: 0 14px; }
+.logo-prev .lp-title { font-weight: 800; letter-spacing: 0.08em; font-size: 15px; color: #c9d1dc; }
+.logo-prev #logoAnim { left: 12px; right: 12px; top: 2px; }
+.set-head { background: var(--board); color: #e8ecf2; display: flex; align-items: center; gap: 10px; padding: calc(10px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) 10px calc(16px + env(safe-area-inset-left)); }
+.set-head b { font-size: 17px; margin-right: auto; }
+.set-head button { background: #1f2630; color: #e8ecf2; border-color: #2b3440; min-height: 40px; }
+#setBack[hidden] { display: none; }
+.set-wrap { flex: 1; min-height: 0; display: grid; grid-template-columns: 250px minmax(0, 1fr); }
+.set-nav { overflow: auto; background: var(--panel); border-right: 1px solid var(--line); padding: 8px; display: flex; flex-direction: column; gap: 2px; }
+.set-nav button { display: flex; align-items: center; gap: 8px; justify-content: flex-start; text-align: left; border: 0; background: transparent; min-height: 46px; padding: 0 12px; font-size: 15px; font-weight: 700; border-radius: 10px; }
+.set-nav button small { margin-left: auto; font-size: 11px; color: var(--late); font-weight: 700; }
+.set-nav button[aria-current="true"] { background: var(--running-bg); color: var(--accent); }
+.set-body { overflow: auto; padding: 16px max(16px, env(safe-area-inset-right)) 40px 16px; -webkit-overflow-scrolling: touch; }
+.set-body .set-sec { max-width: 640px; }
+.set-body .set-sec[hidden] { display: none; }
+.set-body .card { box-shadow: none; }
+.set-body .cl-list { max-height: none; }
+.set-body .changelog > summary { pointer-events: none; }
+.set-body .changelog > summary::after { content: none; }
+@media (max-width: 759px) {
+  .set-wrap { grid-template-columns: 1fr; }
+  .set-nav { border-right: 0; padding: 8px 12px; }
+  .set-nav button { border-bottom: 1px solid var(--line); border-radius: 0; min-height: 52px; }
+  .set-nav button::after { content: "›"; margin-left: auto; color: var(--sub); font-size: 20px; }
+  .set-nav button small, .set-nav button .dot { margin-left: 8px; }
+  #setPanel:not(.in-sec) .set-body { display: none; }
+  #setPanel.in-sec .set-nav { display: none; }
+}
+/* ---------- Google ToDo ---------- */
+.gt-steps { margin: 8px 0 10px; padding-left: 1.4em; font-size: 14px; line-height: 1.7; }
+.gt-steps a { color: var(--accent); font-weight: 700; }
+.gt-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.gt-bar select { flex: 1; min-width: 0; }
+.gt-list { display: grid; }
+.gt-item { display: grid; grid-template-columns: 26px 1fr 82px; gap: 8px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+.gt-item input[type=checkbox] { width: 22px; height: 22px; min-height: 0; margin: 0; accent-color: var(--accent); }
+.gt-item small { display: block; color: var(--sub); font-size: 12px; }
+.gt-item .gt-dur { display: flex; align-items: center; gap: 2px; font-size: 13px; color: var(--sub); }
+.gt-item .gt-dur input { width: 56px; min-height: 38px; padding: 0 6px; text-align: right; }
+.gt-item.added { opacity: 0.5; }
+/* ---------- 中断 ---------- */
+button.intr { background: var(--intr-bg, #fff1e0); color: var(--intr-text, #a85a12); border-color: transparent; }
+.intr-opts { display: grid; gap: 8px; margin-top: 10px; }
+.intr-opts button { display: block; text-align: left; min-height: 0; padding: 10px 12px; font-size: 15px; font-weight: 700; }
+.intr-opts button small { display: block; font-weight: 400; font-size: 12.5px; color: var(--sub); }
+.intr-opts button[aria-pressed="true"] { border: 2px solid var(--accent); background: var(--running-bg); }
+.intr-note { font-size: 12.5px; color: var(--sub); margin-top: 10px; }
+.delay.intr-pill { background: #fff1e0; color: #a85a12; }
 /* ---------- 週の目標 ---------- */
 .g-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
 .g-head small { font-size: 12px; color: var(--sub); font-weight: 400; }
@@ -657,6 +733,7 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
     <div class="date num" id="dateLabel"></div>
     <button id="nextDay" aria-label="次の日">›</button>
     <button id="todayBtn">今日</button>
+    <button type="button" class="gear-btn" id="setOpen" aria-label="設定を開く">⚙<span class="gear-txt"> 設定</span><i class="dot" id="setDot" hidden></i></button>
   </div>
 </header>
 
@@ -686,16 +763,11 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
 
   <div id="news">
     <div class="warn" id="installWarn" hidden>⚠ ホーム画面に追加しないと、しばらく開かない間にデータが消えることがあります。<button type="button" class="linkbtn" id="installHow">追加のしかた</button></div>
-    <div class="warn" id="backupWarn" hidden><span id="backupWarnTxt"></span> <button type="button" id="backupNow">今すぐ書き出す</button></div>
     <div class="update-bar" id="updateBar" hidden>
       <span>🆕 新しいバージョン <b id="updateVer"></b> があります</span>
       <button class="primary" id="updateBtn">今すぐ更新</button>
       <button id="updateLater">あとで</button>
     </div>
-    <details class="card changelog" id="changelog">
-      <summary>📝 変更履歴 <span class="num" id="appVer"></span><span class="new-badge" id="clNew" hidden>NEW</span></summary>
-      <div class="cl-list" id="clList">読み込み中…</div>
-    </details>
   </div>
 
   <div class="col col-now">
@@ -707,8 +779,10 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
       <button type="button" class="fold-head" id="formToggle" aria-expanded="true" aria-controls="taskForm"><span id="formTitle">タスクを追加</span><span class="chev" aria-hidden="true"></span></button>
       <div class="mode-tog in-tabs" id="fInTabs" role="tablist" aria-label="入力のしかた">
         <button type="button" data-in="one" role="tab">1件ずつ</button>
-        <button type="button" data-in="bulk" role="tab">📝 文章でまとめて</button>
+        <button type="button" data-in="bulk" role="tab">📝 文章</button>
+        <button type="button" data-in="todo" role="tab">✅ ToDo</button>
       </div>
+      <div id="todoBox" class="form-grid" hidden></div>
       <div id="bulkBox" class="form-grid" hidden>
         <label for="fBulk">1行に1つ「名前 時間」</label>
         <textarea id="fBulk" rows="6" placeholder="数学 青チャート 50分 ポモ&#10;英単語 ターゲット 約30分&#10;古文単語 20分"></textarea>
@@ -784,6 +858,7 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
 
   <section class="card" id="tableCard">
     <h2>時刻表</h2>
+    <button type="button" class="dia-line" id="diaLine" aria-label="開始時刻と就寝期限を変える"></button>
     <div class="tt-tools">
       <button id="copyPrev">📋 前日をコピー</button>
       <button id="carryOver">➡ 未完了を翌日へ</button>
@@ -793,8 +868,49 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
   </section>
 
   <div class="col col-side">
+    <section class="card" id="sideCard">
+      <div class="side-tabs" role="tablist" aria-label="目標と記録">
+        <button type="button" role="tab" data-side="goal">🎯 目標</button>
+        <button type="button" role="tab" data-side="stats">📊 記録</button>
+        <button type="button" role="tab" data-side="pomo">🍅</button>
+      </div>
+      <div class="side-panel" data-panel="goal" id="goalCard">
+      <h2 class="g-head">今週の目標 <small id="goalRange"></small></h2>
+      <div id="goalBody"></div>
+
+      </div>
+      <div class="side-panel" data-panel="stats" id="statsCard">
+      <h2>勉強の記録(7日間)</h2>
+      <div id="statsBody"></div>
+
+      </div>
+      <div class="side-panel" data-panel="pomo" id="pomoStats">
+        <h2>ポモドーロ</h2>
+        <div class="pomo-today num" id="pomoToday">今日の🍅 0個</div>
+      <div class="hist num" id="pomoHist"></div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<div id="setPanel" hidden role="dialog" aria-modal="true" aria-label="設定">
+  <div class="set-head"><button type="button" id="setBack" hidden aria-label="一覧に戻る">‹ 戻る</button><b id="setTitle">⚙ 設定</b><button type="button" id="setClose">✕ 閉じる</button></div>
+  <div class="set-wrap">
+    <nav class="set-nav" id="setNav">
+      <button type="button" data-sec="dia">🚃 ダイヤ(開始・就寝期限)</button>
+      <button type="button" data-sec="pomo">🍅 ポモドーロ</button>
+      <button type="button" data-sec="sound">🔊 音・通知</button>
+      <button type="button" data-sec="data">💾 データの保存 <i class="dot" id="setDataDot" hidden></i></button>
+      <button type="button" data-sec="design">🎨 ロゴ・タイマーのデザイン</button>
+      <button type="button" data-sec="reset">🗑 リセット</button>
+      <button type="button" data-sec="gtodo">✅ Google ToDo</button>
+      <button type="button" data-sec="guide">❓ 使い方</button>
+      <button type="button" data-sec="history">📝 変更履歴 <small id="setHistNew" hidden>NEW</small></button>
+    </nav>
+    <div class="set-body" id="setBody">
+      <div class="set-sec" data-sec="dia" hidden>
     <section class="card" id="settingsCard">
-      <h2>ダイヤ設定 <button type="button" class="help-btn" id="guideOpen">❓ 使い方を見る</button></h2>
+      <h2>ダイヤ設定(開始時刻・就寝期限)</h2>
       <div class="settings-grid">
         <div>
           <label>開始時刻</label>
@@ -807,16 +923,22 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
       </div>
     </section>
 
+      </div>
+      <div class="set-sec" data-sec="pomo" hidden>
     <section class="card" id="pomoCard">
       <h2>ポモドーロ</h2>
-      <div class="pomo-today num" id="pomoToday">今日の🍅 0個</div>
-      <div class="hist num" id="pomoHist"></div>
       <div class="pomo-grid">
         <div><label for="pWork">作業(分)</label><input id="pWork" type="number" inputmode="numeric" min="1" max="180" class="num"></div>
         <div><label for="pBrk">休憩(分)</label><input id="pBrk" type="number" inputmode="numeric" min="0" max="60" class="num"></div>
         <div><label for="pLong">長休憩(分)</label><input id="pLong" type="number" inputmode="numeric" min="0" max="120" class="num"></div>
         <div><label for="pEvery">長休憩は何回ごと</label><input id="pEvery" type="number" inputmode="numeric" min="1" max="20" class="num"></div>
       </div>
+      <p class="note">変えた設定は、次に開始するタスクから使われます。</p>
+    </section>
+      </div>
+      <div class="set-sec" data-sec="sound" hidden>
+    <section class="card" id="soundCard">
+      <h2>音・通知</h2>
       <div class="btnrow">
         <button id="soundTest" class="grow">🔊 音を有効にしてテスト</button>
         <button id="soundToggle" class="grow"></button>
@@ -834,19 +956,12 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
       <div class="cur-sub" id="notifyState"></div>
       <p class="note">※ 画面を閉じている間や消音モードでは鳴らないことがあります。詳しくは <button type="button" class="linkbtn" data-guide="1">使い方</button> の「音・通知について」へ。</p>
       <p class="note" id="wakeState"></p>
-    </section>
 
-    <section class="card" id="goalCard">
-      <h2 class="g-head">今週の目標 <small id="goalRange"></small></h2>
-      <div id="goalBody"></div>
     </section>
-
-    <section class="card" id="statsCard">
-      <h2>勉強の記録(7日間)</h2>
-      <div id="statsBody"></div>
-    </section>
-
+      </div>
+      <div class="set-sec" data-sec="data" hidden>
     <section class="card" id="dataCard">
+      <div class="warn" id="backupWarn" hidden style="margin-bottom:10px"><span id="backupWarnTxt"></span> <button type="button" id="backupNow">今すぐ書き出す</button></div>
       <h2>データの書き出し・読み込み</h2>
       <div class="btnrow" style="margin-top:0">
         <button id="exportBtn" class="grow">書き出す</button>
@@ -860,16 +975,8 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
       <p class="note">全日付のタスク・実績・設定を1つのファイル(JSON)にします。読み込むと、ファイルに含まれる日付のデータで上書きされます(含まれない日付はそのまま)。</p>
     </section>
 
-    <section class="card" id="resetCard">
-      <h2>リセット</h2>
-      <div class="btnrow" style="margin-top:0">
-        <button id="resetDay" class="danger grow">今日の予定をリセット</button>
-        <button id="resetUndo" hidden>元に戻す</button>
       </div>
-      <div class="msg" id="resetMsg" role="status"></div>
-      <p class="note">表示中の日のタスク・実績・🍅の記録をすべて消します(開始時刻と就寝期限、他の日のデータはそのまま)。2回押すと実行されます。</p>
-    </section>
-
+      <div class="set-sec" data-sec="design" hidden>
     <section class="card" id="logoCard">
       <h2>ロゴ・タイマーのデザイン</h2>
       <h3 class="sub-h" style="margin-top:0">ロゴ</h3>
@@ -881,6 +988,7 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
         <label><input type="radio" name="logoAnim" value="D"> D 路線図</label>
         <label><input type="radio" name="logoAnim" value="off"> なし</label>
       </div>
+      <div class="logo-prev" id="logoPrev"><span class="lp-title">StudyLine</span></div>
       <div class="btnrow"><button id="logoPlay" class="grow">▶ ロゴを今すぐ見る</button></div>
       <p class="note">アプリを開いたとき と、開いている間は40秒ごとに、ヘッダーの「StudyLine」が動きます。「ランダム」はそのたびに A〜D からくじ引きで選びます。</p>
       <h3 class="sub-h">全画面タイマー(⛶)</h3>
@@ -894,9 +1002,56 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
       </div>
       <p class="note">タスクの実行中に「⛶」を押すと、このデザインで表示します。「ランダム」は開くたびに選び直します。</p>
     </section>
-  </div>
-</main>
+      </div>
+      <div class="set-sec" data-sec="reset" hidden>
+    <section class="card" id="resetCard">
+      <h2>リセット</h2>
+      <div class="btnrow" style="margin-top:0">
+        <button id="resetDay" class="danger grow">今日の予定をリセット</button>
+        <button id="resetUndo" hidden>元に戻す</button>
+      </div>
+      <div class="msg" id="resetMsg" role="status"></div>
+      <p class="note">表示中の日のタスク・実績・🍅の記録をすべて消します(開始時刻と就寝期限、他の日のデータはそのまま)。2回押すと実行されます。</p>
+    </section>
 
+      </div>
+      <div class="set-sec" data-sec="gtodo" hidden>
+    <section class="card" id="gtodoCard">
+      <h2>Google ToDo とつなぐ</h2>
+      <p class="note" style="margin-top:0">Google ToDo(Google Tasks)のタスクを、タスク追加の「✅ ToDo」から時刻表に取り込めます。自分の Google アカウントに小さなプログラム(Apps Script)を1つ置いて、それを通して読みます。最初に1回だけ準備が必要です。</p>
+      <ol class="gt-steps">
+        <li><a href="https://script.google.com/home/projects/create" target="_blank" rel="noopener">script.google.com</a> で「新しいプロジェクト」を作る</li>
+        <li>左の「サービス」の「＋」から <b>Tasks API</b> を選んで「追加」</li>
+        <li>はじめから書いてあるコードを全部消して、下のコードを貼り付けて保存(💾)</li>
+        <li>右上の「デプロイ」→「新しいデプロイ」→ 種類「⚙」から <b>ウェブアプリ</b>。「次のユーザーとして実行」は <b>自分</b>、「アクセスできるユーザー」は <b>全員</b> にして「デプロイ」(初回は Google の許可の画面が出るので許可する)</li>
+        <li>出てきた <b>ウェブアプリの URL</b>(…/exec で終わる)を下に貼って「つないで読み込む」</li>
+      </ol>
+      <textarea id="gtCode" rows="8" readonly class="num" style="font-size:12px"></textarea>
+      <div class="btnrow" style="margin-top:6px"><button type="button" id="gtCopy" class="grow">📋 コードをコピー</button></div>
+      <label for="gtUrl" style="margin-top:12px">ウェブアプリの URL</label>
+      <input id="gtUrl" type="url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off">
+      <div class="btnrow"><button type="button" class="primary grow" id="gtSave">つないで読み込む</button><button type="button" id="gtOff" hidden>つなぐのをやめる</button></div>
+      <div class="msg" id="gtMsg" role="status"></div>
+      <label class="toggle" style="margin-top:12px"><input type="checkbox" id="gtSync"> StudyLine でタスクを終えたら、Google ToDo も完了にする</label>
+      <p class="note">コードの中の「合言葉」を知らないと読めないようにしてあります。URL とコードは人に教えないでください。学校のアカウントだと「全員」を選べないことがあるので、そのときは個人の Google アカウントで作ってください。URL はこの端末だけに保存します(「書き出す」のファイルには入れません)。</p>
+    </section>
+      </div>
+      <div class="set-sec" data-sec="guide" hidden>
+    <section class="card" id="guideCard">
+      <h2>使い方</h2>
+      <p class="note" style="margin-top:0">はじめに出た使い方(3つの手順、見込みとズレの意味、iPhone のホーム画面への追加、音・通知の注意)をもう一度見られます。</p>
+      <div class="btnrow"><button type="button" class="primary grow" id="guideOpen">❓ 使い方を見る</button></div>
+    </section>
+      </div>
+      <div class="set-sec" data-sec="history" hidden>
+    <details class="card changelog" id="changelog" open>
+      <summary>📝 変更履歴 <span class="num" id="appVer"></span><span class="new-badge" id="clNew" hidden>NEW</span></summary>
+      <div class="cl-list" id="clList">読み込み中…</div>
+    </details>
+      </div>
+    </div>
+  </div>
+</div>
 <div id="toast" hidden role="status"><span id="toastMsg"></span><button id="toastAct" hidden></button></div>
 <div id="clockFull" hidden role="dialog" aria-label="時計"><div class="cf-time num"><span id="cfTime"></span><span class="cf-sec" id="cfSec"></span></div><div class="cf-date" id="cfDate"></div><div class="cf-hint">タップで閉じる</div></div>
 <div id="focus" hidden role="dialog" aria-label="全画面タイマー"></div>
@@ -904,7 +1059,7 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
   <div class="guide-body">
     <h3 id="guideTitle">🚃 StudyLine の使い方</h3>
     <p style="margin:0 0 6px">勉強の予定を電車の時刻表のように並べて、遅れや就寝時刻を見ながら進めるアプリです。</p>
-    <div class="guide-step"><span class="n">1</span><div><b>開始時刻と就寝期限を決める</b><br>「ダイヤ設定」で、今日勉強を始める時刻と、寝る時刻を選びます。</div></div>
+    <div class="guide-step"><span class="n">1</span><div><b>開始時刻と就寝期限を決める</b><br>時刻表の上の「🚃 19:00 発 → 就寝期限 24:00 変更 ›」を押して、今日勉強を始める時刻と、寝る時刻を選びます(「⚙ 設定」→「ダイヤ」でも同じ)。</div></div>
     <div class="guide-step"><span class="n">2</span><div><b>タスクを追加する</b><br>「タスクを追加」に名前と時間を入れます。「📝 文章でまとめて」なら何件も一度に入ります。</div></div>
     <div class="guide-step"><span class="n">3</span><div><b>「開始」を押す</b><br>上の「運行状況」で開始・一時停止・終了をします。終わると次のタスクへ進みます。</div></div>
     <h4>時刻表の見方</h4>
@@ -928,7 +1083,7 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
     </details>
     <details>
       <summary>💾 データについて</summary>
-      <p>データはこの端末の中だけに保存されます(どこにも送りません)。機種変更や念のための保存には「データの書き出し・読み込み」を使ってください。</p>
+      <p>データはこの端末の中だけに保存されます(どこにも送りません)。機種変更や念のための保存には「⚙ 設定」→「データの保存」の「書き出す」を使ってください。</p>
     </details>
   </div>
   <div class="guide-btns">
@@ -1003,6 +1158,8 @@ function cleanDay(d, newIds) {
       amtPlan: Number.isFinite(t.amtPlan) && t.amtPlan >= 0 ? Math.min(99999, t.amtPlan) : undefined,
       amt: Number.isFinite(t.amt) && t.amt >= 0 ? Math.min(99999, t.amt) : undefined,
       range: typeof t.range === 'string' && t.range.trim() ? t.range.trim().slice(0, 40) : undefined,
+      gtask: isObj(t.gtask) && typeof t.gtask.list === 'string' && typeof t.gtask.id === 'string' ? { list: t.gtask.list.slice(0, 200), id: t.gtask.id.slice(0, 200) } : undefined,
+      intr: isObj(t.intr) && Number.isFinite(t.intr.done) && Number.isFinite(t.intr.of) ? { done: clampN(t.intr.done, 0, 6000, 0), of: clampN(t.intr.of, 1, 6000, 1), ...(isObj(t.intr.cont) && /^\d{4}-\d{2}-\d{2}$/.test(t.intr.cont.day) && typeof t.intr.cont.id === 'string' ? { cont: { day: t.intr.cont.day, id: t.intr.cont.id } } : {}) } : undefined,
       ...cleanRecords(t)
     };
   }).map(t => { for (const k of Object.keys(t)) if (t[k] === undefined) delete t[k]; return t; });
@@ -1575,6 +1732,7 @@ function render() {
     : `実時刻で動作中 ・ 論理日付 ${logicalToday()}`);
   const [y, m, d] = dayStr.split('-').map(Number);
   const wd = '日月火水木金土'[new Date(y, m - 1, d).getDay()];
+  setHTML('diaLine', `🚃 <b class="num">${fmt(data.settings.start)}</b> 発 → 就寝期限 <b class="num">${fmt(deadlineMin())}</b><span>変更 ›</span>`);
   setHTML('dateLabel', `${m}月${d}日(${wd})<small>${isToday() ? '今日' : isLive() && dayStr < logicalToday() ? (dayStr === shiftDay(logicalToday(), -1) && continuesYesterday(dayStr, data) ? '昨日の続き' : '実行中のタスクあり') : dayStr < logicalToday() ? '過去の日' : '先の日'}</small>`);
 
   if (!data.tasks.length && $('formCard').classList.contains('collapsed')) setFormCollapsed(false); // 0件なら追加欄を開く
@@ -1592,6 +1750,7 @@ function render() {
   if (modalValid && !$('modal').hidden && !modalValid()) closeModal(); // 確認の対象がもう無ければ閉じる
   const running = sc.rows.find(r => r.st === 'running');
   syncWakeLock(!!((running && (running.t.pomo || focusOpen)) || !$('clockFull').hidden));
+  if (!$('todoBox').hidden && gt.lists) { const sig = dayStr + ':' + data.tasks.filter(t => t.gtask).map(t => t.gtask.id).join(','); if (sig !== gt.sig) { gt.sig = sig; renderTodoBox(); } }
   if (!$('clockFull').hidden) {
     setText('cfTime', `${now.getHours()}:${pad(now.getMinutes())}`); setText('cfSec', pad(now.getSeconds()));
     setText('cfDate', `${now.getMonth() + 1}月${now.getDate()}日(${'日月火水木金土'[now.getDay()]})`);
@@ -1684,9 +1843,11 @@ function renderCurrent(sc) {
       <div class="btnrow">
         ${paused
           ? `<button class="primary big grow" data-act="resume" data-id="${esc(t.id)}">▶ 再開</button>
-             <button class="big" data-act="finish" data-id="${esc(t.id)}">終了</button>`
+             <button class="big" data-act="finish" data-id="${esc(t.id)}">終了</button>
+             ${over ? '' : `<button class="big intr" data-act="intr" data-id="${esc(t.id)}">⏹ 中断</button>`}`
           : `<button class="primary big grow" data-act="finish" data-id="${esc(t.id)}">終了</button>
-             ${over || swBrk ? '' : `<button class="big" data-act="pause" data-id="${esc(t.id)}">⏸ 一時停止</button>`}`}
+             ${over || swBrk ? '' : `<button class="big" data-act="pause" data-id="${esc(t.id)}">⏸ 一時停止</button>`}
+             ${over || (sw && sw.over) ? '' : `<button class="big intr" data-act="intr" data-id="${esc(t.id)}">⏹ 中断</button>`}`}
         <button class="big" data-act="focus" data-id="${esc(t.id)}" aria-label="全画面">⛶</button>
       </div>
       <div class="btnrow">
@@ -1694,7 +1855,7 @@ function renderCurrent(sc) {
         <button class="grow" data-act="adj" data-v="5" data-id="${esc(t.id)}">${t.pomo ? '作業 ' : ''}+5分</button>`}
         ${armBtn('unstart', t.id, '開始を取消', 'danger')}
       </div>
-      ${t.pomo ? `<p class="note">${!soundOn() ? '🔇 音はOFFです(点滅と通知は出ます)。' : audio.ready ? '🔊 音は有効です。' : '🔇 音が無効です(「ポモドーロ」欄のボタンで有効化)。'}画面を閉じている間は音や通知が出ないことがあります。</p>` : ''}`;
+      ${t.pomo ? `<p class="note">${!soundOn() ? '🔇 音はOFFです(点滅と通知は出ます)。' : audio.ready ? '🔊 音は有効です。' : '🔇 音が無効です(「⚙ 設定」→「音・通知」のボタンで有効化)。'}画面を閉じている間は音や通知が出ないことがあります。</p>` : ''}`;
   } else if (next) {
     h += `<div class="cur-sub">次の発車</div>
       <div class="cur-name">${next.t.sw ? '⏲ ' : ''}${next.t.pomo ? '🍅 ' : ''}${esc(next.t.name)}</div>
@@ -1750,7 +1911,7 @@ function renderTable(sc) {
     const prevPending = i > 0 && sc.rows[i - 1].st === 'pending';
     const nextPending = i < n - 1 && sc.rows[i + 1].st === 'pending';
     const canMove = r.st === 'pending';
-    const label = r.st === 'done' ? '実績' : r.st === 'running' ? (isPaused(t) ? '⏸ 一時停止中' : '実行中') : '';
+    const label = r.st === 'done' ? (t.intr ? `<span class="delay intr-pill">⏹ 中断 ${t.intr.done}/${t.intr.of}分</span>` : '実績') : r.st === 'running' ? (isPaused(t) ? '⏸ 一時停止中' : '実行中') : '';
     const brkMin = Math.round(r.phases.filter(p => p.k === 'b').reduce((a, p) => a + p.e - p.s, 0));
     const pomoInfo = t.pomo && !t.sw ? `<span>🍅×${r.phases.filter(p => p.k === 'w').length}${brkMin ? ` +休憩${brkMin}分` : ''}</span>` : t.pomo && brkMin ? `<span>🍅 休憩${brkMin}分</span>` : t.pomo ? '<span>🍅</span>' : '';
     // ストップウォッチはおおよそなので「頃」を付ける(終わったものは実績なので付けない)
@@ -2146,6 +2307,7 @@ const actions = {
     (t.pauses || []).forEach(p => { if (p.e == null) p.e = now; }); // 停止中に終了したら停止もそこで終わり
     t.actualEnd = now;
     if (matOf(t.mat)) setTimeout(() => askAmount(t.id), 0); // 教材を選んだタスクは、どれだけ進んだかを聞く
+    if (t.gtask) gtComplete(t);
   },
   pause(t) {
     if (!canPause(t.id)) return false;
@@ -2178,6 +2340,14 @@ const actions = {
     if (findRunDay()) return false;
     if (!confirmTap('unfinish', t)) return false;
     t.actualEnd = null;
+    // 中断を取り消したときは、そのとき作った「(続き)」も消す(もう始めていたら残す)
+    const c = t.intr && t.intr.cont;
+    if (c) {
+      const notStarted = x => !(x.id === c.id && !x.actualStart);
+      if (c.day === dayStr) data.tasks = data.tasks.filter(notStarted);
+      else { const raw = store.get('day:' + c.day); if (isObj(raw) && Array.isArray(raw.tasks)) store.set('day:' + c.day, { ...raw, tasks: raw.tasks.filter(x => !isObj(x) || notStarted(x)) }); }
+    }
+    delete t.intr;
   },
   adj(t, btn) {
     const v = +btn.dataset.v;
@@ -2206,6 +2376,7 @@ const actions = {
   },
   focus() { openFocus(); return false; },
   amt(t) { askAmount(t.id); return false; },
+  intr(t) { if (taskState(t) !== 'running') return false; if (focusOpen) closeFocus(); askInterrupt(t); return false; },
   extbrk(t, btn) {
     if (taskState(t) !== 'running') return false;
     if (t.sw) { const b = (t.swBreaks || [])[+btn.dataset.bi]; if (!b) return false; b.ext = (b.ext || 0) + 5; return; }
@@ -2339,6 +2510,7 @@ function focusInfo(r, now) {
   } else if (!over && !(sw && brk)) {
     btns += `<button data-act="pause" data-id="${esc(t.id)}">⏸ 一時停止</button>`;
   }
+  if (!over && !(sw && sw.over)) btns += `<button class="intr" data-act="intr" data-id="${esc(t.id)}">⏹ 中断</button>`;
   btns += `<button class="${paused ? '' : 'primary'}" data-act="finish" data-id="${esc(t.id)}">終了</button>`;
   const main = sw ? (brk ? fmtSec(ph.e - now) : fmtUp(sw.workMin)) : over ? `+${fmtSec(now - r.target)}` : fmtSec((t.pomo ? ph.e : r.target) - now);
   const caption = sw && !brk ? '' : over ? '超過' : 'あと';
@@ -2472,14 +2644,14 @@ $('focus').addEventListener('click', e => {
 });
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
-  if (!$('modal').hidden) closeModal(); else if (!$('guide').hidden) closeGuide(); else if (focusOpen) closeFocus();
+  if (!$('modal').hidden) closeModal(); else if (!$('guide').hidden) closeGuide(); else if (!$('setPanel').hidden) closeSettings(); else if (focusOpen) closeFocus();
 });
 
 /* ================= バージョン・変更履歴 ================= */
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '3.5.2';
+const APP_VERSION = '4.1.1';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
@@ -2527,7 +2699,7 @@ setInterval(checkVersion, 15 * 60 * 1000); // 開きっぱなしでも15分ご�
 document.addEventListener('visibilitychange', () => { if (!document.hidden) checkVersion(); });
 
 /* ================= ロゴのアニメーション ================= */
-// 開くたびに流す。'random' は A〜D から完全ランダム。設定は一番下のカード
+// 開くたびに流す。'random' は A〜D から完全ランダム。設定は「⚙ 設定」→「デザイン」
 const LOGO_KINDS = ['A', 'B', 'C', 'D'];
 const LOGO_LEN = { A: 3.6, B: 3.4, C: 4.6, D: 3.6 }; // 秒(動き+そろった状態で少し止める)
 const LOGO_REPEAT_MS = 40000; // 開いている間は40秒ごとにもう一度
@@ -2677,6 +2849,7 @@ function updateBackupUI() {
   const old = (ago === null || ago >= BACKUP_DAYS) && hasDayData();
   el.classList.toggle('old', old);
   $('backupWarn').hidden = !old;
+  $('setDataDot').hidden = !old; updateSetDot();
   if (old) $('backupWarnTxt').textContent = ago === null ? '⚠ まだ一度もデータを書き出していません。' : `⚠ 最後の書き出しから${ago}日たっています。`;
 }
 $('backupNow').addEventListener('click', () => $(!$('shareBtn').hidden ? 'shareBtn' : 'exportBtn').click());
@@ -2685,6 +2858,236 @@ $('installWarn').hidden = !(IS_IOS && !IS_STANDALONE);
 const IOS_INSTALL_STEPS = '<ol><li>Safari の下(または上)にある <b>共有ボタン</b>(四角から矢印が出たマーク)を押す</li><li>「<b>ホーム画面に追加</b>」を選ぶ(見つからなければ一覧を下にスクロール)</li><li>右上の「追加」を押し、ホーム画面の StudyLine から開く</li></ol>';
 $('installHow').addEventListener('click', () => openOkModal({ title: '📱 ホーム画面に追加する', body: IOS_INSTALL_STEPS + '<p>Safari で開いたままだと、しばらく使わない間に iPhone がデータを消すことがあります。追加したアプリには、今のデータは引き継がれないので、先に「書き出す」でファイルにしてから、追加したアプリで「読み込む」をしてください。</p>', ok: 'わかった', cancel: '閉じる', onOk: () => {} }));
 
+
+/* ================= ⚙ 設定(ダイヤ・ポモドーロ・音・データ・デザイン・リセット・使い方・変更履歴) ================= */
+const SET_TITLES = { gtodo: '✅ Google ToDo', dia: '🚃 ダイヤ', pomo: '🍅 ポモドーロ', sound: '🔊 音・通知', data: '💾 データ', design: '🎨 デザイン', reset: '🗑 リセット', guide: '❓ 使い方', history: '📝 変更履歴' };
+const wideSettings = () => matchMedia('(min-width: 760px)').matches;
+function openSettings(sec) {
+  $('setPanel').hidden = false;
+  document.documentElement.classList.add('set-open');
+  $('logoPrev').appendChild($('logoAnim')); // ヘッダーは設定の下に隠れるので、ロゴは設定の中の見本で流す
+  selectSet(sec || (wideSettings() ? 'dia' : null));
+}
+function selectSet(sec) {
+  for (const el of document.querySelectorAll('.set-sec')) el.hidden = el.dataset.sec !== sec;
+  for (const b of $('setNav').querySelectorAll('[data-sec]')) b.setAttribute('aria-current', String(b.dataset.sec === sec));
+  $('setPanel').classList.toggle('in-sec', !!sec);
+  $('setBack').hidden = !sec || wideSettings();
+  $('setTitle').textContent = sec && !wideSettings() ? SET_TITLES[sec] : '⚙ 設定';
+  $('setBody').scrollTop = 0;
+  if (sec === 'gtodo') syncGtSettings();
+  if (sec === 'history') { store.set('seenVersion', APP_VERSION); $('clNew').hidden = true; updateSetDot(); }
+  if (sec === 'sound') for (const [kind] of SOUND_KINDS) if (customSounds[kind]) renderSoundRow(kind); // 波形は見えてから描く
+}
+function closeSettings() {
+  $('setPanel').hidden = true;
+  document.documentElement.classList.remove('set-open');
+  document.querySelector('header.board .title').after($('logoAnim'));
+  render();
+}
+// ⚙ の赤い点: 書き出していない・新しい変更履歴がある
+function updateSetDot() {
+  const hist = store.get('seenVersion') !== APP_VERSION;
+  $('setHistNew').hidden = !hist;
+  $('setDot').hidden = $('setDataDot').hidden && !hist;
+}
+$('setOpen').addEventListener('click', () => openSettings());
+$('setClose').addEventListener('click', closeSettings);
+$('setBack').addEventListener('click', () => selectSet(null));
+$('setNav').addEventListener('click', e => { const b = e.target.closest('[data-sec]'); if (b) selectSet(b.dataset.sec); });
+$('diaLine').addEventListener('click', () => openSettings('dia'));
+addEventListener('resize', () => { if (!$('setPanel').hidden) { const cur = document.querySelector('.set-sec:not([hidden])'); selectSet(cur ? cur.dataset.sec : wideSettings() ? 'dia' : null); } });
+
+/* ================= 右の列のタブ(今週の目標・記録・🍅) ================= */
+function selectSide(k) {
+  if (!['goal', 'stats', 'pomo'].includes(k)) k = 'goal';
+  for (const b of document.querySelectorAll('[data-side]')) b.setAttribute('aria-selected', String(b.dataset.side === k));
+  for (const el of document.querySelectorAll('.side-panel')) el.hidden = el.dataset.panel !== k;
+  store.set('sideTab', k);
+}
+document.querySelector('.side-tabs').addEventListener('click', e => { const b = e.target.closest('[data-side]'); if (b) selectSide(b.dataset.side); });
+selectSide(store.get('sideTab'));
+
+/* ================= 中断(いったん終わりにして、残りを続きにする) ================= */
+let intrChoice = 'later';
+function intrRemain(t) {
+  const row = lastSc && lastSc.rows.find(r => r.t.id === t.id); if (!row) return null;
+  const done = row.sw ? row.sw.workMin : workedMin(row);
+  return { done: Math.round(done), left: Math.max(0, Math.round(effDur(t) - done)) };
+}
+function askInterrupt(t) {
+  const id = t.id, rm = intrRemain(t); if (!rm) return;
+  intrChoice = 'later';
+  const opts = rm.left >= 1 ? `<div class="intr-opts">
+      <button type="button" data-intr="later" aria-pressed="true">あとで続きをやる<small>「(続き)${esc(t.name)} ${rm.left}分」を今日の最後に入れる</small></button>
+      <button type="button" data-intr="tomorrow" aria-pressed="false">明日に回す<small>続きを翌日の時刻表の最後に入れる</small></button>
+      <button type="button" data-intr="stop" aria-pressed="false">今日はここまで<small>続きは作らない</small></button></div>` : '';
+  openOkModal({
+    title: '⏹ 中断しますか?',
+    body: `<b>${esc(t.name)}</b> を <b>${rm.done}分</b> やったところで終わりにします。やった分は記録に残り、後ろの予定はずれません。${rm.left >= 1 ? `<br>残りの <b>${rm.left}分</b> はどうしますか?` : ''}${opts}
+      <p class="intr-note">⏸ 一時停止 = すぐ戻る用(止めている間、後ろの予定がずれる)。⏹ 中断 = いったん終わりにして次へ進む。${matOf(t.mat) ? '教材を付けたタスクなので、このあと「どこまで進んだ?」も聞きます。' : ''}</p>`,
+    ok: '中断する', cancel: 'やめる',
+    valid: () => data.tasks.some(x => x.id === id && taskState(x) === 'running'),
+    onOk: () => {
+      const cur = data.tasks.find(x => x.id === id); if (!cur || taskState(cur) !== 'running') return;
+      const r = intrRemain(cur) || rm, now = nowMs();
+      (cur.pauses || []).forEach(p => { if (p.e == null) p.e = now; });
+      cur.actualEnd = now;
+      cur.intr = { done: r.done, of: effDur(cur) };
+      if (r.left >= 1 && intrChoice !== 'stop') {
+        const cont = { ...planCopy(cur), name: '(続き)' + cur.name.replace(/^\(続き\)/, ''), dur: r.left, ...(cur.gtask ? { gtask: { ...cur.gtask } } : {}) };
+        delete cont.amtPlan;
+        const contDay = intrChoice === 'later' ? dayStr : shiftDay(dayStr, 1);
+        if (intrChoice === 'later') data.tasks.push(cont);
+        else {
+          const raw = store.get('day:' + contDay);
+          const nd = isObj(raw) && Array.isArray(raw.tasks) ? cleanDay(raw, false) : { settings: { ...data.settings }, tasks: [] };
+          nd.tasks.push(cont); store.set('day:' + contDay, nd);
+        }
+        cur.intr.cont = { day: contDay, id: cont.id }; // 中断を取り消したときに、この続きも消すため
+      }
+      saveDay(); render(); phaseKeySeen = phaseKeyNow;
+      showToast(intrChoice === 'tomorrow' && r.left >= 1 ? `中断しました。続き ${r.left}分を翌日へ入れました` : intrChoice === 'later' && r.left >= 1 ? `中断しました。続き ${r.left}分を最後に入れました` : '中断しました');
+      if (matOf(cur.mat)) setTimeout(() => askAmount(cur.id), 0);
+    }
+  });
+}
+$('modalBody').addEventListener('click', e => {
+  const b = e.target.closest('[data-intr]'); if (!b) return;
+  intrChoice = b.dataset.intr;
+  for (const x of $('modalBody').querySelectorAll('[data-intr]')) x.setAttribute('aria-pressed', String(x === b));
+});
+
+/* ================= Google ToDo(Apps Script を通して読む・完了にする) ================= */
+// 設定: { url, key, sync, list }。この端末だけに保存(書き出しには入れない)
+const gtCfg = () => { const c = store.get('gtodo'); return isObj(c) ? c : {}; };
+function gtSet(patch) { store.set('gtodo', { ...gtCfg(), ...patch }); }
+function gtKey() { let k = gtCfg().key; if (!k) { const a = new Uint8Array(12); crypto.getRandomValues(a); k = [...a].map(x => x.toString(16).padStart(2, '0')).join(''); gtSet({ key: k }); } return k; }
+const gtCodeText = () => `// StudyLine 用: Google ToDo を読む・完了にする(「サービス」に Tasks API を追加しておく)
+var KEY = '${gtKey()}'; // 合言葉。StudyLine と同じでないと読めない
+
+function doGet(e) {
+  var p = (e && e.parameter) || {};
+  if (p.key !== KEY) return out({ error: '合言葉が違います' });
+  try {
+    if (p.action === 'complete') {
+      var t = Tasks.Tasks.get(p.list, p.task);
+      t.status = 'completed';
+      Tasks.Tasks.update(t, p.list, p.task);
+      return out({ ok: true });
+    }
+    var lists = Tasks.Tasklists.list({ maxResults: 100 }).items || [];
+    return out({ lists: lists.map(function (l) {
+      var items = Tasks.Tasks.list(l.id, { showCompleted: false, showHidden: false, maxResults: 100 }).items || [];
+      return { id: l.id, title: l.title, tasks: items.filter(function (t) { return t.title; }).map(function (t) {
+        return { id: t.id, title: t.title, notes: t.notes || '', due: t.due || '' };
+      }) };
+    }) });
+  } catch (err) { return out({ error: String(err) }); }
+}
+function out(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }`;
+const gt = { lists: null, loading: false, err: '', sel: {} }; // sel: タスクid → 取り込む分数(チェックしたもの)
+function gtCheckUrl(u) {
+  if (!/^https:\/\/script\.google(usercontent)?\.com\//.test(u)) return 'URL が Apps Script のものではありません(https://script.google.com/macros/s/…/exec)';
+  if (/\/dev(\?|$)/.test(u)) return 'URL の最後が /dev です。デプロイ後に出る /exec で終わる URL を使ってください';
+  return '';
+}
+async function gtCall(params) {
+  const c = gtCfg(), u = (c.url || '').trim();
+  const bad = gtCheckUrl(u); if (bad) throw new Error(bad);
+  const q = new URLSearchParams({ key: gtKey(), ...params }).toString();
+  let r;
+  try { r = await fetch(u + (u.includes('?') ? '&' : '?') + q, { cache: 'no-store' }); }
+  catch (e) { throw new Error('つながりませんでした。「アクセスできるユーザー」が「全員」になっているか確かめてください'); }
+  const text = await r.text();
+  if (/^\s*</.test(text)) throw new Error(/accounts\.google|Sign in|ログイン/i.test(text) ? 'Google のログイン画面が返ってきました。デプロイの「アクセスできるユーザー」を「全員」にしてください' : 'ページが返ってきました。デプロイの種類が「ウェブアプリ」か確かめてください');
+  let j; try { j = JSON.parse(text); } catch (e) { throw new Error('返ってきた内容が読めませんでした'); }
+  if (j && j.error) throw new Error(/Tasks is not defined|ReferenceError/.test(j.error) ? '「サービス」に Tasks API が追加されていません' : j.error);
+  return j;
+}
+async function gtLoad() {
+  gt.loading = true; gt.err = ''; renderTodoBox();
+  try {
+    const j = await gtCall({});
+    if (!Array.isArray(j.lists)) throw new Error('形式が違います。コードを貼り付け直してください');
+    gt.lists = j.lists.filter(l => isObj(l) && typeof l.id === 'string').map(l => ({ id: l.id, title: String(l.title || 'リスト'), tasks: (Array.isArray(l.tasks) ? l.tasks : []).filter(t => isObj(t) && typeof t.id === 'string' && t.title).map(t => ({ id: t.id, title: String(t.title).slice(0, 200), due: typeof t.due === 'string' ? t.due.slice(0, 10) : '' })) }));
+    gt.at = nowMs();
+  } catch (e) { gt.err = e.message; }
+  gt.loading = false; renderTodoBox();
+  return !gt.err;
+}
+// タスク名から時間などを読む(「数学 50分」→ 50分)。読めなければ30分
+// 「化学プリント 3」の 3 のような、単位のない数字は時間と読まない(「分」「時間」「h」「min」が付いたものだけ)
+function gtParse(title) {
+  const unit = /\d\s*(分|時間|h(?:ours?|r)?|m(?:in(?:s|utes?)?)?)(?![a-z])/i.test(title.normalize('NFKC'));
+  const r = parseTaskLines(unit ? title : title + ' 0分')[0];
+  return r ? { ...r, ...(unit ? {} : { dur: 30, guess: true }) } : { name: title.slice(0, 60), dur: 30, pomo: false, sw: false, guess: true };
+}
+const gtAdded = id => data.tasks.some(t => t.gtask && t.gtask.id === id);
+function renderTodoBox(autoLoad) {
+  const box = $('todoBox'), c = gtCfg();
+  if (!c.url) { box.innerHTML = `<p class="note" style="margin:0">Google ToDo のタスクを取り込むには、最初に1回だけ準備が必要です。</p><div class="btnrow" style="margin-top:0"><button type="button" class="primary grow" id="gtSetup">✅ Google ToDo とつなぐ</button></div>`; return; }
+  if (autoLoad && !gt.loading) { gtLoad(); return; }
+  if (gt.loading && !gt.lists) { box.innerHTML = '<p class="note" style="margin:0">Google ToDo を読み込み中…</p>'; return; }
+  const lists = gt.lists || [];
+  const cur = lists.find(l => l.id === c.list) || lists[0];
+  const items = cur ? cur.tasks : [];
+  const n = Object.keys(gt.sel).length;
+  box.innerHTML = `<div class="gt-bar">${lists.length > 1 ? `<select id="gtList" aria-label="リスト">${lists.map(l => `<option value="${esc(l.id)}" ${cur && l.id === cur.id ? 'selected' : ''}>${esc(l.title)}(${l.tasks.length})</option>`).join('')}</select>` : `<b>${cur ? esc(cur.title) : ''}</b>`}<button type="button" id="gtReload">${gt.loading ? '読み込み中…' : '↻ 読み込み直す'}</button></div>
+    ${gt.err ? `<div class="msg err">${esc(gt.err)}</div>` : ''}
+    ${items.length ? `<div class="gt-list">${items.map(t => { const pr = gtParse(t.title), added = gtAdded(t.id), on = gt.sel[t.id] != null; return `<label class="gt-item ${added ? 'added' : ''}"><input type="checkbox" data-gt="${esc(t.id)}" ${on ? 'checked' : ''} ${added ? 'disabled' : ''}><span>${esc(t.title)}<small>${added ? '追加済み' : t.due ? `期限 ${+t.due.slice(5, 7)}/${+t.due.slice(8, 10)}` : '期限なし'}</small></span><span class="gt-dur"><input type="number" inputmode="numeric" min="1" max="600" data-gtdur="${esc(t.id)}" value="${on ? gt.sel[t.id] : pr.dur}" class="num" aria-label="所要時間(分)" ${added ? 'disabled' : ''}>分</span></label>`; }).join('')}</div>` : `<p class="note" style="margin:0">${gt.lists ? 'このリストに未完了のタスクはありません。' : ''}</p>`}
+    <div class="btnrow" style="margin-top:6px"><button type="button" class="primary grow" id="gtAdd" ${n ? '' : 'disabled'}>${n ? `${n}件を時刻表に追加` : 'タスクを選んでください'}</button></div>
+    <p class="note" style="margin:0">名前に「50分」などがあれば時間を読み取ります。${c.sync !== false ? '終えたら Google ToDo も完了にします。' : ''}</p>`;
+}
+$('todoBox').addEventListener('change', e => {
+  const t = e.target;
+  if (t.id === 'gtList') { gtSet({ list: t.value }); gt.sel = {}; renderTodoBox(); return; }
+  if (t.dataset.gt) { const id = t.dataset.gt, d = $('todoBox').querySelector(`[data-gtdur="${CSS.escape(id)}"]`); if (t.checked) gt.sel[id] = Math.min(600, Math.max(1, Math.round(+d.value) || 30)); else delete gt.sel[id]; renderTodoBox(); }
+});
+$('todoBox').addEventListener('input', e => { const id = e.target.dataset.gtdur; if (id && gt.sel[id] != null) gt.sel[id] = Math.min(600, Math.max(1, Math.round(+e.target.value) || 30)); });
+$('todoBox').addEventListener('click', e => {
+  if (e.target.id === 'gtSetup') { openSettings('gtodo'); return; }
+  if (e.target.id === 'gtReload') { gt.sel = {}; gtLoad(); return; }
+  if (e.target.id === 'gtAdd') {
+    const all = (gt.lists || []).flatMap(l => l.tasks.map(t => ({ ...t, list: l.id })));
+    const pick = all.filter(t => gt.sel[t.id] != null && !gtAdded(t.id));
+    if (!pick.length) return;
+    const addedDay = dayStr, before = JSON.stringify(data.tasks);
+    for (const t of pick) { const pr = gtParse(t.title); data.tasks.push({ ...planCopy({ ...pr, memo: '' }), dur: gt.sel[t.id], gtask: { list: t.list, id: t.id } }); }
+    gt.sel = {}; saveDay(); render(); renderTodoBox();
+    showToast(`${pick.length}件を追加しました`, '元に戻す', () => { restoreTasks(addedDay, before); renderTodoBox(); });
+  }
+});
+// 終えたら Google ToDo も完了にする(設定がONのとき)
+async function gtComplete(t) {
+  if (gtCfg().sync === false || !gtCfg().url || !t.gtask) return;
+  try { await gtCall({ action: 'complete', list: t.gtask.list, task: t.gtask.id }); showToast(`「${t.name}」を Google ToDo でも完了にしました`); }
+  catch (e) { showToast(`Google ToDo を完了にできませんでした(${e.message})`, 'もう一度', () => gtComplete(t)); }
+}
+// 設定画面
+function syncGtSettings() {
+  const c = gtCfg();
+  $('gtCode').value = gtCodeText();
+  $('gtUrl').value = c.url || '';
+  $('gtSync').checked = c.sync !== false;
+  $('gtOff').hidden = !c.url;
+}
+$('gtCopy').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText($('gtCode').value); setText('gtMsg', 'コードをコピーしました。Apps Script に貼り付けてください。'); }
+  catch (e) { $('gtCode').select(); setText('gtMsg', 'コピーできなかったので、上の欄を長押し(または選択)してコピーしてください。'); }
+});
+$('gtSave').addEventListener('click', async () => {
+  const u = $('gtUrl').value.trim(), bad = gtCheckUrl(u);
+  $('gtMsg').className = 'msg';
+  if (bad) { $('gtMsg').className = 'msg err'; setText('gtMsg', bad); return; }
+  gtSet({ url: u, sync: $('gtSync').checked }); setText('gtMsg', 'つないでいます…');
+  const okLoad = await gtLoad();
+  $('gtMsg').className = 'msg' + (okLoad ? '' : ' err');
+  setText('gtMsg', okLoad ? `つながりました。${gt.lists.length}個のリスト・未完了 ${gt.lists.reduce((a, l) => a + l.tasks.length, 0)}件。タスク追加の「✅ ToDo」から取り込めます。` : gt.err);
+  syncGtSettings();
+});
+$('gtOff').addEventListener('click', () => { gtSet({ url: '' }); gt.lists = null; gt.sel = {}; setText('gtMsg', 'つなぐのをやめました(Apps Script 側のデプロイは残っています)。'); syncGtSettings(); renderTodoBox(); });
+$('gtSync').addEventListener('change', () => { gtSet({ sync: $('gtSync').checked }); renderTodoBox(); });
 
 /* ================= 使い方ガイド ================= */
 $('guideIosSteps').innerHTML = IOS_INSTALL_STEPS;
@@ -2704,7 +3107,7 @@ const SAMPLE_TASKS = [
 $('guideSample').addEventListener('click', () => {
   const addedDay = dayStr, before = JSON.stringify(data.tasks);
   data.tasks.push(...SAMPLE_TASKS.map(t => planCopy({ memo: '', ...t })));
-  saveDay(); closeGuide(); foldFormByDefault(); render();
+  saveDay(); closeGuide(); if (!$('setPanel').hidden) closeSettings(); foldFormByDefault(); render(); // 設定から開いたときも時刻表に戻る
   showToast(`見本を${SAMPLE_TASKS.length}件入れました。自由に消したり直したりできます`, '元に戻す', () => restoreTasks(addedDay, before));
 });
 
@@ -2992,7 +3395,7 @@ $('carryOver').addEventListener('click', () => {
       if (dayStr !== fromDay) return; // 確認中に日付が変わったら何もしない
       const raw = store.get('day:' + next);
       const nd = isObj(raw) && Array.isArray(raw.tasks) ? cleanDay(raw, false) : { settings: { ...data.settings }, tasks: [] };
-      nd.tasks.push(...moving.map(planCopy));
+      nd.tasks.push(...moving.map(t => ({ ...planCopy(t), ...(t.gtask ? { gtask: { ...t.gtask } } : {}) }))); // Google ToDo とのつながりも引き継ぐ
       store.set('day:' + next, nd);
       data.tasks = data.tasks.filter(t => !moving.includes(t));
       saveDay(); render();
@@ -3088,11 +3491,13 @@ $('aiPrompt').addEventListener('click', async () => {
 function setInputMode(mode) {
   for (const b of $('fInTabs').querySelectorAll('[data-in]')) { b.classList.toggle('on', b.dataset.in === mode); b.setAttribute('aria-selected', String(b.dataset.in === mode)); }
   $('bulkBox').hidden = mode !== 'bulk';
-  $('taskForm').hidden = mode === 'bulk';
+  $('todoBox').hidden = mode !== 'todo';
+  $('taskForm').hidden = mode !== 'one';
+  if (mode === 'todo') renderTodoBox(!gt.lists);
   store.set('inMode', mode);
 }
 $('fInTabs').addEventListener('click', e => { const b = e.target.closest('[data-in]'); if (b) { if (editingId) resetForm(); setInputMode(b.dataset.in); } });
-setInputMode(store.get('inMode') === 'bulk' ? 'bulk' : 'one');
+setInputMode(['bulk', 'todo'].includes(store.get('inMode')) ? store.get('inMode') : 'one');
 
 /* ================= day navigation ================= */
 function gotoDay(ds) {
@@ -3153,6 +3558,7 @@ setFormMode(formMode);
 render();
 phaseKeySeen = phaseKeyNow;
 updateBackupUI();
+updateSetDot();
 maybeRenderStats(true);
 if (!store.get('guideSeen') && !hasDayData()) openGuide(); // 初めて開いたときだけ
 setInterval(tick, 1000);
