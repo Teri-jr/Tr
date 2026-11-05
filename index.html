@@ -311,6 +311,18 @@ html.set-open, html.set-open body { overflow: hidden; overscroll-behavior: none;
   #setPanel:not(.in-sec) .set-body { display: none; }
   #setPanel.in-sec .set-nav { display: none; }
 }
+/* ---------- Google ToDo ---------- */
+.gt-steps { margin: 8px 0 10px; padding-left: 1.4em; font-size: 14px; line-height: 1.7; }
+.gt-steps a { color: var(--accent); font-weight: 700; }
+.gt-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.gt-bar select { flex: 1; min-width: 0; }
+.gt-list { display: grid; }
+.gt-item { display: grid; grid-template-columns: 26px 1fr 82px; gap: 8px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+.gt-item input[type=checkbox] { width: 22px; height: 22px; min-height: 0; margin: 0; accent-color: var(--accent); }
+.gt-item small { display: block; color: var(--sub); font-size: 12px; }
+.gt-item .gt-dur { display: flex; align-items: center; gap: 2px; font-size: 13px; color: var(--sub); }
+.gt-item .gt-dur input { width: 56px; min-height: 38px; padding: 0 6px; text-align: right; }
+.gt-item.added { opacity: 0.5; }
 /* ---------- 中断 ---------- */
 button.intr { background: var(--intr-bg, #fff1e0); color: var(--intr-text, #a85a12); border-color: transparent; }
 .intr-opts { display: grid; gap: 8px; margin-top: 10px; }
@@ -767,8 +779,10 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
       <button type="button" class="fold-head" id="formToggle" aria-expanded="true" aria-controls="taskForm"><span id="formTitle">タスクを追加</span><span class="chev" aria-hidden="true"></span></button>
       <div class="mode-tog in-tabs" id="fInTabs" role="tablist" aria-label="入力のしかた">
         <button type="button" data-in="one" role="tab">1件ずつ</button>
-        <button type="button" data-in="bulk" role="tab">📝 文章でまとめて</button>
+        <button type="button" data-in="bulk" role="tab">📝 文章</button>
+        <button type="button" data-in="todo" role="tab">✅ ToDo</button>
       </div>
+      <div id="todoBox" class="form-grid" hidden></div>
       <div id="bulkBox" class="form-grid" hidden>
         <label for="fBulk">1行に1つ「名前 時間」</label>
         <textarea id="fBulk" rows="6" placeholder="数学 青チャート 50分 ポモ&#10;英単語 ターゲット 約30分&#10;古文単語 20分"></textarea>
@@ -889,6 +903,7 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
       <button type="button" data-sec="data">💾 データの保存 <i class="dot" id="setDataDot" hidden></i></button>
       <button type="button" data-sec="design">🎨 ロゴ・タイマーのデザイン</button>
       <button type="button" data-sec="reset">🗑 リセット</button>
+      <button type="button" data-sec="gtodo">✅ Google ToDo</button>
       <button type="button" data-sec="guide">❓ 使い方</button>
       <button type="button" data-sec="history">📝 変更履歴 <small id="setHistNew" hidden>NEW</small></button>
     </nav>
@@ -999,6 +1014,27 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
       <p class="note">表示中の日のタスク・実績・🍅の記録をすべて消します(開始時刻と就寝期限、他の日のデータはそのまま)。2回押すと実行されます。</p>
     </section>
 
+      </div>
+      <div class="set-sec" data-sec="gtodo" hidden>
+    <section class="card" id="gtodoCard">
+      <h2>Google ToDo とつなぐ</h2>
+      <p class="note" style="margin-top:0">Google ToDo(Google Tasks)のタスクを、タスク追加の「✅ ToDo」から時刻表に取り込めます。自分の Google アカウントに小さなプログラム(Apps Script)を1つ置いて、それを通して読みます。最初に1回だけ準備が必要です。</p>
+      <ol class="gt-steps">
+        <li><a href="https://script.google.com/home/projects/create" target="_blank" rel="noopener">script.google.com</a> で「新しいプロジェクト」を作る</li>
+        <li>左の「サービス」の「＋」から <b>Tasks API</b> を選んで「追加」</li>
+        <li>はじめから書いてあるコードを全部消して、下のコードを貼り付けて保存(💾)</li>
+        <li>右上の「デプロイ」→「新しいデプロイ」→ 種類「⚙」から <b>ウェブアプリ</b>。「次のユーザーとして実行」は <b>自分</b>、「アクセスできるユーザー」は <b>全員</b> にして「デプロイ」(初回は Google の許可の画面が出るので許可する)</li>
+        <li>出てきた <b>ウェブアプリの URL</b>(…/exec で終わる)を下に貼って「つないで読み込む」</li>
+      </ol>
+      <textarea id="gtCode" rows="8" readonly class="num" style="font-size:12px"></textarea>
+      <div class="btnrow" style="margin-top:6px"><button type="button" id="gtCopy" class="grow">📋 コードをコピー</button></div>
+      <label for="gtUrl" style="margin-top:12px">ウェブアプリの URL</label>
+      <input id="gtUrl" type="url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off">
+      <div class="btnrow"><button type="button" class="primary grow" id="gtSave">つないで読み込む</button><button type="button" id="gtOff" hidden>つなぐのをやめる</button></div>
+      <div class="msg" id="gtMsg" role="status"></div>
+      <label class="toggle" style="margin-top:12px"><input type="checkbox" id="gtSync"> StudyLine でタスクを終えたら、Google ToDo も完了にする</label>
+      <p class="note">コードの中の「合言葉」を知らないと読めないようにしてあります。URL とコードは人に教えないでください。学校のアカウントだと「全員」を選べないことがあるので、そのときは個人の Google アカウントで作ってください。URL はこの端末だけに保存します(「書き出す」のファイルには入れません)。</p>
+    </section>
       </div>
       <div class="set-sec" data-sec="guide" hidden>
     <section class="card" id="guideCard">
@@ -1122,6 +1158,7 @@ function cleanDay(d, newIds) {
       amtPlan: Number.isFinite(t.amtPlan) && t.amtPlan >= 0 ? Math.min(99999, t.amtPlan) : undefined,
       amt: Number.isFinite(t.amt) && t.amt >= 0 ? Math.min(99999, t.amt) : undefined,
       range: typeof t.range === 'string' && t.range.trim() ? t.range.trim().slice(0, 40) : undefined,
+      gtask: isObj(t.gtask) && typeof t.gtask.list === 'string' && typeof t.gtask.id === 'string' ? { list: t.gtask.list.slice(0, 200), id: t.gtask.id.slice(0, 200) } : undefined,
       intr: isObj(t.intr) && Number.isFinite(t.intr.done) && Number.isFinite(t.intr.of) ? { done: clampN(t.intr.done, 0, 6000, 0), of: clampN(t.intr.of, 1, 6000, 1) } : undefined,
       ...cleanRecords(t)
     };
@@ -2269,6 +2306,7 @@ const actions = {
     (t.pauses || []).forEach(p => { if (p.e == null) p.e = now; }); // 停止中に終了したら停止もそこで終わり
     t.actualEnd = now;
     if (matOf(t.mat)) setTimeout(() => askAmount(t.id), 0); // 教材を選んだタスクは、どれだけ進んだかを聞く
+    if (t.gtask) gtComplete(t);
   },
   pause(t) {
     if (!canPause(t.id)) return false;
@@ -2604,7 +2642,7 @@ document.addEventListener('keydown', e => {
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '4.0.0';
+const APP_VERSION = '4.1.0';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
@@ -2813,7 +2851,7 @@ $('installHow').addEventListener('click', () => openOkModal({ title: '📱 ホ�
 
 
 /* ================= ⚙ 設定(ダイヤ・ポモドーロ・音・データ・デザイン・リセット・使い方・変更履歴) ================= */
-const SET_TITLES = { dia: '🚃 ダイヤ', pomo: '🍅 ポモドーロ', sound: '🔊 音・通知', data: '💾 データ', design: '🎨 デザイン', reset: '🗑 リセット', guide: '❓ 使い方', history: '📝 変更履歴' };
+const SET_TITLES = { gtodo: '✅ Google ToDo', dia: '🚃 ダイヤ', pomo: '🍅 ポモドーロ', sound: '🔊 音・通知', data: '💾 データ', design: '🎨 デザイン', reset: '🗑 リセット', guide: '❓ 使い方', history: '📝 変更履歴' };
 const wideSettings = () => matchMedia('(min-width: 760px)').matches;
 function openSettings(sec) {
   $('setPanel').hidden = false;
@@ -2828,6 +2866,7 @@ function selectSet(sec) {
   $('setBack').hidden = !sec || wideSettings();
   $('setTitle').textContent = sec && !wideSettings() ? SET_TITLES[sec] : '⚙ 設定';
   $('setBody').scrollTop = 0;
+  if (sec === 'gtodo') syncGtSettings();
   if (sec === 'history') { store.set('seenVersion', APP_VERSION); $('clNew').hidden = true; updateSetDot(); }
   if (sec === 'sound') for (const [kind] of SOUND_KINDS) if (customSounds[kind]) renderSoundRow(kind); // 波形は見えてから描く
 }
@@ -2907,6 +2946,132 @@ $('modalBody').addEventListener('click', e => {
   intrChoice = b.dataset.intr;
   for (const x of $('modalBody').querySelectorAll('[data-intr]')) x.setAttribute('aria-pressed', String(x === b));
 });
+
+/* ================= Google ToDo(Apps Script を通して読む・完了にする) ================= */
+// 設定: { url, key, sync, list }。この端末だけに保存(書き出しには入れない)
+const gtCfg = () => { const c = store.get('gtodo'); return isObj(c) ? c : {}; };
+function gtSet(patch) { store.set('gtodo', { ...gtCfg(), ...patch }); }
+function gtKey() { let k = gtCfg().key; if (!k) { const a = new Uint8Array(12); crypto.getRandomValues(a); k = [...a].map(x => x.toString(16).padStart(2, '0')).join(''); gtSet({ key: k }); } return k; }
+const gtCodeText = () => `// StudyLine 用: Google ToDo を読む・完了にする(「サービス」に Tasks API を追加しておく)
+var KEY = '${gtKey()}'; // 合言葉。StudyLine と同じでないと読めない
+
+function doGet(e) {
+  var p = (e && e.parameter) || {};
+  if (p.key !== KEY) return out({ error: '合言葉が違います' });
+  try {
+    if (p.action === 'complete') {
+      var t = Tasks.Tasks.get(p.list, p.task);
+      t.status = 'completed';
+      Tasks.Tasks.update(t, p.list, p.task);
+      return out({ ok: true });
+    }
+    var lists = Tasks.Tasklists.list({ maxResults: 100 }).items || [];
+    return out({ lists: lists.map(function (l) {
+      var items = Tasks.Tasks.list(l.id, { showCompleted: false, showHidden: false, maxResults: 100 }).items || [];
+      return { id: l.id, title: l.title, tasks: items.filter(function (t) { return t.title; }).map(function (t) {
+        return { id: t.id, title: t.title, notes: t.notes || '', due: t.due || '' };
+      }) };
+    }) });
+  } catch (err) { return out({ error: String(err) }); }
+}
+function out(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }`;
+const gt = { lists: null, loading: false, err: '', sel: {} }; // sel: タスクid → 取り込む分数(チェックしたもの)
+function gtCheckUrl(u) {
+  if (!/^https:\/\/script\.google(usercontent)?\.com\//.test(u)) return 'URL が Apps Script のものではありません(https://script.google.com/macros/s/…/exec)';
+  if (/\/dev(\?|$)/.test(u)) return 'URL の最後が /dev です。デプロイ後に出る /exec で終わる URL を使ってください';
+  return '';
+}
+async function gtCall(params) {
+  const c = gtCfg(), u = (c.url || '').trim();
+  const bad = gtCheckUrl(u); if (bad) throw new Error(bad);
+  const q = new URLSearchParams({ key: gtKey(), ...params }).toString();
+  let r;
+  try { r = await fetch(u + (u.includes('?') ? '&' : '?') + q, { cache: 'no-store' }); }
+  catch (e) { throw new Error('つながりませんでした。「アクセスできるユーザー」が「全員」になっているか確かめてください'); }
+  const text = await r.text();
+  if (/^\s*</.test(text)) throw new Error(/accounts\.google|Sign in|ログイン/i.test(text) ? 'Google のログイン画面が返ってきました。デプロイの「アクセスできるユーザー」を「全員」にしてください' : 'ページが返ってきました。デプロイの種類が「ウェブアプリ」か確かめてください');
+  let j; try { j = JSON.parse(text); } catch (e) { throw new Error('返ってきた内容が読めませんでした'); }
+  if (j && j.error) throw new Error(/Tasks is not defined|ReferenceError/.test(j.error) ? '「サービス」に Tasks API が追加されていません' : j.error);
+  return j;
+}
+async function gtLoad() {
+  gt.loading = true; gt.err = ''; renderTodoBox();
+  try {
+    const j = await gtCall({});
+    if (!Array.isArray(j.lists)) throw new Error('形式が違います。コードを貼り付け直してください');
+    gt.lists = j.lists.filter(l => isObj(l) && typeof l.id === 'string').map(l => ({ id: l.id, title: String(l.title || 'リスト'), tasks: (Array.isArray(l.tasks) ? l.tasks : []).filter(t => isObj(t) && typeof t.id === 'string' && t.title).map(t => ({ id: t.id, title: String(t.title).slice(0, 200), due: typeof t.due === 'string' ? t.due.slice(0, 10) : '' })) }));
+    gt.at = nowMs();
+  } catch (e) { gt.err = e.message; }
+  gt.loading = false; renderTodoBox();
+  return !gt.err;
+}
+// タスク名から時間などを読む(「数学 50分」→ 50分)。読めなければ30分
+function gtParse(title) { const r = parseTaskLines(title)[0]; return r || { name: title.slice(0, 60), dur: 30, pomo: false, sw: false, guess: true }; }
+const gtAdded = id => data.tasks.some(t => t.gtask && t.gtask.id === id);
+function renderTodoBox(autoLoad) {
+  const box = $('todoBox'), c = gtCfg();
+  if (!c.url) { box.innerHTML = `<p class="note" style="margin:0">Google ToDo のタスクを取り込むには、最初に1回だけ準備が必要です。</p><div class="btnrow" style="margin-top:0"><button type="button" class="primary grow" id="gtSetup">✅ Google ToDo とつなぐ</button></div>`; return; }
+  if (autoLoad && !gt.loading) { gtLoad(); return; }
+  if (gt.loading && !gt.lists) { box.innerHTML = '<p class="note" style="margin:0">Google ToDo を読み込み中…</p>'; return; }
+  const lists = gt.lists || [];
+  const cur = lists.find(l => l.id === c.list) || lists[0];
+  const items = cur ? cur.tasks : [];
+  const n = Object.keys(gt.sel).length;
+  box.innerHTML = `<div class="gt-bar">${lists.length > 1 ? `<select id="gtList" aria-label="リスト">${lists.map(l => `<option value="${esc(l.id)}" ${cur && l.id === cur.id ? 'selected' : ''}>${esc(l.title)}(${l.tasks.length})</option>`).join('')}</select>` : `<b>${cur ? esc(cur.title) : ''}</b>`}<button type="button" id="gtReload">${gt.loading ? '読み込み中…' : '↻ 読み込み直す'}</button></div>
+    ${gt.err ? `<div class="msg err">${esc(gt.err)}</div>` : ''}
+    ${items.length ? `<div class="gt-list">${items.map(t => { const pr = gtParse(t.title), added = gtAdded(t.id), on = gt.sel[t.id] != null; return `<label class="gt-item ${added ? 'added' : ''}"><input type="checkbox" data-gt="${esc(t.id)}" ${on ? 'checked' : ''} ${added ? 'disabled' : ''}><span>${esc(t.title)}<small>${added ? '追加済み' : t.due ? `期限 ${+t.due.slice(5, 7)}/${+t.due.slice(8, 10)}` : '期限なし'}</small></span><span class="gt-dur"><input type="number" inputmode="numeric" min="1" max="600" data-gtdur="${esc(t.id)}" value="${on ? gt.sel[t.id] : pr.dur}" class="num" aria-label="所要時間(分)" ${added ? 'disabled' : ''}>分</span></label>`; }).join('')}</div>` : `<p class="note" style="margin:0">${gt.lists ? 'このリストに未完了のタスクはありません。' : ''}</p>`}
+    <div class="btnrow" style="margin-top:6px"><button type="button" class="primary grow" id="gtAdd" ${n ? '' : 'disabled'}>${n ? `${n}件を時刻表に追加` : 'タスクを選んでください'}</button></div>
+    <p class="note" style="margin:0">名前に「50分」などがあれば時間を読み取ります。${c.sync !== false ? '終えたら Google ToDo も完了にします。' : ''}</p>`;
+}
+$('todoBox').addEventListener('change', e => {
+  const t = e.target;
+  if (t.id === 'gtList') { gtSet({ list: t.value }); gt.sel = {}; renderTodoBox(); return; }
+  if (t.dataset.gt) { const id = t.dataset.gt, d = $('todoBox').querySelector(`[data-gtdur="${CSS.escape(id)}"]`); if (t.checked) gt.sel[id] = Math.min(600, Math.max(1, Math.round(+d.value) || 30)); else delete gt.sel[id]; renderTodoBox(); }
+});
+$('todoBox').addEventListener('input', e => { const id = e.target.dataset.gtdur; if (id && gt.sel[id] != null) gt.sel[id] = Math.min(600, Math.max(1, Math.round(+e.target.value) || 30)); });
+$('todoBox').addEventListener('click', e => {
+  if (e.target.id === 'gtSetup') { openSettings('gtodo'); return; }
+  if (e.target.id === 'gtReload') { gt.sel = {}; gtLoad(); return; }
+  if (e.target.id === 'gtAdd') {
+    const all = (gt.lists || []).flatMap(l => l.tasks.map(t => ({ ...t, list: l.id })));
+    const pick = all.filter(t => gt.sel[t.id] != null && !gtAdded(t.id));
+    if (!pick.length) return;
+    const addedDay = dayStr, before = JSON.stringify(data.tasks);
+    for (const t of pick) { const pr = gtParse(t.title); data.tasks.push({ ...planCopy({ ...pr, memo: '' }), dur: gt.sel[t.id], gtask: { list: t.list, id: t.id } }); }
+    gt.sel = {}; saveDay(); render(); renderTodoBox();
+    showToast(`${pick.length}件を追加しました`, '元に戻す', () => { restoreTasks(addedDay, before); renderTodoBox(); });
+  }
+});
+// 終えたら Google ToDo も完了にする(設定がONのとき)
+async function gtComplete(t) {
+  if (gtCfg().sync === false || !gtCfg().url || !t.gtask) return;
+  try { await gtCall({ action: 'complete', list: t.gtask.list, task: t.gtask.id }); showToast(`「${t.name}」を Google ToDo でも完了にしました`); }
+  catch (e) { showToast(`Google ToDo を完了にできませんでした(${e.message})`, 'もう一度', () => gtComplete(t)); }
+}
+// 設定画面
+function syncGtSettings() {
+  const c = gtCfg();
+  $('gtCode').value = gtCodeText();
+  $('gtUrl').value = c.url || '';
+  $('gtSync').checked = c.sync !== false;
+  $('gtOff').hidden = !c.url;
+}
+$('gtCopy').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText($('gtCode').value); setText('gtMsg', 'コードをコピーしました。Apps Script に貼り付けてください。'); }
+  catch (e) { $('gtCode').select(); setText('gtMsg', 'コピーできなかったので、上の欄を長押し(または選択)してコピーしてください。'); }
+});
+$('gtSave').addEventListener('click', async () => {
+  const u = $('gtUrl').value.trim(), bad = gtCheckUrl(u);
+  $('gtMsg').className = 'msg';
+  if (bad) { $('gtMsg').className = 'msg err'; setText('gtMsg', bad); return; }
+  gtSet({ url: u, sync: $('gtSync').checked }); setText('gtMsg', 'つないでいます…');
+  const okLoad = await gtLoad();
+  $('gtMsg').className = 'msg' + (okLoad ? '' : ' err');
+  setText('gtMsg', okLoad ? `つながりました。${gt.lists.length}個のリスト・未完了 ${gt.lists.reduce((a, l) => a + l.tasks.length, 0)}件。タスク追加の「✅ ToDo」から取り込めます。` : gt.err);
+  syncGtSettings();
+});
+$('gtOff').addEventListener('click', () => { gtSet({ url: '' }); gt.lists = null; gt.sel = {}; setText('gtMsg', 'つなぐのをやめました(Apps Script 側のデプロイは残っています)。'); syncGtSettings(); renderTodoBox(); });
+$('gtSync').addEventListener('change', () => { gtSet({ sync: $('gtSync').checked }); renderTodoBox(); });
 
 /* ================= 使い方ガイド ================= */
 $('guideIosSteps').innerHTML = IOS_INSTALL_STEPS;
@@ -3310,11 +3475,13 @@ $('aiPrompt').addEventListener('click', async () => {
 function setInputMode(mode) {
   for (const b of $('fInTabs').querySelectorAll('[data-in]')) { b.classList.toggle('on', b.dataset.in === mode); b.setAttribute('aria-selected', String(b.dataset.in === mode)); }
   $('bulkBox').hidden = mode !== 'bulk';
-  $('taskForm').hidden = mode === 'bulk';
+  $('todoBox').hidden = mode !== 'todo';
+  $('taskForm').hidden = mode !== 'one';
+  if (mode === 'todo') renderTodoBox(!gt.lists);
   store.set('inMode', mode);
 }
 $('fInTabs').addEventListener('click', e => { const b = e.target.closest('[data-in]'); if (b) { if (editingId) resetForm(); setInputMode(b.dataset.in); } });
-setInputMode(store.get('inMode') === 'bulk' ? 'bulk' : 'one');
+setInputMode(['bulk', 'todo'].includes(store.get('inMode')) ? store.get('inMode') : 'one');
 
 /* ================= day navigation ================= */
 function gotoDay(ds) {
