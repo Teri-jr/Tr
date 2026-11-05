@@ -442,14 +442,14 @@ body.editing .page .tile .tdel{pointer-events:auto}
 .sx{max-width:none}
 .sbody{display:grid;grid-template-columns:repeat(var(--n,1),minmax(0,1fr));gap:0 28px;align-items:start}
 .sbody>section{min-width:0}
-.sbody>section+section{border-left:1px solid var(--rule);padding-left:28px;margin-left:-14px}
+
 .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:8px 32px;align-items:start}
 .cols>div{min-width:0}
 .cols.c2{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}
 .sx h4{font-size:14px;margin:4px 0 8px}
 .cdl{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
 .cdl .row{border:1px solid var(--rule);padding:10px;margin:0}
-@media (max-width:900px){.sbody{grid-template-columns:1fr}.sbody>section+section{border-left:0;padding-left:0;margin-left:0}.cols.c2{grid-template-columns:1fr}}
+@media (max-width:900px){.sbody{grid-template-columns:1fr}.cols.c2{grid-template-columns:1fr}}
 .board{display:grid;grid-template-columns:1fr 1fr 1fr 1.05fr;gap:0;margin:0 -4px}
 .board>div{padding:0 14px;border-right:1px solid var(--rule);min-height:440px}.board>div:last-child{border:0}
 .board h3{font-size:12px;color:var(--sub);letter-spacing:.1em;margin:4px 0 10px;display:flex;justify-content:space-between;gap:6px;font-weight:700}
@@ -526,7 +526,7 @@ body.editing .page .tile .tdel{pointer-events:auto}
 
 <script>
 'use strict';
-const APP_VERSION = '1.11.1'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.0.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1099,7 +1099,7 @@ function termClick(e) {
 }
 
 /* ================= カウントダウン・次の休み・カレンダー ================= */
-function cdList() { return cfg.countdowns.filter(c => c.name && c.date).map(c => ({ ...c, days: dayDiff(now(), parseYmd(c.date)) })).filter(c => c.days >= 0); }
+function cdList() { return cfg.countdowns.filter(c => c.name && c.date).map(c => ({ ...c, days: dayDiff(now(), parseYmd(c.date)) })).filter(c => c.days >= 0).sort((a, b) => a.days - b.days); }
 function renderCount() {
   const l = cdList();
   if (!l.length) return '<h3>カウントダウン</h3><p class="empty">設定で日付を入れてください。</p>';
@@ -2087,7 +2087,15 @@ function renderSettings() {
   </section>
 
   <section id="s-cd"><h2>カウントダウン</h2>
-    <div class="cdl">${cfg.countdowns.map((c, i) => `<div class="row"><input type="text" data-cdn="${i}" value="${esc(c.name)}" placeholder="名前(例:期末考査)"><input type="date" data-cdd="${i}" value="${esc(c.date)}"></div>`).join('')}</div>
+    <div class="cols c2"><div><h4>カウントダウン</h4>
+    <div class="cdl">${cfg.countdowns.map((c, i) => `<div class="row"><input type="text" data-cdn="${i}" value="${esc(c.name)}" placeholder="名前(例:期末考査)" style="flex:1"><input type="date" data-cdd="${i}" value="${esc(c.date)}"><button class="btn sub" data-cddel="${i}">×</button></div>`).join('')}</div>
+    <button class="btn sub" id="cdAdd" style="margin-top:8px">手で追加</button>
+    <p class="note">近い順に、タイルには2つまで出ます。過ぎた日は出ません。</p>
+    </div><div><h4>Googleカレンダーから追加</h4>
+    ${!cfg.gasUrl ? '<p class="note">「連携」タブで Googleカレンダーをつなぐと、ここに予定が出て、押すだけで追加できます。</p>'
+      : !events || !events.length ? '<p class="note">この先の予定がありません(読み込み中のこともあります)。</p>'
+      : `<table>${events.filter(ev => new Date(ev.start) >= addDays(now(), -1)).slice(0, 30).map((ev, i) => { const d = new Date(ev.start), y = ymd(d), on = cfg.countdowns.some(c => c.date === y && c.name === String(ev.title).slice(0, 12)); return `<tr><td class="n" style="width:6.5em">${md(d)}(${WD[d.getDay()]})</td><td>${esc(ev.title)}</td><td style="width:5.5em">${on ? '<span class="note">追加済み</span>' : `<button class="btn sub" data-cdev="${i}">追加</button>`}</td></tr>`; }).join('')}</table>`}
+    </div></div>
   </section>
 
   <section id="s-loc"><h2>場所</h2>
@@ -2146,7 +2154,8 @@ function renderSettings() {
 
   <section id="s-about"><h2>このアプリ</h2>
     <p><b>Platform</b> v${APP_VERSION}</p>
-    ${changelog.slice(0, 5).map(e => `<p class="note"><b>v${esc(e.version)}</b> ${esc(e.date)}</p><ul class="l note">${(e.items || []).map(i => `<li>${esc(i)}</li>`).join('')}</ul>`).join('')}
+    ${changelog.slice(0, 3).map(e => `<p class="note"><b>v${esc(e.version)}</b> ${esc(e.date)}</p><ul class="l note">${(e.items || []).map(i => `<li>${esc(i)}</li>`).join('')}</ul>`).join('')}
+    ${changelog.length > 3 ? `<details><summary class="note" style="cursor:pointer">前のバージョン(${changelog.length - 3}件)を見る</summary>${changelog.slice(3).map(e => `<p class="note"><b>v${esc(e.version)}</b> ${esc(e.date)}</p><ul class="l note">${(e.items || []).map(i => `<li>${esc(i)}</li>`).join('')}</ul>`).join('')}</details>` : ''}
     <p class="note" style="margin-top:10px">天気:Open-Meteo / 緊急地震速報:Wolfx / 地震情報:P2P地震情報(どちらも気象庁の発表をもとにしたもの)/ 地図:dataofjapan/land(地球地図日本 ©国土地理院)を簡略化 / 震度の色:気象庁の配色</p>
   </section>
   </div></div>`;
@@ -2161,6 +2170,9 @@ const unpad = s => { const m = toMin(s); return m == null ? '' : `${Math.floor(m
 $('settings').addEventListener('click', e => {
   const t = e.target, rs = () => { saveCfg(); renderSettings(); };
   if (t.id === 'sDone') return closeSettings();
+  if (t.id === 'cdAdd') { cfg.countdowns.push({ name: '', date: '' }); return rs(); }
+  if (t.dataset.cddel != null) { cfg.countdowns.splice(+t.dataset.cddel, 1); return rs(); }
+  if (t.dataset.cdev != null) { const ev = events.filter(ev => new Date(ev.start) >= addDays(now(), -1))[+t.dataset.cdev]; if (ev) { cfg.countdowns = cfg.countdowns.filter(c => c.name || c.date); cfg.countdowns.push({ name: String(ev.title).slice(0, 12), date: ymd(new Date(ev.start)) }); } return rs(); }
   if (t.dataset.stab) { sTab = t.dataset.stab; sPlus = null; renderSettings(); $('settings').scrollTop = 0; return; }
   if (t.dataset.boff) { const k = t.dataset.boff; for (const side in cfg.layout) cfg.layout[side] = cfg.layout[side].filter(x => x !== k); saveCfg(); renderLayout(); return renderSettings(); }
   if (t.dataset.bplus) { sPlus = sPlus === t.dataset.bplus ? null : t.dataset.bplus; return renderSettings(); }
