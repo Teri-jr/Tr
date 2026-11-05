@@ -279,6 +279,13 @@ main {
 }
 #setPanel { position: fixed; inset: 0; z-index: 90; background: var(--bg); display: flex; flex-direction: column; }
 #setPanel[hidden] { display: none; }
+/* 設定を開いている間は、後ろの画面がいっしょにスクロールしないようにする */
+html.set-open, html.set-open body { overflow: hidden; overscroll-behavior: none; }
+.set-nav, .set-body, #setPanel { overscroll-behavior: contain; }
+/* デザインの見本(ロゴのアニメーションを設定の中で流す) */
+.logo-prev { position: relative; background: var(--board); border-radius: 10px; height: 50px; margin-top: 10px; overflow: hidden; display: flex; align-items: center; padding: 0 14px; }
+.logo-prev .lp-title { font-weight: 800; letter-spacing: 0.08em; font-size: 15px; color: #c9d1dc; }
+.logo-prev #logoAnim { left: 12px; right: 12px; top: 2px; }
 .set-head { background: var(--board); color: #e8ecf2; display: flex; align-items: center; gap: 10px; padding: calc(10px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) 10px calc(16px + env(safe-area-inset-left)); }
 .set-head b { font-size: 17px; margin-right: auto; }
 .set-head button { background: #1f2630; color: #e8ecf2; border-color: #2b3440; min-height: 40px; }
@@ -966,6 +973,7 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
         <label><input type="radio" name="logoAnim" value="D"> D 路線図</label>
         <label><input type="radio" name="logoAnim" value="off"> なし</label>
       </div>
+      <div class="logo-prev" id="logoPrev"><span class="lp-title">StudyLine</span></div>
       <div class="btnrow"><button id="logoPlay" class="grow">▶ ロゴを今すぐ見る</button></div>
       <p class="note">アプリを開いたとき と、開いている間は40秒ごとに、ヘッダーの「StudyLine」が動きます。「ランダム」はそのたびに A〜D からくじ引きで選びます。</p>
       <h3 class="sub-h">全画面タイマー(⛶)</h3>
@@ -2596,7 +2604,7 @@ document.addEventListener('keydown', e => {
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '3.6.0';
+const APP_VERSION = '4.0.0';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
@@ -2809,6 +2817,8 @@ const SET_TITLES = { dia: '🚃 ダイヤ', pomo: '🍅 ポモドーロ', sound:
 const wideSettings = () => matchMedia('(min-width: 760px)').matches;
 function openSettings(sec) {
   $('setPanel').hidden = false;
+  document.documentElement.classList.add('set-open');
+  $('logoPrev').appendChild($('logoAnim')); // ヘッダーは設定の下に隠れるので、ロゴは設定の中の見本で流す
   selectSet(sec || (wideSettings() ? 'dia' : null));
 }
 function selectSet(sec) {
@@ -2821,7 +2831,12 @@ function selectSet(sec) {
   if (sec === 'history') { store.set('seenVersion', APP_VERSION); $('clNew').hidden = true; updateSetDot(); }
   if (sec === 'sound') for (const [kind] of SOUND_KINDS) if (customSounds[kind]) renderSoundRow(kind); // 波形は見えてから描く
 }
-function closeSettings() { $('setPanel').hidden = true; render(); }
+function closeSettings() {
+  $('setPanel').hidden = true;
+  document.documentElement.classList.remove('set-open');
+  document.querySelector('header.board .title').after($('logoAnim'));
+  render();
+}
 // ⚙ の赤い点: 書き出していない・新しい変更履歴がある
 function updateSetDot() {
   const hist = store.get('seenVersion') !== APP_VERSION;
@@ -2911,7 +2926,7 @@ const SAMPLE_TASKS = [
 $('guideSample').addEventListener('click', () => {
   const addedDay = dayStr, before = JSON.stringify(data.tasks);
   data.tasks.push(...SAMPLE_TASKS.map(t => planCopy({ memo: '', ...t })));
-  saveDay(); closeGuide(); $('setPanel').hidden = true; foldFormByDefault(); render(); // 設定から開いたときも時刻表に戻る
+  saveDay(); closeGuide(); if (!$('setPanel').hidden) closeSettings(); foldFormByDefault(); render(); // 設定から開いたときも時刻表に戻る
   showToast(`見本を${SAMPLE_TASKS.length}件入れました。自由に消したり直したりできます`, '元に戻す', () => restoreTasks(addedDay, before));
 });
 
