@@ -1059,7 +1059,7 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
   <div class="guide-body">
     <h3 id="guideTitle">🚃 StudyLine の使い方</h3>
     <p style="margin:0 0 6px">勉強の予定を電車の時刻表のように並べて、遅れや就寝時刻を見ながら進めるアプリです。</p>
-    <div class="guide-step"><span class="n">1</span><div><b>開始時刻と就寝期限を決める</b><br>「ダイヤ設定」で、今日勉強を始める時刻と、寝る時刻を選びます。</div></div>
+    <div class="guide-step"><span class="n">1</span><div><b>開始時刻と就寝期限を決める</b><br>時刻表の上の「🚃 19:00 発 → 就寝期限 24:00 変更 ›」を押して、今日勉強を始める時刻と、寝る時刻を選びます(「⚙ 設定」→「ダイヤ」でも同じ)。</div></div>
     <div class="guide-step"><span class="n">2</span><div><b>タスクを追加する</b><br>「タスクを追加」に名前と時間を入れます。「📝 文章でまとめて」なら何件も一度に入ります。</div></div>
     <div class="guide-step"><span class="n">3</span><div><b>「開始」を押す</b><br>上の「運行状況」で開始・一時停止・終了をします。終わると次のタスクへ進みます。</div></div>
     <h4>時刻表の見方</h4>
@@ -1083,7 +1083,7 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
     </details>
     <details>
       <summary>💾 データについて</summary>
-      <p>データはこの端末の中だけに保存されます(どこにも送りません)。機種変更や念のための保存には「データの書き出し・読み込み」を使ってください。</p>
+      <p>データはこの端末の中だけに保存されます(どこにも送りません)。機種変更や念のための保存には「⚙ 設定」→「データの保存」の「書き出す」を使ってください。</p>
     </details>
   </div>
   <div class="guide-btns">
@@ -1159,7 +1159,7 @@ function cleanDay(d, newIds) {
       amt: Number.isFinite(t.amt) && t.amt >= 0 ? Math.min(99999, t.amt) : undefined,
       range: typeof t.range === 'string' && t.range.trim() ? t.range.trim().slice(0, 40) : undefined,
       gtask: isObj(t.gtask) && typeof t.gtask.list === 'string' && typeof t.gtask.id === 'string' ? { list: t.gtask.list.slice(0, 200), id: t.gtask.id.slice(0, 200) } : undefined,
-      intr: isObj(t.intr) && Number.isFinite(t.intr.done) && Number.isFinite(t.intr.of) ? { done: clampN(t.intr.done, 0, 6000, 0), of: clampN(t.intr.of, 1, 6000, 1) } : undefined,
+      intr: isObj(t.intr) && Number.isFinite(t.intr.done) && Number.isFinite(t.intr.of) ? { done: clampN(t.intr.done, 0, 6000, 0), of: clampN(t.intr.of, 1, 6000, 1), ...(isObj(t.intr.cont) && /^\d{4}-\d{2}-\d{2}$/.test(t.intr.cont.day) && typeof t.intr.cont.id === 'string' ? { cont: { day: t.intr.cont.day, id: t.intr.cont.id } } : {}) } : undefined,
       ...cleanRecords(t)
     };
   }).map(t => { for (const k of Object.keys(t)) if (t[k] === undefined) delete t[k]; return t; });
@@ -1750,6 +1750,7 @@ function render() {
   if (modalValid && !$('modal').hidden && !modalValid()) closeModal(); // 確認の対象がもう無ければ閉じる
   const running = sc.rows.find(r => r.st === 'running');
   syncWakeLock(!!((running && (running.t.pomo || focusOpen)) || !$('clockFull').hidden));
+  if (!$('todoBox').hidden && gt.lists) { const sig = dayStr + ':' + data.tasks.filter(t => t.gtask).map(t => t.gtask.id).join(','); if (sig !== gt.sig) { gt.sig = sig; renderTodoBox(); } }
   if (!$('clockFull').hidden) {
     setText('cfTime', `${now.getHours()}:${pad(now.getMinutes())}`); setText('cfSec', pad(now.getSeconds()));
     setText('cfDate', `${now.getMonth() + 1}月${now.getDate()}日(${'日月火水木金土'[now.getDay()]})`);
@@ -1854,7 +1855,7 @@ function renderCurrent(sc) {
         <button class="grow" data-act="adj" data-v="5" data-id="${esc(t.id)}">${t.pomo ? '作業 ' : ''}+5分</button>`}
         ${armBtn('unstart', t.id, '開始を取消', 'danger')}
       </div>
-      ${t.pomo ? `<p class="note">${!soundOn() ? '🔇 音はOFFです(点滅と通知は出ます)。' : audio.ready ? '🔊 音は有効です。' : '🔇 音が無効です(「ポモドーロ」欄のボタンで有効化)。'}画面を閉じている間は音や通知が出ないことがあります。</p>` : ''}`;
+      ${t.pomo ? `<p class="note">${!soundOn() ? '🔇 音はOFFです(点滅と通知は出ます)。' : audio.ready ? '🔊 音は有効です。' : '🔇 音が無効です(「⚙ 設定」→「音・通知」のボタンで有効化)。'}画面を閉じている間は音や通知が出ないことがあります。</p>` : ''}`;
   } else if (next) {
     h += `<div class="cur-sub">次の発車</div>
       <div class="cur-name">${next.t.sw ? '⏲ ' : ''}${next.t.pomo ? '🍅 ' : ''}${esc(next.t.name)}</div>
@@ -2338,7 +2339,15 @@ const actions = {
   unfinish(t) {
     if (findRunDay()) return false;
     if (!confirmTap('unfinish', t)) return false;
-    t.actualEnd = null; delete t.intr;
+    t.actualEnd = null;
+    // 中断を取り消したときは、そのとき作った「(続き)」も消す(もう始めていたら残す)
+    const c = t.intr && t.intr.cont;
+    if (c) {
+      const notStarted = x => !(x.id === c.id && !x.actualStart);
+      if (c.day === dayStr) data.tasks = data.tasks.filter(notStarted);
+      else { const raw = store.get('day:' + c.day); if (isObj(raw) && Array.isArray(raw.tasks)) store.set('day:' + c.day, { ...raw, tasks: raw.tasks.filter(x => !isObj(x) || notStarted(x)) }); }
+    }
+    delete t.intr;
   },
   adj(t, btn) {
     const v = +btn.dataset.v;
@@ -2642,7 +2651,7 @@ document.addEventListener('keydown', e => {
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '4.1.0';
+const APP_VERSION = '4.1.1';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
@@ -2690,7 +2699,7 @@ setInterval(checkVersion, 15 * 60 * 1000); // 開きっぱなしでも15分ご�
 document.addEventListener('visibilitychange', () => { if (!document.hidden) checkVersion(); });
 
 /* ================= ロゴのアニメーション ================= */
-// 開くたびに流す。'random' は A〜D から完全ランダム。設定は一番下のカード
+// 開くたびに流す。'random' は A〜D から完全ランダム。設定は「⚙ 設定」→「デザイン」
 const LOGO_KINDS = ['A', 'B', 'C', 'D'];
 const LOGO_LEN = { A: 3.6, B: 3.4, C: 4.6, D: 3.6 }; // 秒(動き+そろった状態で少し止める)
 const LOGO_REPEAT_MS = 40000; // 開いている間は40秒ごとにもう一度
@@ -2926,14 +2935,16 @@ function askInterrupt(t) {
       cur.actualEnd = now;
       cur.intr = { done: r.done, of: effDur(cur) };
       if (r.left >= 1 && intrChoice !== 'stop') {
-        const cont = { ...planCopy(cur), name: '(続き)' + cur.name.replace(/^\(続き\)/, ''), dur: r.left };
+        const cont = { ...planCopy(cur), name: '(続き)' + cur.name.replace(/^\(続き\)/, ''), dur: r.left, ...(cur.gtask ? { gtask: { ...cur.gtask } } : {}) };
         delete cont.amtPlan;
+        const contDay = intrChoice === 'later' ? dayStr : shiftDay(dayStr, 1);
         if (intrChoice === 'later') data.tasks.push(cont);
         else {
-          const next = shiftDay(dayStr, 1), raw = store.get('day:' + next);
+          const raw = store.get('day:' + contDay);
           const nd = isObj(raw) && Array.isArray(raw.tasks) ? cleanDay(raw, false) : { settings: { ...data.settings }, tasks: [] };
-          nd.tasks.push(cont); store.set('day:' + next, nd);
+          nd.tasks.push(cont); store.set('day:' + contDay, nd);
         }
+        cur.intr.cont = { day: contDay, id: cont.id }; // 中断を取り消したときに、この続きも消すため
       }
       saveDay(); render(); phaseKeySeen = phaseKeyNow;
       showToast(intrChoice === 'tomorrow' && r.left >= 1 ? `中断しました。続き ${r.left}分を翌日へ入れました` : intrChoice === 'later' && r.left >= 1 ? `中断しました。続き ${r.left}分を最後に入れました` : '中断しました');
@@ -3006,7 +3017,12 @@ async function gtLoad() {
   return !gt.err;
 }
 // タスク名から時間などを読む(「数学 50分」→ 50分)。読めなければ30分
-function gtParse(title) { const r = parseTaskLines(title)[0]; return r || { name: title.slice(0, 60), dur: 30, pomo: false, sw: false, guess: true }; }
+// 「化学プリント 3」の 3 のような、単位のない数字は時間と読まない(「分」「時間」「h」「min」が付いたものだけ)
+function gtParse(title) {
+  const unit = /\d\s*(分|時間|h(?:ours?|r)?|m(?:in(?:s|utes?)?)?)(?![a-z])/i.test(title.normalize('NFKC'));
+  const r = parseTaskLines(unit ? title : title + ' 0分')[0];
+  return r ? { ...r, ...(unit ? {} : { dur: 30, guess: true }) } : { name: title.slice(0, 60), dur: 30, pomo: false, sw: false, guess: true };
+}
 const gtAdded = id => data.tasks.some(t => t.gtask && t.gtask.id === id);
 function renderTodoBox(autoLoad) {
   const box = $('todoBox'), c = gtCfg();
@@ -3379,7 +3395,7 @@ $('carryOver').addEventListener('click', () => {
       if (dayStr !== fromDay) return; // 確認中に日付が変わったら何もしない
       const raw = store.get('day:' + next);
       const nd = isObj(raw) && Array.isArray(raw.tasks) ? cleanDay(raw, false) : { settings: { ...data.settings }, tasks: [] };
-      nd.tasks.push(...moving.map(planCopy));
+      nd.tasks.push(...moving.map(t => ({ ...planCopy(t), ...(t.gtask ? { gtask: { ...t.gtask } } : {}) }))); // Google ToDo とのつながりも引き継ぐ
       store.set('day:' + next, nd);
       data.tasks = data.tasks.filter(t => !moving.includes(t));
       saveDay(); render();
