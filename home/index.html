@@ -407,6 +407,36 @@ body.editing .page .tile .tdel{pointer-events:auto}
 .toast button{border:1px solid var(--bg);padding:3px 12px;font-weight:700}
 
 /* 設定(拡大縮小しない、ふつうにスクロールする画面) */
+ /* 予定のお知らせ・タイマー(全画面) */
+#soon{position:fixed;inset:0;z-index:92;background:rgba(10,10,9,.84);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px}
+#soon[hidden]{display:none}
+#soon .sc{width:min(860px,100%);border:1px solid #3a3833;background:#151513;color:#ece8df;padding:38px 52px 32px;position:relative}
+#soon .sbar{position:absolute;left:0;top:0;bottom:0;width:10px;background:var(--sbc,#e8c65a)}
+#soon .slb{font-size:15px;letter-spacing:.2em;color:var(--sbc,#e8c65a);font-weight:700}
+#soon .slb small{display:inline-block;border:1px solid #3a3833;padding:1px 8px;font-size:12px;margin-left:10px;color:#8d8a83;letter-spacing:0;font-weight:400}
+#soon h1{font-size:clamp(30px,6vw,54px);margin:10px 0 4px;line-height:1.25;word-break:break-word}
+#soon .stm{font-size:20px;color:#8d8a83;font-family:var(--num)}
+#soon .scd{display:flex;align-items:flex-end;gap:16px;margin:24px 0 20px;flex-wrap:wrap}
+#soon .scd .n{font-family:var(--num);font-size:clamp(90px,17vw,190px);line-height:.82;font-weight:500}
+#soon .scd .u{font-size:24px;color:#8d8a83;padding-bottom:12px}
+#soon .spg{height:8px;background:#2b2a28}#soon .spg i{display:block;height:100%;background:var(--sbc,#e8c65a);transition:width .9s linear}
+#soon .sft{display:flex;align-items:center;gap:12px;margin-top:22px;font-size:14px;color:#8d8a83;flex-wrap:wrap}
+#soon .sft span{flex:1;min-width:200px}
+#soon .sft button{border:1px solid #ece8df;color:#ece8df;padding:8px 22px;font-size:16px;font-weight:700}
+#soon .sft button.sub{border-color:#3a3833;color:#8d8a83}
+.bigcd{font-family:var(--num);font-size:56px;line-height:1;font-weight:500;margin:6px 0 2px;letter-spacing:-.5px}
+.side .bigcd{font-size:42px}
+.soont .ttl{font-size:17px;font-weight:700;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.soont .when{font-size:13px;color:var(--sub)}
+.soont .nx{margin-top:10px;padding-top:8px;border-top:1px solid var(--rule);font-size:13px;color:var(--sub);display:flex;gap:8px;white-space:nowrap;overflow:hidden}
+.soont .nx b{color:var(--ink);font-weight:500;overflow:hidden;text-overflow:ellipsis}
+.tmr .pre{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+.tmr button{border:1px solid var(--rule);padding:7px 0;font-size:14px;font-weight:700}
+.tmr .row3{display:flex;gap:6px;margin-top:8px;align-items:center}
+.tmr .row3 input{flex:1;min-width:0;font:inherit;font-size:15px;color:var(--ink);background:var(--card);border:1px solid var(--rule);padding:5px 6px;border-radius:0}
+.tmr .row3 button{padding:7px 12px}
+.tmr .run{display:flex;gap:6px;margin-top:10px}.tmr .run button{flex:1}
+.tmr .lab{font-size:13px;color:var(--sub)}
 #dim{position:fixed;inset:0;z-index:90;background:#000;pointer-events:none;transition:opacity 1.5s}
 #settings{position:fixed;inset:0;z-index:100;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;user-select:text;-webkit-user-select:text}
 .sx{max-width:860px;margin:0 auto;padding:max(20px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) 80px max(18px,env(safe-area-inset-left))}
@@ -524,12 +554,13 @@ body.editing .page .tile .tdel{pointer-events:auto}
 
 <div id="settings" hidden></div>
 <div id="dim" hidden></div>
+<div id="soon" hidden><div class="sc"><div class="sbar"></div><div class="slb" id="soonLb"></div><h1 id="soonTitle"></h1><div class="stm" id="soonTm"></div><div class="scd"><span class="n" id="soonN"></span><span class="u" id="soonU"></span></div><div class="spg"><i id="soonPg"></i></div><div class="sft"><span id="soonNote"></span><button class="sub" id="soonMute">この予定は知らせない</button><button id="soonOk">わかった</button></div></div></div>
 <div id="appView" hidden><div class="ah"><button id="appBack">← Platform に戻る</button><b id="appName"></b></div><iframe id="appFrame" title="アプリ" allow="screen-wake-lock; autoplay; fullscreen"></iframe></div>
 <div id="sai" style="position:fixed;left:0;top:0;width:1px;height:env(safe-area-inset-top,0px);visibility:hidden;pointer-events:none"></div>
 
 <script>
 'use strict';
-const APP_VERSION = '2.5.1'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.6.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -560,7 +591,7 @@ const now = () => new Date(nowMs());
 
 /* ================= 設定 ================= */
 const DEFAULT_CFG = {
-  theme: 'dark', lightFrom: '06:30', darkFrom: '18:00', showSec: true, shift: true, dimOn: true, dimFrom: '22:00', dimTo: '06:00', dimLv: 70,
+  theme: 'dark', lightFrom: '06:30', darkFrom: '18:00', showSec: true, shift: true, soonOn: true, soonLeads: [5], soonStart: true, soonBeep: true, dimOn: true, dimFrom: '22:00', dimTo: '06:00', dimLv: 70,
   loc: null, // {lat, lon, pref, how}
   gasUrl: '',
   days: null, satWeeks: [1, 3, 5], // 曜日ごとの時刻(fixDays で初期値を入れる)。土曜は第何週に授業があるか
@@ -1123,6 +1154,114 @@ function nextOff() {
   return { days: dayDiff(d, x), from: x, len: offLen(x) };
 }
 function offLen(d) { let n = 0, x = d; while (!isSchoolDay(x) && n < 30) { x = addDays(x, 1); n++; } return n; }
+/* ================= 予定のお知らせ・次の予定・タイマー ================= */
+// 残り時間の表示(1秒ごとに data-to の付いた所を書きかえる)
+function fmtLeft(ms, short) {
+  const t = Math.max(0, Math.ceil(ms / 1000)), d = Math.floor(t / 86400), h = Math.floor(t % 86400 / 3600), m = Math.floor(t % 3600 / 60), sec = t % 60;
+  if (d >= 1) return short ? `${d}日` : `${d}日 ${h}時間`;
+  if (h >= 1) return short ? `${h}:${pad(m)}` : `${h}:${pad(m)}:${pad(sec)}`;
+  return `${m}:${pad(sec)}`;
+}
+const evKey = e => e.start + '|' + e.title;
+const nextTimed = () => upcoming().filter(e => !e.allDay && new Date(e.start).getTime() > nowMs());
+const evWhen = e => { const s = new Date(e.start), t = new Date(e.end); return `${dayLabel(now(), s)} ${s.getHours()}:${pad(s.getMinutes())}${t > s ? ` 〜 ${t.getHours()}:${pad(t.getMinutes())}` : ''}`; };
+function renderSoonTile() {
+  const l = nextTimed();
+  if (!cfg.gasUrl) return '<h3>次の予定まで</h3><p class="empty">「設定」→「連携」で Googleカレンダーをつなぐと、次の予定までの残り時間が出ます。</p>';
+  if (!l.length) return `<h3>次の予定まで</h3><p class="empty">${events ? 'この先、時間の決まった予定はありません。' : '予定を読み込んでいます…'}</p>`;
+  const e = l[0], st = new Date(e.start).getTime();
+  return `<div class="soont"><h3>次の予定まで <span>Googleカレンダー</span></h3><div class="ttl">${esc(e.title)}</div><div class="when">${esc(evWhen(e))}</div>
+    <div class="bigcd" data-to="${st}">${fmtLeft(st - nowMs())}</div>
+    ${l[1] ? `<div class="nx"><span>その次</span><b>${esc(l[1].title)}</b><span>${esc(evWhen(l[1]))}</span></div>` : ''}</div>`;
+}
+// タイマー
+let tmr = store.get('timer'); // { end, total, label, paused(残りms) }
+function saveTmr() { store.set('timer', tmr); renderTiles(); renderChips(); renderSlot(); }
+function renderTimer() {
+  if (!tmr) return `<div class="tmr"><h3>タイマー</h3><div class="pre">${[1, 3, 5, 10, 15, 30, 45, 60].map(m => `<button data-tm="start" data-v="${m}">${m < 60 ? m + '分' : '1時間'}</button>`).join('')}</div>
+    <div class="row3"><input type="number" min="1" max="999" inputmode="numeric" placeholder="分" id="tmMin" aria-label="分"><button data-tm="min">分で始める</button></div>
+    <div class="row3"><input type="time" id="tmAt" aria-label="時刻"><button data-tm="at">この時刻まで</button></div></div>`;
+  const left = tmr.paused ?? tmr.end - nowMs();
+  return `<div class="tmr"><h3>タイマー <span>${esc(tmr.label)}</span></h3>
+    <div class="bigcd" ${tmr.paused == null ? `data-to="${tmr.end}"` : ''}>${fmtLeft(left)}</div>
+    <div class="lab">${tmr.paused != null ? '一時停止中' : `${tmS(tmr.end).slice(0, -3)} に終わります`}</div>
+    <div class="run"><button data-tm="pause">${tmr.paused != null ? '再開' : '一時停止'}</button><button data-tm="add">+1分</button><button data-tm="stop">やめる</button></div></div>`;
+}
+function startTimer(ms, label) { tmr = { end: nowMs() + ms, total: ms, label, paused: null }; saveTmr(); }
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-tm]'); if (!b || editing) return;
+  e.stopPropagation(); unlockAudio();
+  const a = b.dataset.tm, box = b.closest('.tmr');
+  if (a === 'start') startTimer(+b.dataset.v * 60e3, `${+b.dataset.v < 60 ? b.dataset.v + '分' : '1時間'}`);
+  else if (a === 'min') { const m = +(box.querySelector('#tmMin') || {}).value; if (m > 0) startTimer(Math.min(m, 999) * 60e3, `${m}分`); }
+  else if (a === 'at') {
+    const v = (box.querySelector('#tmAt') || {}).value, mm = toMin(v); if (mm == null) return;
+    let t = sod(now()).getTime() + mm * 60e3; if (t <= nowMs()) t += 864e5;
+    startTimer(t - nowMs(), `${unpad(v)} まで`);
+  }
+  else if (a === 'pause' && tmr) { if (tmr.paused != null) { tmr.end = nowMs() + tmr.paused; tmr.paused = null; } else tmr.paused = Math.max(0, tmr.end - nowMs()); saveTmr(); }
+  else if (a === 'add' && tmr) { if (tmr.paused != null) tmr.paused += 60e3; else tmr.end += 60e3; saveTmr(); }
+  else if (a === 'stop') { tmr = null; saveTmr(); }
+}, true);
+// 全画面のお知らせ
+let soonCur = null, soonDone = store.get('soonDone') || {}, soonMuted = store.get('soonMute') || {}, soonFirst = true;
+const LEADS = [[1, '1分'], [3, '3分'], [5, '5分'], [10, '10分'], [15, '15分'], [30, '30分'], [60, '1時間'], [120, '2時間'], [180, '3時間'], [360, '6時間'], [720, '12時間'], [1440, '1日']];
+function showSoon(o) {
+  if (fullMode) return; // 地震の表示が優先
+  soonCur = o; dimWake = nowMs() + 60e3;
+  const S = $('soon'), e = o.ev;
+  S.style.setProperty('--sbc', o.kind === 'timer' ? '#ff5b3a' : (e && e.color && (EV_COLORS[e.color] || e.color)) || '#e8c65a');
+  $('soonLb').innerHTML = o.kind === 'timer' ? 'タイマー' : o.kind === 'start' ? '始まります' : `まもなく始まります<small>${o.demo ? 'テスト' : 'Googleカレンダー'}</small>`;
+  $('soonTitle').textContent = o.kind === 'timer' ? '時間です' : e.title;
+  $('soonTm').textContent = o.kind === 'timer' ? o.label : evWhen(e);
+  $('soonMute').hidden = o.kind !== 'lead' || o.demo;
+  $('soonNote').textContent = o.kind === 'timer' ? 'タップで止めます' : o.kind === 'start' ? '5秒で閉じます' : '10秒で閉じます';
+  S.hidden = false; updateSoon();
+  if (cfg.soonBeep || o.kind === 'timer') { unlockAudio(); o.kind === 'timer' ? soundAlarm() : soundBeep(); }
+}
+function closeSoon() { soonCur = null; $('soon').hidden = true; }
+function updateSoon() {
+  const o = soonCur; if (!o) return;
+  const t = nowMs();
+  if (t > o.until || fullMode) return closeSoon();
+  if (o.kind === 'lead') {
+    const st = new Date(o.ev.start).getTime();
+    $('soonN').textContent = fmtLeft(st - t); $('soonU').textContent = '後に開始';
+    $('soonPg').style.width = Math.min(100, Math.max(0, 100 * (1 - (st - t) / (o.lead * 60e3)))) + '%';
+  } else if (o.kind === 'start') { $('soonN').textContent = 'いま'; $('soonU').textContent = ''; $('soonPg').style.width = '100%'; }
+  else { $('soonN').textContent = '0:00'; $('soonU').textContent = ''; $('soonPg').style.width = '100%'; if (Math.floor(t / 1000) % 3 === 0) soundAlarm(); }
+}
+$('soonOk').addEventListener('click', closeSoon);
+$('soon').addEventListener('click', e => { if (e.target.id === 'soon' || (soonCur && soonCur.kind === 'timer')) closeSoon(); });
+$('soonMute').addEventListener('click', () => { if (soonCur && soonCur.ev) { soonMuted[evKey(soonCur.ev)] = new Date(soonCur.ev.start).getTime(); store.set('soonMute', soonMuted); } closeSoon(); });
+function checkSoon() {
+  const t = nowMs();
+  // タイマーが終わった
+  if (tmr && tmr.paused == null && t >= tmr.end) { const lab = tmr.label; tmr = null; saveTmr(); showSoon({ kind: 'timer', label: lab + ' のタイマー', until: t + 60e3 }); }
+  if (cfg.soonOn && !soonCur && !editing) {
+    const leads = [...(cfg.soonLeads || [])].sort((a, b) => b - a);
+    for (const e of nextTimed().concat(upcoming().filter(e => !e.allDay && new Date(e.start).getTime() <= t))) {
+      const st = new Date(e.start).getTime(), k = evKey(e);
+      if (soonMuted[k] || st - t > 1441 * 60e3) continue;
+      if (st > t) {
+        // いちばん近い「◯分前」を、その時刻から1分以内(開いた直後は時刻を過ぎていても)に1回だけ
+        const L = leads.filter(L => t >= st - L * 60e3).pop();
+        if (L != null && !soonDone[k + '|' + L] && (soonFirst || t - (st - L * 60e3) < 60e3)) {
+          for (const x of leads) if (x >= L) soonDone[k + '|' + x] = st;
+          store.set('soonDone', soonDone); showSoon({ kind: 'lead', ev: e, lead: L, until: t + 10e3 }); break;
+        }
+      } else if (cfg.soonStart && t - st < 60e3 && !soonDone[k + '|start']) {
+        soonDone[k + '|start'] = st; store.set('soonDone', soonDone); showSoon({ kind: 'start', ev: e, until: t + 5e3 }); break;
+      }
+    }
+    if (events) soonFirst = false;
+  }
+  updateSoon();
+  for (const el of document.querySelectorAll('[data-to]')) el.textContent = fmtLeft(+el.dataset.to - t, !!el.dataset.short);
+}
+// 古い記録を消す
+for (const m of [soonDone, soonMuted]) for (const k in m) if (m[k] < Date.now() - 2 * 864e5) delete m[k];
+setInterval(checkSoon, 1000);
 function renderQuakes() {
   const L = loc(), list = quakeHist.slice(0, 6);
   return `<h3>最近の地震 <span>気象庁</span></h3>` + (list.length ? `<ul class="ql">${list.map(q => {
@@ -1159,11 +1298,13 @@ const CHIP = {
   holiday: { name: '次の休み', render: renderHoliday, chip: () => { const o = nextOff(); return o.today ? '今日は休み' : `次の休み <b>${o.days}</b>日後`; } },
   terms: { name: '受験の語句', render: renderTerms, chip: () => '受験の語句' },
   calendar: { name: 'カレンダー', render: renderCalendar, chip: () => `カレンダー` },
+  soon: { name: '次の予定まで', render: renderSoonTile, chip: () => { const e = nextTimed()[0]; return e ? `${esc(e.title.slice(0, 8))} <b data-to="${new Date(e.start).getTime()}" data-short="1">${fmtLeft(new Date(e.start).getTime() - nowMs(), true)}</b>` : '次の予定'; } },
+  timer: { name: 'タイマー', render: renderTimer, chip: () => tmr ? `タイマー <b ${tmr.paused == null ? `data-to="${tmr.end}"` : ''}>${fmtLeft(tmr.paused ?? tmr.end - nowMs())}</b>` : 'タイマー' },
   quakes: { name: '最近の地震', render: renderQuakes, chip: () => { const q = quakeHist[0]; return q ? `地震 ${q.maxI ? shindoChip(q.maxI) : ''}` : '最近の地震'; } }
 };
 const FIXED = { tt: 'ttTile', todo: 'todoTile', clock: 'clockTile', weather: 'wxTile', sched: 'schedTile' };
 const TILE_NAME = { tt: '時間割', todo: 'やること', clock: '時計', weather: '天気', sched: '予定', ...Object.fromEntries(Object.entries(CHIP).map(([k, v]) => [k, v.name])) };
-const TILE_DESC = { tt: '今日(放課後は明日)の時間割', todo: '課題と持ちもの', clock: '時計と時限バー', weather: '気温・降水確率・傘', sched: 'Googleカレンダーの予定', studyline: '今日のダイヤ・運行状況', kioku: '今日の復習を1語ずつ採点', count: '共通テストなどまでの日数', holiday: '次の連休・今年の残り', terms: '受験の語句をカードでめくる', calendar: '4週間分のカレンダー', quakes: '最近の地震と震度(気象庁)' };
+const TILE_DESC = { tt: '今日(放課後は明日)の時間割', todo: '課題と持ちもの', clock: '時計と時限バー', weather: '気温・降水確率・傘', sched: 'Googleカレンダーの予定', studyline: '今日のダイヤ・運行状況', kioku: '今日の復習を1語ずつ採点', count: '共通テストなどまでの日数', holiday: '次の連休・今年の残り', terms: '受験の語句をカードでめくる', calendar: '4週間分のカレンダー', quakes: '最近の地震と震度(気象庁)', soon: 'Googleカレンダーの次の予定までの残り時間', timer: '時間・時刻を決めてカウントダウン' };
 const GROW = new Set(['clock', 'todo', 'sched']);
 const SIDES = { left: 'colL', center: 'colC', right: 'colR' };
 const DEFAULT_LAYOUT = { left: ['tt', 'todo', 'kioku'], center: ['clock', 'studyline'], right: ['weather', 'count', 'calendar', 'sched'] };
@@ -1213,6 +1354,7 @@ function fitClock() {
 function renderTiles() {
   document.querySelectorAll('#page [data-tile], #full [data-tile]').forEach(el => {
     const k = el.dataset.tile, side = !el.closest('#full') && el.parentNode.id !== 'colC';
+    if (el.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return; // 入力中は描き直さない
     el.innerHTML = k === 'studyline' ? renderStudyLine(side) : CHIP[k].render();
   });
 }
@@ -1976,7 +2118,7 @@ const GAS_CODE = `function doGet() {
     .setMimeType(ContentService.MimeType.JSON);
 }`;
 let ttDay = 1, sTab = 'tiles', sPlus = null;
-const STABS = [['tiles', 'タイル', ['s-chips']], ['tt', '時間割', ['s-tt']], ['todo', 'やること', ['s-todo']], ['cd', 'カウントダウン', ['s-cd']], ['quake', '地震', ['s-quake']], ['link', '連携', ['s-gcal', 's-apps']], ['view', '表示', ['s-view', 's-loc', 's-terms', 's-about']]];
+const STABS = [['tiles', 'タイル', ['s-chips']], ['tt', '時間割', ['s-tt']], ['todo', 'やること', ['s-todo']], ['cd', 'カウントダウン・通知', ['s-cd', 's-soon'], 1], ['quake', '地震', ['s-quake']], ['link', '連携', ['s-gcal', 's-apps']], ['view', '表示', ['s-view', 's-loc', 's-terms', 's-about']]];
 function openSettings(anchor) {
   closeFull();
   if (anchor) { const t = STABS.find(x => x[2].includes(anchor)); if (t) sTab = t[0]; } else sTab = 'tiles';
@@ -2117,6 +2259,15 @@ function renderSettings() {
     </div></div>
   </section>
 
+  <section id="s-soon"><h2>予定のお知らせ</h2>
+    <div class="row"><label><input type="checkbox" id="soonOn" ${cfg.soonOn ? 'checked' : ''}>Googleカレンダーの予定が近づいたら、10秒だけ全画面で知らせる</label></div>
+    <div class="row">知らせるとき(いくつでも):</div>
+    <div class="row">${LEADS.map(([v, l]) => `<label><input type="checkbox" data-lead="${v}" ${(cfg.soonLeads || []).includes(v) ? 'checked' : ''}>${l}前</label>`).join('')}</div>
+    <div class="row"><label><input type="checkbox" id="soonStart" ${cfg.soonStart ? 'checked' : ''}>始まる時刻にも「始まります」を5秒出す</label><label><input type="checkbox" id="soonBeep" ${cfg.soonBeep ? 'checked' : ''}>音を鳴らす</label></div>
+    <div class="row"><button class="btn" id="soonTest">テスト表示</button>${Object.keys(soonMuted).length ? `<button class="btn sub" id="soonUnmute">「知らせない」にした予定を戻す(${Object.keys(soonMuted).length}件)</button>` : ''}</div>
+    <p class="note">終日の予定は、始まる時刻がないので知らせません。地震の表示が出ているときは出しません。タイマーは「タイマー」タイル(または上のバー)から使えます。</p>
+  </section>
+
   <section id="s-loc"><h2>場所</h2>
     <p>いまの設定:<b>${L ? esc(L.pref || '') + (L.how === 'gps' ? '(現在地)' : '') : '未設定(東京)'}</b>${L ? ` <span class="note mono">${L.lat}, ${L.lon}</span>` : ''}</p>
     <div class="row"><button class="btn" id="useGps">現在地を使う</button><span id="gpsMsg" class="note"></span></div>
@@ -2180,7 +2331,7 @@ function renderSettings() {
   </div></div>`;
   const tab = STABS.find(t => t[0] === sTab) || STABS[0];
   $('settings').querySelectorAll('.sbody>section').forEach(sec => { sec.hidden = !tab[2].includes(sec.id); });
-  $('settings').querySelector('.sbody').style.setProperty('--n', tab[2].length);
+  $('settings').querySelector('.sbody').style.setProperty('--n', tab[3] || tab[2].length);
 }
 function slDaysCount() { let n = 0; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith('ttable:day:')) n++; } } catch (e) {} return n; }
 function vocabRecCount() { let n = 0; for (const v of VOCAB) { try { n += Object.keys(JSON.parse(localStorage.getItem('vocabTest.srs.' + v.id)) || {}).length; } catch (e) {} } return n; }
@@ -2189,6 +2340,8 @@ const unpad = s => { const m = toMin(s); return m == null ? '' : `${Math.floor(m
 $('settings').addEventListener('click', e => {
   const t = e.target, rs = () => { saveCfg(); renderSettings(); };
   if (t.id === 'sDone') return closeSettings();
+  if (t.id === 'soonTest') { closeSettings(); const st = nowMs() + 5 * 60e3; setTimeout(() => showSoon({ kind: 'lead', demo: true, lead: 5, ev: { title: 'テストの予定', start: new Date(st).toISOString(), end: new Date(st + 30 * 60e3).toISOString() }, until: nowMs() + 10e3 }), 300); return; }
+  if (t.id === 'soonUnmute') { soonMuted = {}; store.set('soonMute', soonMuted); return rs(); }
   if (t.id === 'cdAdd') { cfg.countdowns.push({ name: '', date: '' }); return rs(); }
   if (t.dataset.cddel != null) { cfg.countdowns.splice(+t.dataset.cddel, 1); return rs(); }
   if (t.dataset.cdev != null) { cfg.countdowns = cfg.countdowns.filter(c => c.name || c.date); cfg.countdowns.push({ name: t.dataset.cdev, date: t.dataset.cdd2 }); return rs(); }
@@ -2233,6 +2386,10 @@ $('settings').addEventListener('change', e => {
   else if (t.id === 'darkFrom') cfg.darkFrom = t.value;
   else if (t.id === 'showSec') cfg.showSec = t.checked;
   else if (t.id === 'shiftOn') { cfg.shift = t.checked; fit(); }
+  else if (t.id === 'soonOn') cfg.soonOn = t.checked;
+  else if (t.id === 'soonStart') cfg.soonStart = t.checked;
+  else if (t.id === 'soonBeep') cfg.soonBeep = t.checked;
+  else if (t.dataset.lead) { const v = +t.dataset.lead; cfg.soonLeads = t.checked ? [...new Set([...(cfg.soonLeads || []), v])].sort((a, b) => a - b) : (cfg.soonLeads || []).filter(x => x !== v); }
   else if (t.id === 'dimOn') cfg.dimOn = t.checked;
   else if (t.id === 'dimFrom') cfg.dimFrom = unpad(t.value);
   else if (t.id === 'dimTo') cfg.dimTo = unpad(t.value);
@@ -2292,7 +2449,7 @@ function inDim() {
   return a < b ? m >= a && m < b : m >= a || m < b;
 }
 function updateDim() {
-  const on = inDim() && nowMs() > dimWake && !fullMode && $('qb').hidden && $('settings').hidden && $('appView').hidden;
+  const on = inDim() && nowMs() > dimWake && !fullMode && !soonCur && $('qb').hidden && $('settings').hidden && $('appView').hidden;
   const D = $('dim'); D.hidden = !on; if (on) D.style.opacity = (cfg.dimLv || 70) / 100;
 }
 addEventListener('pointerdown', () => { if (!$('dim').hidden || inDim()) { dimWake = nowMs() + 60e3; updateDim(); } }, { capture: true });
