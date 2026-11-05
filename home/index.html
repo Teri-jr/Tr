@@ -115,7 +115,10 @@ ul{list-style:none}
 
 /* 時計の下の枠 */
 .col>.tile{flex:none}
-.col>.tile.grow{flex:1 1 0;min-height:0}
+.col>.tile.grow{flex:1 1 0;min-height:150px}
+/* タイルが多くて入りきらない列は、その列だけスクロール */
+.col{overflow-y:auto;overflow-x:hidden;scrollbar-width:none;-webkit-overflow-scrolling:touch}.col::-webkit-scrollbar{display:none}
+.col.over{box-shadow:inset 0 -14px 10px -10px rgba(0,0,0,.45)}
 .pop{position:absolute;top:60px;left:50%;transform:translateX(-50%);width:620px;max-height:320px;background:var(--bg);border:1px solid var(--ink);box-shadow:0 18px 40px rgba(0,0,0,.45);z-index:4;padding:18px 26px;display:flex;flex-direction:column}
 .pop .back{font-size:11px;color:var(--dim);text-align:right;margin-top:auto;padding-top:6px}
 .slhead{display:flex;align-items:baseline;gap:12px;min-width:0}
@@ -290,7 +293,7 @@ body.editing .page .tile .openapp{border:1px solid var(--sub);color:var(--ink);f
 #appView .ah button{border:1px solid var(--ink);padding:6px 16px;font-weight:700;font-size:15px}
 #appView .ah b{font-size:16px}
 #appView iframe{flex:1;border:0;width:100%;background:#fff}
-.tdel{pointer-events:auto}
+body.editing .page .tile .tdel{pointer-events:auto}
 .openapp{border:1px solid var(--sub);color:var(--ink);font-size:11.5px;padding:1px 10px;margin-left:6px;letter-spacing:0;font-weight:700}
 #appView{position:fixed;inset:0;z-index:95;background:var(--bg);display:flex;flex-direction:column}
 #appView .ah{display:flex;align-items:center;gap:12px;padding:calc(env(safe-area-inset-top) + 8px) 14px 8px;border-bottom:1px solid var(--rule);background:var(--bg)}
@@ -477,7 +480,7 @@ body.editing .page .tile .openapp{border:1px solid var(--sub);color:var(--ink);f
 
 <script>
 'use strict';
-const APP_VERSION = '1.10.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.10.1'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1130,8 +1133,10 @@ function renderLayout() {
   }
   renderTiles();
   if (editing) document.querySelectorAll('#page .tile').forEach(el => { if (el.dataset.k !== 'clock') el.insertAdjacentHTML('beforeend', '<button class="tdel" aria-label="外す">×</button>'); });
-  requestAnimationFrame(fitClock);
+  requestAnimationFrame(() => { fitClock(); markOver(); });
 }
+function markOver() { for (const id of Object.values(SIDES)) { const c = $(id); c.classList.toggle('over', c.scrollHeight > c.clientHeight + 2 && c.scrollTop + c.clientHeight < c.scrollHeight - 2); } }
+for (const id of Object.values(SIDES)) $(id).addEventListener('scroll', markOver, { passive: true });
 // 時計の大きさを、置いた場所の広さに合わせる
 function fitClock() {
   const el = $('clockTile'); if (!el.isConnected || !el.parentNode || el.parentNode.id === 'pool') return;
