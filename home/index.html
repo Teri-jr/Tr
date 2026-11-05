@@ -473,6 +473,7 @@ body.editing .page .tile .tdel{pointer-events:auto}
 .board .row2{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--rule);font-size:14px}
 .board .row2 b{color:var(--sub);font-weight:500}.board .row2 button{border:1px solid var(--rule);padding:3px 12px;font-size:13px}
 @media (max-width:900px){.board{grid-template-columns:1fr 1fr}.board>div{min-height:0;margin-bottom:18px}}
+@media (max-width:600px){.board{grid-template-columns:1fr}.board>div{border-right:0}.bcard{touch-action:pan-y}}
 .sx .chiprow{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--rule)}
 .sx .chiprow .nm{flex:1}
 .sx .chiprow button{border:1px solid var(--rule);width:32px;height:30px}
@@ -526,7 +527,7 @@ body.editing .page .tile .tdel{pointer-events:auto}
 
 <script>
 'use strict';
-const APP_VERSION = '2.4.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.4.1'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -610,6 +611,7 @@ const nthWeek = d => Math.ceil(d.getDate() / 7);
 const isSchoolDay = d => {
   const w = d.getDay(), dc = cfg.days[w];
   if (!dc || !dc.p || !dc.p.length || HOLIDAYS[ymd(d)]) return false;
+  const mmdd = (d.getMonth() + 1) * 100 + d.getDate(); if (mmdd >= 1229 || mmdd <= 103) return false; // 年末年始(12/29〜1/3)は学校もお休み
   return w === 6 ? (cfg.satWeeks || []).includes(nthWeek(d)) : w >= 1 && w <= 5;
 };
 const nextSchoolDay = d => { let x = addDays(d, 1); for (let i = 0; i < 30 && !isSchoolDay(x); i++) x = addDays(x, 1); return x; };
@@ -674,7 +676,7 @@ function renderClock() {
   const st = schoolState(d);
   let t = '';
   const sub = (dd, i) => { const s = subjOf(dd, i); return s ? `<b>${esc(s)}</b>${roomOf(dd, i) ? `(${esc(roomOf(dd, i))})` : ''}` : `<b>${i + 1}限</b>`; };
-  const left = m => `<span class="n">${Math.ceil(m)}</span> 分`;
+  const left = m => { m = Math.ceil(m); return m >= 60 ? `<span class="n">${Math.floor(m / 60)}</span> 時間 <span class="n">${m % 60}</span> 分` : `<span class="n">${m}</span> 分`; };
   const postName = st.post ? esc(st.post[0]) : '帰り';
   if (st.mode === 'before') t = `${esc(st.label)}まで ${left(st.left)}　／　1限は ${sub(d, 0)} <span class="n" style="color:var(--sub);font-size:20px">${fmtMin(st.ps[0][0])}</span>`;
   else if (st.mode === 'pre') t = `${esc(st.name)}　あと ${left(st.left)}　／　1限は ${sub(d, 0)} <span class="n" style="color:var(--sub);font-size:20px">${fmtMin(st.ps[0][0])}</span>`;
@@ -786,6 +788,7 @@ async function loadWeather() {
   } catch (e) { if (wx) wx.err = true; else wxFail = true; }
   renderWeather();
 }
+const wxDay0 = () => wx && wx.daily && wx.daily.time ? Math.max(0, wx.daily.time.indexOf(ymd(now()))) : 0;
 function renderWeather() {
   if (editing) return; // 並べ替え中は中身を描き直さない(× ボタンが消えないように)
   const T = $('wxTile');
@@ -795,7 +798,7 @@ function renderWeather() {
   const night = !wx.cur.is_day;
   const [txt, kind] = WCODE(wx.cur.weather_code);
   const after = st.mode === 'after' || minOfDay(d) >= 17 * 60;
-  const di = after ? 1 : 0;
+  const di = Math.min((after ? 1 : 0) + wxDay0(), D.time.length - 1); // 日付が変わったあと、天気を読み直すまでの間もずれないように
   let say;
   if (!after) {
     const pm = postMin(d), pl = periodsMin(d);
@@ -812,7 +815,7 @@ function renderWeather() {
   if (hourIdx >= 0) for (let i = 0; i < 6; i++) { const k = hourIdx + 1 + i * 3; if (k >= H.time.length) break; hrs += `<div>${+H.time[k].slice(11, 13)}時<b>${Math.round(H.temperature_2m[k])}°</b><span>${H.precipitation_probability[k] ?? '-'}%</span></div>`; }
   T.innerHTML = `<h3>天気 <span>${esc(wx.pref || loc().pref)}${wx.err ? ' ・ 更新できません' : ''}</span></h3>
     <div class="wx">${wxIcon(kind, night)}<span class="t n">${Math.round(wx.cur.temperature_2m)}°</span>
-    <div class="d">${esc(txt)}<br><b class="n" style="color:var(--red);font-size:17px">${Math.round(D.temperature_2m_max[di])}°</b> / <b class="n" style="color:var(--blue);font-size:17px">${Math.round(D.temperature_2m_min[di])}°</b>${di ? ' 明日' : ''}</div>
+    <div class="d">${esc(txt)}<br><b class="n" style="color:var(--red);font-size:17px">${Math.round(D.temperature_2m_max[di])}°</b> / <b class="n" style="color:var(--blue);font-size:17px">${Math.round(D.temperature_2m_min[di])}°</b>${after ? ' 明日' : ''}</div>
     <div class="say">${esc(say)}</div></div><div class="hrs">${hrs}</div>`;
 }
 const umbrella = p => p >= 50 ? '傘を持っていく' : p >= 30 ? '折りたたみ傘があると安心' : '傘はいりません';
@@ -1100,10 +1103,12 @@ function termClick(e) {
 
 /* ================= カウントダウン・次の休み・カレンダー ================= */
 function cdList() { return cfg.countdowns.filter(c => c.name && c.date).map(c => ({ ...c, days: dayDiff(now(), parseYmd(c.date)) })).filter(c => c.days >= 0).sort((a, b) => a.days - b.days); }
+const cdEmpty = () => cfg.countdowns.some(c => c.name && c.date) ? 'この先のカウントダウンはありません。設定で新しい日付を足せます。' : '設定で日付を入れてください。';
+const cdNum = c => c.days ? `${c.days}<small>日</small>` : '<span style="font-size:.7em">今日</span>';
 function renderCount() {
   const l = cdList();
-  if (!l.length) return '<h3>カウントダウン</h3><p class="empty">設定で日付を入れてください。</p>';
-  return `<h3>カウントダウン</h3><div class="big2">${l.slice(0, 2).map(c => `<div><div class="k">${esc(c.name)}まで</div><div class="v n">${c.days}<small>日</small></div><div class="d">${md(parseYmd(c.date))}(${WD[parseYmd(c.date).getDay()]}) ・ 残り${Math.floor(c.days / 7)}週</div></div>`).join('')}</div>`;
+  if (!l.length) return `<h3>カウントダウン</h3><p class="empty">${cdEmpty()}</p>`;
+  return `<h3>カウントダウン</h3><div class="big2">${l.slice(0, 2).map(c => `<div><div class="k">${esc(c.name)}${c.days ? 'まで' : ''}</div><div class="v n">${cdNum(c)}</div><div class="d">${md(parseYmd(c.date))}(${WD[parseYmd(c.date).getDay()]}) ・ 残り${Math.floor(c.days / 7)}週</div></div>`).join('')}</div>`;
 }
 function nextOff() {
   const d = now(); let x = d, i = 0;
@@ -1144,7 +1149,7 @@ function renderCalendar() {
 const CHIP = {
   studyline: { name: 'StudyLine', render: () => renderStudyLine(false), chip: () => `<span class="slc">StudyLine</span> ${slChip()}` },
   kioku: { name: '記憶回路', render: renderKioku, chip: () => `記憶回路 <b>${kioku.loaded ? dueList().length : '…'}</b>` },
-  count: { name: 'カウントダウン', render: renderCount, chip: () => { const c = cdList()[0]; return c ? `${esc(c.name)} <b>${c.days}</b>日` : 'カウントダウン'; } },
+  count: { name: 'カウントダウン', render: renderCount, chip: () => { const c = cdList()[0]; return c ? (c.days ? `${esc(c.name)} <b>${c.days}</b>日` : `${esc(c.name)} <b>今日</b>`) : 'カウントダウン'; } },
   holiday: { name: '次の休み', render: renderHoliday, chip: () => { const o = nextOff(); return o.today ? '今日は休み' : `次の休み <b>${o.days}</b>日後`; } },
   terms: { name: '受験の語句', render: renderTerms, chip: () => '受験の語句' },
   calendar: { name: 'カレンダー', render: renderCalendar, chip: () => `カレンダー` },
@@ -1359,7 +1364,7 @@ function fvTT() {
 // 天気: 今日・明日・あさってを選べる。1時間ごとの気温と降水確率
 function fvWeather() {
   if (!wx) return `<p class="empty">${wxFail ? '天気を取得できませんでした。' : '天気を読み込み中…'}</p>`;
-  const H = wx.hourly, D = wx.daily, di = +(fs.wd || 0);
+  const H = wx.hourly, D = wx.daily, d0 = wxDay0(), di = Math.min(d0 + +(fs.wd || 0), D.time.length - 1);
   const date = D.time ? D.time[di] : ymd(addDays(now(), di));
   const [txt, kind] = WCODE(D.weather_code[di]);
   const hrs = H.time.map((t, i) => ({ t, i })).filter(x => x.t.startsWith(date) && +x.t.slice(11, 13) >= 5);
@@ -1371,7 +1376,7 @@ function fvWeather() {
     return `<div class="hc ${h === nowH ? 'nowh' : ''} ${h < nowH ? 'pasth' : ''}"><span class="ht n" style="margin-top:${(y * 46).toFixed(0)}px">${Math.round(tt)}°</span><span class="hw">${WCODE(H.weather_code[i])[0]}</span><span class="hp"><i style="height:${p}%"></i></span><span class="hpn n">${p}%</span><span class="hh n">${h}</span></div>`;
   }).join('');
   const names = ['今日', '明日', 'あさって'];
-  return `<div class="fvbar">${tabs('wd', D.time.slice(0, 3).map((t, i) => [i, `${names[i]} ${md(parseYmd(t))}`]), di)}<span class="fvnote">${esc(wx.pref || loc().pref)}${wx.err ? ' ・ 更新できません' : ''}</span></div>
+  return `<div class="fvbar">${tabs('wd', D.time.slice(d0, d0 + 3).map((t, i) => [i, `${names[i]} ${md(parseYmd(t))}`]), di - d0)}<span class="fvnote">${esc(wx.pref || loc().pref)}${wx.err ? ' ・ 更新できません' : ''}</span></div>
     <div class="wxbig">${wxIcon(kind, false)}<div><div class="wt">${esc(txt)}</div><div><b class="n" style="color:var(--red)">${Math.round(D.temperature_2m_max[di])}°</b> / <b class="n" style="color:var(--blue)">${Math.round(D.temperature_2m_min[di])}°</b> ・ 降水確率 最大 <b class="n">${D.precipitation_probability_max[di]}%</b></div><div class="wsay">${umbrella(D.precipitation_probability_max[di])}</div></div></div>
     <div class="hgrid">${cols}</div><p class="fvnote" style="margin-top:6px">上の数字 = 気温、青い棒 = 降水確率、いちばん下 = 時刻</p>`;
 }
@@ -1389,10 +1394,10 @@ function fvTodo() {
 // カウントダウン: 全部の日付と、週・平日の数
 function fvCount() {
   const l = cdList();
-  if (!l.length) return '<p class="empty">設定で日付を入れてください。</p>';
+  if (!l.length) return `<p class="empty">${cdEmpty()}</p>`;
   return `<div class="cdl">${l.map(c => {
     const d = parseYmd(c.date); let sch = 0, off = 0; for (let x = addDays(sod(now()), 1); x <= d; x = addDays(x, 1)) isSchoolDay(x) ? sch++ : off++;
-    return `<div class="cdi"><div class="k">${esc(c.name)}まで</div><div class="v n">${c.days}<small>日</small></div><div class="d">${d.getFullYear()}/${md(d)}(${WD[d.getDay()]}) ・ ${Math.floor(c.days / 7)}週と${c.days % 7}日 ・ 授業日 ${sch}日 / 休み ${off}日</div></div>`;
+    return `<div class="cdi"><div class="k">${esc(c.name)}${c.days ? 'まで' : ''}</div><div class="v n">${cdNum(c)}</div><div class="d">${d.getFullYear()}/${md(d)}(${WD[d.getDay()]}) ・ ${Math.floor(c.days / 7)}週と${c.days % 7}日 ・ 授業日 ${sch}日 / 休み ${off}日</div></div>`;
   }).join('')}</div>`;
 }
 // 次の休み: この先の連休を一覧で
@@ -1496,6 +1501,8 @@ addEventListener('pointermove', e => {
   for (const id of Object.values(SIDES)) {
     const col = $(id), r = col.getBoundingClientRect();
     if (e.clientX < r.left || e.clientX > r.right) continue;
+    // 入りきらない列は、上下の端に近づけるとスクロールする
+    if (e.clientY < r.top + 60) col.scrollTop -= 14; else if (e.clientY > r.bottom - 60) col.scrollTop += 14;
     const kids = [...col.children].filter(c => c !== drag.ph && c !== drag.el);
     const before = kids.find(c => { const b = c.getBoundingClientRect(); return e.clientY < b.top + b.height / 2; });
     if (before) { if (drag.ph.nextSibling !== before) col.insertBefore(drag.ph, before); }
@@ -1720,7 +1727,7 @@ function drawInfoPanel() {
     <div class="ft">${q.demo ? 'デモ' : '気象庁(P2P地震情報 経由)'} ・ 地図は都道府県ごとの最大震度(色と数字)</div>
   </div>${q.demo ? '<div class="demo">デモ</div>' : ''}`;
 }
-$('eewPanel').addEventListener('click', e => {
+$('eewPanel').addEventListener('pointerup', e => {
   if (e.target.closest('[data-set]')) { openSettings('s-quake'); return; }
   const b = e.target.closest('[data-close]'); if (!b) return;
   if (b.dataset.close === 'eew' && eew) eew.closed = true;
@@ -1861,8 +1868,9 @@ function showQuakeInfo(q, demo, forceFull) {
   const why = forceFull ? '' : cfg.qiPref && mine >= cfg.qiPref ? `${L.pref} 震度${SHINDO[mine]}` : cfg.qiMax && maxI >= cfg.qiMax ? `最大震度${SHINDO[maxI]}` : cfg.qiMag && H.magnitude >= cfg.qiMag ? `M${(+H.magnitude).toFixed(1)}` : tsBad && cfg.qiTsunami ? TSUNAMI[ts] : '';
   const full = forceFull || (!!why && !demo); // 帯のデモは帯だけ
   const prev = quake, same = prev && prev.id === q.id;
-  quake = { id: q.id, q, demo, mine, maxI, maxPref, byPref, why, full, fullClosed: same ? prev.fullClosed : false, view: same ? prev.view : null, until: nowMs() + 15 * 60e3 };
-  if (!same && (full || mine >= cfg.qBeep)) full ? soundAlarm() : soundBeep();
+  const grew = same && (q.types || []).length > (prev.q.types || []).length; // 次の発表(震源・各地の震度)が出た
+  quake = { id: q.id, q, demo, mine, maxI, maxPref, byPref, why, full, fullClosed: same ? prev.fullClosed : false, view: same && !grew ? prev.view : null, until: same && !grew ? prev.until : nowMs() + 15 * 60e3 };
+  if (!same || (full && !prev.full) || (mine >= cfg.qBeep && prev.mine < cfg.qBeep)) full ? soundAlarm() : mine >= cfg.qBeep ? soundBeep() : 0;
   updateFull(); renderQBanner();
 }
 const TSUNAMI = { None: 'この地震による津波の心配はありません', Unknown: '津波の有無は不明', Checking: '津波の有無を調査中', NonEffective: '若干の海面変動の可能性(被害の心配なし)', Watch: '津波注意報 発表中', Warning: '津波警報 発表中' };
@@ -1883,7 +1891,7 @@ function renderQBanner() {
   }
   B.hidden = true;
 }
-$('qb').addEventListener('click', e => {
+$('qb').addEventListener('pointerup', e => {
   if (e.target.closest('[data-set]')) { openSettings('s-quake'); return; }
   if (e.target.closest('[data-qclose]')) { // ✕:帯を消す(新しい地震が来たらまた出る)
     if (eew && (eewLevel() === 1 || eew.closed) && eewHidden !== eew.id) { eewHidden = eew.id; renderQBanner(); return; }
@@ -2094,7 +2102,7 @@ function renderSettings() {
     </div><div><h4>Googleカレンダーから追加</h4>
     ${!cfg.gasUrl ? '<p class="note">「連携」タブで Googleカレンダーをつなぐと、ここに予定が出て、押すだけで追加できます。</p>'
       : !events || !events.length ? '<p class="note">この先の予定がありません(読み込み中のこともあります)。</p>'
-      : `<table>${events.filter(ev => new Date(ev.start) >= addDays(now(), -1)).slice(0, 30).map((ev, i) => { const d = new Date(ev.start), y = ymd(d), on = cfg.countdowns.some(c => c.date === y && c.name === String(ev.title).slice(0, 12)); return `<tr><td class="n" style="width:6.5em">${md(d)}(${WD[d.getDay()]})</td><td>${esc(ev.title)}</td><td style="width:5.5em">${on ? '<span class="note">追加済み</span>' : `<button class="btn sub" data-cdev="${i}">追加</button>`}</td></tr>`; }).join('')}</table>`}
+      : `<table>${events.filter(ev => new Date(ev.start) >= addDays(now(), -1)).slice(0, 30).map((ev, i) => { const d = new Date(ev.start), y = ymd(d), on = cfg.countdowns.some(c => c.date === y && c.name === String(ev.title).slice(0, 12)); return `<tr><td class="n" style="width:6.5em">${md(d)}(${WD[d.getDay()]})</td><td>${esc(ev.title)}</td><td style="width:5.5em">${on ? '<span class="note">追加済み</span>' : `<button class="btn sub" data-cdev="${esc(String(ev.title).slice(0, 12))}" data-cdd2="${y}">追加</button>`}</td></tr>`; }).join('')}</table>`}
     </div></div>
   </section>
 
@@ -2172,7 +2180,7 @@ $('settings').addEventListener('click', e => {
   if (t.id === 'sDone') return closeSettings();
   if (t.id === 'cdAdd') { cfg.countdowns.push({ name: '', date: '' }); return rs(); }
   if (t.dataset.cddel != null) { cfg.countdowns.splice(+t.dataset.cddel, 1); return rs(); }
-  if (t.dataset.cdev != null) { const ev = events.filter(ev => new Date(ev.start) >= addDays(now(), -1))[+t.dataset.cdev]; if (ev) { cfg.countdowns = cfg.countdowns.filter(c => c.name || c.date); cfg.countdowns.push({ name: String(ev.title).slice(0, 12), date: ymd(new Date(ev.start)) }); } return rs(); }
+  if (t.dataset.cdev != null) { cfg.countdowns = cfg.countdowns.filter(c => c.name || c.date); cfg.countdowns.push({ name: t.dataset.cdev, date: t.dataset.cdd2 }); return rs(); }
   if (t.dataset.stab) { sTab = t.dataset.stab; sPlus = null; renderSettings(); $('settings').scrollTop = 0; return; }
   if (t.dataset.boff) { const k = t.dataset.boff; for (const side in cfg.layout) cfg.layout[side] = cfg.layout[side].filter(x => x !== k); saveCfg(); renderLayout(); return renderSettings(); }
   if (t.dataset.bplus) { sPlus = sPlus === t.dataset.bplus ? null : t.dataset.bplus; return renderSettings(); }
