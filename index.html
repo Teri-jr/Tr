@@ -650,6 +650,11 @@ button.danger-fill { background: var(--late); color: #fff; border-color: transpa
 @media (max-width: 440px) { .clock-btn { font-size: 0; padding: 0 10px; } .clock-btn::before { content: "🕐"; font-size: 18px; } .mode-row .mode-tog button { font-size: 13.5px; padding: 0 2px; } }
 @media (max-width: 380px) { .mode-row .mode-tog button { font-size: 12px; letter-spacing: -0.02em; } .clock-btn { padding: 0 7px; } }
 /* 時計だけの全画面 */
+/* 画面焼け防止: 全画面の中身を1分ごとに少しずらし、しばらく触らなければ暗くする */
+#focus > *, #clockFull > * { translate: var(--bx, 0px) var(--by, 0px); transition: translate 2s ease, filter 1.5s ease; }
+#focus.dimmed > *, #clockFull.dimmed > * { filter: brightness(0.3); }
+.burn-opts { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
+.burn-opts select { min-height: 40px; }
 #clockFull { position: fixed; inset: 0; z-index: 97; background: #080a0d; color: #f5b301; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; user-select: none; }
 #clockFull[hidden] { display: none; }
 #clockFull .cf-time { font-size: min(25vw, 55vh); font-weight: 800; line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
@@ -1001,6 +1006,10 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
         <label><input type="radio" name="timerDesign" value="plain"> シンプル</label>
       </div>
       <p class="note">タスクの実行中に「⛶」を押すと、このデザインで表示します。「ランダム」は開くたびに選び直します。</p>
+      <h3 class="sub-h">画面焼け防止</h3>
+      <label class="toggle"><input type="checkbox" id="burnOn"> 全画面タイマー・時計の全画面で、表示を少しずつ動かす</label>
+      <div class="burn-opts"><label for="burnDim" style="margin:0">さわらなければ暗くする</label><select id="burnDim"><option value="0">しない</option><option value="5">5分後</option><option value="10">10分後</option><option value="20">20分後</option><option value="30">30分後</option></select></div>
+      <p class="note">同じ表示を長く出しっぱなしにすると、有機ELの画面(多くの iPhone など)は跡が残ることがあります。表示を1分ごとに数ピクセルずらし、しばらくさわらなければ暗くして防ぎます。暗いときは画面をタップすると元に戻ります(そのタップでボタンは押されません)。区切りの知らせのときも元に戻ります。</p>
     </section>
       </div>
       <div class="set-sec" data-sec="reset" hidden>
@@ -1606,6 +1615,7 @@ function notifyStatus() {
 let flashTimer = null;
 function signal(kind, body) {
   const sg = SIGNALS[kind];
+  lastTouch = Date.now(); if (typeof applyBurn === 'function') applyBurn(); // 知らせのときは暗いのをやめる
   notifyPhase(kind, body || sg.sub);
   playKind(kind === 'ask' ? 'brk' : kind); // 「25分たちました」は休憩の音
   vibrate(sg.vib);
@@ -1694,6 +1704,33 @@ function setText(id, txt) { const el = $(id); if (el && el.textContent !== txt) 
 /* ================= 時計だけの全画面 ================= */
 $('clockOpen').addEventListener('click', () => { $('clockFull').hidden = false; render(); });
 $('clockFull').addEventListener('click', () => { $('clockFull').hidden = true; render(); });
+
+/* ================= 画面焼け防止 ================= */
+// 設定 { on: 動かす, dim: 暗くするまでの分(0 = しない) }
+const burnCfg = () => { const c = store.get('burn'); return { on: !(isObj(c) && c.on === false), dim: isObj(c) && [0, 5, 10, 20, 30].includes(c.dim) ? c.dim : 10 }; };
+let lastTouch = Date.now(), wakeTap = false;
+// 暗いときの最初のタップは、明るく戻すだけにする(下のボタンを押したり、時計の全画面を閉じたりしない)
+document.addEventListener('pointerdown', () => {
+  if (document.querySelector('#focus.dimmed, #clockFull.dimmed')) wakeTap = true;
+  lastTouch = Date.now(); applyBurn();
+}, true);
+document.addEventListener('click', e => { if (wakeTap) { wakeTap = false; e.stopPropagation(); e.preventDefault(); } }, true);
+document.addEventListener('keydown', () => { lastTouch = Date.now(); applyBurn(); }, true);
+function applyBurn() {
+  const c = burnCfg(), i = Math.floor(Date.now() / 60000);
+  // 1分ごとに上下左右へ最大 ±6px・±4px(決まった順で回る)
+  const dx = c.on ? ((i * 7) % 13) - 6 : 0, dy = c.on ? ((i * 5) % 9) - 4 : 0;
+  const dim = c.dim > 0 && Date.now() - lastTouch >= c.dim * 60000;
+  for (const id of ['focus', 'clockFull']) {
+    const el = $(id); if (el.hidden) { el.classList.remove('dimmed'); continue; }
+    el.style.setProperty('--bx', dx + 'px'); el.style.setProperty('--by', dy + 'px');
+    el.classList.toggle('dimmed', dim);
+  }
+}
+function syncBurnUI() { const c = burnCfg(); $('burnOn').checked = c.on; $('burnDim').value = String(c.dim); }
+$('burnOn').addEventListener('change', () => { store.set('burn', { ...burnCfg(), on: $('burnOn').checked }); applyBurn(); });
+$('burnDim').addEventListener('change', () => { store.set('burn', { ...burnCfg(), dim: +$('burnDim').value }); applyBurn(); });
+syncBurnUI();
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('clockFull').hidden) { $('clockFull').hidden = true; render(); } });
 
 // 時刻表の行に出す教材と量(終えたら記録した量、まだなら予定の量)
@@ -1750,6 +1787,7 @@ function render() {
   if (modalValid && !$('modal').hidden && !modalValid()) closeModal(); // 確認の対象がもう無ければ閉じる
   const running = sc.rows.find(r => r.st === 'running');
   syncWakeLock(!!((running && (running.t.pomo || focusOpen)) || !$('clockFull').hidden));
+  applyBurn();
   if (!$('todoBox').hidden && gt.lists) { const sig = dayStr + ':' + data.tasks.filter(t => t.gtask).map(t => t.gtask.id).join(','); if (sig !== gt.sig) { gt.sig = sig; renderTodoBox(); } }
   if (!$('clockFull').hidden) {
     setText('cfTime', `${now.getHours()}:${pad(now.getMinutes())}`); setText('cfSec', pad(now.getSeconds()));
@@ -2651,7 +2689,7 @@ document.addEventListener('keydown', e => {
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '4.1.1';
+const APP_VERSION = '4.2.0';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
@@ -2804,7 +2842,7 @@ $('resetUndo').addEventListener('click', () => {
 });
 
 /* ================= export / import ================= */
-const VALID_KEY = k => /^day:\d{4}-\d{2}-\d{2}$/.test(k) || ['lastSettings', 'pomo', 'lastPomo', 'sound', 'sounds', 'clockSize', 'lastSw', 'logoAnim', 'timerDesign', 'inMode', 'subjList', 'goals'].includes(k);
+const VALID_KEY = k => /^day:\d{4}-\d{2}-\d{2}$/.test(k) || ['lastSettings', 'pomo', 'lastPomo', 'sound', 'sounds', 'clockSize', 'lastSw', 'logoAnim', 'timerDesign', 'inMode', 'subjList', 'goals', 'burn'].includes(k);
 function buildExport() {
   const out = {};
   for (const k of store.keys()) if (VALID_KEY(k)) out[k] = store.get(k);
