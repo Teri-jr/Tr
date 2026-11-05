@@ -529,7 +529,7 @@ body.editing .page .tile .tdel{pointer-events:auto}
 
 <script>
 'use strict';
-const APP_VERSION = '2.5.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.5.1'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -852,7 +852,9 @@ async function loadEvents() {
 function upcoming() {
   if (!events) return [];
   const t = nowMs(), d0 = new Date(now().getFullYear(), now().getMonth(), now().getDate()).getTime();
-  return events.filter(e => (e.allDay ? new Date(e.end).getTime() > d0 : new Date(e.end).getTime() > t)).sort((a, b) => new Date(a.start) - new Date(b.start));
+  // 日ごとに、時間のある予定を先に、終日の予定をそのあとに並べる(前から続いている終日の予定は今日の分として)
+  const day = e => sod(new Date(Math.max(new Date(e.start).getTime(), d0))).getTime();
+  return events.filter(e => (e.allDay ? new Date(e.end).getTime() > d0 : new Date(e.end).getTime() > t)).sort((a, b) => (day(a) - day(b)) || (a.allDay - b.allDay) || (new Date(a.start) - new Date(b.start)));
 }
 const EV_COLORS = { 1: '#7986cb', 2: '#33b679', 3: '#8e24aa', 4: '#e67c73', 5: '#f6bf26', 6: '#f4511e', 7: '#039be5', 8: '#616161', 9: '#3f51b5', 10: '#0b8043', 11: '#d50000' };
 function renderSched() {
@@ -1297,7 +1299,7 @@ const sod = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
 function eventsOn(d) {
   if (!events) return [];
   const a = sod(d).getTime(), b = a + 864e5;
-  return events.filter(e => new Date(e.start).getTime() < b && new Date(e.end).getTime() > a && !(e.allDay && new Date(e.end).getTime() <= a)).sort((x, y) => (y.allDay - x.allDay) || (new Date(x.start) - new Date(y.start)));
+  return events.filter(e => new Date(e.start).getTime() < b && new Date(e.end).getTime() > a && !(e.allDay && new Date(e.end).getTime() <= a)).sort((x, y) => (x.allDay - y.allDay) || (new Date(x.start) - new Date(y.start)));
 }
 const evColor = e => e.color ? esc(EV_COLORS[e.color] || e.color) : 'var(--blue)';
 const evTime = e => { const s = new Date(e.start), t = new Date(e.end); return e.allDay ? '終日' : `${s.getHours()}:${pad(s.getMinutes())}–${t.getHours()}:${pad(t.getMinutes())}`; };
