@@ -722,9 +722,15 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
         <textarea id="aiPromptBox" rows="8" readonly hidden aria-label="AIへの頼み方"></textarea>
       </div>
       <form id="taskForm" class="form-grid" autocomplete="off">
+        <div id="fMatBox">
+          <label>教材(任意・選ぶと終えたときに「どこまで進んだ?」を記録)</label>
+          <div class="chips" id="fMat" role="group" aria-label="教材"></div>
+          <div id="fMatNew" class="mat-new" hidden><input id="fMatName" maxlength="30" placeholder="教材名(例: 青チャート 例題)" aria-label="新しい教材の名前"><select id="fMatUnit" aria-label="単位"></select><button type="button" class="primary" id="fMatSave">登録</button></div>
+          <div id="fAmtRow" hidden><label for="fAmt" style="margin:0">今日やる量</label><input id="fAmt" type="number" inputmode="decimal" min="0" max="99999" step="any" class="num"><span id="fAmtUnit"></span><span class="note" id="fAmtHint" style="margin:0"></span></div>
+        </div>
         <div>
-          <label for="fName">タスク名</label>
-          <input id="fName" required maxlength="60" placeholder="例: 英単語 ターゲット 1-200" enterkeyhint="next">
+          <label for="fName" id="fNameLabel">タスク名</label>
+          <input id="fName" maxlength="60" placeholder="例: 英単語 ターゲット 1-200" enterkeyhint="next">
         </div>
         <div class="mode-row">
           <div class="mode-tog" id="fMode" role="radiogroup" aria-label="計り方">
@@ -761,12 +767,6 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
             <input id="fSubjText" maxlength="10" placeholder="教科名(例: 化学・古文・日本史)" aria-label="その他の教科名" enterkeyhint="done">
             <div class="chips" id="subjRecent"></div>
           </div>
-        </div>
-        <div id="fMatBox">
-          <label>教材(任意・付けると終えたときに「どこまで進んだ?」を記録)</label>
-          <div class="chips" id="fMat" role="group" aria-label="教材"></div>
-          <div id="fMatNew" class="mat-new" hidden><input id="fMatName" maxlength="30" placeholder="教材名(例: 青チャート 例題)" aria-label="新しい教材の名前"><select id="fMatUnit" aria-label="単位"></select><button type="button" class="primary" id="fMatSave">登録</button></div>
-          <div id="fAmtRow" hidden><label for="fAmt" style="margin:0">今日やる量</label><input id="fAmt" type="number" inputmode="decimal" min="0" max="99999" step="any" class="num"><span id="fAmtUnit"></span><span class="note" id="fAmtHint" style="margin:0"></span></div>
         </div>
         <label class="toggle"><input type="checkbox" id="fPomo"> 🍅 ポモドーロで区切る</label>
         <div>
@@ -1543,6 +1543,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('clockF
 function matMeta(t) {
   const m = matOf(t.mat); if (!m) return '';
   const v = Number.isFinite(t.amt) ? `<b>${amtTxt(t.amt)}${m.unit}</b>` : Number.isFinite(t.amtPlan) ? `${amtTxt(t.amtPlan)}${m.unit}${t.actualEnd ? '(量 未記録)' : ''}` : t.actualEnd ? '量 未記録' : '';
+  if (t.name === m.name) return v ? `<span class="mat-tag">${v}</span>` : ''; // 名前が教材名と同じなら量だけ
   return `<span class="mat-tag">${esc(m.name)}${v ? ' ' + v : ''}</span>`;
 }
 function delayHTML(d) {
@@ -2025,7 +2026,7 @@ function resetForm() {
 }
 $('taskForm').addEventListener('submit', e => {
   e.preventDefault();
-  const name = $('fName').value.trim();
+  const name = $('fName').value.trim() || (matOf(formMat) ? matOf(formMat).name : ''); // 教材を選んだときは名前を空にしてよい(教材名になる)
   const dur = Math.round(+$('fDur').value);
   if (!name) { $('fName').focus(); return; }
   if (!(dur >= 1 && dur <= 600)) { $('formMsg').textContent = '所要時間は1〜600分で入力してください'; return; }
@@ -2054,6 +2055,8 @@ function renderMatChips() {
   $('fMat').innerHTML = `<button type="button" data-mat="" aria-pressed="${!formMat}">なし</button>` + mats.map(m => `<button type="button" data-mat="${esc(m.id)}" aria-pressed="${formMat === m.id}">${esc(m.name)}</button>`).join('') + '<button type="button" class="mat-add" id="fMatAdd">＋ 教材を登録</button>';
   const m = matOf(formMat);
   $('fAmtRow').hidden = !m;
+  $('fNameLabel').textContent = m ? 'タスク名(空なら教材名)' : 'タスク名';
+  $('fName').placeholder = m ? `${m.name}(範囲などを書き足してもよい)` : '例: 英単語 ターゲット 1-200';
   if (m) { $('fAmtUnit').textContent = m.unit; const prev = lastRange(m.id, editingId); $('fAmtHint').textContent = prev ? `前回は「${prev}」まで` : ''; }
 }
 function setMat(id, amt) {
@@ -2073,7 +2076,7 @@ $('fMatSave').addEventListener('click', () => {
   const g = goals(), m = { id: 'm' + uid(), name: name.slice(0, 30), unit: $('fMatUnit').value, target: 0, ...(formSubj ? { subj: formSubj } : {}), ...(formSubj === 'ot' && $('fSubjText').value.trim() ? { subjText: $('fSubjText').value.trim().slice(0, 10) } : {}) };
   g.mats.push(m); store.set('goals', cleanGoals(g));
   $('fMatName').value = ''; $('fMatNew').hidden = true;
-  setMat(m.id); if (!$('fName').value.trim()) $('fName').value = m.name;
+  setMat(m.id);
   maybeRenderStats(true); $('fAmt').focus();
 });
 $('fMat').addEventListener('click', e => {
@@ -2082,7 +2085,6 @@ $('fMat').addEventListener('click', e => {
   setMat(b.dataset.mat);
   const m = matOf(formMat);
   if (m) {
-    if (!$('fName').value.trim()) $('fName').value = m.name; // 名前が空なら教材名を入れる
     if (!formSubj && m.subj) setSubj(m.subj, m.subjText || '');
     $('fAmt').focus();
   }
@@ -2477,7 +2479,7 @@ document.addEventListener('keydown', e => {
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '3.5.1';
+const APP_VERSION = '3.5.2';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
