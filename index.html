@@ -467,8 +467,8 @@ button.armed { background: var(--late); color: #fff; border-color: transparent; 
 #formCard.collapsed { padding-top: 6px; padding-bottom: 6px; }
 #formCard.collapsed .fold-head { margin: 0; color: var(--text); }
 #formCard.collapsed .fold-head .chev::after { content: "開く ▸"; color: var(--accent); }
-#formCard.collapsed #taskForm, #formCard.collapsed #fInTabs, #formCard.collapsed #bulkBox { display: none; }
-#taskForm[hidden], #bulkBox[hidden] { display: none; }
+#formCard.collapsed #taskForm, #formCard.collapsed #fInTabs, #formCard.collapsed #bulkBox, #formCard.collapsed #todoBox { display: none; }
+#taskForm[hidden], #bulkBox[hidden], #todoBox[hidden] { display: none; }
 .row.editing { box-shadow: inset 4px 0 0 var(--accent); }
 .form-msg { color: var(--late); font-size: 14px; font-weight: 700; min-height: 0; }
 .form-msg:empty { display: none; }
@@ -2691,7 +2691,7 @@ document.addEventListener('keydown', e => {
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '4.3.0';
+const APP_VERSION = '4.3.1';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
