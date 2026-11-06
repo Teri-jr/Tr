@@ -646,10 +646,10 @@ em.r{color:var(--red);font-style:normal}em.b{color:var(--blue);font-style:normal
 .v2fc{flex:1;min-height:0;border:1px solid var(--rule);background:var(--card);display:grid;grid-template-columns:1fr 1fr}
 .v2fc .f{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;border-right:1px dashed var(--rule);gap:10px;text-align:center}
 .v2fc .f .c{font-size:14px;border:1px solid var(--blue);color:var(--blue);padding:2px 10px}.v2fc .f b{font-size:clamp(34px,6vw,72px);font-weight:900;line-height:1.2;word-break:break-word}
-.v2fc .f span{font-size:18px;color:var(--sub)}.v2fc .f em{font-style:normal;font-size:13px;color:var(--grn);border:1px solid var(--grn);padding:1px 8px}
+.v2fc .f span{font-size:18px;color:var(--sub)}.v2fc em.kn{font-style:normal;font-size:13px;color:var(--grn);border:1px solid var(--grn);padding:1px 8px;align-self:flex-start}.v2fc .f em{font-style:normal;font-size:13px;color:var(--grn);border:1px solid var(--grn);padding:1px 8px}
 .v2fc .bk{padding:30px 34px;display:flex;flex-direction:column;justify-content:center;gap:10px;text-align:left;overflow:auto}
 .v2fc .bk p{font-size:21px;line-height:1.7}.v2fc .bk p.sub{font-size:16px}
-.v2fc .bk.hid{align-items:center;color:var(--sub);font-size:16px;border:0;background:repeating-linear-gradient(45deg,transparent 0 10px,color-mix(in srgb,var(--ink) 3%,transparent) 10px 20px)}
+.v2fc .f.hid,.v2fc .bk.hid{align-items:center;color:var(--sub);font-size:16px;border:0;background:repeating-linear-gradient(45deg,transparent 0 10px,color-mix(in srgb,var(--ink) 3%,transparent) 10px 20px)}
 .v2ctrl{display:flex;gap:12px}.v2ctrl button{flex:1;border:1px solid var(--rule);padding:14px;font-size:17px;font-weight:700}.v2ctrl button.p{border-color:var(--ink)}.v2ctrl button:disabled{opacity:.3}
 /* 記憶回路 */
 .v2split.kk{grid-template-columns:290px 1fr}
@@ -754,7 +754,7 @@ body.portrait .v2rows{min-height:520px}body.portrait .v2g{min-height:460px}body.
 
 <script>
 'use strict';
-const APP_VERSION = '2.8.1'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.9.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1398,7 +1398,7 @@ function renderTerms() {
   const t = termCur, n = terms.filter(x => cfg.termCats.includes(x.cat)).length;
   return `<h3>受験の語句 <span>${n}語 ・ <button class="tnext" data-tnext="1">次へ →</button></span></h3>
     <div class="termcard fc ${termShown ? 'flipped' : ''}"><div class="fc-in">
-      <div class="fc-face fc-front"><span class="tcat">${esc(t.cat)}</span><div class="tw">${esc(t.term)}</div><span class="flip">タップでめくる</span></div>
+      <div class="fc-face fc-front"><span class="tcat">${esc(t.cat)}</span>${termRev(t) ? `<div class="td2" style="margin-top:8px">${esc(t.desc)}</div><span class="flip">この説明にあう語句は? ・ タップでめくる</span>` : `<div class="tw">${esc(t.term)}</div><span class="flip">タップでめくる</span>`}</div>
       <div class="fc-face fc-back"><div style="display:flex;gap:10px;align-items:center"><span class="tcat">${esc(t.cat)}</span><span style="color:var(--sub);font-size:12px">${esc(t.note || '')}</span></div>
         <div class="tw2">${esc(t.term)}${t.yomi ? `<span class="tr">${esc(t.yomi)}</span>` : ''}</div><div class="td2">${esc(t.desc)}</div></div>
     </div></div>`;
@@ -2087,15 +2087,21 @@ function fv2Study() {
 }
 // 受験の語句: 表と裏を左右に。覚えた語句は出にくく
 let termMem = store.get('termMem') || [], termHist = [];
+// カードの向き:おまかせ(用語を答える科目は「意味→語句」、意味を答える科目は「語句→意味」)
+const TERM_REV = ['日本史', '化学', '物理', '情報'];
+const termRev = t => !!t && ((cfg.termDir || 'auto') === 'auto' ? TERM_REV.includes(t.cat) : cfg.termDir === 'mt');
 function fv2Terms() {
   const cats = [...new Set(terms.map(t => t.cat))], mode = fs.mode || 'card';
-  const head = v2bar(`${tabs('tmode', [['card', 'カード'], ['list', '一覧']], mode)}<span class="fvnote">${terms.filter(t => cfg.termCats.includes(t.cat)).length}語 ・ 覚えた ${termMem.filter(x => terms.some(t => t.term === x && cfg.termCats.includes(t.cat))).length}語</span>${termMem.length ? '<button class="v2btn" data-fa="tmreset">覚えたをリセット</button>' : ''}`);
+  const head = v2bar(`${tabs('tmode', [['card', 'カード'], ['list', '一覧']], mode)}${mode === 'card' ? tabs('tdir', [['auto', 'おまかせ'], ['tm', '語句→意味'], ['mt', '意味→語句']], cfg.termDir || 'auto') : ''}<span class="fvnote">${terms.filter(t => cfg.termCats.includes(t.cat)).length}語 ・ 覚えた ${termMem.filter(x => terms.some(t => t.term === x && cfg.termCats.includes(t.cat))).length}語</span>${termMem.length ? '<button class="v2btn" data-fa="tmreset">覚えたをリセット</button>' : ''}`);
   if (mode === 'list') return head + v2pad(fvTerms().replace(/^<div class="fvbar">[\s\S]*?<\/div><\/div>/, ''));
   if (!termCur) pickTerm();
   const t = termCur, shown = !!fs.flip, known = t && termMem.includes(t.term);
   const catsH = `<div class="v2cats"><div class="lab">科目(押して切りかえ)</div>${cats.map(c => `<button data-fa="tcat" data-v="${esc(c)}" class="${cfg.termCats.includes(c) ? 'on' : ''}">${esc(c)}<i class="n">${terms.filter(x => x.cat === c).length}</i></button>`).join('')}</div>`;
-  const card = t ? `<div class="v2fc"><button class="f" data-fa="tflip"><span class="c">${esc(t.cat)}</span><b>${esc(t.term)}</b>${t.yomi ? `<span>${esc(t.yomi)}</span>` : ''}${known ? '<em>覚えた ✓</em>' : ''}</button>
-    <button class="bk ${shown ? '' : 'hid'}" data-fa="tflip">${shown ? `<div class="lab yel">意味</div><p>${esc(t.desc)}</p>${t.note ? `<div class="lab" style="margin-top:10px">メモ</div><p class="sub">${esc(t.note)}</p>` : ''}` : '<span>押すと意味が出ます</span>'}</button></div>` : '<p class="empty">科目を選んでください。</p>';
+  const rev = termRev(t);
+  const card = !t ? '<p class="empty">科目を選んでください。</p>' : !rev ? `<div class="v2fc"><button class="f" data-fa="tflip"><span class="c">${esc(t.cat)}</span><b>${esc(t.term)}</b>${t.yomi ? `<span>${esc(t.yomi)}</span>` : ''}${known ? '<em>覚えた ✓</em>' : ''}</button>
+    <button class="bk ${shown ? '' : 'hid'}" data-fa="tflip">${shown ? `<div class="lab yel">意味</div><p>${esc(t.desc)}</p>${t.note ? `<div class="lab" style="margin-top:10px">メモ</div><p class="sub">${esc(t.note)}</p>` : ''}` : '<span>押すと意味が出ます</span>'}</button></div>`
+    : `<div class="v2fc"><button class="bk" data-fa="tflip"><div class="lab yel">${esc(t.cat)} ・ この説明にあう語句は?</div><p>${esc(t.desc)}</p>${known ? '<em class="kn">覚えた ✓</em>' : ''}</button>
+    <button class="f ${shown ? '' : 'hid'}" data-fa="tflip">${shown ? `<span class="c">${esc(t.cat)}</span><b>${esc(t.term)}</b>${t.yomi ? `<span>${esc(t.yomi)}</span>` : ''}${t.note ? `<span class="sub">${esc(t.note)}</span>` : ''}` : '<span>押すと語句が出ます</span>'}</button></div>`;
   return head + `<div class="v2split tm">${catsH}<div class="v2fcw">${card}<div class="v2ctrl"><button data-fa="tprev" ${termHist.length ? '' : 'disabled'}>‹ 前へ</button><button data-fa="tmem" data-v="0">まだ覚えてない</button><button data-fa="tmem" data-v="1">覚えた ✓</button><button data-fa="tnext2" class="p">次へ ›</button></div></div></div>`;
 }
 // 記憶回路: 単語を特大で、採点ボタンに次に出る日
@@ -2176,6 +2182,7 @@ function fvAction(a, v) {
   else if (a === 'topen') { fs.open = fs.open || {}; fs.open[v] = !fs.open[v]; }
   else if (a === 'tall') { fs.all = !fs.all; fs.open = {}; }
   else if (a === 'tflip') { fs.flip = !fs.flip; }
+  else if (a === 'tdir') { cfg.termDir = v; saveCfg(); fs.flip = false; renderTiles(); }
   else if (a === 'tnext2') { if (termCur) termHist.push(termCur); pickTerm(); fs.flip = false; renderTiles(); }
   else if (a === 'tprev') { if (termHist.length) { termCur = termHist.pop(); termAt = nowMs(); fs.flip = false; } }
   else if (a === 'tmem' && termCur) { const k = termCur.term; termMem = termMem.filter(x => x !== k); if (v === '1') termMem.push(k); store.set('termMem', termMem); termHist.push(termCur); pickTerm(); fs.flip = false; renderTiles(); }
