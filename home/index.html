@@ -302,11 +302,6 @@ body.editing .page .tile .openapp{border:1px solid var(--sub);color:var(--ink);f
 #appView iframe{flex:1;border:0;width:100%;background:#fff}
 body.editing .page .tile .tdel{pointer-events:auto}
 .openapp{border:1px solid var(--sub);color:var(--ink);font-size:11.5px;padding:1px 10px;margin-left:6px;letter-spacing:0;font-weight:700}
-#appView{position:fixed;inset:0;z-index:95;background:var(--bg);display:flex;flex-direction:column}
-#appView .ah{display:flex;align-items:center;gap:12px;padding:calc(env(safe-area-inset-top) + 8px) 14px 8px;border-bottom:1px solid var(--rule);background:var(--bg)}
-#appView .ah button{border:1px solid var(--ink);padding:6px 16px;font-weight:700;font-size:15px}
-#appView .ah b{font-size:16px}
-#appView iframe{flex:1;border:0;width:100%;background:#fff}
 .tdel{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;background:var(--red);color:#fff;font-size:20px;line-height:28px;text-align:center;z-index:3;font-weight:700}
 .tile.dragging{opacity:.3}
 .ph{height:8px;background:var(--sl);flex:none;margin:3px 10px}
@@ -561,7 +556,7 @@ body.editing .page .tile .tdel{pointer-events:auto}
 
 <script>
 'use strict';
-const APP_VERSION = '2.7.2'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.7.3'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
