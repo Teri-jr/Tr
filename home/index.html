@@ -504,6 +504,204 @@ body.editing .page .tile .tdel{pointer-events:auto}
 .sx .chiprow .nm{flex:1}
 .sx .chiprow button{border:1px solid var(--rule);width:32px;height:30px}
 .sx .ok{color:var(--grn)} .sx .ng{color:var(--red)}
+/* ===== 全画面 v2 ===== */
+.fv.v2{padding:0;overflow:hidden}
+.v2pad{padding:14px 22px 18px;flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column}
+.v2bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 22px;border-bottom:1px solid var(--rule);flex:none}
+.v2bar>b{font-size:20px}.v2bar .fvnote{margin-left:auto}
+.v2btn{border:1px solid var(--rule);padding:7px 14px;font-size:15px;color:var(--ink);min-width:44px}.v2btn:disabled{opacity:.3}
+.fv.v2 .lab{font-size:12px;letter-spacing:.16em;color:var(--sub);font-weight:700}
+.fv.v2 .lab.red,.fv.v2 .red{color:var(--red)}.fv.v2 .lab.yel,.fv.v2 .yel{color:var(--yel)}.fv.v2 .grn{color:var(--grn)}
+.fv.v2 .sub{font-size:15px;color:var(--sub)}
+.v2split{flex:1;min-height:0;display:grid;grid-template-columns:420px 1fr}
+.v2split>*{min-width:0;min-height:0}
+.v2hero{padding:28px 34px;border-right:1px solid var(--rule);display:flex;flex-direction:column;overflow:auto}
+.v2pd{font-size:118px;line-height:.9;font-weight:500;margin-top:10px}.v2pd small{font-size:30px;color:var(--sub);margin-left:6px;font-family:var(--jp)}
+.v2sj{font-size:42px;font-weight:900;line-height:1.2;margin-top:6px;word-break:break-word}
+.v2rm{font-size:16px;color:var(--sub);margin-top:6px}
+.v2left{display:flex;align-items:baseline;gap:6px;margin-top:24px}.v2left b{font-size:66px;line-height:1;font-weight:500}.v2left small{font-size:22px;color:var(--sub)}.v2left span{margin-left:12px;font-size:15px;color:var(--sub)}
+.v2pg{height:10px;background:var(--track);margin-top:12px}.v2pg i{display:block;height:100%;background:var(--red)}
+.v2pgl{display:flex;justify-content:space-between;font-size:15px;color:var(--sub);margin-top:6px}
+.v2nx{margin-top:auto;border-top:1px solid var(--rule);padding-top:14px}.v2nx b{font-size:22px;display:block;margin-top:4px}.v2nx b .n{font-size:20px;color:var(--sub);margin-left:10px;font-weight:400}
+.v2tt{flex:1;min-height:0;display:flex;flex-direction:column}
+.v2tl{padding:20px 30px 18px;display:flex;flex-direction:column;min-height:0}
+.v2tlh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}.v2tlh b{font-size:18px}.v2tlh span{font-size:13px;color:var(--sub)}
+.v2rows{flex:1;display:flex;flex-direction:column;gap:4px;min-height:0}
+.v2row{display:grid;grid-template-columns:70px 44px 1fr 110px;align-items:center;padding:0 16px;background:var(--card);border-left:4px solid var(--dim);min-height:0;overflow:hidden}
+.v2row .tm{font-size:17px;color:var(--sub)}.v2row .no{font-size:26px;color:var(--sub)}.v2row .sb{font-size:20px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.v2row .rr{font-size:13px;color:var(--sub);text-align:right}
+.v2row.done{opacity:.42}.v2row.cur{background:color-mix(in srgb,var(--red) 16%,var(--bg));border-left-color:var(--red)}.v2row.cur .sb,.v2row.cur .no{color:var(--ink)}.v2row.cur .rr{color:var(--red);font-weight:700}
+.v2row.sm,.v2row.lunch{background:transparent;border-left-color:transparent}.v2row.lunch{border-left:4px dashed var(--dim)}.v2row.sm .sb,.v2row.lunch .sb{font-size:14px;font-weight:500;color:var(--sub)}
+/* 天気 */
+.v2wx{flex:1;min-height:0;display:flex;flex-direction:column}
+.v2wtop{display:grid;grid-template-columns:460px 1fr;border-bottom:1px solid var(--rule);flex:none}
+.v2wnow{padding:24px 30px;border-right:1px solid var(--rule);display:flex;gap:20px;align-items:center}
+.v2wnow svg{width:110px;height:100px;flex:none}
+.v2wnow .tp{font-size:140px;line-height:.8}.v2wnow .tp sup{font-size:54px;vertical-align:top}
+.v2wnow .tx{font-size:24px;font-weight:700}.v2wnow .hl{font-size:26px;margin-top:6px}.v2wnow .fl{font-size:13px;color:var(--sub);margin-top:6px}
+em.r{color:var(--red);font-style:normal}em.b{color:var(--blue);font-style:normal}
+.v2wsay{padding:22px 28px;display:flex;flex-direction:column;gap:12px}
+.v2call{border:1px solid var(--rule);background:var(--card);padding:14px 18px;display:flex;align-items:center;gap:16px}
+.v2call.wet{border-color:var(--blue);background:color-mix(in srgb,var(--blue) 12%,var(--bg))}
+.v2call .ic{font-size:36px}.v2call b{font-size:22px;display:block}.v2call span{font-size:14px;color:var(--sub)}
+.v2days{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.v2day{background:var(--card);border:1px solid var(--rule);padding:10px 14px;text-align:left;display:flex;flex-direction:column;gap:2px}
+.v2day.on{border-color:var(--ink)}.v2day span{font-size:13px;color:var(--sub)}.v2day b{font-size:26px;font-weight:500}.v2day small{font-size:13px;color:var(--blue)}
+.v2chart{flex:1;min-height:0;padding:16px 28px 10px;display:flex;flex-direction:column}
+.v2chart svg{flex:1;width:100%;min-height:0;margin-top:6px}
+.v2chart .pb1{fill:color-mix(in srgb,var(--blue) 45%,var(--bg))}.v2chart .pb2{fill:var(--blue)}
+.v2chart .pt{fill:var(--blue);font:14px var(--num);text-anchor:middle}
+.v2chart .ht2{fill:var(--sub);font:15px var(--num);text-anchor:middle}.v2chart .ht2.now{fill:var(--red)}
+.v2chart .tl2{fill:none;stroke:var(--ink);stroke-width:3}
+.v2chart .tt2{fill:var(--ink);font:17px var(--num);text-anchor:middle}
+.v2chart .gh{fill:none;stroke:var(--yel);stroke-dasharray:4 4}.v2chart .ghl{fill:var(--yel);font:13px var(--jp);text-anchor:middle}
+.v2chart .nl{stroke:var(--red);stroke-width:2}.v2chart .nlt{fill:var(--red);font:13px var(--jp)}
+/* カレンダー */
+.v2cal{flex:1;min-height:0;display:grid;grid-template-columns:1fr 340px}
+.v2mon{padding:14px 18px;display:flex;flex-direction:column;min-height:0}
+.v2mh{display:flex;align-items:center;gap:10px;margin-bottom:8px}.v2mh b{font-size:36px;font-weight:500}.v2mh b small{font-family:var(--jp);font-size:15px;color:var(--sub);margin:0 4px}
+.v2mh button{border:1px solid var(--rule);min-width:36px;height:36px;font-size:16px}.v2mh button.w{padding:0 12px;font-size:13px}.v2mh .fvnote{margin-left:auto}
+.v2wk{display:grid;grid-template-columns:repeat(7,1fr);font-size:12px;color:var(--sub);padding:0 6px 4px;letter-spacing:.1em}.v2wk .su{color:var(--red)}.v2wk .sa{color:var(--blue)}
+.v2g{flex:1;display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:minmax(0,1fr);gap:3px;min-height:0}
+.v2c{background:var(--card);padding:5px 7px;display:flex;flex-direction:column;align-items:stretch;gap:2px;min-height:0;overflow:hidden;position:relative;text-align:left}
+.v2c .dn{font-size:19px;line-height:1}.v2c.o{background:transparent}.v2c.o .dn{color:var(--dim)}.v2c.past:not(.td) .dn{opacity:.55}
+.v2c.su .dn{color:var(--red)}.v2c.sa .dn{color:var(--blue)}.v2c.td{box-shadow:inset 0 0 0 2px var(--red)}.v2c.sel{background:color-mix(in srgb,var(--ink) 10%,var(--card));box-shadow:inset 0 0 0 2px var(--ink)}
+.v2c .hol{font-size:10px;color:var(--red);position:absolute;right:6px;top:6px;max-width:60%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v2c .ev{font-size:11px;padding:1px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#111;font-weight:700}
+.v2c .ev.mt{margin:0 -7px;padding-left:12px}
+.v2c .ev.t{background:none;color:var(--ink);font-weight:500;padding-left:0}.v2c .ev.t::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--c);margin-right:4px;vertical-align:1px}
+.v2c .more{font-size:10px;color:var(--sub)}.v2c .tdot{font-size:10px;color:var(--yel);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v2side{border-left:1px solid var(--rule);padding:18px 22px;overflow:auto;display:flex;flex-direction:column;gap:4px}
+.v2side .dd{font-size:50px;line-height:1}.v2side .dd small{font-family:var(--jp);font-size:16px;color:var(--sub);margin-left:6px}
+.v2tag{display:inline-block;align-self:flex-start;font-size:12px;border:1px solid var(--rule);padding:2px 8px;color:var(--sub);margin-top:6px}
+.v2it{display:grid;grid-template-columns:64px 4px 1fr;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--rule)}
+.v2it .tm{font-size:15px;color:var(--sub)}.v2it i{align-self:stretch;min-height:26px;background:var(--c)}.v2it b{font-size:16px}.v2it b small{display:block;font-size:12px;color:var(--sub);font-weight:400}
+.v2it.dn2{opacity:.45;text-decoration:line-through}
+.v2mini{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:14px}.v2mini em{font-style:normal;color:var(--sub);margin-right:4px}
+/* やること */
+.v2cols{flex:1;min-height:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.v2col{padding:16px 16px;border-right:1px solid var(--rule);display:flex;flex-direction:column;gap:8px;overflow:auto}.v2col:last-child{border:0}
+.v2col .ch{display:flex;align-items:baseline;justify-content:space-between;padding-bottom:8px;border-bottom:2px solid var(--c);margin-bottom:4px}.v2col .ch b{font-size:16px}.v2col .ch span{font-size:30px;color:var(--c)}
+.v2cd{background:var(--card);border:1px solid var(--rule);padding:12px 14px;display:flex;gap:12px;align-items:flex-start;text-align:left}
+.v2cd .bx{width:22px;height:22px;border:2px solid var(--sub);flex:none;margin-top:2px}.v2cd .cx{flex:1;min-width:0}
+.v2cd b{font-size:17px;display:block;line-height:1.35;word-break:break-word}
+.v2cd .m{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}.v2cd .m em{font-style:normal;font-size:11px;border:1px solid var(--sub);color:var(--sub);padding:0 6px;white-space:nowrap}
+.v2cd .m em.y{border-color:var(--yel);color:var(--yel)}.v2cd .m em.g{border-color:var(--blue);color:var(--blue)}.v2cd .m em.r{border-color:var(--red);color:var(--red)}
+.v2cd.done{opacity:.4}.v2cd.done b{text-decoration:line-through}.v2cd.done .bx{background:var(--sub)}
+.v2add{margin-top:auto;border:1px dashed var(--dim);padding:12px;color:var(--sub);font-size:14px}
+/* 予定 */
+.v2split.ag{grid-template-columns:380px 1fr}
+.v2hero .ttl{font-size:30px;font-weight:900;line-height:1.25;margin-top:8px;word-break:break-word}.v2hero .big{font-size:100px;line-height:.9;margin-top:14px}
+.v2agl{padding:14px 26px;overflow:auto}
+.v2dy{display:grid;grid-template-columns:104px 1fr;border-bottom:1px solid var(--rule);padding:8px 0}
+.v2dy .dd{font-size:32px;line-height:1;text-align:left;align-self:start;padding-top:4px}.v2dy .dd small{display:block;font-family:var(--jp);font-size:12px;color:var(--sub);margin-top:4px}.v2dy .dd.t{color:var(--red)}.v2dy .dd.su:not(.t){color:var(--red)}
+.v2ei{display:grid;grid-template-columns:104px 5px 1fr auto;gap:12px;align-items:center;padding:6px 0}
+.v2ei .tm{font-size:17px;color:var(--sub)}.v2ei i{height:28px;background:var(--c)}.v2ei b{font-size:17px}.v2ei .rr{font-size:13px;color:var(--sub);white-space:nowrap}
+/* 次の休み */
+.v2hol{flex:1;min-height:0;display:flex;flex-direction:column}
+.v2hh{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid var(--rule)}
+.v2hh>div{padding:24px 30px;border-right:1px solid var(--rule)}.v2hh>div:last-child{border:0}
+.v2hh .v{font-size:104px;line-height:.9;margin-top:6px}.v2hh .v small{font-family:var(--jp);font-size:22px;color:var(--sub);margin-left:6px}.v2hh .d{font-size:14px;color:var(--sub);margin-top:8px}
+.v2strip{flex:1;min-height:0;padding:18px 30px;display:flex;flex-direction:column}
+.v2wks{flex:1;display:grid;grid-template-columns:70px repeat(7,1fr);grid-template-rows:auto;grid-auto-rows:1fr;gap:4px;margin-top:10px;min-height:0}
+.v2wks span{display:flex;align-items:center;justify-content:center;font-family:var(--num);font-size:16px;min-height:0}
+.v2wks .w{color:var(--sub);font-family:var(--jp);font-size:12px;justify-content:flex-start}.v2wks .h{color:var(--sub);font-family:var(--jp);font-size:12px;height:20px}
+.v2wks .sc,.v2leg i.sc{background:var(--card);color:var(--sub)}.v2wks .of,.v2leg i.of{background:color-mix(in srgb,var(--grn) 22%,var(--bg));color:var(--grn)}.v2wks .hl,.v2leg i.hl{background:color-mix(in srgb,var(--red) 24%,var(--bg));color:var(--red)}
+.v2wks .td,.v2leg i.td{box-shadow:inset 0 0 0 2px var(--ink)}.v2wks .past{opacity:.4}
+.v2leg{display:flex;gap:16px;font-size:12px;color:var(--sub);margin-top:10px;align-items:center}.v2leg i{display:inline-block;width:12px;height:12px;margin-right:5px;vertical-align:-1px}
+/* カウントダウン */
+.v2split.cd{grid-template-columns:1.25fr 1fr}
+.v2cdm{padding:28px 36px;border-right:1px solid var(--rule);display:flex;flex-direction:column}
+.v2cdm .nm{font-size:24px;font-weight:700;margin-top:8px}.v2cdm .v{font-size:240px;line-height:.82;margin-top:14px;font-weight:500}.v2cdm .v small{font-family:var(--jp);font-size:38px;color:var(--sub);margin-left:10px}
+.v2cdm .sub{margin-top:12px}
+.v2cdm .row4{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:auto}.v2cdm .row4 div{background:var(--card);border:1px solid var(--rule);padding:12px 16px}.v2cdm .row4 b{font-size:40px;display:block;line-height:1}.v2cdm .row4 span{font-size:13px;color:var(--sub)}
+.v2cds{padding:22px 24px;display:flex;flex-direction:column;gap:10px;overflow:auto}
+.v2cdc{background:var(--card);border:1px solid var(--rule);padding:14px 18px;display:grid;grid-template-columns:1fr auto;align-items:center}
+.v2cdc b{font-size:18px}.v2cdc small{display:block;font-size:13px;color:var(--sub);margin-top:3px}.v2cdc .n2{font-size:54px;line-height:1}.v2cdc .n2 small{font-family:var(--jp);font-size:15px;color:var(--sub);display:inline}
+/* StudyLine */
+.v2sl{flex:1;min-height:0;display:flex;flex-direction:column}
+.v2sl>.empty{padding:22px 30px}
+.v2slh{padding:20px 30px;border-bottom:1px solid var(--rule);display:grid;grid-template-columns:1fr auto;gap:20px;align-items:end}
+.v2slh .v2st{font-size:14px;color:var(--sl);font-weight:700;letter-spacing:.15em}.v2slh .tk{font-size:36px;font-weight:900;margin-top:6px}.v2slh .tk .n{font-size:30px;color:var(--sub);font-weight:400;margin-left:14px}
+.v2slh .kp{display:flex;gap:24px}.v2slh .kp div{text-align:right}.v2slh .kp b{font-size:40px;display:block;line-height:1;font-weight:500}.v2slh .kp span{font-size:12px;color:var(--sub)}
+.v2route{position:relative;height:230px;margin:0 60px;flex:none}
+.v2route .v2ln{position:absolute;top:96px;height:10px;background:var(--segdone)}.v2route .v2ln i{position:absolute;left:0;top:0;bottom:0;background:var(--sl)}
+.v2route .v2stn{position:absolute;top:80px;width:42px;height:42px;border-radius:50%;background:var(--bg);border:5px solid var(--segdone);transform:translateX(-21px)}
+.v2route .v2stn.done{border-color:var(--sl);background:var(--sl)}.v2route .v2stn.run{border-color:var(--sl)}
+.v2route .v2stl{position:absolute;top:134px;transform:translateX(-50%);text-align:center;width:150px}
+.v2route .v2stl b{font-size:15px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.v2route .v2stl span{display:block;font-size:15px;color:var(--sub)}.v2route .v2stl .du{font-size:13px}
+.v2route .v2stl.done b{color:var(--sub)}
+.v2route .v2train{position:absolute;top:26px;transform:translateX(-50%);background:var(--sl);color:#141413;font-weight:900;padding:6px 14px;font-size:15px;white-space:nowrap}
+.v2route .v2train::after{content:"";position:absolute;left:50%;bottom:-8px;border:8px solid transparent;border-top-color:var(--sl);border-bottom:0;transform:translateX(-50%)}
+.v2wkc{flex:1;min-height:120px;padding:0 30px 16px;display:grid;grid-template-columns:repeat(7,1fr);gap:16px;align-items:end}
+.v2wkc button{display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
+.v2wkc i{width:56px;max-width:100%;background:color-mix(in srgb,var(--sl) 35%,var(--bg));display:block;min-height:2px}.v2wkc .on i{background:var(--sl)}
+.v2wkc b{font-size:18px;font-weight:500}.v2wkc span{font-size:12px;color:var(--sub)}.v2wkc .on span{color:var(--ink);font-weight:700}
+/* 語句 */
+.v2split.tm{grid-template-columns:240px 1fr}
+.v2cats{padding:18px 18px;border-right:1px solid var(--rule);display:flex;flex-direction:column;gap:6px;overflow:auto}
+.v2cats button{display:flex;justify-content:space-between;padding:9px 12px;border:1px solid var(--rule);font-size:15px;color:var(--sub)}
+.v2cats button.on{border-color:var(--yel);color:var(--yel)}.v2cats button i{font-style:normal;color:var(--sub)}
+.v2fcw{padding:24px 34px;display:flex;flex-direction:column;gap:16px;min-height:0}
+.v2fc{flex:1;min-height:0;border:1px solid var(--rule);background:var(--card);display:grid;grid-template-columns:1fr 1fr}
+.v2fc .f{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;border-right:1px dashed var(--rule);gap:10px;text-align:center}
+.v2fc .f .c{font-size:14px;border:1px solid var(--blue);color:var(--blue);padding:2px 10px}.v2fc .f b{font-size:clamp(34px,6vw,72px);font-weight:900;line-height:1.2;word-break:break-word}
+.v2fc .f span{font-size:18px;color:var(--sub)}.v2fc .f em{font-style:normal;font-size:13px;color:var(--grn);border:1px solid var(--grn);padding:1px 8px}
+.v2fc .bk{padding:30px 34px;display:flex;flex-direction:column;justify-content:center;gap:10px;text-align:left;overflow:auto}
+.v2fc .bk p{font-size:21px;line-height:1.7}.v2fc .bk p.sub{font-size:16px}
+.v2fc .bk.hid{align-items:center;color:var(--sub);font-size:16px;border:0;background:repeating-linear-gradient(45deg,transparent 0 10px,color-mix(in srgb,var(--ink) 3%,transparent) 10px 20px)}
+.v2ctrl{display:flex;gap:12px}.v2ctrl button{flex:1;border:1px solid var(--rule);padding:14px;font-size:17px;font-weight:700}.v2ctrl button.p{border-color:var(--ink)}.v2ctrl button:disabled{opacity:.3}
+/* 記憶回路 */
+.v2split.kk{grid-template-columns:290px 1fr}
+.v2kst{padding:22px 22px;border-right:1px solid var(--rule);display:flex;flex-direction:column;gap:10px}
+.v2kst .tot{font-size:88px;line-height:.9;font-weight:500}
+.v2dk{background:var(--card);border:1px solid var(--rule);padding:12px 14px}.v2dk b{font-size:15px}.v2dk>span{float:right;font-size:24px}
+.v2dk .pb{height:5px;background:var(--track);margin-top:8px}.v2dk .pb i{display:block;height:100%;background:var(--grn)}.v2dk small{font-size:12px;color:var(--sub)}
+.v2kq{padding:24px 34px;display:flex;flex-direction:column;gap:16px;min-height:0}
+.v2kc{flex:1;min-height:0;border:1px solid var(--rule);background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;position:relative;padding:20px}
+.v2kc .tg{position:absolute;left:18px;top:16px;font-size:13px;border:1px solid var(--yel);color:var(--yel);padding:2px 10px}
+.v2kc .w{font-size:clamp(44px,7vw,84px);font-weight:700;font-family:var(--num);word-break:break-word;text-align:center}.v2kc .w.jp{font-family:var(--jp)}
+.v2kc .a{font-size:32px;font-weight:700;text-align:center}.v2kc .ex{font-size:16px;color:var(--sub);max-width:640px;text-align:center;line-height:1.7}
+.v2gr{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.v2gr button{border:1px solid var(--c);color:var(--c);padding:16px 0;font-size:20px;font-weight:700}.v2gr button small{display:block;font-size:12px;font-weight:400;color:var(--sub);margin-top:2px}.v2gr button:disabled{opacity:.3}
+/* 地震 */
+.v2split.qk{grid-template-columns:1fr 440px}
+.v2ql{padding:16px 22px;display:flex;flex-direction:column;gap:8px;border-right:1px solid var(--rule);overflow:auto}
+.v2qi{display:grid;grid-template-columns:86px 1fr auto;gap:16px;align-items:center;background:var(--card);border:1px solid var(--rule);padding:10px 14px;text-align:left}
+.v2qi.on{border-color:var(--ink)}
+.v2qi .sh{height:58px;display:flex;align-items:center;justify-content:center;font-size:38px;font-weight:600}.v2qi .sh small{font-size:19px;font-family:var(--jp);font-weight:900}.v2qi .sh.none{border:1px solid var(--rule);color:var(--sub)}
+.v2qi b{font-size:18px;display:block}.v2qi .m{font-size:13px;color:var(--sub);margin-top:3px;display:block}
+.v2qi .tm{font-size:20px;color:var(--sub);text-align:right}.v2qi .tm small{display:block;font-family:var(--jp);font-size:12px}
+.v2qd{padding:16px 22px;display:flex;flex-direction:column;gap:8px;min-height:0}
+.v2qd canvas{width:100%;flex:1;min-height:0;object-fit:cover;background:#101418;border:1px solid var(--rule)}
+.v2qd .rw{display:flex;justify-content:space-between;gap:10px;font-size:15px;border-bottom:1px solid var(--rule);padding:6px 0}.v2qd .rw span{color:var(--sub)}.v2qd .rw b{font-weight:500;text-align:right}
+/* タイマー */
+.v2split.tmv{grid-template-columns:1fr 380px}
+.v2tmc{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;border-right:1px solid var(--rule);padding:20px}
+.v2ring{position:relative;width:min(470px,60vh,100%);aspect-ratio:1}
+.v2ring svg{position:absolute;inset:0;width:100%;height:100%}.v2ring .bg{fill:none;stroke:var(--track);stroke-width:18}.v2ring .fg{fill:none;stroke:var(--red);stroke-width:18;transition:stroke-dashoffset .9s linear}
+.v2ring .in{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}.v2ring .in b{font-size:clamp(70px,12vw,150px);font-weight:500;line-height:1}.v2ring .in span{font-size:16px;color:var(--sub)}
+.v2bt3{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}.v2bt3 button{border:1px solid var(--ink);padding:14px 26px;font-size:18px;font-weight:700}.v2bt3 button.ss{border-color:var(--rule);color:var(--sub)}
+.v2tms{padding:22px 22px;display:flex;flex-direction:column;gap:10px;overflow:auto}
+.v2pre{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.v2pre button{border:1px solid var(--rule);padding:14px 0;font-size:26px}.v2pre button small{font-family:var(--jp);font-size:13px;color:var(--sub);margin-left:2px}
+.v2inp{display:flex;gap:8px}.v2inp input{flex:1;min-width:0;font:inherit;font-size:16px;color:var(--ink);background:var(--card);border:1px solid var(--rule);padding:10px;border-radius:0}.v2inp button{border:1px solid var(--ink);padding:10px 14px;font-size:15px;font-weight:700;white-space:nowrap}
+.v2tms .v2hist{border:0;border-bottom:1px solid var(--rule);font-weight:400;display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--rule);font-size:15px;text-align:left}.v2hist .sub{font-size:13px}
+/* 次の予定まで */
+.v2sn{flex:1;min-height:0;display:flex;flex-direction:column}
+.v2snm{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border-bottom:1px solid var(--rule);padding:20px;text-align:center}
+.v2snm .tt3{font-size:44px;font-weight:900;word-break:break-word}.v2snm .tm{font-size:24px;color:var(--sub)}
+.v2snm .bigc{font-size:clamp(110px,20vw,230px);line-height:.85;font-weight:500;margin-top:10px}
+.v2snm .bar3{width:min(760px,90%);height:8px;background:var(--track);margin-top:18px}.v2snm .bar3 i{display:block;height:100%;background:var(--yel);transition:width .9s linear}
+.v2snl{display:grid;grid-template-columns:repeat(3,1fr);flex:none}
+.v2snl>div{padding:16px 24px;border-right:1px solid var(--rule)}.v2snl>div:last-child{border:0}
+.v2snl b{font-size:18px;display:block;margin-top:2px}.v2snl em{font-style:normal;float:right;font-size:26px;color:var(--ink)}
+/* スマホ・縦向き */
+body.portrait .v2split,body.portrait .v2split.ag,body.portrait .v2split.cd,body.portrait .v2split.tm,body.portrait .v2split.kk,body.portrait .v2split.qk,body.portrait .v2split.tmv,body.portrait .v2cal,body.portrait .v2wtop{grid-template-columns:1fr}
+body.portrait .v2cols,body.portrait .v2hh,body.portrait .v2days,body.portrait .v2snl{grid-template-columns:1fr}
+body.portrait .fv.v2{overflow:auto}body.portrait .v2hero,body.portrait .v2cdm{border-right:0;border-bottom:1px solid var(--rule)}
+body.portrait .v2fc{grid-template-columns:1fr}body.portrait .v2route{margin:0 30px}
+body.portrait .v2split,body.portrait .v2tt,body.portrait .v2cal,body.portrait .v2wx,body.portrait .v2hol,body.portrait .v2sn,body.portrait .v2sl,body.portrait .v2cols,body.portrait .v2mon,body.portrait .v2strip,body.portrait .v2chart{flex:none;height:auto;min-height:0}
+body.portrait .v2rows{min-height:520px}body.portrait .v2g{min-height:460px}body.portrait .v2chart svg{flex:none;height:240px}body.portrait .v2wks{min-height:340px}body.portrait .v2fc{min-height:320px}body.portrait .v2kc{min-height:280px}body.portrait .v2qd canvas{flex:none;height:300px}body.portrait .v2route{overflow-x:auto}
+.fhead b{white-space:nowrap}body.portrait .fhead .fhint{display:none}
 </style>
 </head>
 <body>
@@ -555,7 +753,7 @@ body.editing .page .tile .tdel{pointer-events:auto}
 
 <script>
 'use strict';
-const APP_VERSION = '2.7.8'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.8.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1187,7 +1385,8 @@ fetch('terms.json', { cache: 'no-store' }).then(r => r.json()).then(j => {
 }).catch(() => {});
 // 直前と同じ語句が続かないように選ぶ
 function pickTerm() {
-  const pool = terms.filter(t => cfg.termCats.includes(t.cat) && t !== termCur);
+  const all = terms.filter(t => cfg.termCats.includes(t.cat) && t !== termCur), mem = typeof termMem !== 'undefined' ? termMem : [];
+  const fresh = all.filter(t => !mem.includes(t.term)), pool = fresh.length && Math.random() > .1 ? fresh : all; // 覚えたものはたまにだけ
   termCur = pool.length ? pool[Math.floor(Math.random() * pool.length)] : terms.find(t => cfg.termCats.includes(t.cat)) || null;
   termAt = nowMs(); termShown = false;
 }
@@ -1250,7 +1449,7 @@ function renderSoonTile() {
 }
 // タイマー
 let tmr = store.get('timer'); // { end, total, label, paused(残りms) }
-function saveTmr() { store.set('timer', tmr); renderTiles(); renderChips(); renderSlot(); }
+function saveTmr() { store.set('timer', tmr); renderTiles(); renderChips(); renderSlot(); if (fullK === 'timer') renderFullView(); }
 function renderTimer() {
   if (!tmr) return `<div class="tmr"><h3>タイマー</h3><div class="pre">${[1, 3, 5, 10, 15, 30, 45, 60].map(m => `<button data-tm="start" data-v="${m}">${m < 60 ? m + '分' : '1時間'}</button>`).join('')}</div>
     <div class="row3"><input type="number" min="1" max="999" inputmode="numeric" placeholder="分" id="tmMin" aria-label="分"><button data-tm="min">分で始める</button></div>
@@ -1261,7 +1460,7 @@ function renderTimer() {
     <div class="lab">${tmr.paused != null ? '一時停止中' : `${tmS(tmr.end).slice(0, -3)} に終わります`}</div>
     <div class="run"><button data-tm="pause">${tmr.paused != null ? '再開' : '一時停止'}</button><button data-tm="add">+1分</button><button data-tm="stop">やめる</button></div></div>`;
 }
-function startTimer(ms, label) { tmr = { end: nowMs() + ms, total: ms, label, paused: null }; saveTmr(); }
+function startTimer(ms, label) { tmr = { end: nowMs() + ms, total: ms, label, paused: null }; if (typeof tmrHist !== 'undefined') { tmrHist = [{ ms, label, at: nowMs() }, ...tmrHist.filter(h => h.label !== label)].slice(0, 3); store.set('tmrHist', tmrHist); } saveTmr(); }
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-tm]'); if (!b || editing) return;
   e.stopPropagation(); unlockAudio();
@@ -1275,7 +1474,8 @@ document.addEventListener('click', e => {
     startTimer(t - nowMs(), `${unpad(v)} まで`);
   }
   else if (a === 'pause' && tmr) { if (tmr.paused != null) { tmr.end = nowMs() + tmr.paused; tmr.paused = null; } else tmr.paused = Math.max(0, tmr.end - nowMs()); saveTmr(); }
-  else if (a === 'add' && tmr) { if (tmr.paused != null) tmr.paused += 60e3; else tmr.end += 60e3; saveTmr(); }
+  else if ((a === 'add' || a === 'add5') && tmr) { const ms = a === 'add5' ? 300e3 : 60e3; if (tmr.paused != null) tmr.paused += ms; else tmr.end += ms; tmr.total += ms; saveTmr(); }
+  else if (a === 'again') startTimer(+b.dataset.v, b.dataset.l);
   else if (a === 'stop') { tmr = null; saveTmr(); }
 }, true);
 // 全画面のお知らせ
@@ -1334,6 +1534,8 @@ function checkSoon() {
   }
   updateSoon();
   for (const el of document.querySelectorAll('[data-to]')) el.textContent = fmtLeft(+el.dataset.to - t, !!el.dataset.short);
+  const rc = $('v2ringC'); if (rc && tmr && tmr.paused == null) rc.style.strokeDashoffset = (2 * Math.PI * 210 * (1 - Math.max(0, Math.min(1, (tmr.end - t) / tmr.total)))).toFixed(1);
+  const sb = $('v2snbar'); if (sb) sb.style.width = Math.max(0, Math.min(100, 100 * (1 - (+sb.dataset.st - t) / 3600e3))).toFixed(1) + '%';
 }
 // 古い記録を消す
 for (const m of [soonDone, soonMuted]) for (const k in m) if (m[k] < Date.now() - 2 * 864e5) delete m[k];
@@ -1467,7 +1669,7 @@ $('page').addEventListener('click', e => {
 
 /* ---- タイルの全画面表示 ---- */
 // 時計・記憶回路はタイルをそのまま大きくする。それ以外は、全画面用の詳しい画面(日付・曜日・科目などを選べる)を出す
-const FULL_SETTINGS = { tt: 's-tt', todo: 's-todo', count: 's-cd', weather: 's-loc', sched: 's-gcal', calendar: 's-gcal', terms: 's-terms' };
+const FULL_SETTINGS = { tt: 's-tt', todo: 's-todo', count: 's-cd', weather: 's-loc', sched: 's-gcal', calendar: 's-gcal', terms: 's-terms', quakes: 's-quake', soon: 's-soon' };
 let fullTile = null, fullPh = null, fullCls = '', fullTouched = 0;
 let fullK = null, fs = {}; // 詳しい画面のタイル名と、選んでいるもの(月・日・曜日・タブなど)
 function openFull(t) {
@@ -1511,7 +1713,7 @@ $('fullBody').addEventListener('click', e => {
 addEventListener('keydown', e => { if (e.key === 'Escape' && (fullTile || fullK)) closeFull(); });
 
 /* ---- 全画面の詳しい画面 ---- */
-function renderFullView() { if (fullK && FV[fullK]) $('fullBody').innerHTML = `<div class="fv fv-${fullK}">${FV[fullK]()}</div>`; }
+function renderFullView() { if (fullK && FV[fullK]) { $('fullBody').innerHTML = `<div class="fv v2 fv-${fullK}">${FV[fullK]()}</div>`; if (fullK === 'quakes') requestAnimationFrame(drawQuakeMini); } }
 const tabs = (fa, items, cur) => `<div class="fvtabs">${items.map(([v, l]) => `<button data-fa="${fa}" data-v="${esc(v)}" class="${String(v) === String(cur) ? 'on' : ''}">${l}</button>`).join('')}</div>`;
 // その日にかかる予定(終日の予定は終わりの日を含まない)
 function eventsOn(d) {
@@ -1670,7 +1872,294 @@ function fvStudy() {
     <div class="slwrap"><div class="slmain">${body}</div><div class="wbars">${bars}</div></div>`;
 }
 const fmtTime = ms => { const d = new Date(ms); return `${d.getHours()}:${pad(d.getMinutes())}`; };
-const FV = { calendar: fvCalendar, sched: fvSched, tt: fvTT, weather: fvWeather, todo: fvTodo, count: fvCount, holiday: fvHoliday, terms: fvTerms, studyline: fvStudy };
+/* ================= 全画面(v2):タイルを押したときの詳しい画面 ================= */
+const v2bar = inner => `<div class="v2bar">${inner}</div>`;
+const v2pad = h => `<div class="v2pad">${h}</div>`;
+const mdw = d => `${md(d)}(${WD[d.getDay()]})`;
+// 時間割: 左に「いま」、右に1日の流れ(長さ = 時間)
+function fv2TT() {
+  const d = now(), st = schoolState(d), m = minOfDay(d);
+  const shown = st.mode === 'after' || st.mode === 'off' ? (st.mode === 'off' && isSchoolDay(d) ? d : nextSchoolDay(d)) : d;
+  const wd = +(fs.wd || shown.getDay() || 1);
+  let date = sod(d); for (let i = 0; i < 7 && date.getDay() !== wd; i++) date = addDays(date, 1);
+  const live = ymd(date) === ymd(d) && isSchoolDay(d);
+  const ps = periodsMin(date), pre = preMin(date), post = postMin(date);
+  const items = [];
+  for (const [n, a, b] of pre) items.push({ k: 'sm', a, b, t: n });
+  ps.forEach(([a, b], i) => {
+    const prev = items[items.length - 1];
+    if (prev && a - prev.b >= 30) items.push({ k: 'lunch', a: prev.b, b: a, t: `昼休み ${a - prev.b}分` });
+    items.push({ k: 'p', a, b, i, t: subjOf(date, i) || `${i + 1}限`, r: roomOf(date, i) });
+  });
+  if (post) items.push({ k: 'sm', a: post[1], b: post[2], t: post[0] });
+  const rows = items.map(x => {
+    const cls = live ? (m >= x.b ? 'done' : m >= x.a ? 'cur' : '') : '';
+    const fl = Math.max(.45, Math.min(1.2, (x.b - x.a) / 50));
+    return `<div class="v2row ${x.k} ${cls}" style="flex:${fl.toFixed(2)}"><span class="tm n">${fmtMin(x.a)}</span><span class="no n">${x.k === 'p' ? x.i + 1 : ''}</span><span class="sb">${esc(x.t)}</span><span class="rr">${cls === 'cur' ? `あと${Math.ceil(x.b - m)}分` : esc(x.r || '')}</span></div>`;
+  }).join('');
+  // 左:いま
+  let hero;
+  const sub = i => esc(subjOf(d, i) || `${i + 1}限`);
+  if (live && st.mode === 'class') {
+    const [a, b] = st.ps[st.i], nx = st.i + 1 < st.ps.length ? `${st.i + 2}限 ${sub(st.i + 1)}<span class="n">${fmtMin(st.ps[st.i + 1][0])}</span>` : esc(st.post ? st.post[0] : '帰り');
+    hero = `<div class="lab red">● 授業中</div><div class="v2pd n">${st.i + 1}<small>限</small></div><div class="v2sj">${sub(st.i)}</div><div class="v2rm">${fmtMin(a)} 〜 ${fmtMin(b)}${roomOf(d, st.i) ? ' ・ ' + esc(roomOf(d, st.i)) : ''}</div>
+      <div class="v2left"><b class="n">${Math.ceil(st.left)}</b><small>分</small><span>終わりまで</span></div><div class="v2pg"><i style="width:${(100 * (m - a) / (b - a)).toFixed(1)}%"></i></div><div class="v2pgl n"><span>${fmtMin(a)}</span><span>${fmtMin(b)}</span></div>
+      <div class="v2nx"><div class="lab">つぎ</div><b>${nx}</b></div>`;
+  } else if (live && (st.mode === 'break' || st.mode === 'before' || st.mode === 'pre' || st.mode === 'shr')) {
+    const nextI = st.mode === 'break' ? st.next : st.mode === 'shr' ? -1 : 0;
+    const lab = st.mode === 'break' ? '● 休み時間' : st.mode === 'shr' ? '● 帰りの時間' : st.mode === 'pre' ? `● ${esc(st.name)}` : '● 朝';
+    hero = `<div class="lab yel">${lab}</div>${nextI >= 0 ? `<div class="v2pd n">${nextI + 1}<small>限まで</small></div><div class="v2sj">${sub(nextI)}</div><div class="v2rm">${fmtMin(st.ps[nextI][0])} 〜 ${fmtMin(st.ps[nextI][1])}${roomOf(d, nextI) ? ' ・ ' + esc(roomOf(d, nextI)) : ''}</div>` : `<div class="v2sj" style="margin-top:20px">${esc(st.post ? st.post[0] : '帰り')}</div>`}
+      <div class="v2left"><b class="n">${Math.ceil(st.left)}</b><small>分</small><span>${nextI >= 0 ? 'あと' : '終わりまで'}</span></div>`;
+  } else {
+    const nd = live ? nextSchoolDay(d) : date, p0 = periodsMin(nd)[0];
+    hero = `<div class="lab">${live || st.mode === 'after' ? '今日の授業はおわり' : st.mode === 'off' && ymd(date) === ymd(d) ? '今日はお休み' : '次の' + WD[wd] + '曜'}</div><div class="v2sj" style="margin-top:16px">${dayLabel(d, nd)}</div>
+      ${p0 ? `<div class="v2rm">1限 ${fmtMin(p0[0])} 〜 ・ ${periodsMin(nd).length}時間</div><div class="v2nx"><div class="lab">1限</div><b>${esc(subjOf(nd, 0) || '—')}</b></div>` : '<div class="v2rm">授業はありません</div>'}`;
+  }
+  const end = post ? post[2] : ps.length ? ps[ps.length - 1][1] : null;
+  return `<div class="v2tt">${v2bar(`${tabs('wd', [[1, '月'], [2, '火'], [3, '水'], [4, '木'], [5, '金'], [6, '土']], wd)}<span class="fvnote">${mdw(date)}${isSchoolDay(date) ? '' : '(お休み)'}${wd === 6 ? ` ・ 土曜は 第${(cfg.satWeeks || []).join('・')}週` : ''}</span>`)}
+    <div class="v2split"><div class="v2hero"><div class="lab">${mdw(date)}${ymd(date) === ymd(d) ? ' ・ 今日' : ''}</div>${hero}</div>
+    <div class="v2tl"><div class="v2tlh"><b>${ymd(date) === ymd(d) ? '今日の流れ' : WD[wd] + '曜の流れ'}</b><span>${ps.length}時間${end != null ? ' ・ 下校 ' + fmtMin(end) : ''}</span></div>
+    ${ps.length ? `<div class="v2rows">${rows}</div>` : '<p class="empty">この曜日は授業がありません。</p>'}</div></div></div>`;
+}
+// 天気の一言(タイルと同じ決まり)
+function wxSay(after) {
+  const d = now(), st = schoolState(d), H = wx.hourly, D = wx.daily;
+  const di = Math.min((after ? 1 : 0) + wxDay0(), D.time.length - 1);
+  if (!after && (!isSchoolDay(d) || st.mode === 'after')) {
+    const hs = H.time.map((t, i) => ({ t, i })).filter(x => x.t.startsWith(ymd(d)) && +x.t.slice(11, 13) >= d.getHours() && +x.t.slice(11, 13) <= 21);
+    const ps = hs.map(x => H.precipitation_probability[x.i]).filter(v => v != null);
+    const p = ps.length ? Math.max(...ps) : D.precipitation_probability_max[di];
+    const wet = hs.find(x => /rain|snow|thunder/.test(WCODE(H.weather_code[x.i])[1]));
+    return { head: `今日はこのあと ${pct(p)}%`, say: umbrella(p, wet ? H.weather_code[wet.i] : null), p, wet: !!wet };
+  }
+  if (!after) {
+    const pm = postMin(d), pl = periodsMin(d);
+    const goHome = Math.round((pm ? pm[2] : pl.length ? pl[pl.length - 1][1] : 960) / 60);
+    const idx = H.time.findIndex(t => t.startsWith(ymd(d)) && +t.slice(11, 13) === goHome);
+    const p = idx >= 0 ? H.precipitation_probability[idx] : D.precipitation_probability_max[di];
+    const k = idx >= 0 ? WCODE(H.weather_code[idx])[0] : '';
+    return { head: `帰り(${goHome}時ごろ)は${k}${p == null ? '' : ' ' + p + '%'}`, say: umbrella(p, idx >= 0 ? H.weather_code[idx] : null), p, goHome, wet: idx >= 0 && /rain|snow|thunder/.test(WCODE(H.weather_code[idx])[1]) };
+  }
+  const p = D.precipitation_probability_max[di];
+  return { head: `明日は${WCODE(D.weather_code[di])[0]}${p == null ? '' : ' ' + p + '%'}`, say: umbrella(p, D.weather_code[di]), p };
+}
+// 天気: 今の天気を大きく、傘の一言、気温の線と雨の棒
+function fv2Weather() {
+  if (!wx) return v2pad(`<p class="empty">${wxFail ? '天気を取得できませんでした。' : '天気を読み込み中…'}</p>`);
+  const H = wx.hourly, D = wx.daily, d0 = wxDay0(), sel = +(fs.wd || 0), di = Math.min(d0 + sel, D.time.length - 1), date = D.time[di];
+  const isToday = date === ymd(now());
+  const [txt, kind] = WCODE(isToday ? wx.cur.weather_code : D.weather_code[di]);
+  const cs = isToday ? wxSay(false) : { head: `${['今日', '明日', 'あさって'][sel]}は${WCODE(D.weather_code[di])[0]}${D.precipitation_probability_max[di] == null ? '' : ' ' + D.precipitation_probability_max[di] + '%'}`, say: umbrella(D.precipitation_probability_max[di], D.weather_code[di]), p: D.precipitation_probability_max[di] };
+  const rainy = (cs.p != null && cs.p >= 30) || cs.wet;
+  const names = ['今日', '明日', 'あさって'];
+  const cards = D.time.slice(d0, d0 + 3).map((t, i) => { const j = d0 + i; return `<button class="v2day ${i === sel ? 'on' : ''}" data-fa="wd" data-v="${i}"><span>${names[i]} ${mdw(parseYmd(t))}</span><b class="n"><em class="r">${Math.round(D.temperature_2m_max[j])}°</em> / <em class="b">${Math.round(D.temperature_2m_min[j])}°</em></b><small>${esc(WCODE(D.weather_code[j])[0])} ・ ☂ ${pct(D.precipitation_probability_max[j])}%</small></button>`; }).join('');
+  // グラフ
+  const hrs = H.time.map((t, i) => ({ t, i })).filter(x => x.t.startsWith(date));
+  const W = 1100, Hh = 300, top = 34, bh = 110, bt = Hh - 34;
+  const T = hrs.map(x => H.temperature_2m[x.i]).filter(v => v != null), tMax = Math.max(...T), tMin = Math.min(...T);
+  const X = k => 24 + k * (W - 48) / Math.max(1, hrs.length - 1), Y = t => top + 10 + (tMax - t) / Math.max(1, tMax - tMin) * 100;
+  let g = '';
+  hrs.forEach((x, k) => {
+    const p = H.precipitation_probability[x.i], h = +x.t.slice(11, 13), ph = p == null ? 0 : p / 100 * bh;
+    g += `<rect x="${(X(k) - 13).toFixed(1)}" y="${(bt - ph).toFixed(1)}" width="26" height="${ph.toFixed(1)}" class="${p >= 50 ? 'pb2' : 'pb1'}"/>`;
+    if (p) g += `<text x="${X(k).toFixed(1)}" y="${(bt - ph - 5).toFixed(1)}" class="pt">${p}%</text>`;
+    g += `<text x="${X(k).toFixed(1)}" y="${Hh - 12}" class="ht2 ${isToday && h === now().getHours() ? 'now' : ''}">${h}</text>`;
+  });
+  const pts = hrs.map((x, k) => H.temperature_2m[x.i] == null ? null : `${X(k).toFixed(1)},${Y(H.temperature_2m[x.i]).toFixed(1)}`).filter(Boolean).join(' ');
+  g += `<polyline points="${pts}" class="tl2"/>`;
+  hrs.forEach((x, k) => { if (k % 3 === 0 && H.temperature_2m[x.i] != null) g += `<text x="${X(k).toFixed(1)}" y="${(Y(H.temperature_2m[x.i]) - 10).toFixed(1)}" class="tt2">${Math.round(H.temperature_2m[x.i])}°</text>`; });
+  if (isToday && cs.goHome != null) { const k = hrs.findIndex(x => +x.t.slice(11, 13) === cs.goHome); if (k >= 0) g += `<rect x="${(X(k) - 22).toFixed(1)}" y="${top - 8}" width="44" height="${bt - top + 8}" class="gh"/><text x="${X(k).toFixed(1)}" y="${top - 14}" class="ghl">帰り</text>`; }
+  if (isToday) { const nh = now().getHours() + now().getMinutes() / 60, x = X(nh); g += `<line x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${top - 4}" y2="${bt}" class="nl"/><text x="${(x + 6).toFixed(1)}" y="${top + 4}" class="nlt">いま</text>`; }
+  return `<div class="v2wx"><div class="v2wtop"><div class="v2wnow">${wxIcon(kind, isToday && !wx.cur.is_day)}<div class="tp n">${Math.round(isToday ? wx.cur.temperature_2m : D.temperature_2m_max[di])}<sup>°</sup></div><div><div class="tx">${esc(txt)}</div><div class="hl n"><em class="r">${Math.round(D.temperature_2m_max[di])}°</em> / <em class="b">${Math.round(D.temperature_2m_min[di])}°</em></div><div class="fl">${esc(wx.pref || loc().pref)}${cfg.loc ? '' : '(場所 未設定)'}${wx.err ? ' ・ 更新できません' : ''}</div></div></div>
+    <div class="v2wsay"><div class="v2call ${rainy ? 'wet' : ''}"><span class="ic">${rainy ? '☂' : '☀'}</span><div><b>${esc(cs.head)}</b><span>${esc(cs.say)}</span></div></div><div class="v2days">${cards}</div></div></div>
+    <div class="v2chart"><div class="lab">1時間ごと ・ 線 = 気温 / 棒 = 降水確率</div><svg viewBox="0 0 ${W} ${Hh}" preserveAspectRatio="none">${g}</svg></div></div>`;
+}
+// カレンダー: マスに予定の名前、続く予定は帯
+function fv2Calendar() {
+  const today = sod(now()), sel = fs.day ? parseYmd(fs.day) : today;
+  const m0 = fs.month ? parseYmd(fs.month) : new Date(sel.getFullYear(), sel.getMonth(), 1);
+  const start = addDays(m0, -((m0.getDay() + 6) % 7));
+  let cells = '';
+  for (let i = 0; i < 42; i++) {
+    const x = addDays(start, i);
+    if (i >= 35 && x.getMonth() !== m0.getMonth()) break;
+    const k = ymd(x), evs = eventsOn(x), td = todosOn(x).filter(t => !t.done);
+    const cls = [x.getMonth() !== m0.getMonth() ? 'o' : '', x.getDay() === 0 || HOLIDAYS[k] ? 'su' : x.getDay() === 6 ? 'sa' : '', k === ymd(today) ? 'td' : '', k === ymd(sel) ? 'sel' : '', x < today ? 'past' : ''].join(' ');
+    let inner = '';
+    for (const e of evs.slice(0, 3)) {
+      const s = sod(new Date(e.start)), multi = e.allDay && new Date(e.end) - new Date(e.start) > 864e5;
+      if (e.allDay) inner += `<span class="ev ln ${multi ? 'mt' : ''}" style="background:${evColor(e)}">${multi && ymd(s) !== k && x.getDay() !== 1 && x.getDate() !== 1 ? '&nbsp;' : esc(e.title)}</span>`;
+      else { const st = new Date(e.start); inner += `<span class="ev t" style="--c:${evColor(e)}">${st.getHours()}:${pad(st.getMinutes())} ${esc(e.title)}</span>`; }
+    }
+    if (evs.length > 3) inner += `<span class="more">+${evs.length - 3}</span>`;
+    if (td.length) inner += `<span class="tdot">● ${esc(td[0].text)}${td.length > 1 ? ` 他${td.length - 1}` : ''}</span>`;
+    cells += `<button class="v2c ${cls}" data-fa="day" data-v="${k}"><span class="dn n">${x.getDate()}</span>${HOLIDAYS[k] ? `<span class="hol">${esc(HOLIDAYS[k])}</span>` : ''}${inner}</button>`;
+  }
+  const evs = eventsOn(sel), tds = todosOn(sel), ls = dayLessons(sel);
+  const side = `<div class="dd n">${md(sel)}<small>${WD[sel.getDay()]}曜日${ymd(sel) === ymd(today) ? ' ・ 今日' : ''}</small></div>
+    <span class="v2tag">${isSchoolDay(sel) ? `授業あり ・ ${ls.length}時間` : HOLIDAYS[ymd(sel)] ? esc(HOLIDAYS[ymd(sel)]) : 'お休み'}</span>
+    <div class="lab" style="margin-top:14px">予定</div>${evs.length ? evs.map(e => `<div class="v2it" style="--c:${evColor(e)}"><span class="tm n">${e.allDay ? '終日' : fmtTime(new Date(e.start).getTime())}</span><i></i><b>${esc(e.title)}<small>${e.allDay ? (new Date(e.end) - new Date(e.start) > 864e5 ? `${md(new Date(e.start))} 〜 ${md(addDays(new Date(e.end), -1))}` : '') : evTime(e).replace('–', ' 〜 ')}</small></b></div>`).join('') : `<p class="empty">${cfg.gasUrl ? '予定はありません' : '「設定」→「連携」で Googleカレンダーをつなぐと出ます'}</p>`}
+    ${tds.length ? `<div class="lab" style="margin-top:14px">この日までのやること</div>${tds.map(t => `<div class="v2it ${t.done ? 'dn2' : ''}" style="--c:var(--yel)"><span class="tm">${t.gt ? 'ToDo' : t.bring ? '持ちもの' : '課題'}</span><i></i><b>${esc(t.text)}</b></div>`).join('')}` : ''}
+    ${ls.length ? `<div class="lab" style="margin-top:14px">時間割</div><div class="v2mini">${ls.map(l => `<span><em class="n">${l.i + 1}</em>${esc(l.sub || '—')}</span>`).join('')}</div>` : ''}`;
+  return `<div class="v2cal"><div class="v2mon"><div class="v2mh"><button data-fa="mon" data-v="-1">‹</button><b class="n">${m0.getFullYear()}<small>年</small> ${m0.getMonth() + 1}<small>月</small></b><button data-fa="mon" data-v="1">›</button><button data-fa="today" class="w">今日</button><span class="fvnote">日付を押すと右にその日のこと</span></div>
+    <div class="v2wk">${['月', '火', '水', '木', '金', '土', '日'].map((w, i) => `<span class="${i === 5 ? 'sa' : i === 6 ? 'su' : ''}">${w}</span>`).join('')}</div><div class="v2g">${cells}</div></div><div class="v2side">${side}</div></div>`;
+}
+// やること: 期限ごとに4列
+function fv2Todo() {
+  const mode = fs.mode || 'col';
+  const head = v2bar(`${tabs('tmode', [['col', '期限ごと'], ['list', 'リスト']], mode)}<span class="fvnote">押すと済(もう一度で戻る)</span><button data-fa="todoadd" class="v2btn">+ 追加・編集</button>`);
+  if (mode === 'list') return head + v2pad(fvTodo());
+  cleanTodos();
+  const all = allTodos().sort((a, b) => (a.done - b.done) || (dueInfo(a).ord - dueInfo(b).ord)), t0 = sod(now());
+  const col = t => { if (!t.due) return 3; const k = dayDiff(t0, parseYmd(t.due)); return k <= 0 ? 0 : k === 1 ? 1 : k <= 14 ? 2 : 3; };
+  const cols = [['今日まで・期限切れ', 'var(--red)'], ['明日', 'var(--yel)'], ['この2週間', 'var(--blue)'], ['それ以降・期限なし', 'var(--sub)']];
+  const card = t => { const di = dueInfo(t); return `<button class="v2cd ${t.done ? 'done' : ''}" data-fa="todo" data-v="${esc(t.id)}"><span class="bx"></span><span class="cx"><b>${esc(t.text)}</b><span class="m">${t.due ? `<em class="${di.hot && !t.done ? 'r' : ''}">${di.label}${di.label !== md(parseYmd(t.due)) ? '' : `(${WD[parseYmd(t.due).getDay()]})`}</em>` : ''}${t.bring ? '<em class="y">持ちもの</em>' : t.gt ? '' : '<em>課題</em>'}${t.gt ? `<em class="g">G・${esc((t.lt || 'ToDo').slice(0, 8))}</em>` : ''}${t.done ? '<em>済</em>' : ''}</span></span></button>`; };
+  return head + `<div class="v2cols">${cols.map(([n, c], i) => { const l = all.filter(t => col(t) === i); return `<div class="v2col" style="--c:${c}"><div class="ch"><b>${n}</b><span class="n">${l.filter(t => !t.done).length}</span></div>${l.map(card).join('') || '<p class="empty">なし</p>'}${i === 3 ? '<button class="v2add" data-fa="todoadd">+ やることを追加</button>' : ''}</div>`; }).join('')}</div>`;
+}
+// 予定: 左に次の予定、右は日ごとに
+function fv2Sched() {
+  const f = fs.f || 'all', up = upcoming(), wk = sod(addDays(now(), 7)).getTime();
+  const list = up.filter(e => f === 'allday' ? e.allDay : f === 'week' ? new Date(e.start).getTime() < wk : true);
+  const groups = {};
+  for (const e of list) { const k = ymd(new Date(Math.max(new Date(e.start).getTime(), sod(now()).getTime()))); (groups[k] = groups[k] || []).push(e); }
+  const nt = nextTimed()[0], two = up.filter(e => new Date(e.start).getTime() < sod(addDays(now(), 14)).getTime());
+  const left = nt ? `<div class="lab yel">次の予定</div><div class="ttl">${esc(nt.title)}</div><div class="sub">${esc(evWhen(nt))}</div><div class="big n" data-to="${new Date(nt.start).getTime()}">${fmtLeft(new Date(nt.start).getTime() - nowMs())}</div><div class="sub">後に始まります</div>`
+    : `<div class="lab">次の予定</div><p class="empty" style="margin-top:10px">${cfg.gasUrl ? (events ? 'この先、時間の決まった予定はありません。' : '読み込み中…') : '「設定」→「連携」で Googleカレンダーをつなぐと出ます。'}</p>`;
+  return `${v2bar(`${tabs('f', [['all', 'この先'], ['week', '1週間'], ['allday', '終日だけ']], f)}<span class="fvnote">${eventsAt ? `${new Date(eventsAt).getHours()}:${pad(new Date(eventsAt).getMinutes())} に読み込み` : ''}${eventsErr ? ` ・ <span class="late">${esc(eventsErr)}</span>` : ''}</span><button data-fa="reload" class="v2btn">読み込み直す</button>`)}
+    <div class="v2split ag"><div class="v2hero">${left}<div class="v2nx"><div class="lab">この先 2週間</div><b class="n" style="font-size:44px">${two.length}</b><small> 件</small><div class="sub">時間の決まった予定 ${two.filter(e => !e.allDay).length} ・ 終日 ${two.filter(e => e.allDay).length}</div></div></div>
+    <div class="v2agl">${Object.keys(groups).sort().map(k => { const d = parseYmd(k); return `<div class="v2dy"><button class="dd n ${k === ymd(now()) ? 't' : ''} ${d.getDay() === 0 || HOLIDAYS[k] ? 'su' : ''}" data-fa="openday" data-v="${k}">${md(d)}<small>${WD[d.getDay()]} ・ ${dayLabel(now(), d).replace(/^\d.*$/, '') || dayDiff(now(), d) + '日後'}</small></button><div>${groups[k].map(e => { const st = new Date(e.start).getTime(); return `<div class="v2ei" style="--c:${evColor(e)}"><span class="tm n">${evTime(e)}</span><i></i><b>${esc(e.title)}</b><span class="rr">${!e.allDay && st > nowMs() && st - nowMs() < 864e5 ? `あと <span data-to="${st}" data-short="1">${fmtLeft(st - nowMs(), true)}</span>` : e.allDay && new Date(e.end) - new Date(e.start) > 864e5 ? `${md(new Date(e.start))}〜${md(addDays(new Date(e.end), -1))}` : ''}</span></div>`; }).join('')}</div></div>`; }).join('') || `<p class="empty">${events ? '予定はありません。' : '読み込み中…'}</p>`}</div></div>`;
+}
+// 次の休み
+function fv2Holiday() {
+  const d = sod(now()), o = nextOff();
+  let x = d, n = 0, lng = null;
+  while (n < 400 && !lng) { if (!isSchoolDay(x)) { const from = x; let len = 0; while (!isSchoolDay(x) && len < 90) { x = addDays(x, 1); len++; n++; } if (len >= 3 && ymd(from) !== ymd(d)) lng = { from, len }; else if (len >= 3 && o.today) lng = { from, len }; } else { x = addDays(x, 1); n++; } }
+  const y1 = new Date(d.getFullYear() + 1, 0, 1), left = dayDiff(d, y1) - 1; let sch = 0; for (let z = addDays(d, 1); z < y1; z = addDays(z, 1)) if (isSchoolDay(z)) sch++;
+  const frac = (nowMs() - new Date(d.getFullYear(), 0, 1)) / (y1 - new Date(d.getFullYear(), 0, 1));
+  const lt = lng ? addDays(lng.from, lng.len - 1) : null, lnames = lng ? [...new Set([...Array(lng.len)].map((_, i) => HOLIDAYS[ymd(addDays(lng.from, i))]).filter(Boolean))].join('・') : '';
+  const mon = addDays(d, -((d.getDay() + 6) % 7));
+  let grid = '<span class="w"></span>' + ['月', '火', '水', '木', '金', '土', '日'].map(w => `<span class="h">${w}</span>`).join('');
+  for (let r = 0; r < 8; r++) { grid += `<span class="w">${md(addDays(mon, r * 7))}〜</span>`; for (let c = 0; c < 7; c++) { const z = addDays(mon, r * 7 + c), k = ymd(z); grid += `<span class="${HOLIDAYS[k] ? 'hl' : isSchoolDay(z) ? 'sc' : 'of'} ${k === ymd(d) ? 'td' : ''} ${z < d ? 'past' : ''}" title="${esc(HOLIDAYS[k] || '')}">${z.getDate()}</span>`; } }
+  return `<div class="v2hol"><div class="v2hh"><div><div class="lab">${o.today ? '今日はお休み' : '次の休みまで'}</div><div class="v n">${o.today ? o.len : o.days}<small>${o.today ? '連休' : '日後'}</small></div><div class="d">${mdw(o.from)}から ${o.len}連休</div></div>
+    <div><div class="lab grn">次の長い休み</div>${lng ? `<div class="v n grn">${lng.len}<small>連休</small></div><div class="d">${mdw(lng.from)} 〜 ${mdw(lt)}${lnames ? ' ・ ' + esc(lnames) : ''} ・ ${dayDiff(d, lng.from) ? dayDiff(d, lng.from) + '日後' : '今'}</div>` : '<div class="d">この先1年に3連休以上はありません</div>'}</div>
+    <div><div class="lab">${d.getFullYear()}年の残り</div><div class="v n">${left}<small>日</small></div><div class="d">授業日 あと ${sch}日 ・ ${(frac * 100).toFixed(1)}% 経過</div></div></div>
+    <div class="v2strip"><div class="lab">この先 8週間</div><div class="v2wks">${grid}</div><div class="v2leg"><span><i class="sc"></i>授業</span><span><i class="of"></i>休み</span><span><i class="hl"></i>祝日</span><span><i class="td"></i>今日</span><span class="fvnote">土日・祝日・年末年始と、授業のない土曜(第${(cfg.satWeeks || []).join('・')}週以外)</span></div></div></div>`;
+}
+// カウントダウン
+function fv2Count() {
+  const l = cdList();
+  if (!l.length) return v2pad(`<p class="empty">${cdEmpty()}</p><button class="v2btn" data-fa="cdadd">+ カウントダウンを追加</button>`);
+  const c = l[0], dt = parseYmd(c.date); let sch = 0, off = 0; for (let x = addDays(sod(now()), 1); x <= dt; x = addDays(x, 1)) isSchoolDay(x) ? sch++ : off++;
+  return `<div class="v2split cd"><div class="v2cdm"><div class="lab">いちばん近い目標</div><div class="nm">${esc(c.name)}${c.days ? 'まで' : ''}</div><div class="v n">${c.days ? `${c.days}<small>日</small>` : '<span style="font-size:.5em">今日</span>'}</div><div class="sub">${dt.getFullYear()}/${mdw(dt)} ・ ${Math.floor(c.days / 7)}週と${c.days % 7}日</div>
+    <div class="row4"><div><b class="n">${sch}</b><span>授業日</span></div><div><b class="n">${off}</b><span>休みの日</span></div><div><b class="n">${Math.max(0, Math.floor((dt.getTime() - nowMs()) / 3600e3)).toLocaleString()}</b><span>時間</span></div></div></div>
+    <div class="v2cds"><div class="lab">ほかのカウントダウン</div>${l.slice(1).map(x => { const d2 = parseYmd(x.date); let s2 = 0; for (let z = addDays(sod(now()), 1); z <= d2; z = addDays(z, 1)) if (isSchoolDay(z)) s2++; return `<div class="v2cdc"><div><b>${esc(x.name)}</b><small>${d2.getFullYear() !== now().getFullYear() ? d2.getFullYear() + '/' : ''}${mdw(d2)} ・ 授業日 ${s2}日</small></div><div class="n2 n">${x.days}<small> 日</small></div></div>`; }).join('') || '<p class="empty">ほかにはありません</p>'}
+    <button class="v2add" data-fa="cdadd">+ カウントダウンを追加(カレンダーからも)</button></div></div>`;
+}
+// StudyLine: 路線図と7日の棒
+function fv2Study() {
+  const today = sod(now()), sel = fs.day ? parseYmd(fs.day) : today, ds = ymd(sel), isT = ds === ymd(today), d = slDay(ds);
+  const sc = isT ? slSchedule() : null, base = sel.getTime();
+  let head = '', route = '';
+  if (!d || !d.tasks.length) head = `<p class="empty">${isT ? '今日のダイヤはまだありません。「StudyLine を開く」から作るとここに出ます。' : 'この日の記録はありません。'}</p>`;
+  else {
+    d._ds = ds;
+    const rows = sc ? sc.rows : d.tasks.map(t => ({ t, st: t.actualEnd ? 'done' : t.actualStart ? 'run' : 'wait', s: t.actualStart ? (t.actualStart - base) / 60000 : null, e: t.actualEnd ? (t.actualEnd - base) / 60000 : null }));
+    const run = rows.findIndex(r => r.st === 'run'), nDone = rows.filter(r => r.st === 'done').length;
+    const cur = run >= 0 ? rows[run] : null;
+    const studied = slStudied(d), late = sc && sc.deadline != null ? Math.round(sc.deadline - sc.end) : null;
+    head = `<div class="v2slh"><div><div class="v2st">${isT ? (cur ? '● 運行中' : nDone === rows.length ? '● 終点に着きました' : '● 発車前') : '記録'}</div><div class="tk">${cur ? esc(cur.t.name) : nDone === rows.length ? 'おつかれさまでした' : esc(rows[nDone] ? rows[nDone].t.name : '')}${cur && sc ? `<span class="n">あと ${Math.max(0, Math.ceil(cur.e - sc.nm))}分</span>` : ''}</div></div>
+      <div class="kp"><div><b class="n">${hm(studied * 60000)}</b><span>${isT ? '今日' : 'この日'}の勉強</span></div>${sc ? `<div><b class="n">${fmtDay(sc.end)}</b><span>終点 着見込み</span></div>` : ''}${late != null ? `<div><b class="n ${late >= 0 ? 'grn' : 'red'}">${late >= 0 ? '+' : '−'}${hm(Math.abs(late) * 60000)}</b><span>就寝期限まで${late >= 0 ? '余裕' : 'オーバー'}</span></div>` : ''}<div><b class="n">${nDone}/${rows.length}</b><span>済</span></div></div></div>`;
+    const N = rows.length, pos = i => N === 1 ? 50 : 4 + i * 92 / (N - 1);
+    let trainAt = null;
+    if (cur && sc) { const r = Math.min(1, Math.max(0, (sc.nm - cur.s) / Math.max(1, cur.e - cur.s))); trainAt = run + 1 < N ? pos(run) + (pos(run + 1) - pos(run)) * r * .9 : pos(run); }
+    const fill = trainAt != null ? trainAt : nDone ? pos(Math.min(N - 1, nDone - 1)) : 0;
+    route = `<div class="v2route"><div class="v2ln" style="left:${pos(0)}%;right:${100 - pos(N - 1)}%"><i style="width:${N > 1 ? ((fill - pos(0)) / (pos(N - 1) - pos(0)) * 100).toFixed(1) : 0}%"></i></div>
+      ${rows.map((r, i) => `<span class="v2stn ${r.st}" style="left:${pos(i)}%"></span><div class="v2stl ${r.st}" style="left:${pos(i)}%"><b>${esc(r.t.name)}</b><span class="n">${r.s != null ? fmtDay(r.s) : '—'}${r.st === 'wait' ? ' 頃' : ''}${r.t.pomo ? ' 🍅' : ''}</span><span class="n du">${slDur(r.t)}分</span></div>`).join('')}
+      ${trainAt != null ? `<div class="v2train" style="left:${trainAt}%">🚃 いまここ</div>` : ''}</div>`;
+  }
+  let mx = 60; const wk = [];
+  for (let i = 6; i >= 0; i--) { const x = addDays(today, -i), dd = slDay(ymd(x)); if (dd) dd._ds = ymd(x); const v = slStudied(dd); wk.push([x, v]); mx = Math.max(mx, v); }
+  const bars = wk.map(([x, v]) => `<button class="${ymd(x) === ds ? 'on' : ''}" data-fa="day" data-v="${ymd(x)}"><b class="n">${v >= 1 ? (v / 60).toFixed(1) + 'h' : ''}</b><i style="height:${(v / mx * 100).toFixed(0)}%"></i><span>${ymd(x) === ymd(today) ? '今日' : md(x)}</span></button>`).join('');
+  return `${v2bar(`<button data-fa="sday" data-v="-1" class="v2btn">‹</button><b>${mdw(sel)}${isT ? ' 今日' : ''}</b><button data-fa="sday" data-v="1" class="v2btn" ${isT ? 'disabled' : ''}>›</button><button data-fa="today" class="v2btn">今日</button><span class="fvnote">下の棒を押すとその日を見られます</span><button class="v2btn openapp" data-app="studyline">StudyLine を開く</button>`)}
+    <div class="v2sl">${head}${route}<div class="lab" style="padding:0 30px 6px">この7日の勉強時間</div><div class="v2wkc">${bars}</div></div>`;
+}
+// 受験の語句: 表と裏を左右に。覚えた語句は出にくく
+let termMem = store.get('termMem') || [], termHist = [];
+function fv2Terms() {
+  const cats = [...new Set(terms.map(t => t.cat))], mode = fs.mode || 'card';
+  const head = v2bar(`${tabs('tmode', [['card', 'カード'], ['list', '一覧']], mode)}<span class="fvnote">${terms.filter(t => cfg.termCats.includes(t.cat)).length}語 ・ 覚えた ${termMem.filter(x => terms.some(t => t.term === x && cfg.termCats.includes(t.cat))).length}語</span>${termMem.length ? '<button class="v2btn" data-fa="tmreset">覚えたをリセット</button>' : ''}`);
+  if (mode === 'list') return head + v2pad(fvTerms().replace(/^<div class="fvbar">[\s\S]*?<\/div><\/div>/, ''));
+  if (!termCur) pickTerm();
+  const t = termCur, shown = !!fs.flip, known = t && termMem.includes(t.term);
+  const catsH = `<div class="v2cats"><div class="lab">科目(押して切りかえ)</div>${cats.map(c => `<button data-fa="tcat" data-v="${esc(c)}" class="${cfg.termCats.includes(c) ? 'on' : ''}">${esc(c)}<i class="n">${terms.filter(x => x.cat === c).length}</i></button>`).join('')}</div>`;
+  const card = t ? `<div class="v2fc"><button class="f" data-fa="tflip"><span class="c">${esc(t.cat)}</span><b>${esc(t.term)}</b>${t.yomi ? `<span>${esc(t.yomi)}</span>` : ''}${known ? '<em>覚えた ✓</em>' : ''}</button>
+    <button class="bk ${shown ? '' : 'hid'}" data-fa="tflip">${shown ? `<div class="lab yel">意味</div><p>${esc(t.desc)}</p>${t.note ? `<div class="lab" style="margin-top:10px">メモ</div><p class="sub">${esc(t.note)}</p>` : ''}` : '<span>押すと意味が出ます</span>'}</button></div>` : '<p class="empty">科目を選んでください。</p>';
+  return head + `<div class="v2split tm">${catsH}<div class="v2fcw">${card}<div class="v2ctrl"><button data-fa="tprev" ${termHist.length ? '' : 'disabled'}>‹ 前へ</button><button data-fa="tmem" data-v="0">まだ覚えてない</button><button data-fa="tmem" data-v="1">覚えた ✓</button><button data-fa="tnext2" class="p">次へ ›</button></div></div></div>`;
+}
+// 記憶回路: 単語を特大で、採点ボタンに次に出る日
+function fv2Kioku() {
+  if (!kioku.loaded) return v2pad('<p class="empty">単語を読み込み中…</p>');
+  const list = dueList(), t = vToday();
+  if (kioku.cur && !list.some(x => x.sub === kioku.cur.sub && x.w === kioku.cur.w)) kioku.cur = null;
+  if (!kioku.cur && list.length) { kioku.cur = list[0]; kioku.shown = false; }
+  const doneToday = id => Object.values(vDb(id)).filter(r => r && r.last === t).length;
+  const decks = VOCAB.map(v => { const due = list.filter(x => x.sub === v.id).length, dn = doneToday(v.id); return `<div class="v2dk"><b>${v.name}</b><span class="n">${due}</span><div class="pb"><i style="width:${due + dn ? (dn / (due + dn) * 100).toFixed(0) : 100}%"></i></div><small>今日 ${dn}語 済</small></div>`; }).join('');
+  const left = `<div class="v2kst"><div class="lab">今日の復習 のこり</div><b class="tot n">${list.length}</b>${decks}<button class="v2btn openapp" data-app="kioku" style="margin-top:auto">記憶回路を開く</button></div>`;
+  if (!list.length) return `<div class="v2split kk">${left}<div class="v2kq"><div class="v2kc"><b class="a">今日の復習はおわりです</b><span class="ex">新しい単語は記憶回路で覚えましょう。</span></div></div></div>`;
+  const c = kioku.cur, w = c.w, isK = c.sub === 'kanji', kana = isK && /^[゠-ヿ・ー]+$/.test(w.english);
+  const tag = `${VOCAB.find(v => v.id === c.sub).name}${isK ? (kana ? ' ・ 書き' : ' ・ 読み') : ''}${isWeak(c.r) ? ' ・ 苦手' : ''}`;
+  const nextLab = g => { const iv = vSchedule(c.r, g, t).ivl; return iv === 0 ? '今日もう一度' : iv === 1 ? '明日' : iv + '日後'; };
+  const gr = [['✕ 全然', '#ff5b3a'], ['△ 惜しい', '#e8c65a'], ['○ 正解', '#79c28a'], ['◎ 余裕', '#6fa8dc']];
+  return `<div class="v2split kk">${left}<div class="v2kq"><button class="v2kc" data-fa="kshow"><span class="tg">${esc(tag)}</span><span class="w ${isK ? 'jp' : ''}">${esc(w.english)}</span>${kioku.shown ? `<span class="a">${esc(w.japanese)}</span>${w.definition && !isK ? `<span class="ex">${esc(w.definition)}</span>` : ''}` : '<span class="ex">押すと答え</span>'}</button>
+    <div class="v2gr">${gr.map(([l, col], g) => `<button data-fa="kg" data-v="${g}" style="--c:${col}" ${kioku.shown ? '' : 'disabled'}>${l}<small>${nextLab(g)}</small></button>`).join('')}</div></div></div>`;
+}
+// 最近の地震: 色つきの震度で一覧、右に地図とくわしく
+function fv2Quakes() {
+  const list = quakeHist.slice(0, 8), i = Math.min(+(fs.qi || 0), Math.max(0, list.length - 1)), q = list[i], L = loc();
+  if (!q) return v2pad('<p class="empty">地震の情報を読み込んでいます…</p>');
+  const box = s => s ? `<span class="sh n" style="background:${SHINDO_COLOR[s]};color:${SHINDO_TEXT[s]}">${SHINDO[s].replace(/(弱|強)/, '<small>$1</small>')}</span>` : '<span class="sh n none">?</span>';
+  const when = x => { const d = new Date(x.t); return `${d.getHours()}:${pad(d.getMinutes())}<small>${ymd(d) === ymd(now()) ? '今日' : md(d)}</small>`; };
+  const meta = x => `${x.mag > 0 ? 'M' + x.mag.toFixed(1) : '規模は調査中'}${x.depth > 0 ? ` ・ 深さ ${x.depth}km` : x.depth === 0 ? ' ・ ごく浅い' : ''}${x.mine ? ` ・ ${esc(L.pref)} 震度${SHINDO[x.mine]}` : ''}`;
+  const d = new Date(q.t);
+  return `<div class="v2split qk"><div class="v2ql">${list.map((x, k) => `<button class="v2qi ${k === i ? 'on' : ''}" data-fa="qi" data-v="${k}">${box(x.maxI)}<span><b>${esc(x.name || '震源は調査中')}</b><span class="m">${meta(x)}</span></span><span class="tm n">${when(x)}</span></button>`).join('')}</div>
+    <div class="v2qd"><div class="lab">選んだ地震</div><canvas id="v2qmap" width="840" height="600"></canvas>
+    <div class="rw"><span>発生</span><b>${mdw(d)} ${d.getHours()}:${pad(d.getMinutes())} ごろ</b></div><div class="rw"><span>最大震度</span><b>${q.maxI ? '震度' + SHINDO[q.maxI] : '—'}</b></div><div class="rw"><span>津波</span><b>${esc(TSUNAMI[q.ts] || '情報なし')}</b></div><div class="rw"><span>発表</span><b>${q.step === 'ScalePrompt' ? '震度速報(震源は調査中)' : '各地の震度まで'}</b></div></div></div>`;
+}
+function drawQuakeMini() {
+  const cv = $('v2qmap'); if (!cv || !JAPAN) return;
+  const q = quakeHist[Math.min(+(fs.qi || 0), quakeHist.length - 1)]; if (!q) return;
+  const g = cv.getContext('2d'), W = cv.width, H = cv.height, L = loc(), by = q.byPref || {};
+  const has = q.lat > -90 && q.lon > -180, cLat = has ? q.lat : L.lat, cLon = has ? q.lon : L.lon, span = 6, k = Math.cos(cLat * Math.PI / 180), ppd = H / span;
+  const P = (lon, lat) => [W / 2 + (lon - cLon) * k * ppd, H / 2 - (lat - cLat) * ppd];
+  g.fillStyle = '#101418'; g.fillRect(0, 0, W, H); g.lineJoin = 'round'; g.strokeStyle = '#0b0c0e'; g.lineWidth = 1.5;
+  for (const p of JAPAN) { const lv = by[p.name] || 0; g.fillStyle = lv >= 1 ? SHINDO_COLOR[lv] : '#2a2d32'; g.beginPath(); for (const r of p.rings) { r.forEach((pt, j) => { const [x, y] = P(pt[0], pt[1]); j ? g.lineTo(x, y) : g.moveTo(x, y); }); g.closePath(); } g.fill(); g.stroke(); }
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  for (const p of JAPAN) { const lv = by[p.name] || 0; if (lv < 1) continue; const [x, y] = P(p.c[0], p.c[1]); if (x < 0 || x > W || y < 0 || y > H) continue; const t = SHINDO[lv]; g.font = '700 30px "Barlow Condensed",sans-serif'; const w = g.measureText(t).width + 16; g.fillStyle = SHINDO_COLOR[lv]; g.strokeStyle = '#0b0c0e'; g.lineWidth = 2; g.fillRect(x - w / 2, y - 18, w, 36); g.strokeRect(x - w / 2, y - 18, w, 36); g.fillStyle = SHINDO_TEXT[lv]; g.fillText(t, x, y + 1); }
+  if (has) { const [ex, ey] = P(q.lon, q.lat); g.lineWidth = 10; g.strokeStyle = '#000'; g.beginPath(); g.moveTo(ex - 14, ey - 14); g.lineTo(ex + 14, ey + 14); g.moveTo(ex + 14, ey - 14); g.lineTo(ex - 14, ey + 14); g.stroke(); g.lineWidth = 5; g.strokeStyle = '#ff2800'; g.stroke(); }
+  const [hx, hy] = P(L.lon, L.lat); g.fillStyle = '#fff'; g.strokeStyle = '#000'; g.lineWidth = 3; g.beginPath(); g.arc(hx, hy, 9, 0, 7); g.fill(); g.stroke();
+}
+// タイマー: 大きな円で残り
+let tmrHist = store.get('tmrHist') || [];
+function fv2Timer() {
+  const left = tmr ? (tmr.paused ?? tmr.end - nowMs()) : 0, frac = tmr ? Math.max(0, Math.min(1, left / tmr.total)) : 0, C = 2 * Math.PI * 210;
+  const ring = `<div class="v2ring"><svg viewBox="0 0 470 470"><circle cx="235" cy="235" r="210" class="bg"/><circle id="v2ringC" cx="235" cy="235" r="210" class="fg" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - frac)).toFixed(1)}" transform="rotate(-90 235 235)"/></svg>
+    <div class="in">${tmr ? `<span>${esc(tmr.label)} のタイマー</span><b class="n" ${tmr.paused == null ? `data-to="${tmr.end}"` : ''}>${fmtLeft(left)}</b><span>${tmr.paused != null ? '一時停止中' : tmS(tmr.end).slice(0, -3) + ' に終わります'}</span>` : '<span>タイマーは止まっています</span><b class="n">0:00</b><span>右から始めてください</span>'}</div></div>`;
+  const ctl = tmr ? `<div class="v2bt3"><button data-tm="pause">${tmr.paused != null ? '再開' : '一時停止'}</button><button data-tm="add">+1分</button><button data-tm="add5">+5分</button><button data-tm="stop" class="ss">やめる</button></div>` : '';
+  return `<div class="v2split tmv"><div class="v2tmc">${ring}${ctl}</div><div class="v2tms tmr"><div class="lab">すぐ始める</div><div class="v2pre">${[1, 3, 5, 10, 15, 25, 30, 45, 60].map(m => `<button data-tm="start" data-v="${m}" class="n">${m}<small>分</small></button>`).join('')}</div>
+    <div class="lab" style="margin-top:10px">分・時刻で</div><div class="v2inp"><input type="number" min="1" max="999" inputmode="numeric" placeholder="分を入れる" id="tmMin" aria-label="分"><button data-tm="min">分で開始</button></div><div class="v2inp"><input type="time" id="tmAt" aria-label="時刻"><button data-tm="at">この時刻まで</button></div>
+    ${tmrHist.length ? `<div class="lab" style="margin-top:10px">さっき使ったもの</div>${tmrHist.map(h => `<button class="v2hist" data-tm="again" data-v="${h.ms}" data-l="${esc(h.label)}"><span>${esc(h.label)}</span><span class="sub">${dayLabel(now(), new Date(h.at))} ${fmtTime(h.at)}</span></button>`).join('')}` : ''}</div></div>`;
+}
+// 次の予定まで
+function fv2Soon() {
+  const l = nextTimed();
+  if (!l.length) return v2pad(`<p class="empty">${cfg.gasUrl ? (events ? 'この先、時間の決まった予定はありません。' : '予定を読み込んでいます…') : '「設定」→「連携」で Googleカレンダーをつなぐと出ます。'}</p>`);
+  const e = l[0], st = new Date(e.start).getTime(), lead = Math.min(...(cfg.soonLeads && cfg.soonLeads.length ? cfg.soonLeads : [5]));
+  return `<div class="v2sn"><div class="v2snm"><div class="lab yel">つぎの予定</div><div class="tt3">${esc(e.title)}</div><div class="tm n">${esc(evWhen(e))}</div><div class="bigc n" data-to="${st}">${fmtLeft(st - nowMs())}</div>
+    <div class="bar3"><i id="v2snbar" data-st="${st}" style="width:${Math.max(0, Math.min(100, 100 * (1 - (st - nowMs()) / 3600e3))).toFixed(1)}%"></i></div><div class="sub">${cfg.soonOn ? `${(cfg.soonLeads || []).map(v => (LEADS.find(x => x[0] === v) || [, v + '分'])[1]).join('・')}前に全画面でお知らせします` : '予定のお知らせはオフです'} ・ 線は残り1時間から</div></div>
+    <div class="v2snl">${l.slice(1, 4).map(x => { const s2 = new Date(x.start).getTime(); return `<div><span class="sub">${dayLabel(now(), new Date(x.start))}</span><em class="n" data-to="${s2}" data-short="1">${fmtLeft(s2 - nowMs(), true)}</em><b>${esc(x.title)}</b><span class="sub n">${esc(evWhen(x).replace(/^\S+ /, ''))}</span></div>`; }).join('') || '<div><span class="sub">そのあとの予定はありません</span></div>'}</div></div>`;
+}
+
+const FV = { calendar: fv2Calendar, sched: fv2Sched, tt: fv2TT, weather: fv2Weather, todo: fv2Todo, count: fv2Count, holiday: fv2Holiday, terms: fv2Terms, studyline: fv2Study, kioku: fv2Kioku, quakes: fv2Quakes, timer: fv2Timer, soon: fv2Soon };
 function fvAction(a, v) {
   if (a === 'day') { fs.day = v; if (fullK === 'calendar') { const d = parseYmd(v); fs.month = ymd(new Date(d.getFullYear(), d.getMonth(), 1)); } }
   else if (a === 'mon') { const base = fs.month ? parseYmd(fs.month) : new Date(now().getFullYear(), now().getMonth(), 1); fs.month = ymd(new Date(base.getFullYear(), base.getMonth() + +v, 1)); }
@@ -1684,6 +2173,15 @@ function fvAction(a, v) {
   else if (a === 'tcat') { cfg.termCats = cfg.termCats.includes(v) ? cfg.termCats.filter(x => x !== v) : [...cfg.termCats, v]; saveCfg(); if (termCur && !cfg.termCats.includes(termCur.cat)) pickTerm(); renderTiles(); renderSlot(); }
   else if (a === 'topen') { fs.open = fs.open || {}; fs.open[v] = !fs.open[v]; }
   else if (a === 'tall') { fs.all = !fs.all; fs.open = {}; }
+  else if (a === 'tflip') { fs.flip = !fs.flip; }
+  else if (a === 'tnext2') { if (termCur) termHist.push(termCur); pickTerm(); fs.flip = false; renderTiles(); }
+  else if (a === 'tprev') { if (termHist.length) { termCur = termHist.pop(); termAt = nowMs(); fs.flip = false; } }
+  else if (a === 'tmem' && termCur) { const k = termCur.term; termMem = termMem.filter(x => x !== k); if (v === '1') termMem.push(k); store.set('termMem', termMem); termHist.push(termCur); pickTerm(); fs.flip = false; renderTiles(); }
+  else if (a === 'tmreset') { if (!confirm('「覚えた」をすべて消しますか?')) return; termMem = []; store.set('termMem', termMem); }
+  else if (a === 'kshow') { kioku.shown = !kioku.shown; renderTiles(); }
+  else if (a === 'kg') { if (kioku.shown) { kiokuClick({ target: { closest: s => s === '[data-g]' ? { dataset: { g: v } } : null } }); } }
+  else if (a === 'qi') { fs.qi = +v; }
+  else if (a === 'cdadd') { closeFull(); openSettings('s-cd'); return; }
   renderFullView();
 }
 // ポップアップの外をタップしたら閉じる
@@ -2071,10 +2569,12 @@ async function pollQuake() {
     quakeHist = groups.filter(g => !g.types.includes('Foreign') || g.types.length > 1).slice(0, 10).map(g => {
       const H = g.earthquake.hypocenter || {}; let mine = 0;
       for (const p of g.points) if (p.pref === L.pref) mine = Math.max(mine, P2P_SCALE[p.scale] || 0);
-      return { t: jst(g.earthquake.time), name: H.name || '', mag: +H.magnitude || 0, depth: H.depth, maxI: P2P_SCALE[g.earthquake.maxScale] || 0, mine, ts: g.earthquake.domesticTsunami, step: g.latest };
+      const byPref = {}; for (const p of g.points) { const i = P2P_SCALE[p.scale] || 0; if (p.pref && i > (byPref[p.pref] || 0)) byPref[p.pref] = i; }
+      return { t: jst(g.earthquake.time), name: H.name || '', mag: +H.magnitude || 0, depth: H.depth, maxI: P2P_SCALE[g.earthquake.maxScale] || 0, mine, ts: g.earthquake.domesticTsunami, step: g.latest, lat: H.latitude, lon: H.longitude, byPref };
     });
     store.set('quakeHist', quakeHist);
     if (!editing && (inLayout('quakes') || cfg.bar.includes('quakes'))) { renderTiles(); renderChips(); }
+    if (fullK === 'quakes') renderFullView();
     const q = groups[0];
     if (!q || !q.earthquake) return;
     const at = jst(q.earthquake.time);
@@ -2538,7 +3038,7 @@ function tick(force) {
     applyTheme(); renderTT(st); renderTodo(); renderSched(); renderChips();
     if (slotMode && nowMs() - slotTouched > 60e3) closeSlot();
     if ((fullTile || fullK) && fullKey() !== 'clock' && nowMs() - fullTouched > 180e3) closeFull(); // 時計以外は3分さわらなければ戻る
-    else if (fullK && fullK !== 'terms') renderFullView();
+    else if (fullK && !['terms', 'kioku', 'timer'].includes(fullK) && !$('fullBody').contains(document.activeElement)) renderFullView();
     if (!kioku.shown && !editing) { renderSlot(); renderTiles(); requestAnimationFrame(fitClock); }
     if (d.getMinutes() % 30 === 0) loadWeather();
     if (d.getMinutes() % 10 === 5) loadEvents();
