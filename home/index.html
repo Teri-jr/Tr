@@ -291,7 +291,7 @@ body.portrait .hol li{grid-template-columns:70px 1fr auto}body.portrait .hol .hn
 .bar .edc{display:none}
 body.editing .bar .edc{display:inline-block}
 body.editing .bar .stx,body.editing #chips{display:none!important}
-body.editing .page{touch-action:none}
+body.editing .page,body.editing .page .col,body.editing .page .tile{touch-action:none} /* 列がスクロールできると、指で動かしたときに列のスクロールになって並べ替えが止まるので */
 body.editing .page .tile{position:relative;outline:2px dashed var(--sub);outline-offset:-5px;cursor:grab}
 body.editing .page .tile *{pointer-events:none}
 #appView{position:fixed;inset:0;z-index:95;background:var(--bg);display:flex;flex-direction:column}
@@ -555,7 +555,7 @@ body.editing .page .tile .tdel{pointer-events:auto}
 
 <script>
 'use strict';
-const APP_VERSION = '2.7.6'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.7.7'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1396,6 +1396,7 @@ const inLayout = k => Object.values(cfg.layout).some(a => a.includes(k));
 let editing = false;
 
 function renderLayout() {
+  const scr = Object.values(SIDES).map(id => $(id).scrollTop); // 並べ直しても、列のスクロール位置はそのまま
   document.querySelectorAll('.tdel').forEach(x => x.remove());
   const pool = $('pool');
   for (const id of Object.values(SIDES)) [...$(id).children].forEach(el => { if (Object.values(FIXED).includes(el.id)) pool.appendChild(el); else el.remove(); });
@@ -1414,6 +1415,7 @@ function renderLayout() {
   }
   renderTiles();
   if (editing) document.querySelectorAll('#page .tile').forEach(el => { if (el.dataset.k !== 'clock') el.insertAdjacentHTML('beforeend', '<button class="tdel" aria-label="外す">×</button>'); });
+  Object.values(SIDES).forEach((id, i) => { $(id).scrollTop = scr[i]; });
   requestAnimationFrame(() => { fitClock(); markOver(); });
 }
 function markOver() { for (const id of Object.values(SIDES)) { const c = $(id); c.classList.toggle('over', c.scrollHeight > c.clientHeight + 2 && c.scrollTop + c.clientHeight < c.scrollHeight - 2); } }
@@ -1732,6 +1734,8 @@ addEventListener('pointermove', e => {
     break;
   }
 });
+// iPad の Safari は touch-action だけでは列のスクロールが止まらないことがあるので、動かしている間は指のスクロールを止める
+document.addEventListener('touchmove', e => { if (drag || (typeof bdrag !== 'undefined' && bdrag && bdrag.moved)) e.preventDefault(); }, { passive: false });
 function endDrag() {
   if (!drag) return;
   const d = drag; drag = null; $('dragTag').hidden = true; d.el.classList.remove('dragging');
