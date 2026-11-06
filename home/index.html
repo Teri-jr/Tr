@@ -432,6 +432,7 @@ body.editing .page .tile .tdel{pointer-events:auto}
 .tmr .row3 button{padding:7px 12px}
 .tmr .run{display:flex;gap:6px;margin-top:10px}.tmr .run button{flex:1}
 .tmr .lab{font-size:13px;color:var(--sub)}
+#s-soon{order:-1}.gcadd summary{cursor:pointer;padding:6px 0;list-style:revert}.leadc{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--ink);padding:3px 4px 3px 10px;font-size:14px}.leadc button{width:22px;height:22px;font-size:15px;color:var(--sub)}
 #dim{position:fixed;inset:0;z-index:90;background:#000;pointer-events:none;transition:opacity 1.5s}
 #settings{position:fixed;inset:0;z-index:100;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;user-select:text;-webkit-user-select:text}
 .sx{max-width:860px;margin:0 auto;padding:max(20px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) 80px max(18px,env(safe-area-inset-left))}
@@ -753,7 +754,7 @@ body.portrait .v2rows{min-height:520px}body.portrait .v2g{min-height:460px}body.
 
 <script>
 'use strict';
-const APP_VERSION = '2.8.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.8.1'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1480,6 +1481,7 @@ document.addEventListener('click', e => {
 }, true);
 // 全画面のお知らせ
 let soonCur = null, soonDone = store.get('soonDone') || {}, soonMuted = store.get('soonMute') || {}, soonFirst = true;
+const leadLabel = v => v % 1440 === 0 ? v / 1440 + '日' : v % 60 === 0 ? v / 60 + '時間' : v >= 60 ? `${Math.floor(v / 60)}時間${v % 60}分` : v + '分';
 const LEADS = [[1, '1分'], [3, '3分'], [5, '5分'], [10, '10分'], [15, '15分'], [30, '30分'], [60, '1時間'], [120, '2時間'], [180, '3時間'], [360, '6時間'], [720, '12時間'], [1440, '1日']];
 function showSoon(o) {
   if (fullMode) return; // 地震の表示が優先
@@ -1518,7 +1520,7 @@ function checkSoon() {
     const leads = [...(cfg.soonLeads || [])].sort((a, b) => b - a);
     for (const e of nextTimed().concat(upcoming().filter(e => !e.allDay && new Date(e.start).getTime() <= t))) {
       const st = new Date(e.start).getTime(), k = evKey(e);
-      if (soonMuted[k] || st - t > 1441 * 60e3) continue;
+      if (soonMuted[k] || st - t > (Math.max(1440, ...(cfg.soonLeads || [0])) + 1) * 60e3) continue;
       if (st > t) {
         // いちばん近い「◯分前」を、その時刻から1分以内(開いた直後は時刻を過ぎていても)に1回だけ
         const L = leads.filter(L => t >= st - L * 60e3).pop();
@@ -2155,7 +2157,7 @@ function fv2Soon() {
   if (!l.length) return v2pad(`<p class="empty">${cfg.gasUrl ? (events ? 'この先、時間の決まった予定はありません。' : '予定を読み込んでいます…') : '「設定」→「連携」で Googleカレンダーをつなぐと出ます。'}</p>`);
   const e = l[0], st = new Date(e.start).getTime(), lead = Math.min(...(cfg.soonLeads && cfg.soonLeads.length ? cfg.soonLeads : [5]));
   return `<div class="v2sn"><div class="v2snm"><div class="lab yel">つぎの予定</div><div class="tt3">${esc(e.title)}</div><div class="tm n">${esc(evWhen(e))}</div><div class="bigc n" data-to="${st}">${fmtLeft(st - nowMs())}</div>
-    <div class="bar3"><i id="v2snbar" data-st="${st}" style="width:${Math.max(0, Math.min(100, 100 * (1 - (st - nowMs()) / 3600e3))).toFixed(1)}%"></i></div><div class="sub">${cfg.soonOn ? `${(cfg.soonLeads || []).map(v => (LEADS.find(x => x[0] === v) || [, v + '分'])[1]).join('・')}前に全画面でお知らせします` : '予定のお知らせはオフです'} ・ 線は残り1時間から</div></div>
+    <div class="bar3"><i id="v2snbar" data-st="${st}" style="width:${Math.max(0, Math.min(100, 100 * (1 - (st - nowMs()) / 3600e3))).toFixed(1)}%"></i></div><div class="sub">${cfg.soonOn ? `${(cfg.soonLeads || []).map(leadLabel).join('・')}前に全画面でお知らせします` : '予定のお知らせはオフです'} ・ 線は残り1時間から</div></div>
     <div class="v2snl">${l.slice(1, 4).map(x => { const s2 = new Date(x.start).getTime(); return `<div><span class="sub">${dayLabel(now(), new Date(x.start))}</span><em class="n" data-to="${s2}" data-short="1">${fmtLeft(s2 - nowMs(), true)}</em><b>${esc(x.title)}</b><span class="sub n">${esc(evWhen(x).replace(/^\S+ /, ''))}</span></div>`; }).join('') || '<div><span class="sub">そのあとの予定はありません</span></div>'}</div></div>`;
 }
 
@@ -2831,17 +2833,20 @@ function renderSettings() {
     <div class="cdl">${cfg.countdowns.map((c, i) => `<div class="row"><input type="text" data-cdn="${i}" value="${esc(c.name)}" placeholder="名前(例:期末考査)" style="flex:1"><input type="date" data-cdd="${i}" value="${esc(c.date)}"><button class="btn sub" data-cddel="${i}">×</button></div>`).join('')}</div>
     <button class="btn sub" id="cdAdd" style="margin-top:8px">手で追加</button>
     <p class="note">近い順に、タイルには2つまで出ます。過ぎた日は出ません。</p>
-    </div><div><h4>Googleカレンダーから追加</h4>
+    </div><div><details class="gcadd"><summary><b>Googleカレンダーから追加</b> <span class="note">(押して開く)</span></summary>
     ${!cfg.gasUrl ? '<p class="note">「連携」タブで Googleカレンダーをつなぐと、ここに予定が出て、押すだけで追加できます。</p>'
       : !events || !events.length ? '<p class="note">この先の予定がありません(読み込み中のこともあります)。</p>'
       : `<table>${events.filter(ev => new Date(ev.start) >= addDays(now(), -1)).slice(0, 30).map((ev, i) => { const d = new Date(ev.start), y = ymd(d), on = cfg.countdowns.some(c => c.date === y && c.name === String(ev.title).slice(0, 12)); return `<tr><td class="n" style="width:6.5em">${md(d)}(${WD[d.getDay()]})</td><td>${esc(ev.title)}</td><td style="width:5.5em">${on ? '<span class="note">追加済み</span>' : `<button class="btn sub" data-cdev="${esc(String(ev.title).slice(0, 12))}" data-cdd2="${y}">追加</button>`}</td></tr>`; }).join('')}</table>`}
+    </details>
     </div></div>
   </section>
 
   <section id="s-soon"><h2>予定のお知らせ</h2>
     <div class="row"><label><input type="checkbox" id="soonOn" ${cfg.soonOn ? 'checked' : ''}>Googleカレンダーの予定が近づいたら、10秒だけ全画面で知らせる</label></div>
-    <div class="row">知らせるとき(いくつでも):</div>
-    <div class="row">${LEADS.map(([v, l]) => `<label><input type="checkbox" data-lead="${v}" ${(cfg.soonLeads || []).includes(v) ? 'checked' : ''}>${l}前</label>`).join('')}</div>
+    <div class="row">知らせるとき(いくつでも。× で外す):</div>
+    <div class="row">${(cfg.soonLeads || []).length ? cfg.soonLeads.map(v => `<span class="leadc">${leadLabel(v)}前<button data-leaddel="${v}" aria-label="外す">×</button></span>`).join('') : '<span class="note">まだありません</span>'}</div>
+    <div class="row">よく使う:${LEADS.filter(([v]) => !(cfg.soonLeads || []).includes(v)).map(([v, l]) => `<button class="btn sub" data-leadadd="${v}">+ ${l}前</button>`).join('')}</div>
+    <div class="row">自分で決める:<input type="number" id="leadN" min="1" max="999" inputmode="numeric" style="width:6em" placeholder="数"><select id="leadU"><option value="1">分前</option><option value="60">時間前</option><option value="1440">日前</option></select><button class="btn" id="leadAdd">追加</button></div>
     <div class="row"><label><input type="checkbox" id="soonStart" ${cfg.soonStart ? 'checked' : ''}>始まる時刻にも「始まります」を5秒出す</label><label><input type="checkbox" id="soonBeep" ${cfg.soonBeep ? 'checked' : ''}>音を鳴らす</label></div>
     <div class="row"><button class="btn" id="soonTest">テスト表示</button>${Object.keys(soonMuted).length ? `<button class="btn sub" id="soonUnmute">「知らせない」にした予定を戻す(${Object.keys(soonMuted).length}件)</button>` : ''}</div>
     <p class="note">終日の予定は、始まる時刻がないので知らせません。地震の表示が出ているときは出しません。タイマーは「タイマー」タイル(または上のバー)から使えます。</p>
@@ -2940,6 +2945,9 @@ $('settings').addEventListener('click', e => {
   if (t.id === 'gtOff') { cfg.gtUrl = ''; gtasks = []; store.set('gtasks', gtasks); saveCfg(); renderTodo(); return rs(); }
   if (t.id === 'gtCopy') { navigator.clipboard?.writeText(GT_CODE()).then(() => { t.textContent = 'コピーしました'; }, () => { const r = document.createRange(); r.selectNodeContents($('gtCode')); getSelection().removeAllRanges(); getSelection().addRange(r); }); return; }
   if (t.id === 'soonTest') { closeSettings(); const st = nowMs() + 5 * 60e3; setTimeout(() => showSoon({ kind: 'lead', demo: true, lead: 5, ev: { title: 'テストの予定', start: new Date(st).toISOString(), end: new Date(st + 30 * 60e3).toISOString() }, until: nowMs() + 10e3 }), 300); return; }
+  if (t.dataset.leaddel) { cfg.soonLeads = (cfg.soonLeads || []).filter(x => x !== +t.dataset.leaddel); return rs(); }
+  if (t.dataset.leadadd) { cfg.soonLeads = [...new Set([...(cfg.soonLeads || []), +t.dataset.leadadd])].sort((a, b) => a - b); return rs(); }
+  if (t.id === 'leadAdd') { const n = +$('leadN').value, m = Math.round(n * +$('leadU').value); if (!(n > 0) || m > 7 * 1440) { toast('1分〜7日前の間で入れてください'); return; } cfg.soonLeads = [...new Set([...(cfg.soonLeads || []), m])].sort((a, b) => a - b); return rs(); }
   if (t.id === 'soonUnmute') { soonMuted = {}; store.set('soonMute', soonMuted); return rs(); }
   if (t.id === 'cdAdd') { cfg.countdowns.push({ name: '', date: '' }); return rs(); }
   if (t.dataset.cddel != null) { cfg.countdowns.splice(+t.dataset.cddel, 1); return rs(); }
