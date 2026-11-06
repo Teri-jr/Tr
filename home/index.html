@@ -561,7 +561,7 @@ body.editing .page .tile .tdel{pointer-events:auto}
 
 <script>
 'use strict';
-const APP_VERSION = '2.7.1'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.7.2'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -570,7 +570,7 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 const PREFIX = 'home:';
 const store = {
   get(k) { try { return JSON.parse(localStorage.getItem(PREFIX + k)); } catch (e) { return null; } },
-  set(k, v) { try { localStorage.setItem(PREFIX + k, JSON.stringify(v)); } catch (e) {} }
+  set(k, v) { try { localStorage.setItem(PREFIX + k, JSON.stringify(v)); return true; } catch (e) { if (!store.warned && typeof toast === 'function') { store.warned = true; toast('この端末に保存できませんでした(容量がいっぱい・プライベートブラウズなど)。変更は読み直すと消えます'); } return false; } }
 };
 const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const parseYmd = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
@@ -832,7 +832,11 @@ function doGet(e) {
     }
     var lists = Tasks.Tasklists.list({ maxResults: 100 }).items || [];
     return out({ lists: lists.map(function (l) {
-      var items = Tasks.Tasks.list(l.id, { showCompleted: false, showHidden: false, maxResults: 100 }).items || [];
+      var items = [], tok;
+      do { // 100件ずつ、最後まで読む
+        var r = Tasks.Tasks.list(l.id, { showCompleted: false, showHidden: false, maxResults: 100, pageToken: tok });
+        items = items.concat(r.items || []); tok = r.nextPageToken;
+      } while (tok && items.length < 1000);
       return { id: l.id, title: l.title, tasks: items.filter(function (t) { return t.title; }).map(function (t) {
         return { id: t.id, title: t.title, due: t.due || '' };
       }) };
@@ -900,20 +904,23 @@ function renderWeather() {
   const after = st.mode === 'after' || minOfDay(d) >= 17 * 60;
   const di = Math.min((after ? 1 : 0) + wxDay0(), D.time.length - 1); // 日付が変わったあと、天気を読み直すまでの間もずれないように
   let say;
-  if (!after) {
+  if (!after && !isSchoolDay(d)) {
+    const p = D.precipitation_probability_max[di];
+    say = `今日は降水確率 最大${p}%。` + umbrella(p);
+  } else if (!after) {
     const pm = postMin(d), pl = periodsMin(d);
     const goHome = Math.floor((pm ? pm[2] : pl.length ? pl[pl.length - 1][1] : 960) / 60);
     const idx = H.time.findIndex(t => t.startsWith(ymd(d)) && +t.slice(11, 13) === goHome);
-    const p = idx >= 0 ? H.precipitation_probability[idx] : D.precipitation_probability_max[0];
+    const p = idx >= 0 ? H.precipitation_probability[idx] : D.precipitation_probability_max[di];
     const k = idx >= 0 ? WCODE(H.weather_code[idx])[0] : '';
     say = `帰り(${goHome}時)は${k}。` + umbrella(p);
   } else {
-    const p = D.precipitation_probability_max[1];
-    say = `明日は${WCODE(D.weather_code[1])[0]} ${p}%。` + umbrella(p);
+    const p = D.precipitation_probability_max[di];
+    say = `明日は${WCODE(D.weather_code[di])[0]} ${p}%。` + umbrella(p);
   }
   let hrs = '';
   if (hourIdx >= 0) for (let i = 0; i < 6; i++) { const k = hourIdx + 1 + i * 3; if (k >= H.time.length) break; hrs += `<div>${+H.time[k].slice(11, 13)}時<b>${Math.round(H.temperature_2m[k])}°</b><span>${H.precipitation_probability[k] ?? '-'}%</span></div>`; }
-  T.innerHTML = `<h3>天気 <span>${esc(wx.pref || loc().pref)}${wx.err ? ' ・ 更新できません' : ''}</span></h3>
+  T.innerHTML = `<h3>天気 <span>${esc(wx.pref || loc().pref)}${cfg.loc ? '' : '(場所 未設定)'}${wx.err ? ' ・ 更新できません' : ''}</span></h3>
     <div class="wx">${wxIcon(kind, night)}<span class="t n">${Math.round(wx.cur.temperature_2m)}°</span>
     <div class="d">${esc(txt)}<br><b class="n" style="color:var(--red);font-size:17px">${Math.round(D.temperature_2m_max[di])}°</b> / <b class="n" style="color:var(--blue);font-size:17px">${Math.round(D.temperature_2m_min[di])}°</b>${after ? ' 明日' : ''}</div>
     <div class="say">${esc(say)}</div></div><div class="hrs">${hrs}</div>`;
@@ -1302,6 +1309,7 @@ $('soonMute').addEventListener('click', () => { if (soonCur && soonCur.ev) { soo
 function checkSoon() {
   const t = nowMs();
   // タイマーが終わった
+  if (fullMode) { for (const el of document.querySelectorAll('[data-to]')) el.textContent = fmtLeft(+el.dataset.to - t, !!el.dataset.short); return; } // 地震の全画面が終わってから出す
   if (tmr && tmr.paused == null && t >= tmr.end) { const lab = tmr.label; tmr = null; saveTmr(); showSoon({ kind: 'timer', label: lab + ' のタイマー', until: t + 60e3 }); }
   if (cfg.soonOn && !soonCur && !editing) {
     const leads = [...(cfg.soonLeads || [])].sort((a, b) => b - a);
@@ -1311,11 +1319,11 @@ function checkSoon() {
       if (st > t) {
         // いちばん近い「◯分前」を、その時刻から1分以内(開いた直後は時刻を過ぎていても)に1回だけ
         const L = leads.filter(L => t >= st - L * 60e3).pop();
-        if (L != null && !soonDone[k + '|' + L] && (soonFirst || t - (st - L * 60e3) < 60e3)) {
+        if (L != null && !soonDone[k + '|' + L]) { // 時刻を過ぎていても、始まる前なら1回だけ(地震の表示やページを閉じていて出せなかった分も)
           for (const x of leads) if (x >= L) soonDone[k + '|' + x] = st;
           store.set('soonDone', soonDone); showSoon({ kind: 'lead', ev: e, lead: L, until: t + 10e3 }); break;
         }
-      } else if (cfg.soonStart && t - st < 60e3 && !soonDone[k + '|start']) {
+      } else if (cfg.soonStart && t - st < 3 * 60e3 && !soonDone[k + '|start']) {
         soonDone[k + '|start'] = st; store.set('soonDone', soonDone); showSoon({ kind: 'start', ev: e, until: t + 5e3 }); break;
       }
     }
@@ -1510,7 +1518,7 @@ function eventsOn(d) {
 }
 const evColor = e => e.color ? esc(EV_COLORS[e.color] || e.color) : 'var(--blue)';
 const evTime = e => { const s = new Date(e.start), t = new Date(e.end); return e.allDay ? '終日' : `${s.getHours()}:${pad(s.getMinutes())}–${t.getHours()}:${pad(t.getMinutes())}`; };
-const todosOn = d => todos.filter(t => t.due === ymd(d));
+const todosOn = d => allTodos().filter(t => t.due === ymd(d));
 // その日の時間割(授業がある日だけ)
 function dayLessons(d) {
   if (!isSchoolDay(d)) return [];
@@ -2422,7 +2430,7 @@ const unpad = s => { const m = toMin(s); return m == null ? '' : `${Math.floor(m
 $('settings').addEventListener('click', e => {
   const t = e.target, rs = () => { saveCfg(); renderSettings(); };
   if (t.id === 'sDone') return closeSettings();
-  if (t.id === 'gtSave') { cfg.gtUrl = $('gtUrl').value.trim(); const k = $('gtKeyIn').value.trim(); if (/^[\w-]{6,64}$/.test(k)) cfg.gtKey = k; saveCfg(); $('gtMsg').textContent = '読み込み中…'; loadGt().then(() => renderSettings()); return; }
+  if (t.id === 'gtSave') { cfg.gtUrl = $('gtUrl').value.trim(); const k = $('gtKeyIn').value.trim(); if (!/^[\w-]{6,64}$/.test(k)) { $('gtMsg').innerHTML = '<span class="ng">合言葉は、英数字・_・- の6〜64文字にしてください</span>'; return; } cfg.gtKey = k; saveCfg(); $('gtMsg').textContent = '読み込み中…'; loadGt().then(() => renderSettings()); return; }
   if (t.id === 'gtOff') { cfg.gtUrl = ''; gtasks = []; store.set('gtasks', gtasks); saveCfg(); renderTodo(); return rs(); }
   if (t.id === 'gtCopy') { navigator.clipboard?.writeText(GT_CODE()).then(() => { t.textContent = 'コピーしました'; }, () => { const r = document.createRange(); r.selectNodeContents($('gtCode')); getSelection().removeAllRanges(); getSelection().addRange(r); }); return; }
   if (t.id === 'soonTest') { closeSettings(); const st = nowMs() + 5 * 60e3; setTimeout(() => showSoon({ kind: 'lead', demo: true, lead: 5, ev: { title: 'テストの予定', start: new Date(st).toISOString(), end: new Date(st + 30 * 60e3).toISOString() }, until: nowMs() + 10e3 }), 300); return; }
