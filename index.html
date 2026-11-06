@@ -362,7 +362,7 @@ button.intr { background: var(--intr-bg, #fff1e0); color: var(--intr-text, #a85a
 .g-hours input { width: 90px; }
 .g-mats { display: grid; gap: 12px; }
 .g-matbox { border: 1px solid var(--line); border-radius: 10px; padding: 8px; display: grid; gap: 6px; }
-#fMatBox[hidden], #fAmtRow[hidden] { display: none; }
+#fMatBox[hidden], #fAmtRow[hidden], #aiMatsRow[hidden] { display: none; }
 #fMat button { min-width: 0; padding: 0 12px; }
 #fMat .mat-add { border-style: dashed; color: var(--accent); }
 .mat-new { display: grid; grid-template-columns: 1fr 76px auto; gap: 6px; margin-top: 8px; }
@@ -467,8 +467,8 @@ button.armed { background: var(--late); color: #fff; border-color: transparent; 
 #formCard.collapsed { padding-top: 6px; padding-bottom: 6px; }
 #formCard.collapsed .fold-head { margin: 0; color: var(--text); }
 #formCard.collapsed .fold-head .chev::after { content: "開く ▸"; color: var(--accent); }
-#formCard.collapsed #taskForm, #formCard.collapsed #fInTabs, #formCard.collapsed #bulkBox { display: none; }
-#taskForm[hidden], #bulkBox[hidden] { display: none; }
+#formCard.collapsed #taskForm, #formCard.collapsed #fInTabs, #formCard.collapsed #bulkBox, #formCard.collapsed #todoBox { display: none; }
+#taskForm[hidden], #bulkBox[hidden], #todoBox[hidden] { display: none; }
 .row.editing { box-shadow: inset 4px 0 0 var(--accent); }
 .form-msg { color: var(--late); font-size: 14px; font-weight: 700; min-height: 0; }
 .form-msg:empty { display: none; }
@@ -767,7 +767,7 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
   </section>
 
   <div id="news">
-    <div class="warn" id="installWarn" hidden>⚠ ホーム画面に追加しないと、しばらく開かない間にデータが消えることがあります。<button type="button" class="linkbtn" id="installHow">追加のしかた</button></div>
+    <div class="warn" id="installWarn" hidden>⚠ ホーム画面に追加しないと、しばらく開かない間にデータが消えることがあります。<button type="button" class="linkbtn" id="installHow">追加のしかた</button><button type="button" id="installClose" aria-label="この注意を閉じる">✕ 閉じる</button></div>
     <div class="update-bar" id="updateBar" hidden>
       <span>🆕 新しいバージョン <b id="updateVer"></b> があります</span>
       <button class="primary" id="updateBtn">今すぐ更新</button>
@@ -797,6 +797,7 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
           <button type="button" class="primary grow" id="bulkAdd" disabled>追加</button>
           <button type="button" id="aiPrompt">🤖 AIへの頼み方をコピー</button>
         </div>
+        <label class="toggle" id="aiMatsRow" hidden style="margin:0"><input type="checkbox" id="aiMats" checked> AIへの頼み方に、登録している教材と今週の進み具合も入れる</label>
         <div class="msg" id="bulkMsg" role="status"></div>
         <textarea id="aiPromptBox" rows="8" readonly hidden aria-label="AIへの頼み方"></textarea>
       </div>
@@ -2251,6 +2252,7 @@ $('fCancel').addEventListener('click', resetForm);
 let formMat = '';
 function renderMatChips() {
   const mats = goals().mats;
+  $('aiMatsRow').hidden = !mats.length;
   $('fMat').innerHTML = `<button type="button" data-mat="" aria-pressed="${!formMat}">なし</button>` + mats.map(m => `<button type="button" data-mat="${esc(m.id)}" aria-pressed="${formMat === m.id}">${esc(m.name)}</button>`).join('') + '<button type="button" class="mat-add" id="fMatAdd">＋ 教材を登録</button>';
   const m = matOf(formMat);
   $('fAmtRow').hidden = !m;
@@ -2689,7 +2691,7 @@ document.addEventListener('keydown', e => {
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '4.2.0';
+const APP_VERSION = '4.3.1';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
@@ -2892,7 +2894,9 @@ function updateBackupUI() {
 }
 $('backupNow').addEventListener('click', () => $(!$('shareBtn').hidden ? 'shareBtn' : 'exportBtn').click());
 // iPhone/iPad の Safari で開いている(ホーム画面に追加していない)とき
-$('installWarn').hidden = !(IS_IOS && !IS_STANDALONE);
+// 閉じたら次から出さない(待機画面などで見るために Chrome や Safari で開くとき用)。追加のしかたは「使い方」にもある
+$('installWarn').hidden = !(IS_IOS && !IS_STANDALONE) || store.get('installWarnOff') === true;
+$('installClose').addEventListener('click', () => { store.set('installWarnOff', true); $('installWarn').hidden = true; showToast('閉じました。ホーム画面への追加のしかたは「⚙ 設定」→「使い方」で見られます'); });
 const IOS_INSTALL_STEPS = '<ol><li>Safari の下(または上)にある <b>共有ボタン</b>(四角から矢印が出たマーク)を押す</li><li>「<b>ホーム画面に追加</b>」を選ぶ(見つからなければ一覧を下にスクロール)</li><li>右上の「追加」を押し、ホーム画面の StudyLine から開く</li></ol>';
 $('installHow').addEventListener('click', () => openOkModal({ title: '📱 ホーム画面に追加する', body: IOS_INSTALL_STEPS + '<p>Safari で開いたままだと、しばらく使わない間に iPhone がデータを消すことがあります。追加したアプリには、今のデータは引き継がれないので、先に「書き出す」でファイルにしてから、追加したアプリで「読み込む」をしてください。</p>', ok: 'わかった', cancel: '閉じる', onOk: () => {} }));
 
@@ -3443,13 +3447,24 @@ $('carryOver').addEventListener('click', () => {
 });
 
 // 文章でまとめて入力: 1行に1つ「名前 時間」。AIが作った予定をそのまま貼り付けられるようにする
+// 教材名で比べるときの形(全角半角・空白・大文字小文字の違いを無視)
+const matNorm = x => String(x).normalize('NFKC').replace(/\s+/g, '').toLowerCase();
+const reEsc = x => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 function parseTaskLines(text) {
-  const out = [];
+  const out = [], mats = goals().mats;
   for (let raw of String(text).split(/\r?\n/)) {
     let line = raw.trim().replace(/^[①-⑳❶-❿]\s*/, '').normalize('NFKC').trim(); // 丸数字は半角にする前に取る(①→1 にならないように)
     if (!line) continue;
     line = line.replace(/^(?:[-*•・●○□■☐☑✓✔]|\d{1,2}[.)、](?!\d)|\(\d{1,2}\)|[①-⑳])\s*/, '');           // 行頭の記号・番号
     line = line.replace(/^\d{1,2}:\d{2}\s*(?:[-~〜–—ー]\s*\d{1,2}:\d{2})?\s*[:：]?\s*/, '');     // 行頭の時刻「19:00〜19:30」
+    // 登録している教材の名前が入っていれば、その教材を付ける(いちばん長い名前を優先)。「15問」のような単位つきの数字は今日やる量
+    let mat = null, amtPlan;
+    const ln = matNorm(line);
+    for (const m of mats) if (ln.includes(matNorm(m.name)) && (!mat || matNorm(m.name).length > matNorm(mat.name).length)) mat = m;
+    if (mat) {
+      const am = line.match(new RegExp('(\\d+(?:\\.\\d+)?)\\s*' + reEsc(mat.unit)));
+      if (am) { amtPlan = Math.min(99999, parseFloat(am[1])); line = line.slice(0, am.index) + ' ' + line.slice(am.index + am[0].length); }
+    }
     let pomo = false, sw = false, dur = null;
     if (/(?:^|\s|[(\[])(?:ポモ(?:ドーロ)?|🍅)(?:[)\]]|\s|$)/.test(line)) { pomo = true; line = line.replace(/[(\[]?(?:ポモ(?:ドーロ)?|🍅)[)\]]?/g, ' '); }
     // 時間: 一番最後に出てくるものを使う
@@ -3465,9 +3480,11 @@ function parseTaskLines(text) {
       if (bare) { dur = +bare[1]; line = line.slice(0, bare.index); }
     }
     let name = line.replace(/[\s:：,、。\-–—|]+$/g, '').replace(/^[\s:：,、\-–—|]+/g, '').replace(/\s{2,}/g, ' ').trim();
+    if (!name && mat) name = mat.name;
     if (!name) continue;
     const guess = !(dur >= 1);
-    out.push({ name: name.slice(0, 60), dur: Math.min(600, Math.max(1, guess ? 30 : dur)), pomo, sw, guess, ...guessSubj(name) });
+    const subj = mat && mat.subj ? { subj: mat.subj, ...(mat.subjText ? { subjText: mat.subjText } : {}) } : guessSubj(name);
+    out.push({ name: name.slice(0, 60), dur: Math.min(600, Math.max(1, guess ? 30 : dur)), pomo, sw, guess, ...subj, ...(mat ? { mat: mat.id, ...(Number.isFinite(amtPlan) ? { amtPlan } : {}) } : {}) });
   }
   return out;
 }
@@ -3488,7 +3505,7 @@ function renderBulkPreview() {
   $('bulkAdd').disabled = !bulkParsed.length;
   $('bulkAdd').textContent = bulkParsed.length ? `${bulkParsed.length}件を時刻表に追加` : '追加';
   $('bulkPreview').innerHTML = bulkParsed.length ? `<b style="font-size:14px">こう読み取りました(${bulkParsed.length}件)</b><div class="bulk-list">${bulkParsed.map(t =>
-    `<div class="${t.guess ? 'guess' : ''}"><b>${subjTag(t)}${esc(t.name)}</b><span>${t.sw ? '⏲ 約' : ''}${t.dur}分${t.pomo ? ' 🍅' : ''}${t.guess ? '(時間の記入なし)' : ''}</span></div>`).join('')}</div>` : '';
+    `<div class="${t.guess ? 'guess' : ''}"><b>${subjTag(t)}${esc(t.name)}${t.mat && matOf(t.mat) ? ` <span class="mat-tag">📘 ${esc(matOf(t.mat).name)}${Number.isFinite(t.amtPlan) ? ` ・ ${amtTxt(t.amtPlan)}${matOf(t.mat).unit}` : ''}</span>` : ''}</b><span>${t.sw ? '⏲ 約' : ''}${t.dur}分${t.pomo ? ' 🍅' : ''}${t.guess ? '(時間の記入なし)' : ''}</span></div>`).join('')}</div>` : '';
 }
 $('fBulk').addEventListener('input', renderBulkPreview);
 $('bulkAdd').addEventListener('click', () => {
@@ -3500,10 +3517,31 @@ $('bulkAdd').addEventListener('click', () => {
   $('fBulk').value = ''; renderBulkPreview(); render();
   showToast(`${n}件を追加しました`, '元に戻す', () => restoreTasks(addedDay, before));
 });
-const AI_PROMPT = `受験勉強の今日の予定を作ってください。下の【わたしの情報】をもとに考えてください。
+// 今週の教材ごとの進み具合(AIへの頼み方に入れる)
+function weekMatStatus() {
+  const today = logicalToday(), days = weekDays(today), dow = days.indexOf(today), amt = {};
+  for (const d of days) if (d <= today) for (const [id, m] of Object.entries(dayStats(d).mat)) amt[id] = (amt[id] || 0) + m.amt;
+  return goals().mats.map(m => {
+    const a = amt[m.id] || 0;
+    const state = !m.target ? '' : a >= m.target ? '達成済み' : a < m.target * dow / 7 - 0.5 ? '遅れ気味' : 'ペースどおり';
+    return { m, a, state };
+  });
+}
+function aiPromptText() {
+  const mats = goals().mats, withMats = mats.length && $('aiMats').checked;
+  const ex = withMats ? mats[0] : null;
+  const matPart = withMats ? `
+【登録している教材】(今日の予定に合うものだけ使ってください。使わない教材があってもかまいません。一覧にない勉強を入れてもかまいません)
+${weekMatStatus().map(({ m, a, state }) => `・${m.name}(単位: ${m.unit})${m.target ? ` 今週 ${amtTxt(a)}/${amtTxt(m.target)}${m.unit}${state ? ` → ${state}` : ''}` : ''}`).join('\n')}
+・教材を使う行は「教材名 量 所要時間」の順で書き、教材名は上の一覧のとおりに書く
+  例) ${ex.name} 15${ex.unit} 50分
+・遅れ気味の教材を優先し、達成済みの教材は無理に入れない
+・量は、所要時間の中で終わる分だけにする
+` : '';
+  return `受験勉強の今日の予定を作ってください。下の【わたしの情報】をもとに考えてください。
 
 【出力のルール】(答えをそのまま勉強アプリに貼り付けるので、必ず守ってください)
-・1行に1つ、「教科 内容 所要時間」の順で書く
+・1行に1つ、「教科 内容 所要時間」の順で書く${withMats ? '(登録している教材を使う行は下のルール)' : ''}
   例) 数学 青チャート 例題20〜35 50分
 ・行の先頭は教科名にする(英語・数学・物理・情報・化学・古文 など)
 ・時間は「30分」「1時間30分」のように書く
@@ -3512,13 +3550,15 @@ const AI_PROMPT = `受験勉強の今日の予定を作ってください。下�
 ・集中が必要で、25分ごとに休憩を挟みたいものは、行の最後に「ポモ」と書く
 ・休憩・食事・お風呂は行にしない
 ・番号・記号・見出し・説明・あいさつは書かず、予定の行だけを出す
-
+${matPart}
 【わたしの情報】
 ・使える時間: (例 19:00〜23:30)
 ・今日やりたいこと・使う教材:
 ・苦手な教科・優先したいこと:
 ・その他(テストの日程など):`;
+}
 $('aiPrompt').addEventListener('click', async () => {
+  const AI_PROMPT = aiPromptText();
   try { await navigator.clipboard.writeText(AI_PROMPT); setText('bulkMsg', 'コピーしました。AIに貼り付けて【わたしの情報】を書き足して送り、返ってきた予定をここに貼り付けてください。'); }
   catch (e) {
     // コピーできない環境では、入力欄ではなく読み取り専用の欄に出す(入力欄に入れるとタスクとして読み取られてしまうため)
