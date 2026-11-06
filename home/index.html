@@ -555,7 +555,7 @@ body.editing .page .tile .tdel{pointer-events:auto}
 
 <script>
 'use strict';
-const APP_VERSION = '2.7.4'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.7.5'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -896,22 +896,26 @@ function renderWeather() {
   const H = wx.hourly, D = wx.daily, hourIdx = H.time.findIndex(t => new Date(t + ':00+09:00').getTime() > nowMs() - 3600e3);
   const night = !wx.cur.is_day;
   const [txt, kind] = WCODE(wx.cur.weather_code);
-  const after = st.mode === 'after' || minOfDay(d) >= 17 * 60;
+  const after = minOfDay(d) >= 17 * 60; // 17時からは明日の天気(土曜の昼に終わっても、その日のうちは今日の天気)
   const di = Math.min((after ? 1 : 0) + wxDay0(), D.time.length - 1); // 日付が変わったあと、天気を読み直すまでの間もずれないように
   let say;
-  if (!after && !isSchoolDay(d)) {
-    const p = D.precipitation_probability_max[di];
-    say = `今日は降水確率 最大${p}%。` + umbrella(p);
+  if (!after && (!isSchoolDay(d) || st.mode === 'after')) {
+    // 休みの日・授業が終わったあと:今から21時までで一番高い降水確率
+    const hs = H.time.map((t, i) => ({ t, i })).filter(x => x.t.startsWith(ymd(d)) && +x.t.slice(11, 13) >= d.getHours() && +x.t.slice(11, 13) <= 21);
+    const ps = hs.map(x => H.precipitation_probability[x.i]).filter(v => v != null);
+    const p = ps.length ? Math.max(...ps) : D.precipitation_probability_max[di];
+    const wet = hs.find(x => /rain|snow|thunder/.test(WCODE(H.weather_code[x.i])[1]));
+    say = `今日はこのあと 降水確率 最大${pct(p)}%。` + umbrella(p, wet ? H.weather_code[wet.i] : null);
   } else if (!after) {
     const pm = postMin(d), pl = periodsMin(d);
-    const goHome = Math.floor((pm ? pm[2] : pl.length ? pl[pl.length - 1][1] : 960) / 60);
+    const goHome = Math.round((pm ? pm[2] : pl.length ? pl[pl.length - 1][1] : 960) / 60); // 15:35 下校なら16時の予報
     const idx = H.time.findIndex(t => t.startsWith(ymd(d)) && +t.slice(11, 13) === goHome);
     const p = idx >= 0 ? H.precipitation_probability[idx] : D.precipitation_probability_max[di];
     const k = idx >= 0 ? WCODE(H.weather_code[idx])[0] : '';
-    say = `帰り(${goHome}時)は${k}。` + umbrella(p);
+    say = `帰り(${goHome}時ごろ)は${k}。` + umbrella(p, idx >= 0 ? H.weather_code[idx] : null);
   } else {
     const p = D.precipitation_probability_max[di];
-    say = `明日は${WCODE(D.weather_code[di])[0]} ${p}%。` + umbrella(p);
+    say = `明日は${WCODE(D.weather_code[di])[0]}${p == null ? '' : ` ${p}%`}。` + umbrella(p, D.weather_code[di]);
   }
   let hrs = '';
   if (hourIdx >= 0) for (let i = 0; i < 6; i++) { const k = hourIdx + 1 + i * 3; if (k >= H.time.length) break; hrs += `<div>${+H.time[k].slice(11, 13)}時<b>${Math.round(H.temperature_2m[k])}°</b><span>${H.precipitation_probability[k] ?? '-'}%</span></div>`; }
@@ -920,7 +924,8 @@ function renderWeather() {
     <div class="d">${esc(txt)}<br><b class="n" style="color:var(--red);font-size:17px">${Math.round(D.temperature_2m_max[di])}°</b> / <b class="n" style="color:var(--blue);font-size:17px">${Math.round(D.temperature_2m_min[di])}°</b>${after ? ' 明日' : ''}</div>
     <div class="say">${esc(say)}</div></div><div class="hrs">${hrs}</div>`;
 }
-const umbrella = p => p >= 50 ? '傘を持っていく' : p >= 30 ? '折りたたみ傘があると安心' : '傘はいりません';
+const umbrella = (p, code) => p == null ? '降水確率はまだ出ていません' : p >= 50 ? '傘を持っていく' : p >= 30 || (code != null && /rain|snow|thunder/.test(WCODE(code)[1])) ? '折りたたみ傘があると安心' : '傘はいりません';
+const pct = p => p == null ? '—' : p;
 
 /* ================= 予定(Googleカレンダー / Apps Script) ================= */
 let events = store.get('events') || null, eventsAt = store.get('eventsAt') || 0, eventsErr = '';
@@ -1263,7 +1268,8 @@ document.addEventListener('click', e => {
   else if (a === 'min') { const m = +(box.querySelector('#tmMin') || {}).value; if (m > 0) startTimer(Math.min(m, 999) * 60e3, `${m}分`); }
   else if (a === 'at') {
     const v = (box.querySelector('#tmAt') || {}).value, mm = toMin(v); if (mm == null) return;
-    let t = sod(now()).getTime() + mm * 60e3; if (t <= nowMs()) t += 864e5;
+    let t = sod(now()).getTime() + mm * 60e3;
+    if (t <= nowMs()) { if (nowMs() - t < 60e3) { toast('いまの時刻です。あとの時刻を入れてください'); return; } if (!confirm(`${unpad(v)} はもう過ぎています。明日の ${unpad(v)} までのタイマーにしますか?`)) return; t += 864e5; }
     startTimer(t - nowMs(), `${unpad(v)} まで`);
   }
   else if (a === 'pause' && tmr) { if (tmr.paused != null) { tmr.end = nowMs() + tmr.paused; tmr.paused = null; } else tmr.paused = Math.max(0, tmr.end - nowMs()); saveTmr(); }
@@ -1348,11 +1354,10 @@ function renderHoliday() {
 }
 function renderCalendar() {
   const d = now(), mon = addDays(d, -((d.getDay() + 6) % 7));
-  const evDays = new Set(upcoming().map(e => ymd(new Date(e.start))));
   let h = `<h3>カレンダー <span>${d.getMonth() + 1}月 –</span></h3><div class="cal">` + ['月', '火', '水', '木', '金', '土', '日'].map((w, i) => `<span class="w ${i === 6 ? 'su' : ''}">${w}</span>`).join('');
   for (let i = 0; i < 28; i++) {
     const x = addDays(mon, i), k = ymd(x);
-    const cls = [x < new Date(d.getFullYear(), d.getMonth(), d.getDate()) ? 'o' : '', (x.getDay() === 0 || HOLIDAYS[k]) ? 'su' : '', k === ymd(d) ? 'td' : '', evDays.has(k) ? 'ev' : ''].join(' ');
+    const cls = [x < new Date(d.getFullYear(), d.getMonth(), d.getDate()) ? 'o' : '', (x.getDay() === 0 || HOLIDAYS[k]) ? 'su' : '', k === ymd(d) ? 'td' : '', eventsOn(x).length ? 'ev' : ''].join(' ');
     h += `<span class="${cls}">${x.getDate()}</span>`;
   }
   return h + '</div>';
@@ -1592,7 +1597,7 @@ function fvWeather() {
   }).join('');
   const names = ['今日', '明日', 'あさって'];
   return `<div class="fvbar">${tabs('wd', D.time.slice(d0, d0 + 3).map((t, i) => [i, `${names[i]} ${md(parseYmd(t))}`]), di - d0)}<span class="fvnote">${esc(wx.pref || loc().pref)}${wx.err ? ' ・ 更新できません' : ''}</span></div>
-    <div class="wxbig">${wxIcon(kind, false)}<div><div class="wt">${esc(txt)}</div><div><b class="n" style="color:var(--red)">${Math.round(D.temperature_2m_max[di])}°</b> / <b class="n" style="color:var(--blue)">${Math.round(D.temperature_2m_min[di])}°</b> ・ 降水確率 最大 <b class="n">${D.precipitation_probability_max[di]}%</b></div><div class="wsay">${umbrella(D.precipitation_probability_max[di])}</div></div></div>
+    <div class="wxbig">${wxIcon(kind, false)}<div><div class="wt">${esc(txt)}</div><div><b class="n" style="color:var(--red)">${Math.round(D.temperature_2m_max[di])}°</b> / <b class="n" style="color:var(--blue)">${Math.round(D.temperature_2m_min[di])}°</b> ・ 降水確率 最大 <b class="n">${pct(D.precipitation_probability_max[di])}%</b></div><div class="wsay">${umbrella(D.precipitation_probability_max[di], D.weather_code[di])}</div></div></div>
     <div class="hgrid">${cols}</div><p class="fvnote" style="margin-top:6px">上の数字 = 気温、青い棒 = 降水確率、いちばん下 = 時刻</p>`;
 }
 // やること: 全部を出し、絞り込める。押すと済/未を切り替え
@@ -1857,6 +1862,7 @@ function handleEEW(d, demo) {
   if (eew && eew.demo && !demo) endEEW(); // 本物が来たらデモはやめる
   if (eew && !demo && eew.demo === false && eew.id === d.EventID && +d.Serial < eew.serial) return;
   if (d.isCancel) { if (eew && eew.id === d.EventID) { endEEW(); toast('緊急地震速報は取り消されました'); } return; }
+  if (!demo && Date.now() - jst(d.OriginTime) > 180e3) return; // 3分より前に起きた地震の速報(つなぎ直したときに送り直されたものなど)では鳴らさない
   const L = loc();
   const M = +(d.Magnitude ?? d.Magunitude) || 0, depth = +d.Depth || 10, lat = +d.Latitude, lon = +d.Longitude;
   if (!isFinite(lat) || !isFinite(lon)) return;
@@ -1969,7 +1975,7 @@ function drawMap(src) {
   const v = src.view, ppd = H / v.span;
   const P = (lon, lat) => [W / 2 + (lon - v.cLon) * v.k * ppd, H / 2 - (lat - v.cLat) * ppd];
   if (JAPAN) {
-    const key = isE ? src.id + ':' + src.serial : 'q' + src.id;
+    const key = isE ? src.id + ':' + src.serial : 'q' + src.id + ':' + (src.q.types || []).length + ':' + (src.q.points || []).length; // 続報(各地の震度)が来たら塗り直す
     const shift = isE && src.demo ? src.local - estIntensity(src.M, src.depth, src.lat, src.lon, L.lat, L.lon) : 0;
     g.lineJoin = 'round'; g.strokeStyle = '#0b0c0e'; g.lineWidth = 1;
     for (const p of JAPAN) {
