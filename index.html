@@ -1040,7 +1040,9 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
       <div class="btnrow" style="margin-top:6px"><button type="button" id="gtCopy" class="grow">📋 コードをコピー</button></div>
       <label for="gtUrl" style="margin-top:12px">ウェブアプリの URL</label>
       <input id="gtUrl" type="url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off">
+      <p class="note" style="margin:4px 0 0">ブラウザとホーム画面のアプリ(または別の端末)で同じ Google ToDo を使うときは、つないだ方で「📋 つなぐ情報をコピー」を押し、もう片方でこの欄に貼り付けて「つないで読み込む」を押してください(コードを貼り直す必要はありません)。</p>
       <div class="btnrow"><button type="button" class="primary grow" id="gtSave">つないで読み込む</button><button type="button" id="gtOff" hidden>つなぐのをやめる</button></div>
+      <div class="btnrow" style="margin-top:6px"><button type="button" class="grow" id="gtShare" hidden>📋 つなぐ情報をコピー(ブラウザ⇔ホーム画面アプリ・別の端末用)</button></div>
       <div class="msg" id="gtMsg" role="status"></div>
       <label class="toggle" style="margin-top:12px"><input type="checkbox" id="gtSync"> StudyLine でタスクを終えたら、Google ToDo も完了にする</label>
       <p class="note">コードの中の「合言葉」を知らないと読めないようにしてあります。URL とコードは人に教えないでください。学校のアカウントだと「全員」を選べないことがあるので、そのときは個人の Google アカウントで作ってください。URL はこの端末だけに保存します(「書き出す」のファイルには入れません)。</p>
@@ -2691,7 +2693,7 @@ document.addEventListener('keydown', e => {
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '4.3.1';
+const APP_VERSION = '4.4.0';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
@@ -3113,13 +3115,18 @@ function syncGtSettings() {
   $('gtUrl').value = c.url || '';
   $('gtSync').checked = c.sync !== false;
   $('gtOff').hidden = !c.url;
+  $('gtShare').hidden = !c.url;
 }
 $('gtCopy').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText($('gtCode').value); setText('gtMsg', 'コードをコピーしました。Apps Script に貼り付けてください。'); }
   catch (e) { $('gtCode').select(); setText('gtMsg', 'コピーできなかったので、上の欄を長押し(または選択)してコピーしてください。'); }
 });
 $('gtSave').addEventListener('click', async () => {
-  const u = $('gtUrl').value.trim(), bad = gtCheckUrl(u);
+  // 「URL#合言葉」の形(つなぐ情報)を貼ったときは、合言葉もそれに合わせる
+  let u = $('gtUrl').value.trim();
+  const hm = u.match(/^(.*?)#([0-9a-f]{8,64})$/i);
+  if (hm) { u = hm[1]; gtSet({ key: hm[2].toLowerCase() }); $('gtUrl').value = u; }
+  const bad = gtCheckUrl(u);
   $('gtMsg').className = 'msg';
   if (bad) { $('gtMsg').className = 'msg err'; setText('gtMsg', bad); return; }
   gtSet({ url: u, sync: $('gtSync').checked }); setText('gtMsg', 'つないでいます…');
@@ -3129,6 +3136,11 @@ $('gtSave').addEventListener('click', async () => {
   syncGtSettings();
 });
 $('gtOff').addEventListener('click', () => { gtSet({ url: '' }); gt.lists = null; gt.sel = {}; setText('gtMsg', 'つなぐのをやめました(Apps Script 側のデプロイは残っています)。'); syncGtSettings(); renderTodoBox(); });
+$('gtShare').addEventListener('click', async () => {
+  const info = `${gtCfg().url}#${gtKey()}`;
+  try { await navigator.clipboard.writeText(info); setText('gtMsg', 'つなぐ情報をコピーしました。もう片方(ブラウザ/ホーム画面のアプリ/別の端末)の「ウェブアプリの URL」に貼り付けて「つないで読み込む」を押してください。人には教えないでください。'); }
+  catch (e) { $('gtUrl').value = info; $('gtUrl').select(); setText('gtMsg', 'コピーできなかったので、URL の欄に入れました。長押しでコピーしてください。'); }
+});
 $('gtSync').addEventListener('change', () => { gtSet({ sync: $('gtSync').checked }); renderTodoBox(); });
 
 /* ================= 使い方ガイド ================= */
