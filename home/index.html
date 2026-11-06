@@ -555,7 +555,7 @@ body.editing .page .tile .tdel{pointer-events:auto}
 
 <script>
 'use strict';
-const APP_VERSION = '2.7.5'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.7.6'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -571,7 +571,7 @@ const parseYmd = s => { const [y, m, d] = s.split('-').map(Number); return new D
 const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
 const sod = d => new Date(d.getFullYear(), d.getMonth(), d.getDate()); // その日の0時
 const toMin = s => { const m = /^(\d{1,2}):(\d{2})$/.exec(s || ''); return m ? +m[1] * 60 + +m[2] : null; };
-const fmtMin = m => `${Math.floor(m / 60)}:${pad(Math.round(m) % 60)}`;
+const fmtMin = m => { m = Math.round(m); return `${Math.floor(m / 60)}:${pad(m % 60)}`; }; // 先に丸める(21:59:40 が 21:00 にならないように)
 const fmtDay = m => fmtMin(m > 1440 ? m - 1440 : m); // 24:00 はそのまま、それより後は 0:10 のように
 const WD = ['日', '月', '火', '水', '木', '金', '土'];
 const md = d => `${d.getMonth() + 1}/${d.getDate()}`;
@@ -1000,7 +1000,9 @@ function slSchedule() {
   d._ds = ds;
   const base = new Date(now().getFullYear(), now().getMonth(), now().getDate()).getTime();
   const nm = (nowMs() - base) / 60000, pc = slPomo();
-  const start = +(d.settings && d.settings.start) || 19 * 60, deadline = d.settings && d.settings.deadline;
+  const start = +(d.settings && d.settings.start) || 19 * 60;
+  let deadline = d.settings && d.settings.deadline;
+  if (deadline != null && deadline !== '' && +deadline <= start) deadline = +deadline + 1440; // 期限が開始より前なら翌日(StudyLine 本体と同じ)
   let plan = start, cur = start;
   const rows = d.tasks.map(t => {
     const span = slSpan(t, pc), ps = plan; plan += span;
@@ -1651,9 +1653,9 @@ function fvStudy() {
     const sc = isT ? slSchedule() : null;
     const rows = d.tasks.map((t, i) => {
       const r = sc && sc.rows[i], st = t.actualEnd ? 'done' : t.actualStart ? 'run' : 'wait';
-      const act = t.actualStart ? Math.round(((t.actualEnd || nowMs()) - t.actualStart) / 60000) : 0;
-      const tm = t.actualStart ? `${fmtTime(t.actualStart)}–${t.actualEnd ? fmtTime(t.actualEnd) : '実行中'}` : r ? `${fmtDay(r.s)} 頃` : '—';
-      return `<tr class="${st}"><td class="n">${i + 1}</td><td>${esc(t.name)}${t.memo ? `<small>${esc(t.memo)}</small>` : ''}</td><td class="n">${slDur(t)}分${t.pomo ? ' 🍅' : ''}</td><td class="n">${tm}</td><td class="n">${t.actualStart ? act + '分' : ''}</td><td>${st === 'done' ? '済' : st === 'run' ? '<b style="color:var(--sl)">実行中</b>' : '未'}</td></tr>`;
+      const act = t.actualStart ? Math.round(((t.actualEnd || (isT ? nowMs() : t.actualStart)) - t.actualStart) / 60000) : 0; // 前の日の止め忘れは数えない(勉強時間の合計と同じ)
+      const tm = t.actualStart ? `${fmtTime(t.actualStart)}–${t.actualEnd ? fmtTime(t.actualEnd) : isT ? '実行中' : '?'}` : r ? `${fmtDay(r.s)} 頃` : '—';
+      return `<tr class="${st}"><td class="n">${i + 1}</td><td>${esc(t.name)}${t.memo ? `<small>${esc(t.memo)}</small>` : ''}</td><td class="n">${slDur(t)}分${t.pomo ? ' 🍅' : ''}</td><td class="n">${tm}</td><td class="n">${t.actualStart ? act + '分' : ''}</td><td>${st === 'done' ? '済' : st === 'run' ? (isT ? '<b style="color:var(--sl)">実行中</b>' : '止め忘れ') : '未'}</td></tr>`;
     }).join('');
     const plan = d.tasks.reduce((a, t) => a + slDur(t), 0);
     body = `<div class="slsum">予定 <b>${hm(plan * 60000)}</b> ・ 勉強した時間 <b>${hm(slStudied(d) * 60000)}</b> ・ ${d.tasks.filter(t => t.actualEnd).length}/${d.tasks.length}件 済</div>
