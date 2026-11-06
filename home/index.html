@@ -555,7 +555,7 @@ body.editing .page .tile .tdel{pointer-events:auto}
 
 <script>
 'use strict';
-const APP_VERSION = '2.7.7'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.7.8'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -2470,7 +2470,12 @@ $('settings').addEventListener('click', e => {
     navigator.geolocation.getCurrentPosition(p => {
       const lat = +p.coords.latitude.toFixed(3), lon = +p.coords.longitude.toFixed(3);
       cfg.loc = { lat, lon, pref: prefAt(lat, lon) || '', how: 'gps' }; saveCfg(); loadWeather(); renderSettings();
-    }, err => { $('gpsMsg').textContent = '位置を取れませんでした(' + (err.code === 1 ? '許可されていません' : '取得できません') + ')。都道府県を選んでください。'; }, { enableHighAccuracy: false, timeout: 15000, maximumAge: 600000 });
+    }, err => {
+      // iPad の Safari は、一度「許可しない」にしたり端末の設定でオフだったりすると、確認の画面を出さずにすぐ失敗する
+      const why = err.code === 1 ? '位置情報が許可されていません。iPad の「設定」→「プライバシーとセキュリティ」→「位置情報サービス」をオンにして、その中の「Safari Webサイト」を「使用中のみ」にしてください。それでも出ないときは、Safari のアドレスバーの「ぁあ」(または「AA」)→「Webサイトの設定」→「位置情報」を「確認」か「許可」にして、ページを読み直してください。ホーム画面から開いている場合は、Safari で開き直すと確認が出ることがあります。'
+        : err.code === 3 ? '位置を取るのに時間がかかりすぎました。もう一度押してみてください。' : '位置を取得できませんでした(位置情報サービスがオフ、または電波・Wi-Fi の状態が悪いことがあります)。';
+      $('gpsMsg').textContent = why + ' うまくいかないときは、下で都道府県を選んでください。';
+    }, { enableHighAccuracy: false, timeout: 20000, maximumAge: 600000 });
     return;
   }
   if (t.id === 'gasTest') { cfg.gasUrl = $('gasUrl').value.trim(); saveCfg(); $('gasMsg').textContent = '読み込み中…'; loadEvents().then(() => { $('gasMsg').innerHTML = eventsErr ? `<span class="ng">読めませんでした:${esc(eventsErr)}</span>` : `<span class="ok">${events ? events.length : 0}件 読み込みました</span>`; }); return; }
