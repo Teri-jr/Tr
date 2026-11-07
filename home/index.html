@@ -136,6 +136,26 @@ ul{list-style:none}
 .rm .rmn{top:18px;width:34px;height:32px;transform:translateX(-50%);background:var(--ink);color:var(--bg);font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;clip-path:polygon(0 0,78% 0,100% 50%,78% 100%,0 100%);z-index:2}
 .rm .rt{top:72px;font-family:var(--num);font-size:15px;color:var(--sub);white-space:nowrap}
 
+/* 1a のレイアウト:上段(時計)・中段(路線図)は固定、下段のタイルだけページ送り。並べ替え中・縦向きは今までの3列 */
+body.newl .page{display:flex;flex-direction:column}
+body.newl .col{display:none}
+body:not(.newl) #topRow,body:not(.newl) #midRow,body:not(.newl) #strip{display:none}
+#topRow{height:396px;flex:none;display:flex;border-bottom:1px solid var(--rule)}
+#topRow .clockt{border:0;min-width:0}
+#midRow{height:108px;flex:none;padding:2px 28px 0;border-bottom:1px solid var(--rule);overflow:hidden}
+#midRow .rmw{margin-top:0}#midRow .rml{margin-bottom:2px}#midRow .rm{height:88px}#midRow .rt{top:68px}
+#strip{flex:1;min-height:0;position:relative;overflow:hidden;touch-action:pan-y}
+#pages{display:flex;height:100%;transition:transform .3s ease}
+.spage{flex:none;width:100%;height:100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.spage .tile{border-bottom:0;border-right:1px solid var(--rule);padding:16px 22px;overflow:hidden;min-width:0;min-height:0}
+.spage .tile:nth-child(4n){border-right:0}
+.spage .tt li{padding:5px 0}.spage .tt .p,.spage .tt .s,.spage .tt .t{font-size:15px}
+.spage .todo li{padding:5px 0;font-size:14px}.spage .sched li{padding:5px 0}.spage .wx .t{font-size:48px}
+#pgInd{position:absolute;right:14px;bottom:8px;font-size:12px;color:var(--sub);border:1px solid var(--rule);padding:3px 12px;background:var(--bg);z-index:2}
+#nowband{display:flex;align-items:center;gap:10px;margin-left:6px;white-space:nowrap;min-width:0}
+#nowband .np{background:var(--red);color:var(--onpill);font-size:11.5px;font-weight:700;padding:2px 9px}
+#nowband b{font-size:15px;font-weight:700}#nowband .nx{font-size:13px;color:var(--sub)}
+body.editing #nowband{display:none}
 /* 時計の下の枠 */
 .col>.tile{flex:none}
 .col>.tile.grow{flex:1 1 0;min-height:150px}
@@ -722,12 +742,16 @@ body.portrait .v2rows{min-height:520px}body.portrait .v2g{min-height:460px}body.
 <div id="stage">
   <div class="bar" id="bar">
     <div class="logo"><img src="logo-64.png" width="28" height="28" alt=""><span>Platform</span></div>
+    <div id="nowband"></div>
     <div id="chips" style="display:flex;gap:8px"></div>
     <div class="right"><span class="stx" id="stSound"></span><span class="stx" id="stWake"></span><span class="edc">長押しで動かす ・ × で外す</span><button class="gear edc" id="editAdd">+ タイルを追加</button><button class="gear edc" id="editDone" style="border-color:var(--ink);font-weight:700">完了</button><button class="gear stx" id="fsBtn" hidden>全画面</button><button class="gear stx" id="openSettings">設定</button></div>
   </div>
   <div class="pnote">縦向き・スマホ用の簡易表示です。iPad を横向きにして使うのがおすすめです。</div>
   <div class="qb" id="qb" hidden></div>
   <div class="page" id="page">
+    <div id="topRow"></div>
+    <div id="midRow"><div class="rmw" id="rmap"></div></div>
+    <div id="strip"><div id="pages"></div><button id="pgInd" hidden></button></div>
     <div class="col" id="colL"></div>
     <div class="col" id="colC"></div>
     <div class="col" id="colR"></div>
@@ -739,7 +763,6 @@ body.portrait .v2rows{min-height:520px}body.portrait .v2g{min-height:460px}body.
       <div class="date" id="date"></div>
       <div class="clock n" id="clock"></div>
       <div class="next" id="next"></div>
-      <div class="rmw" id="rmap"></div>
     </section>
     <section class="tile" id="wxTile"></section>
     <section class="tile sched" id="schedTile"></section>
@@ -767,7 +790,7 @@ body.portrait .v2rows{min-height:520px}body.portrait .v2g{min-height:460px}body.
 
 <script>
 'use strict';
-const APP_VERSION = '2.13.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.14.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -864,8 +887,9 @@ const nextSchoolDay = d => { let x = addDays(d, 1); for (let i = 0; i < 30 && !i
 const SHIFTS = [[0, 0], [2, 1], [3, 3], [1, 3], [-1, 2], [-3, 1], [-2, -1], [-1, -3], [1, -2], [3, -1]];
 function fit() {
   const top = $('sai').offsetHeight || 0, w = innerWidth, h = innerHeight - top;
-  const portrait = w < h || w < 760;
+  const portrait = w < h || w < 760, wasP = document.body.classList.contains('portrait');
   document.body.classList.toggle('portrait', portrait);
+  if (wasP !== portrait && typeof renderLayout === 'function' && document.body.classList.contains('newl') !== (!editing && !portrait)) renderLayout();
   const st = $('stage');
   if (portrait) { st.style.transform = ''; st.style.width = ''; st.style.height = ''; }
   else {
@@ -974,6 +998,11 @@ function renderClock() {
     t = `${st.mode === 'after' ? '今日の授業はおわり' : '今日はお休み'}　／　${dayLabel(d, nd)} 1限は ${s0 ? `<b>${esc(s0)}</b>` : '—'} ${p0 ? `<span class="n" style="color:var(--sub);font-size:20px">${fmtMin(p0[0])}</span>` : ''}`;
   }
   $('next').innerHTML = t;
+  // 上のバーの「いまの授業」帯
+  if (st.mode === 'class') {
+    const nx = st.i + 1 < st.ps.length ? `${subjOf(d, st.i + 1) || (st.i + 2) + '限'}${roomOf(d, st.i + 1) ? `(${roomOf(d, st.i + 1)})` : ''}` : (st.post ? st.post[0] : '帰り');
+    $('nowband').innerHTML = `<span class="np">授業中</span><b>${st.i + 1}限 ${esc(subjOf(d, st.i))}</b><span class="nx">次 ${esc(nx)}</span>`;
+  } else $('nowband').innerHTML = '';
   // 路線図(授業がある日の昼間だけ)
   const show = st.mode !== 'off' && st.mode !== 'after';
   $('rmap').hidden = !show;
@@ -1624,36 +1653,70 @@ fixLayout();
 const inLayout = k => Object.values(cfg.layout).some(a => a.includes(k));
 let editing = false;
 
+let stripPage = 0, swipedAt = 0;
+const stripKeys = () => [...cfg.layout.left, ...cfg.layout.center.filter(k => k !== 'clock'), ...cfg.layout.right];
+// 路線図の置き場所:通常は中段、時計を全画面にしている間・3列の表示のときは時計の中
+function placeRoute() {
+  const inMid = document.body.classList.contains('newl') && !(fullTile && fullTile.id === 'clockTile');
+  (inMid ? $('midRow') : $('clockTile')).appendChild($('rmap'));
+}
 function renderLayout() {
+  const useNew = !editing && !document.body.classList.contains('portrait');
+  document.body.classList.toggle('newl', useNew);
   const scr = Object.values(SIDES).map(id => $(id).scrollTop); // 並べ直しても、列のスクロール位置はそのまま
   document.querySelectorAll('.tdel').forEach(x => x.remove());
   const pool = $('pool');
-  for (const id of Object.values(SIDES)) [...$(id).children].forEach(el => { if (Object.values(FIXED).includes(el.id)) pool.appendChild(el); else el.remove(); });
-  for (const [side, id] of Object.entries(SIDES)) {
-    const col = $(id); col.classList.toggle('side', side !== 'center');
-    let grow = false;
-    for (const k of cfg.layout[side]) {
-      let el = FIXED[k] ? $(FIXED[k]) : null;
-      if (!el) { el = document.createElement('section'); el.className = 'tile'; el.dataset.tile = k; }
-      el.dataset.k = k;
-      el.classList.toggle('grow', GROW.has(k)); if (GROW.has(k)) grow = true;
-      el.classList.toggle('mini', side !== 'center' && !FIXED[k]);
-      col.appendChild(el);
+  placeRoute();
+  const hosts = [...Object.values(SIDES).map(id => $(id)), $('topRow')];
+  $('pages').querySelectorAll('.spage').forEach(pg => hosts.push(pg));
+  for (const host of hosts) [...host.children].forEach(el => { if (Object.values(FIXED).includes(el.id)) pool.appendChild(el); else el.remove(); });
+  $('pages').innerHTML = '';
+  const mk = k => { let el = FIXED[k] ? $(FIXED[k]) : null; if (!el) { el = document.createElement('section'); el.className = 'tile'; el.dataset.tile = k; } el.dataset.k = k; return el; };
+  if (useNew) {
+    const clock = $('clockTile'); clock.dataset.k = 'clock'; clock.classList.remove('grow', 'mini'); $('topRow').appendChild(clock);
+    const keys = stripKeys(), n = Math.max(1, Math.ceil(keys.length / 4));
+    stripPage = Math.min(stripPage, n - 1);
+    for (let p = 0; p < n; p++) {
+      const pg = document.createElement('div'); pg.className = 'spage';
+      for (const k of keys.slice(p * 4, p * 4 + 4)) { const el = mk(k); el.classList.remove('grow'); el.classList.toggle('mini', !FIXED[k]); pg.appendChild(el); }
+      $('pages').appendChild(pg);
     }
-    if (!grow && col.lastElementChild) col.lastElementChild.classList.add('grow');
+    $('pages').style.transform = `translateX(${-100 * stripPage}%)`;
+    $('pgInd').hidden = n < 2; $('pgInd').textContent = `タイル ${stripPage + 1} / ${n}`;
+  } else {
+    for (const [side, id] of Object.entries(SIDES)) {
+      const col = $(id); col.classList.toggle('side', side !== 'center');
+      let grow = false;
+      for (const k of cfg.layout[side]) {
+        const el = mk(k);
+        el.classList.toggle('grow', GROW.has(k)); if (GROW.has(k)) grow = true;
+        el.classList.toggle('mini', side !== 'center' && !FIXED[k]);
+        col.appendChild(el);
+      }
+      if (!grow && col.lastElementChild) col.lastElementChild.classList.add('grow');
+    }
   }
   renderTiles();
   if (editing) document.querySelectorAll('#page .tile').forEach(el => { if (el.dataset.k !== 'clock') el.insertAdjacentHTML('beforeend', '<button class="tdel" aria-label="外す">×</button>'); });
   Object.values(SIDES).forEach((id, i) => { $(id).scrollTop = scr[i]; });
-  requestAnimationFrame(() => { fitClock(); markOver(); });
+  requestAnimationFrame(() => { renderClock(); fitClock(); markOver(); });
 }
+// 下段のページ送り:左右にスワイプ、または「タイル 1 / 2」を押す(自動では回さない)
+function stripGo(p) { const n = $('pages').children.length; if (n < 2) return; stripPage = (p + n) % n; $('pages').style.transform = `translateX(${-100 * stripPage}%)`; $('pgInd').textContent = `タイル ${stripPage + 1} / ${n}`; }
+$('pgInd').addEventListener('click', e => { e.stopPropagation(); stripGo(stripPage + 1); });
+{ let sw = null;
+  $('strip').addEventListener('pointerdown', e => { sw = { x: e.clientX, y: e.clientY }; });
+  $('strip').addEventListener('pointerup', e => { if (!sw) return; const dx = e.clientX - sw.x, dy = e.clientY - sw.y; sw = null; if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 2) { swipedAt = Date.now(); stripGo(stripPage + (dx < 0 ? 1 : -1)); } });
+  $('strip').addEventListener('pointercancel', () => { sw = null; });
+  $('strip').addEventListener('click', e => { if (Date.now() - swipedAt < 400) { e.stopPropagation(); e.preventDefault(); } }, true); }
 function markOver() { for (const id of Object.values(SIDES)) { const c = $(id); c.classList.toggle('over', c.scrollHeight > c.clientHeight + 2 && c.scrollTop + c.clientHeight < c.scrollHeight - 2); } }
 for (const id of Object.values(SIDES)) $(id).addEventListener('scroll', markOver, { passive: true });
 // 時計の大きさを、置いた場所の広さに合わせる
 function fitClock() {
   const el = $('clockTile'); if (!el.isConnected || !el.parentNode || el.parentNode.id === 'pool') return;
   const w = el.clientWidth, h = document.body.classList.contains('portrait') ? 9999 : el.clientHeight;
-  const f = Math.max(54, Math.min(el.closest('#full') ? 560 : 220, (w - 50) / (cfg.showSec ? 3.1 : 2.6), (h - 200) / 0.92));
+  const full = !!el.closest('#full'), nl = document.body.classList.contains('newl') && !full, res = $('rmap').parentNode === el ? 200 : 150;
+  const f = Math.max(54, Math.min(full ? 560 : nl ? 250 : 220, (w - 50) / (cfg.showSec ? 3.1 : 2.6), (h - res) / 0.92));
   $('clock').style.fontSize = f + 'px';
   const sec = $('clock').querySelector('.sec'); if (sec) sec.style.fontSize = (f * .2) + 'px';
 }
@@ -1710,6 +1773,7 @@ function openFull(t) {
     fullPh = document.createElement('div'); fullPh.className = 'fullph'; t.before(fullPh);
     t.classList.remove('mini', 'grow');
     $('fullBody').appendChild(t);
+    placeRoute();
   }
   setFullHead(k);
   $('full').querySelector('.fhint').hidden = k === 'clock';
@@ -1724,6 +1788,7 @@ function closeFull() {
   t.className = fullCls;
   if (fullPh && fullPh.parentNode) fullPh.replaceWith(t); else $('pool').appendChild(t);
   fullPh = null; $('full').hidden = true;
+  placeRoute();
   renderTiles(); requestAnimationFrame(fitClock);
 }
 const fullKey = () => fullK || (fullTile && fullTile.dataset.k);
