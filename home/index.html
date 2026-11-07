@@ -17,11 +17,11 @@
 /* 1180×820(iPad 第10世代 横向き)の画面を作り、画面サイズに合わせて拡大縮小する */
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#141413;--ink:#ece8df;--sub:#8d8a83;--dim:#4a4844;--rule:#2b2a28;--card:#1b1b19;--track:#2f2e2b;--seg:#24231f;--segdone:#3a3833;
-  --red:#ff5b3a;--blue:#6fa8dc;--yel:#e8c65a;--grn:#79c28a;--sl:#f5b301;--onpill:#141413;
+  --red:#ff5b3a;--blue:#6fa8dc;--yel:#e8c65a;--grn:#79c28a;--sl:#f5b301;--onpill:#141413;--lunchbg:#2a2617;
   --jp:"Zen Kaku Gothic New","Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
   --num:"Barlow Condensed","Helvetica Neue",Arial,sans-serif}
 body.light{--bg:#eceeef;--ink:#16181b;--sub:#656a70;--dim:#a6abb0;--rule:#d3d7db;--card:#f7f8f9;--track:#d6dadd;--seg:#dde1e4;--segdone:#c7ccd1;
-  --red:#e0431f;--blue:#2f78c4;--yel:#a87a05;--grn:#2f9a55;--sl:#c98a00;--onpill:#fff}
+  --red:#e0431f;--blue:#2f78c4;--yel:#a87a05;--grn:#2f9a55;--sl:#c98a00;--onpill:#fff;--lunchbg:#f0e6c4}
 html,body{height:100%;background:var(--bg);overflow:hidden}
 body{-webkit-touch-callout:none;color:var(--ink);font-family:var(--jp);font-size:14px;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
@@ -111,14 +111,30 @@ ul{list-style:none}
 .clock .colon{color:var(--red);margin:0 2px;position:relative;top:-6px}
 .clock .sec{font-size:44px;color:var(--sub);margin:18px 0 0 8px;font-weight:400;width:1.1em}
 .next{margin-top:14px;font-size:16px;color:var(--sub);text-align:center} .next b{color:var(--ink)} .next .n{font-size:24px;color:var(--red);font-weight:500}
-.pbar{width:100%;margin-top:18px;display:flex;height:22px;gap:2px}
-.pbar div{flex:1;background:var(--seg);font-size:10.5px;color:var(--sub);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
-.pbar .done{background:var(--segdone)}
-.pbar .cur{color:#fff}
-.pbar .cur i{position:absolute;left:0;top:0;bottom:0;background:var(--red)}
-.pbar .cur span{position:relative}
-.pbar .brk{flex:.5;background:transparent;border-top:1px dashed var(--dim);height:1px;margin-top:11px}
-.ticks{width:100%;display:flex;justify-content:space-between;margin-top:5px;color:var(--dim);font-size:12px}
+/* 路線図(共通):授業 = 太い線、10分休み = 駅の丸、昼休み = ホームの箱 */
+.rmw{width:100%;margin-top:14px}
+.rml{display:flex;align-items:center;gap:16px;font-size:12px;color:var(--sub);margin-bottom:6px;white-space:nowrap}
+.rml span{display:inline-flex;align-items:center;gap:6px}.rml b{font-size:12.5px;letter-spacing:.12em;margin-right:auto}
+.rml i{display:inline-block;flex:none}
+.rm{position:relative;height:92px}
+.rm>*{position:absolute}
+.rm .rl{top:0;height:20px;display:flex;gap:5px;align-items:center;justify-content:center;font-size:13px;white-space:nowrap;overflow:hidden;color:var(--ink)}
+.rm .rl.done{color:var(--dim)}.rm .rl.cur{font-weight:700}
+.rm .rl.sm{font-size:11px;color:var(--sub)}.rm .rl.sm.done{color:var(--dim)}
+.rm .rn{flex:none;font-family:var(--num);font-size:12px;font-weight:700;width:17px;height:17px;display:flex;align-items:center;justify-content:center;background:var(--ink);color:var(--bg)}
+.rm .rl.done .rn{background:var(--dim)}.rm .rl.cur .rn{background:var(--rc,var(--red));color:var(--onpill)}
+.rm .rb{top:28px;height:12px;background:var(--rc,var(--red));overflow:hidden;border-right:2px solid var(--bg)}
+.rm .rb.sm{background:var(--track)}
+.rm .rb.done{background:var(--segdone)}
+.rm .rb i{position:absolute;left:0;top:0;bottom:0;background:var(--segdone)}
+.rm .rd{top:24px;width:20px;height:20px;border-radius:50%;background:var(--bg);border:4px solid var(--ink);transform:translateX(-50%)}
+.rm .rd.done{border-color:var(--dim)}
+.rm .rdl{top:50px;transform:translateX(-50%);font-size:11px;color:var(--sub);white-space:nowrap}
+.rm .rlu{top:20px;height:28px;border:1px solid var(--yel);background:var(--lunchbg);color:var(--yel);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden}
+.rm .rlu.done{opacity:.55}
+.rm .rlus{top:52px;text-align:center;font-size:11px;color:var(--yel)}
+.rm .rmn{top:18px;width:34px;height:32px;transform:translateX(-50%);background:var(--ink);color:var(--bg);font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;clip-path:polygon(0 0,78% 0,100% 50%,78% 100%,0 100%);z-index:2}
+.rm .rt{top:72px;font-family:var(--num);font-size:15px;color:var(--sub);white-space:nowrap}
 
 /* 時計の下の枠 */
 .col>.tile{flex:none}
@@ -135,20 +151,6 @@ ul{list-style:none}
 .slremain{margin-left:auto;font-size:15px;color:var(--sub);white-space:nowrap} .slremain .n{font-size:40px;color:var(--sl);font-weight:500;line-height:1}
 .slsub{font-size:13px;color:var(--sub);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .late{color:var(--red)} .okc{color:var(--grn)}
-.route{position:relative;height:70px;margin:16px 8px 0}
-.route .ln{position:absolute;left:0;right:0;top:12px;height:4px;background:var(--track)}
-.route .ln i{position:absolute;left:0;top:0;bottom:0;background:var(--sl)}
-.st{position:absolute;top:0;transform:translateX(-50%);text-align:center}
-.st .dot{width:14px;height:14px;border-radius:50%;background:var(--bg);border:3px solid var(--dim);margin:7px auto 0}
-.st.done .dot{border-color:var(--sl);background:var(--sl)}
-.st.cur .dot{border-color:var(--sl);box-shadow:0 0 0 4px rgba(245,179,1,.25)}
-.st.end .dot{width:18px;height:18px;border-radius:2px;margin-top:5px;border-color:var(--ink)}
-.st .nm{font-size:12.5px;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.st .tm{font-size:14px;color:var(--sub)}
-.st.done .nm{color:var(--sub)} .st.cur .nm{color:var(--sl);font-weight:700}
-.st.first{transform:none;text-align:left}.st.first .dot{margin-left:0}
-.st.end{transform:translateX(-100%);text-align:right}.st.end .dot{margin-right:0}
-.train{position:absolute;top:2px;width:26px;height:24px;transform:translateX(-50%);background:var(--sl);color:var(--onpill);font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;clip-path:polygon(0 0,80% 0,100% 50%,80% 100%,0 100%)}
 .slfoot{display:flex;gap:18px;margin-top:4px;font-size:12.5px;color:var(--sub);border-top:1px solid var(--rule);padding-top:8px}
 .slfoot b{color:var(--ink);font-weight:500}
 
@@ -187,7 +189,7 @@ ul{list-style:none}
 .fbody{flex:1;min-height:0;display:flex;overflow:auto}
 #full .tile{flex:1;border:0;zoom:1.6;padding:20px 28px;overflow:auto;display:flex;flex-direction:column}
 #full .clockt{zoom:1;align-items:center;justify-content:center}
-#full .clockt .date{font-size:26px}#full .clockt .next{font-size:24px}#full .clockt .next .n{font-size:36px}#full .clockt .pbar{height:34px}#full .clockt .pbar div{font-size:14px}
+#full .clockt .date{font-size:26px}#full .clockt .next{font-size:24px}#full .clockt .next .n{font-size:36px}#full .clockt .rmw{zoom:1.5}
 #full .termcard.fc{flex:1;min-height:220px}
 #full .fc-front .tw{font-size:52px}#full .fc-back .tw2{font-size:28px}#full .fc-back .td2{font-size:18px}
 body.portrait #full .tile{zoom:1.15}
@@ -286,7 +288,7 @@ body.portrait .hol li{grid-template-columns:70px 1fr auto}body.portrait .hol .hn
 
 /* 列に置いたタイル(幅が狭い版) */
 .mini{padding:16px 22px}
-.side .clockt{padding:12px 16px}.side .next{font-size:13px}.side .next .n{font-size:18px}.side .ticks{font-size:10px}
+.side .clockt{padding:12px 16px}.side .next{font-size:13px}.side .next .n{font-size:18px}
 /* 並べ替えモード */
 .bar .edc{display:none}
 body.editing .bar .edc{display:inline-block}
@@ -643,15 +645,7 @@ em.r{color:var(--red);font-style:normal}em.b{color:var(--blue);font-style:normal
 .v2slh{padding:20px 30px;border-bottom:1px solid var(--rule);display:grid;grid-template-columns:1fr auto;gap:20px;align-items:end}
 .v2slh .v2st{font-size:14px;color:var(--sl);font-weight:700;letter-spacing:.15em}.v2slh .tk{font-size:36px;font-weight:900;margin-top:6px}.v2slh .tk .n{font-size:30px;color:var(--sub);font-weight:400;margin-left:14px}
 .v2slh .kp{display:flex;gap:24px}.v2slh .kp div{text-align:right}.v2slh .kp b{font-size:40px;display:block;line-height:1;font-weight:500}.v2slh .kp span{font-size:12px;color:var(--sub)}
-.v2route{position:relative;height:230px;margin:0 60px;flex:none}
-.v2route .v2ln{position:absolute;top:96px;height:10px;background:var(--segdone)}.v2route .v2ln i{position:absolute;left:0;top:0;bottom:0;background:var(--sl)}
-.v2route .v2stn{position:absolute;top:80px;width:42px;height:42px;border-radius:50%;background:var(--bg);border:5px solid var(--segdone);transform:translateX(-21px)}
-.v2route .v2stn.done{border-color:var(--sl);background:var(--sl)}.v2route .v2stn.run{border-color:var(--sl)}
-.v2route .v2stl{position:absolute;top:134px;transform:translateX(-50%);text-align:center;width:150px}
-.v2route .v2stl b{font-size:15px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.v2route .v2stl span{display:block;font-size:15px;color:var(--sub)}.v2route .v2stl .du{font-size:13px}
-.v2route .v2stl.done b{color:var(--sub)}
-.v2route .v2train{position:absolute;top:26px;transform:translateX(-50%);background:var(--sl);color:#141413;font-weight:900;padding:6px 14px;font-size:15px;white-space:nowrap}
-.v2route .v2train::after{content:"";position:absolute;left:50%;bottom:-8px;border:8px solid transparent;border-top-color:var(--sl);border-bottom:0;transform:translateX(-50%)}
+.v2routew{flex:none;margin:6px 60px 14px}.v2routew .rmw{margin-top:0;zoom:1.6}
 .v2wkc{flex:1;min-height:120px;padding:0 30px 16px;display:grid;grid-template-columns:repeat(7,1fr);gap:16px;align-items:end}
 .v2wkc button{display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
 .v2wkc i{width:56px;max-width:100%;background:color-mix(in srgb,var(--sl) 35%,var(--bg));display:block;min-height:2px}.v2wkc .on i{background:var(--sl)}
@@ -718,9 +712,9 @@ em.r{color:var(--red);font-style:normal}em.b{color:var(--blue);font-style:normal
 body.portrait .v2split,body.portrait .v2split.ag,body.portrait .v2split.cd,body.portrait .v2split.tm,body.portrait .v2split.kk,body.portrait .v2split.qk,body.portrait .v2split.tmv,body.portrait .v2cal,body.portrait .v2wtop{grid-template-columns:1fr}
 body.portrait .v2cols,body.portrait .v2hh,body.portrait .v2days,body.portrait .v2snl{grid-template-columns:1fr}
 body.portrait .fv.v2{overflow:auto}body.portrait .v2hero,body.portrait .v2cdm{border-right:0;border-bottom:1px solid var(--rule)}
-body.portrait .v2fc{grid-template-columns:1fr}body.portrait .v2route{margin:0 30px}
+body.portrait .v2fc{grid-template-columns:1fr}body.portrait .v2routew{margin:6px 30px 14px}
 body.portrait .v2split,body.portrait .v2tt,body.portrait .v2cal,body.portrait .v2wx,body.portrait .v2hol,body.portrait .v2sn,body.portrait .v2sl,body.portrait .v2cols,body.portrait .v2mon,body.portrait .v2strip,body.portrait .v2chart{flex:none;height:auto;min-height:0}
-body.portrait .v2rows{min-height:520px}body.portrait .v2g{min-height:460px}body.portrait .v2chart svg{flex:none;height:240px}body.portrait .v2wks{min-height:340px}body.portrait .v2fc{min-height:320px}body.portrait .v2kc{min-height:280px}body.portrait .v2qd canvas{flex:none;height:300px}body.portrait .v2route{overflow-x:auto}
+body.portrait .v2rows{min-height:520px}body.portrait .v2g{min-height:460px}body.portrait .v2chart svg{flex:none;height:240px}body.portrait .v2wks{min-height:340px}body.portrait .v2fc{min-height:320px}body.portrait .v2kc{min-height:280px}body.portrait .v2qd canvas{flex:none;height:300px}
 .fhead b{white-space:nowrap}body.portrait .fhead .fhint{display:none}
 </style>
 </head>
@@ -745,8 +739,7 @@ body.portrait .v2rows{min-height:520px}body.portrait .v2g{min-height:460px}body.
       <div class="date" id="date"></div>
       <div class="clock n" id="clock"></div>
       <div class="next" id="next"></div>
-      <div class="pbar" id="pbar"></div>
-      <div class="ticks" id="ticks"></div>
+      <div class="rmw" id="rmap"></div>
     </section>
     <section class="tile" id="wxTile"></section>
     <section class="tile sched" id="schedTile"></section>
@@ -774,7 +767,7 @@ body.portrait .v2rows{min-height:520px}body.portrait .v2g{min-height:460px}body.
 
 <script>
 'use strict';
-const APP_VERSION = '2.12.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.13.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -919,6 +912,48 @@ const subjOf = (d, i) => (ttOf(d)[i] || {}).s || '';
 const roomOf = (d, i) => (ttOf(d)[i] || {}).r || '';
 const dayLabel = (base, d) => { const k = dayDiff(base, d); return k === 0 ? '今日' : k === 1 ? '明日' : `${md(d)}(${WD[d.getDay()]})`; };
 
+/* ================= 路線図(共通) =================
+   授業 = 太い線の区間(幅は時刻の割合)/ 10分休み = 駅の丸 / 昼休み = ホームの箱 / いま = 矢印形のマーカー
+   items: [{k:'cls'|'sm', a, b, n, name, st?}]  a,b = 分。st を渡さなければ o.now から 済/いま/これから を決める
+   o: { t0, t1, now(分 or null), w(描く幅のおおよそ px), legend, gaps(休みの駅・昼休みを描く。既定 true), c(未来の線の色), ticks:[分,…] } */
+function routeMap(items, o) {
+  const t0 = o.t0, span = Math.max(1, o.t1 - t0), W = o.w || 520, now0 = o.now == null ? null : o.now;
+  const X = m => Math.max(0, Math.min(100, (m - t0) / span * 100));
+  const stOf = it => it.st || (now0 == null ? 'wait' : now0 >= it.b ? 'done' : now0 >= it.a ? 'cur' : 'wait');
+  let h = o.legend ? '<div class="rml"><b>今日の流れ</b><span><i style="width:22px;height:8px;background:var(--red)"></i>授業</span><span><i style="width:12px;height:12px;border-radius:50%;border:3px solid var(--ink)"></i>10分休み</span><span><i style="width:24px;height:12px;border:1px solid var(--yel);background:var(--lunchbg)"></i>昼休み</span></div>' : '';
+  h += `<div class="rm"${o.c ? ` style="--rc:${o.c}"` : ''}>`;
+  items.forEach((it, i) => {
+    const x = X(it.a), w = X(it.b) - x, px = w / 100 * W, st = stOf(it);
+    if (it.k === 'sm') {
+      const nm = Math.floor(px / 12) >= 1 ? esc(String(it.name || '').slice(0, Math.floor(px / 12))) : '';
+      h += `<div class="rl sm ${st}" style="left:${x.toFixed(2)}%;width:${w.toFixed(2)}%">${nm}</div><div class="rb sm ${st}" style="left:${x.toFixed(2)}%;width:${w.toFixed(2)}%">${st === 'cur' ? `<i style="width:${((now0 - it.a) / (it.b - it.a) * 100).toFixed(1)}%"></i>` : ''}</div>`;
+      return;
+    }
+    const mx = Math.floor((px - 22) / 13), nm = mx >= 1 ? esc(String(it.name || '').slice(0, mx)) : '';
+    h += `<div class="rl ${st}" style="left:${x.toFixed(2)}%;width:${w.toFixed(2)}%" title="${esc(it.name || '')}">${it.n != null ? `<span class="rn">${it.n}</span>` : ''}${nm}</div>`;
+    h += `<div class="rb ${st}" style="left:${x.toFixed(2)}%;width:${w.toFixed(2)}%">${st === 'cur' ? `<i style="width:${Math.max(0, Math.min(100, (now0 - it.a) / (it.b - it.a) * 100)).toFixed(1)}%"></i>` : ''}</div>`;
+    const prev = items[i - 1];
+    if (o.gaps !== false && prev && prev.k === 'cls' && it.a > prev.b) { // 授業と授業のあいだ
+      const gap = it.a - prev.b, done = now0 != null && now0 >= it.a;
+      if (gap >= 30) { const gx = X(prev.b), gw = X(it.a) - gx; h += `<div class="rlu ${done ? 'done' : ''}" style="left:${gx.toFixed(2)}%;width:${gw.toFixed(2)}%">昼休み</div><div class="rlus" style="left:${gx.toFixed(2)}%;width:${gw.toFixed(2)}%">${gap}分</div>`; }
+      else { const gx = X((prev.b + it.a) / 2); h += `<div class="rd ${done ? 'done' : ''}" style="left:${gx.toFixed(2)}%"></div><div class="rdl" style="left:${gx.toFixed(2)}%">休 ${gap}分</div>`; }
+    }
+  });
+  if (now0 != null && now0 >= t0 && now0 <= o.t1) h += `<div class="rmn" style="left:${X(now0).toFixed(2)}%">いま</div>`;
+  const tk = [...new Set(o.ticks || [])].sort((a, b) => a - b).filter((m, i, a) => i === 0 || X(m) - X(a[i - 1]) > 8);
+  tk.forEach((m, i) => { h += `<div class="rt n" style="left:${X(m).toFixed(2)}%;transform:translateX(${i === 0 ? '0' : i === tk.length - 1 ? '-100%' : '-50%'})">${fmtDay(m)}</div>`; });
+  return h + '</div>';
+}
+// 学校の1日(朝 → 1〜6限 → 帰り)を路線図にする
+function schoolRoute(d, st, w) {
+  const m = minOfDay(d), it = [];
+  if (st.pre.length) it.push({ k: 'sm', a: st.pre[0][1], b: st.pre[st.pre.length - 1][2], name: '朝' });
+  st.ps.forEach(([a, b], i) => it.push({ k: 'cls', a, b, n: i + 1, name: subjOf(d, i) }));
+  if (st.post) it.push({ k: 'sm', a: st.post[1], b: st.post[2], name: 'HR' });
+  const t0 = it[0].a, t1 = it[it.length - 1].b, lunch = st.ps.findIndex((p, i) => i > 0 && p[0] - st.ps[i - 1][1] >= 30);
+  return routeMap(it, { t0, t1, now: m, w, legend: true, ticks: [t0, t1, ...(lunch > 0 ? [st.ps[lunch - 1][1]] : [])] });
+}
+
 function renderClock() {
   const d = now();
   $('date').innerHTML = `<b>${d.getMonth() + 1}月${d.getDate()}日</b>　${WD[d.getDay()]}曜日${HOLIDAYS[ymd(d)] ? '　' + esc(HOLIDAYS[ymd(d)]) : ''}`;
@@ -939,25 +974,10 @@ function renderClock() {
     t = `${st.mode === 'after' ? '今日の授業はおわり' : '今日はお休み'}　／　${dayLabel(d, nd)} 1限は ${s0 ? `<b>${esc(s0)}</b>` : '—'} ${p0 ? `<span class="n" style="color:var(--sub);font-size:20px">${fmtMin(p0[0])}</span>` : ''}`;
   }
   $('next').innerHTML = t;
-  // 時限バー(授業がある日の昼間だけ)
+  // 路線図(授業がある日の昼間だけ)
   const show = st.mode !== 'off' && st.mode !== 'after';
-  $('pbar').hidden = $('ticks').hidden = !show;
-  if (show) {
-    const ps = st.ps, m = minOfDay(d);
-    const seg = (s, e, lab, flex) => m >= e ? `<div class="done" style="flex:${flex}">${lab}</div>` : m >= s ? `<div class="cur" style="flex:${flex}"><i style="width:${((m - s) / (e - s) * 100).toFixed(1)}%"></i><span>${lab}</span></div>` : `<div style="flex:${flex}">${lab}</div>`;
-    let h = st.pre.length ? seg(st.pre[0][1], st.pre[st.pre.length - 1][2], '朝', .6) : '';
-    ps.forEach(([s, e], i) => {
-      if (i > 0 && s - ps[i - 1][1] >= 30) h += '<div class="brk"></div>';
-      if (m >= e) h += `<div class="done">${i + 1}</div>`;
-      else if (m >= s) h += `<div class="cur"><i style="width:${((m - s) / (e - s) * 100).toFixed(1)}%"></i><span>${i + 1}</span></div>`;
-      else h += `<div>${i + 1}</div>`;
-    });
-    if (st.post) h += seg(st.post[1], st.post[2], 'HR', .6);
-    $('pbar').innerHTML = h;
-    const lunch = ps.findIndex((p, i) => i > 0 && p[0] - ps[i - 1][1] >= 30);
-    const t0 = st.pre.length ? st.pre[0][1] : ps[0][0], t1 = st.post ? st.post[2] : ps[ps.length - 1][1];
-    $('ticks').innerHTML = `<span class="n">${fmtMin(t0)}</span>${lunch > 0 ? `<span><span class="n">${fmtMin(ps[lunch - 1][1])}</span> 昼休み</span>` : ''}<span class="n">${fmtMin(t1)}</span>`;
-  }
+  $('rmap').hidden = !show;
+  if (show) $('rmap').innerHTML = schoolRoute(d, st, $('rmap').clientWidth || 520);
   return st;
 }
 
@@ -1266,24 +1286,9 @@ function renderStudyLine(mini) {
     const list = rows.slice(0, 5).map(r => `<li class="${r.st === 'done' ? 'done' : r.st === 'run' ? 'cur' : ''}"><span class="tm">${fmtDay(r.s)}</span><span class="dt"></span><span class="nm">${esc(r.t.name)}</span></li>`).join('');
     return `<h3><b style="color:var(--sl);letter-spacing:.06em">StudyLine</b> <span>${run ? '運行状況' : '今日のダイヤ'} <button class="openapp" data-app="studyline">開く</button></span></h3><div class="slhead">${head}</div><div class="slsub">${sub}</div><ul class="slv" style="margin:8px 0">${list}<li><span class="tm">${fmtDay(end)}</span><span class="dt" style="border-radius:2px;border-color:var(--ink)"></span><span class="nm">終点</span></li></ul>${foot}`;
   }
-  // 路線図:駅の位置は時刻の割合。近すぎる駅は少し離す
-  const t0 = rows[0].s, t1 = end, span = Math.max(1, t1 - t0);
-  let pos = rows.map(r => Math.min(.86, (r.s - t0) / span));
-  for (let i = 1; i < pos.length; i++) pos[i] = Math.max(pos[i], pos[i - 1] + .14);
-  const over = pos[pos.length - 1] - .86; if (over > 0) pos = pos.map((p, i) => p - over * i / (pos.length - 1 || 1));
-  const many = rows.length > 6;
-  let route = `<div class="ln"><i style="width:${Math.min(100, Math.max(0, (nm - t0) / span * 100)).toFixed(1)}%"></i></div>`;
-  const RW = 500; // 路線図のおおよその幅(px)。駅名が隣とかさならない幅にする
-  rows.forEach((r, i) => {
-    const cls = (i === 0 ? 'first ' : '') + (r.st === 'done' ? 'done' : r.st === 'run' ? 'cur' : '');
-    const name = many ? r.t.name.slice(0, 4) : r.t.name;
-    const gapL = i === 0 ? 1 : (pos[i] - pos[i - 1]) / 2, gapR = ((i + 1 < pos.length ? pos[i + 1] : 1) - pos[i]) / (i === 0 ? 1 : 2);
-    const w = Math.max(48, Math.min(130, (i === 0 ? gapR : Math.min(gapL, gapR) * 2) * RW - 6));
-    route += `<div class="st ${cls}" style="left:${(pos[i] * 100).toFixed(1)}%;max-width:${w.toFixed(0)}px"><div class="dot"></div><div class="nm">${esc(name)}</div><div class="tm n">${fmtDay(r.s)}</div></div>`;
-  });
-  if (run) route += `<div class="train" style="left:${Math.min(97, Math.max(1, (nm - t0) / span * 100)).toFixed(1)}%">▶</div>`;
-  route += `<div class="st end" style="left:100%"><div class="dot"></div><div class="nm">終点</div><div class="tm n">${fmtDay(end)}</div></div>`;
-  return `<h3><b style="color:var(--sl);letter-spacing:.06em">StudyLine</b> <span>${run ? '運行状況' : '今日のダイヤ'} <button class="openapp" data-app="studyline">開く</button></span></h3><div class="slhead">${head}</div><div class="slsub">${sub}</div><div class="route">${route}</div>${foot}`;
+  // 路線図:タスクが1つの区間(長さ = 時間)。共通の路線図関数で描く
+  const route = routeMap(rows.map((r, i) => ({ k: 'cls', a: r.s, b: Math.max(r.e, r.s + 1), n: i + 1, name: r.t.name, st: r.st === 'run' ? 'cur' : r.st })), { t0: rows[0].s, t1: end, now: nm, w: 520, gaps: false, c: 'var(--sl)', ticks: [rows[0].s, end] });
+  return `<h3><b style="color:var(--sl);letter-spacing:.06em">StudyLine</b> <span>${run ? '運行状況' : '今日のダイヤ'} <button class="openapp" data-app="studyline">開く</button></span></h3><div class="slhead">${head}</div><div class="slsub">${sub}</div><div class="rmw">${route}</div>${foot}`;
 }
 function slChip() {
   const sc = slSchedule();
@@ -1648,7 +1653,7 @@ for (const id of Object.values(SIDES)) $(id).addEventListener('scroll', markOver
 function fitClock() {
   const el = $('clockTile'); if (!el.isConnected || !el.parentNode || el.parentNode.id === 'pool') return;
   const w = el.clientWidth, h = document.body.classList.contains('portrait') ? 9999 : el.clientHeight;
-  const f = Math.max(54, Math.min(el.closest('#full') ? 560 : 220, (w - 50) / (cfg.showSec ? 3.1 : 2.6), (h - 150) / 0.92));
+  const f = Math.max(54, Math.min(el.closest('#full') ? 560 : 220, (w - 50) / (cfg.showSec ? 3.1 : 2.6), (h - 200) / 0.92));
   $('clock').style.fontSize = f + 'px';
   const sec = $('clock').querySelector('.sec'); if (sec) sec.style.fontSize = (f * .2) + 'px';
 }
@@ -2173,13 +2178,11 @@ function fv2Study() {
     const studied = slStudied(d), late = sc && sc.deadline != null ? Math.round(sc.deadline - sc.end) : null;
     head = `<div class="v2slh"><div><div class="v2st">${isT ? (cur ? '● 運行中' : nDone === rows.length ? '● 終点に着きました' : '● 発車前') : '記録'}</div><div class="tk">${cur ? esc(cur.t.name) : nDone === rows.length ? 'おつかれさまでした' : esc(rows[nDone] ? rows[nDone].t.name : '')}${cur && sc ? `<span class="n">あと ${Math.max(0, Math.ceil(cur.e - sc.nm))}分</span>` : ''}</div></div>
       <div class="kp"><div><b class="n">${hm(studied * 60000)}</b><span>${isT ? '今日' : 'この日'}の勉強</span></div>${sc ? `<div><b class="n">${fmtDay(sc.end)}</b><span>終点 着見込み</span></div>` : ''}${late != null ? `<div><b class="n ${late >= 0 ? 'grn' : 'red'}">${late >= 0 ? '+' : '−'}${hm(Math.abs(late) * 60000)}</b><span>就寝期限まで${late >= 0 ? '余裕' : 'オーバー'}</span></div>` : ''}<div><b class="n">${nDone}/${rows.length}</b><span>済</span></div></div></div>`;
-    const N = rows.length, pos = i => N === 1 ? 50 : 4 + i * 92 / (N - 1);
-    let trainAt = null;
-    if (cur && sc) { const r = Math.min(1, Math.max(0, (sc.nm - cur.s) / Math.max(1, cur.e - cur.s))); trainAt = run + 1 < N ? pos(run) + (pos(run + 1) - pos(run)) * r * .9 : pos(run); }
-    const fill = trainAt != null ? trainAt : nDone ? pos(Math.min(N - 1, nDone - 1)) : 0;
-    route = `<div class="v2route"><div class="v2ln" style="left:${pos(0)}%;right:${100 - pos(N - 1)}%"><i style="width:${N > 1 ? ((fill - pos(0)) / (pos(N - 1) - pos(0)) * 100).toFixed(1) : 0}%"></i></div>
-      ${rows.map((r, i) => `<span class="v2stn ${r.st}" style="left:${pos(i)}%"></span><div class="v2stl ${r.st}" style="left:${pos(i)}%"><b>${esc(r.t.name)}</b><span class="n">${r.s != null ? fmtDay(r.s) : '—'}${r.st === 'wait' ? ' 頃' : ''}${r.t.pomo ? ' 🍅' : ''}</span><span class="n du">${slDur(r.t)}分</span></div>`).join('')}
-      ${trainAt != null ? `<div class="v2train" style="left:${trainAt}%">🚃 いまここ</div>` : ''}</div>`;
+    // 路線図(共通):時刻のないタスクは、前のタスクのあとに予定の長さで並べる
+    let cursor = sc ? sc.rows[0].s : (rows.find(r => r.s != null) || { s: 0 }).s;
+    const segs = rows.map((r, i) => { const s0 = r.s != null ? r.s : cursor, e0 = r.e != null ? r.e : Math.max(s0 + slDur(r.t), sc && r.st === 'run' ? sc.nm : 0); cursor = e0; return { k: 'cls', a: s0, b: Math.max(e0, s0 + 1), n: i + 1, name: r.t.name, st: r.st === 'run' ? 'cur' : r.st }; });
+    const t0 = Math.min(...segs.map(x => x.a)), t1 = Math.max(...segs.map(x => x.b));
+    route = `<div class="v2routew"><div class="rmw">${routeMap(segs, { t0, t1, now: isT && sc ? sc.nm : null, w: 640, gaps: false, c: 'var(--sl)', ticks: [t0, t1] })}</div></div>`;
   }
   let mx = 60; const wk = [];
   for (let i = 6; i >= 0; i--) { const x = addDays(today, -i), dd = slDay(ymd(x)); if (dd) dd._ds = ymd(x); const v = slStudied(dd); wk.push([x, v]); mx = Math.max(mx, v); }
