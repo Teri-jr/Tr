@@ -679,7 +679,7 @@ em.r{color:var(--red);font-style:normal}em.b{color:var(--blue);font-style:normal
 .v2qi b{font-size:18px;display:block}.v2qi .m{font-size:13px;color:var(--sub);margin-top:3px;display:block}
 .v2qi .tm{font-size:20px;color:var(--sub);text-align:right}.v2qi .tm small{display:block;font-family:var(--jp);font-size:12px}
 .v2qd{padding:16px 22px;display:flex;flex-direction:column;gap:8px;min-height:0}
-.v2qd canvas{width:100%;flex:1;min-height:0;object-fit:cover;background:#101418;border:1px solid var(--rule)}
+.v2qd canvas{width:100%;flex:1;min-height:0;background:#101418;border:1px solid var(--rule)}
 .v2qd .rw{display:flex;justify-content:space-between;gap:10px;font-size:15px;border-bottom:1px solid var(--rule);padding:6px 0}.v2qd .rw span{color:var(--sub)}.v2qd .rw b{font-weight:500;text-align:right}
 /* タイマー */
 .v2split.tmv{grid-template-columns:1fr 380px}
@@ -760,7 +760,7 @@ body.portrait .v2rows{min-height:520px}body.portrait .v2g{min-height:460px}body.
 
 <script>
 'use strict';
-const APP_VERSION = '2.10.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.10.1'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -2156,8 +2156,17 @@ function fv2Quakes() {
 function drawQuakeMini() {
   const cv = $('v2qmap'); if (!cv || !JAPAN) return;
   const q = quakeHist[Math.min(+(fs.qi || 0), quakeHist.length - 1)]; if (!q) return;
+  // 表示されている大きさに合わせて描く(切れたり伸びたりしないように)
+  if (cv.clientWidth > 50 && cv.clientHeight > 50) { cv.width = Math.round(cv.clientWidth * 2); cv.height = Math.round(cv.clientHeight * 2); }
   const g = cv.getContext('2d'), W = cv.width, H = cv.height, L = loc(), by = q.byPref || {};
-  const has = q.lat > -90 && q.lon > -180, cLat = has ? q.lat : L.lat, cLon = has ? q.lon : L.lon, span = 6, k = Math.cos(cLat * Math.PI / 180), ppd = H / span;
+  const has = q.lat > -90 && q.lon > -180;
+  // 揺れた県ぜんぶと震源が入るように(県の形がはみ出さないよう少し広めに)
+  const pts = []; if (has) pts.push([q.lat, q.lon]);
+  for (const p of JAPAN) if (by[p.name]) for (const r of p.rings) for (let j = 0; j < r.length; j += 8) pts.push([r[j][1], r[j][0]]);
+  if (!pts.length) pts.push([L.lat, L.lon]);
+  const la = pts.map(x => x[0]), lo = pts.map(x => x[1]), la0 = Math.min(...la), la1 = Math.max(...la), lo0 = Math.min(...lo), lo1 = Math.max(...lo);
+  const cLat = (la0 + la1) / 2, cLon = (lo0 + lo1) / 2, k = Math.cos(cLat * Math.PI / 180);
+  const span = Math.min(30, Math.max(3, (la1 - la0) * 1.15 + .4, ((lo1 - lo0) * k * 1.15 + .4) * H / W)), ppd = H / span;
   const P = (lon, lat) => [W / 2 + (lon - cLon) * k * ppd, H / 2 - (lat - cLat) * ppd];
   g.fillStyle = '#101418'; g.fillRect(0, 0, W, H); g.lineJoin = 'round'; g.strokeStyle = '#0b0c0e'; g.lineWidth = 1.5;
   for (const p of JAPAN) { const lv = by[p.name] || 0; g.fillStyle = lv >= 1 ? SHINDO_COLOR[lv] : '#2a2d32'; g.beginPath(); for (const r of p.rings) { r.forEach((pt, j) => { const [x, y] = P(pt[0], pt[1]); j ? g.lineTo(x, y) : g.moveTo(x, y); }); g.closePath(); } g.fill(); g.stroke(); }
@@ -2497,15 +2506,16 @@ function drawMap(src) {
   const eLat = isE ? src.lat : (E.latitude > -90 ? E.latitude : null), eLon = isE ? src.lon : (E.longitude > -180 ? E.longitude : null);
   g.setTransform(2, 0, 0, 2, 0, 0);
   g.fillStyle = '#101418'; g.fillRect(0, 0, W, H);
-  if (!src.view) { // 震源と現在地が入るように。最低でも緯度3度ぶん
+  if (!src.view && (isE || JAPAN)) { // 震源と現在地(地震情報は揺れた県ぜんぶ)が入るように。最低でも緯度3度ぶん。地図を読み込む前は決めない
     const pts = [[L.lat, L.lon]]; if (eLat != null) pts.push([eLat, eLon]);
-    if (!isE) for (const p of JAPAN || []) if ((src.byPref || {})[p.name] >= 3) pts.push([p.c[1], p.c[0]]);
+    if (!isE) for (const p of JAPAN || []) if ((src.byPref || {})[p.name] >= 1) for (const r of p.rings) for (let j = 0; j < r.length; j += 8) pts.push([r[j][1], r[j][0]]); // 揺れた県ぜんぶ
     const lats = pts.map(p => p[0]), lons = pts.map(p => p[1]);
     const lat0 = Math.min(...lats), lat1 = Math.max(...lats), lon0 = Math.min(...lons), lon1 = Math.max(...lons);
     const k = Math.cos((lat0 + lat1) / 2 * Math.PI / 180);
-    const span = Math.min(22, Math.max(3, (lat1 - lat0) * 1.4, (lon1 - lon0) * k * 1.4 * H / W));
+    const span = Math.min(30, Math.max(3, (lat1 - lat0) * 1.15 + .4, ((lon1 - lon0) * k * 1.15 + .4) * H / W));
     src.view = { cLat: (lat0 + lat1) / 2, cLon: (lon0 + lon1) / 2, span, k };
   }
+  if (!src.view) return;
   const v = src.view, ppd = H / v.span;
   const P = (lon, lat) => [W / 2 + (lon - v.cLon) * v.k * ppd, H / 2 - (lat - v.cLat) * ppd];
   if (JAPAN) {
