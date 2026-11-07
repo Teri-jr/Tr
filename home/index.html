@@ -436,6 +436,16 @@ body.editing .page .tile .tdel{pointer-events:auto}
 #eewMap,#v2qmap{touch-action:none;cursor:grab}
 .mzoom{position:absolute;right:10px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:6px;z-index:2}
 .mzoom button{width:44px;height:44px;background:rgba(16,20,24,.85);color:#fff;border:1px solid #556;font-size:22px;font-weight:700}
+/* 雨雲レーダー */
+.v2rd{flex:1;min-height:0;display:flex;flex-direction:column}
+.rdmap{flex:1;min-height:0;position:relative;overflow:hidden;background:#cfd8dc;touch-action:none;cursor:grab}
+.rdtiles img{position:absolute;width:256px;height:256px;user-select:none;-webkit-user-drag:none;pointer-events:none}
+.rdtiles .rdr{opacity:.85;image-rendering:auto}
+body:not(.light) .rdb{filter:invert(1) hue-rotate(180deg) brightness(.85) contrast(.9)}
+.rdme{position:absolute;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;background:#fff;border:3px solid #111;pointer-events:none;}
+.rdleg{position:absolute;left:10px;bottom:10px;background:rgba(16,20,24,.85);color:#fff;font:12px var(--num);padding:5px 8px;display:flex;align-items:center;gap:4px}.rdleg span{width:14px;height:10px;display:inline-block}
+.rdbar{display:flex;align-items:center;gap:14px;padding:10px 22px;border-top:1px solid var(--rule)}
+.rdbar input{flex:1;accent-color:var(--blue)}.rdbar b{font-size:22px;min-width:200px}.rdbar b small{font-family:var(--jp);font-size:13px;color:var(--sub);margin-left:6px}
 #dim{position:fixed;inset:0;z-index:90;background:#000;pointer-events:none;transition:opacity 1.5s}
 #settings{position:fixed;inset:0;z-index:100;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;user-select:text;-webkit-user-select:text}
 .sx{max-width:860px;margin:0 auto;padding:max(20px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) 80px max(18px,env(safe-area-inset-left))}
@@ -764,7 +774,7 @@ body.portrait .v2rows{min-height:520px}body.portrait .v2g{min-height:460px}body.
 
 <script>
 'use strict';
-const APP_VERSION = '2.11.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.12.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1725,7 +1735,7 @@ $('fullBody').addEventListener('click', e => {
 addEventListener('keydown', e => { if (e.key === 'Escape' && (fullTile || fullK)) closeFull(); });
 
 /* ---- 全画面の詳しい画面 ---- */
-function renderFullView() { if (fullK && FV[fullK]) { $('fullBody').innerHTML = `<div class="fv v2 fv-${fullK}">${FV[fullK]()}</div>`; if (fullK === 'quakes') requestAnimationFrame(drawQuakeMini); } }
+function renderFullView() { if (fullK && FV[fullK]) { $('fullBody').innerHTML = `<div class="fv v2 fv-${fullK}">${FV[fullK]()}</div>`; if (fullK === 'quakes') requestAnimationFrame(drawQuakeMini); if (fullK === 'weather' && fs.wmode === 'radar') requestAnimationFrame(rdInit); else rdStop(); } }
 const tabs = (fa, items, cur) => `<div class="fvtabs">${items.map(([v, l]) => `<button data-fa="${fa}" data-v="${esc(v)}" class="${String(v) === String(cur) ? 'on' : ''}">${l}</button>`).join('')}</div>`;
 // その日にかかる予定(終日の予定は終わりの日を含まない)
 function eventsOn(d) {
@@ -1955,8 +1965,76 @@ function wxSay(after) {
   const p = D.precipitation_probability_max[di];
   return { head: `明日は${WCODE(D.weather_code[di])[0]}${p == null ? '' : ' ' + p + '%'}`, say: umbrella(p, D.weather_code[di]), p };
 }
-// 天気: 今の天気を大きく、傘の一言、気温の線と雨の棒
+/* ---- 雨雲レーダー(気象庁 高解像度降水ナウキャスト。地図は国土地理院) ---- */
+const rd = { z: 8, lat: null, lon: null, times: [], idx: -1, at: 0, play: null, err: '' };
+const rdT = s => new Date(Date.UTC(+s.slice(0, 4), +s.slice(4, 6) - 1, +s.slice(6, 8), +s.slice(8, 10), +s.slice(10, 12)));
+async function rdLoad() {
+  if (rd.times.length && Date.now() - rd.at < 4 * 60e3) return;
+  try {
+    const [a, b] = await Promise.all(['N1', 'N2'].map(n => fetch(`https://www.jma.go.jp/bosai/jmatile/data/nowc/targetTimes_${n}.json`, { cache: 'no-store' }).then(r => r.json())));
+    const past = a.filter(x => x.elements.includes('hrpns')).slice(0, 13).reverse(), fut = b.filter(x => x.elements.includes('hrpns')).sort((x, y) => x.validtime < y.validtime ? -1 : 1).filter((x, i) => i % 2 === 1 || i === 0);
+    rd.times = [...past.map(x => ({ ...x, f: false })), ...fut.map(x => ({ ...x, f: true }))];
+    rd.idx = past.length - 1; rd.at = Date.now(); rd.err = '';
+  } catch (e) { rd.err = '雨雲レーダーを読めませんでした(気象庁のデータに届きません)'; }
+}
+function fvRadar() {
+  return `<div class="v2rd"><div class="rdmap" id="rdMap"><div class="rdtiles" id="rdTiles"></div><div class="rdme"></div>
+    <div class="mzoom" data-map="rdMap"><button data-rz="1" aria-label="拡大">＋</button><button data-rz="-1" aria-label="縮小">−</button><button data-rz="0" aria-label="元の場所">⟲</button></div>
+    <div class="rdleg"><span style="background:#f2f2ff"></span>1<span style="background:#a0d2ff"></span>5<span style="background:#218cff"></span>10<span style="background:#0041ff"></span>20<span style="background:#fff500"></span>30<span style="background:#ff9900"></span>50<span style="background:#ff2800"></span>80<span style="background:#b40068"></span> mm/h</div></div>
+    <div class="rdbar"><button class="v2btn" data-fa="rdplay" id="rdPlay">▶ 動かす</button><input type="range" id="rdSlider" min="0" max="0" value="0" aria-label="時刻"><b id="rdTime" class="n">読み込み中…</b></div>
+    <div class="fvnote" style="padding:0 22px 10px">気象庁「高解像度降水ナウキャスト」(5分ごと、1時間先まで予想) ・ 地図:国土地理院 ・ 2本指・ドラッグ・＋−で動かせます</div></div>`;
+}
+const rdPx = (lat, lon, z) => { const n = 256 * 2 ** z, s = Math.sin(lat * Math.PI / 180); return [(lon + 180) / 360 * n, (.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * n]; };
+const rdLL = (x, y, z) => { const n = 256 * 2 ** z; return [Math.atan(Math.sinh(Math.PI * (1 - 2 * y / n))) * 180 / Math.PI, x / n * 360 - 180]; };
+function rdDraw() {
+  const M = $('rdMap'), T = $('rdTiles'); if (!M || !T) return;
+  if (rd.lat == null) { rd.lat = loc().lat; rd.lon = loc().lon; }
+  const W = M.clientWidth, H = M.clientHeight, z = rd.z, [cx, cy] = rdPx(rd.lat, rd.lon, z);
+  const x0 = Math.floor((cx - W / 2) / 256), x1 = Math.floor((cx + W / 2) / 256), y0 = Math.floor((cy - H / 2) / 256), y1 = Math.floor((cy + H / 2) / 256);
+  const t = rd.times[rd.idx], rz = Math.min(z, 10), k = 2 ** (z - rz);
+  let h = '';
+  for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) {
+    const l = x * 256 - cx + W / 2, tp = y * 256 - cy + H / 2;
+    h += `<img class="rdb" src="https://cyberjapandata.gsi.go.jp/xyz/pale/${z}/${x}/${y}.png" style="left:${l}px;top:${tp}px" alt="" onerror="this.style.visibility='hidden'">`;
+  }
+  if (t) { // 雨のタイル(気象庁は10までなので、それより寄ったら引き伸ばす)
+    const rx0 = Math.floor(x0 / k), rx1 = Math.floor(x1 / k), ry0 = Math.floor(y0 / k), ry1 = Math.floor(y1 / k);
+    for (let x = rx0; x <= rx1; x++) for (let y = ry0; y <= ry1; y++) h += `<img class="rdr" src="https://www.jma.go.jp/bosai/jmatile/data/nowc/${t.basetime}/none/${t.validtime}/surf/hrpns/${rz}/${x}/${y}.png" style="left:${x * 256 * k - cx + W / 2}px;top:${y * 256 * k - cy + H / 2}px;width:${256 * k}px;height:${256 * k}px" alt="" onerror="this.style.visibility='hidden'">`;
+  }
+  T.innerHTML = h;
+  const [mx, my] = rdPx(loc().lat, loc().lon, z), me = M.querySelector('.rdme'); if (me) { me.style.left = (mx - cx + W / 2) + 'px'; me.style.top = (my - cy + H / 2) + 'px'; }
+  const s = $('rdSlider'), lb = $('rdTime');
+  if (s) { s.max = Math.max(0, rd.times.length - 1); s.value = rd.idx; }
+  if (lb) lb.innerHTML = rd.err ? `<span class="late">${esc(rd.err)}</span>` : t ? (() => { const d = rdT(t.validtime), n0 = rd.times.filter(x => !x.f).pop(), dm = n0 ? Math.round((d - rdT(n0.validtime)) / 60e3) : 0; return `${d.getHours()}:${pad(d.getMinutes())} <small>${t.f ? `予想 ・ ${dm}分後` : dm ? `実況 ・ ${-dm}分前` : '実況 ・ いま'}</small>`; })() : '読み込み中…';
+}
+async function rdInit() { rdDraw(); await rdLoad(); rdDraw(); }
+function rdStop() { if (rd.play) { clearInterval(rd.play); rd.play = null; } const b = $('rdPlay'); if (b) b.textContent = '▶ 動かす'; }
+function rdToggle() {
+  if (rd.play) return rdStop();
+  rd.play = setInterval(() => { if (fullK !== 'weather' || !$('rdMap')) return rdStop(); rd.idx = (rd.idx + 1) % rd.times.length; rdDraw(); }, 700);
+  const b = $('rdPlay'); if (b) b.textContent = '■ 止める';
+}
+document.addEventListener('input', e => { if (e.target.id === 'rdSlider') { rdStop(); rd.idx = +e.target.value; rdDraw(); } });
+document.addEventListener('click', e => { const b = e.target.closest('[data-rz]'); if (!b) return; e.stopPropagation(); const v = +b.dataset.rz; if (!v) { rd.lat = loc().lat; rd.lon = loc().lon; rd.z = 8; } else rd.z = Math.min(13, Math.max(5, rd.z + v)); rdDraw(); }, true);
+// 指・マウスで動かす
+const rg = { pts: new Map(), d0: 0, acc: 0 };
+document.addEventListener('pointerdown', e => { if (!e.target.closest('#rdMap') || e.target.closest('.mzoom')) return; rg.pts.set(e.pointerId, [e.clientX, e.clientY]); if (rg.pts.size === 2) { const [a, b] = [...rg.pts.values()]; rg.d0 = Math.hypot(a[0] - b[0], a[1] - b[1]); rg.acc = 0; } });
+document.addEventListener('pointermove', e => {
+  if (!rg.pts.has(e.pointerId)) return;
+  const [px, py] = rg.pts.get(e.pointerId); rg.pts.set(e.pointerId, [e.clientX, e.clientY]);
+  if (rg.pts.size === 1) { const [cx, cy] = rdPx(rd.lat, rd.lon, rd.z); [rd.lat, rd.lon] = rdLL(cx - (e.clientX - px), cy - (e.clientY - py), rd.z); rdDraw(); }
+  else if (rg.pts.size === 2) { const [a, b] = [...rg.pts.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]); rg.acc += Math.log2(d / (rg.d0 || d)); rg.d0 = d; if (Math.abs(rg.acc) >= .6) { rd.z = Math.min(13, Math.max(5, rd.z + Math.sign(rg.acc))); rg.acc = 0; rdDraw(); } }
+});
+const rgEnd = e => { rg.pts.delete(e.pointerId); };
+document.addEventListener('pointerup', rgEnd); document.addEventListener('pointercancel', rgEnd);
+document.addEventListener('wheel', e => { if (!e.target.closest('#rdMap')) return; e.preventDefault(); rd.z = Math.min(13, Math.max(5, rd.z + (e.deltaY < 0 ? 1 : -1))); rdDraw(); }, { passive: false });
+// 天気: 今の天気を大きく、傘の一言、気温の線と雨の棒(上で雨雲レーダーに切りかえ)
 function fv2Weather() {
+  const wm = fs.wmode || 'fc', top = v2bar(`${tabs('wmode', [['fc', '予報'], ['radar', '雨雲レーダー']], wm)}`);
+  if (wm === 'radar') return top + fvRadar();
+  return top + fv2WeatherFc();
+}
+function fv2WeatherFc() {
   if (!wx) return v2pad(`<p class="empty">${wxFail ? '天気を取得できませんでした。' : '天気を読み込み中…'}</p>`);
   const H = wx.hourly, D = wx.daily, d0 = wxDay0(), sel = +(fs.wd || 0), di = Math.min(d0 + sel, D.time.length - 1), date = D.time[di];
   const isToday = date === ymd(now());
@@ -2224,6 +2302,8 @@ function fvAction(a, v) {
   else if (a === 'kshow') { kioku.shown = !kioku.shown; renderTiles(); }
   else if (a === 'kg') { if (kioku.shown) { kiokuClick({ target: { closest: s => s === '[data-g]' ? { dataset: { g: v } } : null } }); } }
   else if (a === 'qi') { fs.qi = +v; }
+  else if (a === 'wmode') { fs.wmode = v; }
+  else if (a === 'rdplay') { rdToggle(); return; }
   else if (a === 'year') { fs.year = !fs.year; }
   else if (a === 'cdadd') { closeFull(); openSettings('s-cd'); return; }
   renderFullView();
@@ -3113,7 +3193,7 @@ function tick(force) {
     applyTheme(); renderTT(st); renderTodo(); renderSched(); renderChips();
     if (slotMode && nowMs() - slotTouched > 60e3) closeSlot();
     if ((fullTile || fullK) && fullKey() !== 'clock' && nowMs() - fullTouched > 180e3) closeFull(); // 時計以外は3分さわらなければ戻る
-    else if (fullK && !['terms', 'kioku', 'timer'].includes(fullK) && !$('fullBody').contains(document.activeElement)) renderFullView();
+    else if (fullK && !['terms', 'kioku', 'timer'].includes(fullK) && !(fullK === 'weather' && fs.wmode === 'radar') && !$('fullBody').contains(document.activeElement)) renderFullView();
     if (!kioku.shown && !editing) { renderSlot(); renderTiles(); requestAnimationFrame(fitClock); }
     if (d.getMinutes() % 30 === 0) loadWeather();
     if (d.getMinutes() % 10 === 5) loadEvents();
