@@ -433,6 +433,9 @@ body.editing .page .tile .tdel{pointer-events:auto}
 .tmr .run{display:flex;gap:6px;margin-top:10px}.tmr .run button{flex:1}
 .tmr .lab{font-size:13px;color:var(--sub)}
 #s-soon{order:-1}.gcadd summary{cursor:pointer;padding:6px 0;list-style:revert}.leadc{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--ink);padding:3px 4px 3px 10px;font-size:14px}.leadc button{width:22px;height:22px;font-size:15px;color:var(--sub)}
+#eewMap,#v2qmap{touch-action:none;cursor:grab}
+.mzoom{position:absolute;right:10px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:6px;z-index:2}
+.mzoom button{width:44px;height:44px;background:rgba(16,20,24,.85);color:#fff;border:1px solid #556;font-size:22px;font-weight:700}
 #dim{position:fixed;inset:0;z-index:90;background:#000;pointer-events:none;transition:opacity 1.5s}
 #settings{position:fixed;inset:0;z-index:100;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;user-select:text;-webkit-user-select:text}
 .sx{max-width:860px;margin:0 auto;padding:max(20px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) 80px max(18px,env(safe-area-inset-left))}
@@ -679,7 +682,7 @@ em.r{color:var(--red);font-style:normal}em.b{color:var(--blue);font-style:normal
 .v2qi b{font-size:18px;display:block}.v2qi .m{font-size:13px;color:var(--sub);margin-top:3px;display:block}
 .v2qi .tm{font-size:20px;color:var(--sub);text-align:right}.v2qi .tm small{display:block;font-family:var(--jp);font-size:12px}
 .v2qd{padding:16px 22px;display:flex;flex-direction:column;gap:8px;min-height:0}
-.v2qd canvas{width:100%;flex:1;min-height:0;background:#101418;border:1px solid var(--rule)}
+.v2qmw{position:relative;flex:1;min-height:0;display:flex}.v2qd canvas{width:100%;flex:1;min-height:0;background:#101418;border:1px solid var(--rule)}
 .v2qd .rw{display:flex;justify-content:space-between;gap:10px;font-size:15px;border-bottom:1px solid var(--rule);padding:6px 0}.v2qd .rw span{color:var(--sub)}.v2qd .rw b{font-weight:500;text-align:right}
 /* タイマー */
 .v2split.tmv{grid-template-columns:1fr 380px}
@@ -746,6 +749,7 @@ body.portrait .v2rows{min-height:520px}body.portrait .v2g{min-height:460px}body.
     <div class="map"><canvas id="eewMap" width="1280" height="1640"></canvas>
       <div class="wv" id="eewWave"><b>━ P波</b> 小さな揺れ<br><b style="color:#ff6b6b">━ S波</b> 大きな揺れ</div>
       <div class="lg" id="eewLegend"></div>
+      <div class="mzoom" data-map="eewMap"><button data-z="1.5" aria-label="拡大">＋</button><button data-z="0.67" aria-label="縮小">−</button><button data-z="0" aria-label="元の広さ">⟲</button></div>
     </div>
     <div class="p" id="eewPanel"></div>
   </div>
@@ -760,7 +764,7 @@ body.portrait .v2rows{min-height:520px}body.portrait .v2g{min-height:460px}body.
 
 <script>
 'use strict';
-const APP_VERSION = '2.10.2'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.11.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -2150,7 +2154,7 @@ function fv2Quakes() {
   const meta = x => `${x.mag > 0 ? 'M' + x.mag.toFixed(1) : '規模は調査中'}${x.depth > 0 ? ` ・ 深さ ${x.depth}km` : x.depth === 0 ? ' ・ ごく浅い' : ''}${x.mine ? ` ・ ${esc(L.pref)} 震度${SHINDO[x.mine]}` : ''}`;
   const d = new Date(q.t);
   return `<div class="v2split qk"><div class="v2ql">${list.map((x, k) => `<button class="v2qi ${k === i ? 'on' : ''}" data-fa="qi" data-v="${k}">${box(x.maxI)}<span><b>${esc(x.name || '震源は調査中')}</b><span class="m">${meta(x)}</span></span><span class="tm n">${when(x)}</span></button>`).join('')}</div>
-    <div class="v2qd"><div class="lab">選んだ地震</div><canvas id="v2qmap" width="840" height="600"></canvas>
+    <div class="v2qd"><div class="lab">選んだ地震</div><div class="v2qmw"><canvas id="v2qmap" width="840" height="600"></canvas><div class="mzoom" data-map="v2qmap"><button data-z="1.5" aria-label="拡大">＋</button><button data-z="0.67" aria-label="縮小">−</button><button data-z="0" aria-label="元の広さ">⟲</button></div></div>
     <div class="rw"><span>発生</span><b>${mdw(d)} ${d.getHours()}:${pad(d.getMinutes())} ごろ</b></div><div class="rw"><span>最大震度</span><b>${q.maxI ? '震度' + SHINDO[q.maxI] : '—'}</b></div><div class="rw"><span>津波</span><b>${esc(TSUNAMI[q.ts] || '情報なし')}</b></div><div class="rw"><span>発表</span><b>${q.step === 'ScalePrompt' ? '震度速報(震源は調査中)' : '各地の震度まで'}</b></div></div></div>`;
 }
 function drawQuakeMini() {
@@ -2165,8 +2169,9 @@ function drawQuakeMini() {
   for (const p of JAPAN) if (by[p.name]) pts.push(...prefPts(p));
   if (!pts.length) pts.push([L.lat, L.lon]);
   const la = pts.map(x => x[0]), lo = pts.map(x => x[1]), la0 = Math.min(...la), la1 = Math.max(...la), lo0 = Math.min(...lo), lo1 = Math.max(...lo);
-  const cLat = (la0 + la1) / 2, cLon = (lo0 + lo1) / 2, k = Math.cos(cLat * Math.PI / 180);
-  const span = Math.min(30, Math.max(3, (la1 - la0) * 1.15 + .4, ((lo1 - lo0) * k * 1.15 + .4) * H / W)), ppd = H / span;
+  const qi = Math.min(+(fs.qi || 0), quakeHist.length - 1);
+  if (!fs.qv || fs.qv.i !== qi || fs.qv.W !== W) { const c0 = (la0 + la1) / 2, k0 = Math.cos(c0 * Math.PI / 180); fs.qv = { i: qi, W, cLat: c0, cLon: (lo0 + lo1) / 2, k: k0, span: Math.min(30, Math.max(3, (la1 - la0) * 1.15 + .4, ((lo1 - lo0) * k0 * 1.15 + .4) * H / W)) }; fs.qv.home = { ...fs.qv }; }
+  const { cLat, cLon, k, span } = fs.qv, ppd = H / span;
   const P = (lon, lat) => [W / 2 + (lon - cLon) * k * ppd, H / 2 - (lat - cLat) * ppd];
   g.fillStyle = '#101418'; g.fillRect(0, 0, W, H); g.lineJoin = 'round'; g.strokeStyle = '#0b0c0e'; g.lineWidth = 1.5;
   for (const p of JAPAN) { const lv = by[p.name] || 0; g.fillStyle = lv >= 1 ? SHINDO_COLOR[lv] : '#2a2d32'; g.beginPath(); for (const r of p.rings) { r.forEach((pt, j) => { const [x, y] = P(pt[0], pt[1]); j ? g.lineTo(x, y) : g.moveTo(x, y); }); g.closePath(); } g.fill(); g.stroke(); }
@@ -2499,6 +2504,27 @@ $('eewPanel').addEventListener('pointerup', e => {
   updateFull(); renderQBanner();
 });
 // 地図:緊急地震速報は推定震度とP波・S波、地震情報は都道府県ごとの観測震度
+/* ---- 地図の拡大・縮小・移動(2本指でつまむ・ドラッグ・ホイール・ボタン) ---- */
+function mapRef(id) {
+  if (id === 'eewMap') { const src = fullMode === 'eew' ? eew : fullMode === 'info' ? quake : null; return src && src.view ? { v: src.view, W: 640, H: 820, redraw: drawFull } : null; }
+  if (id === 'v2qmap') { const cv = $('v2qmap'); return cv && fs.qv ? { v: fs.qv, W: cv.width, H: cv.height, redraw: drawQuakeMini } : null; }
+  return null;
+}
+function mapZoom(id, f) { const m = mapRef(id); if (!m) return; if (!f) { const h = m.v.home; if (h) Object.assign(m.v, { cLat: h.cLat, cLon: h.cLon, span: h.span }); } else m.v.span = Math.min(40, Math.max(.4, m.v.span / f)); if (id === 'eewMap') { for (const p of JAPAN || []) p._for = null; } m.redraw(); }
+const mg = { pts: new Map(), id: null, d0: 0 };
+document.addEventListener('pointerdown', e => { const cv = e.target.closest('#eewMap,#v2qmap'); if (!cv) return; mg.id = cv.id; mg.pts.set(e.pointerId, [e.clientX, e.clientY]); if (mg.pts.size === 2) { const [a, b] = [...mg.pts.values()]; mg.d0 = Math.hypot(a[0] - b[0], a[1] - b[1]); } try { cv.setPointerCapture(e.pointerId); } catch (err) {} });
+document.addEventListener('pointermove', e => {
+  if (!mg.pts.has(e.pointerId)) return; const m = mapRef(mg.id); if (!m) return;
+  const cv = $(mg.id), [px, py] = mg.pts.get(e.pointerId), sc = m.W / cv.clientWidth;
+  if (mg.pts.size === 1) { const ppd = m.H / m.v.span; m.v.cLon -= (e.clientX - px) * sc / (m.v.k * ppd); m.v.cLat += (e.clientY - py) * sc / ppd; }
+  mg.pts.set(e.pointerId, [e.clientX, e.clientY]);
+  if (mg.pts.size === 2) { const [a, b] = [...mg.pts.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]); if (mg.d0 > 0) m.v.span = Math.min(40, Math.max(.4, m.v.span * mg.d0 / d)); mg.d0 = d; }
+  m.redraw();
+});
+const mgEnd = e => { mg.pts.delete(e.pointerId); if (mg.pts.size < 2) mg.d0 = 0; };
+document.addEventListener('pointerup', mgEnd); document.addEventListener('pointercancel', mgEnd);
+document.addEventListener('wheel', e => { const cv = e.target.closest('#eewMap,#v2qmap'); if (!cv) return; e.preventDefault(); mapZoom(cv.id, e.deltaY < 0 ? 1.15 : 1 / 1.15); }, { passive: false });
+document.addEventListener('click', e => { const b = e.target.closest('.mzoom [data-z]'); if (!b) return; e.stopPropagation(); mapZoom(b.closest('.mzoom').dataset.map, +b.dataset.z); }, true);
 // 県の形の点(小笠原などの遠い島は、地図の範囲を決めるのに使わない)
 function prefPts(p) { const o = []; for (const r of p.rings) for (let j = 0; j < r.length; j += 8) if (Math.abs(r[j][1] - p.c[1]) < 3.5 && Math.abs(r[j][0] - p.c[0]) < 4) o.push([r[j][1], r[j][0]]); return o; }
 function drawMap(src) {
@@ -2516,7 +2542,7 @@ function drawMap(src) {
     const lat0 = Math.min(...lats), lat1 = Math.max(...lats), lon0 = Math.min(...lons), lon1 = Math.max(...lons);
     const k = Math.cos((lat0 + lat1) / 2 * Math.PI / 180);
     const span = Math.min(30, Math.max(3, (lat1 - lat0) * 1.15 + .4, ((lon1 - lon0) * k * 1.15 + .4) * H / W));
-    src.view = { cLat: (lat0 + lat1) / 2, cLon: (lon0 + lon1) / 2, span, k };
+    src.view = { cLat: (lat0 + lat1) / 2, cLon: (lon0 + lon1) / 2, span, k }; src.view.home = { ...src.view };
   }
   if (!src.view) return;
   const v = src.view, ppd = H / v.span;
