@@ -141,7 +141,18 @@ body.newl .page{display:flex;flex-direction:column}
 body.newl .col{display:none}
 body:not(.newl) #topRow,body:not(.newl) #midRow,body:not(.newl) #strip{display:none}
 #topRow{height:396px;flex:none;display:flex;border-bottom:1px solid var(--rule)}
-#topRow .clockt{border:0;min-width:0}
+#topRow .clockt{border:0;min-width:0;flex:1}
+/* 自習タイマー(時計の右) */
+#pomo{width:360px;flex:none;border-left:1px solid var(--rule);padding:16px 24px 20px;display:flex;flex-direction:column;justify-content:center}
+#pomo .pmh{display:flex;align-items:center;gap:10px}
+#pomo .pmh b{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:.12em}
+#pomo .pmp{font-size:11.5px;font-weight:700;padding:1px 9px;background:var(--grn);color:var(--onpill)}
+#pomo .pmp.brk{background:var(--blue)}
+#pomo .pmt{font-size:124px;font-weight:400;line-height:1;margin:6px 0 10px;white-space:nowrap}
+#pomo .pmb{display:flex;gap:2px;height:10px}
+#pomo .pmb i{flex:1;background:var(--track)}#pomo .pmb i.f{background:var(--grn)}#pomo .pmb.brk i.f{background:var(--blue)}
+#pomo .pmc{display:flex;gap:8px;margin-top:18px}
+#pomo .pmc button{flex:1;border:1px solid var(--rule);padding:8px 0;font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap}
 #midRow{height:108px;flex:none;padding:2px 28px 0;border-bottom:1px solid var(--rule);overflow:hidden}
 #midRow .rmw{margin-top:0}#midRow .rml{margin-bottom:2px}#midRow .rm{height:88px}#midRow .rt{top:68px}
 #strip{flex:1;min-height:0;position:relative;overflow:hidden;touch-action:pan-y}
@@ -749,7 +760,7 @@ body.portrait .v2rows{min-height:520px}body.portrait .v2g{min-height:460px}body.
   <div class="pnote">縦向き・スマホ用の簡易表示です。iPad を横向きにして使うのがおすすめです。</div>
   <div class="qb" id="qb" hidden></div>
   <div class="page" id="page">
-    <div id="topRow"></div>
+    <div id="topRow"><div id="pomo"><div class="pmh"><b>自習タイマー</b><span class="pmp" id="pmP">集中</span></div><div class="pmt n" id="pmT">25:00</div><div class="pmb" id="pmB"></div><div class="pmc"><button data-pm="toggle" id="pmTg">開始</button><button data-pm="skip">スキップ</button><button data-pm="reset">リセット</button></div></div></div>
     <div id="midRow"><div class="rmw" id="rmap"></div></div>
     <div id="strip"><div id="pages"></div><button id="pgInd" hidden></button></div>
     <div class="col" id="colL"></div>
@@ -790,7 +801,7 @@ body.portrait .v2rows{min-height:520px}body.portrait .v2g{min-height:460px}body.
 
 <script>
 'use strict';
-const APP_VERSION = '2.14.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.15.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -910,6 +921,44 @@ function applyTheme() {
   document.querySelector('meta[name=theme-color]').content = light ? '#eceeef' : '#141413';
 }
 
+/* ================= 自習タイマー(ポモドーロ) =================
+   集中・休憩の分数だけ StudyLine の設定(ttable:pomo)から読む。動いている状態は Platform だけで持つ(StudyLine とは共有しない) */
+let pm = Object.assign({ ph: 'focus', run: false, end: 0, left: 0, total: 0 }, store.get('ptimer') || {});
+const pmMins = ph => { const c = slPomo(), v = +(ph === 'focus' ? c.work : c.brk); return Math.max(1, Math.min(180, v || (ph === 'focus' ? 25 : 5))); };
+const savePm = () => store.set('ptimer', pm);
+function pmIdle(ph) { const t = pmMins(ph) * 60e3; pm = { ph, run: false, end: 0, left: t, total: t }; }
+if (!(pm.total > 0) || (pm.ph !== 'focus' && pm.ph !== 'break')) pmIdle('focus');
+const pmOther = ph => ph === 'focus' ? 'break' : 'focus';
+function pmTick() { // 時間が来たら、止めずに次の集中・休憩へ(ページを閉じていて大きくずれたら止めた状態に戻す)
+  if (!pm.run || nowMs() < pm.end) return;
+  let ph = pm.ph, end = pm.end, n = 0;
+  while (nowMs() >= end && n++ < 4) { ph = pmOther(ph); end += pmMins(ph) * 60e3; }
+  if (nowMs() >= end) pmIdle('focus'); else pm = { ph, run: true, end, left: 0, total: pmMins(ph) * 60e3 };
+  savePm();
+}
+function renderPomo() {
+  const el = $('pomo'); if (!el) return;
+  pmTick();
+  const left = pm.run ? Math.max(0, pm.end - nowMs()) : pm.left, sec = Math.ceil(left / 1000), idle = !pm.run && pm.left === pm.total;
+  $('pmP').textContent = pm.ph === 'focus' ? '集中' : '休憩'; $('pmP').classList.toggle('brk', pm.ph !== 'focus');
+  $('pmT').textContent = `${Math.floor(sec / 60)}:${pad(sec % 60)}`;
+  { const t = $('pmT'), avail = el.clientWidth - 48; t.style.fontSize = ''; if (avail > 0 && t.scrollWidth > avail) t.style.fontSize = Math.floor(124 * avail / t.scrollWidth) + 'px'; } // 枠に入らないときだけ縮める
+  const n = Math.round(pm.total / 60e3), b = $('pmB');
+  if (b.children.length !== n) b.innerHTML = '<i></i>'.repeat(n);
+  b.classList.toggle('brk', pm.ph !== 'focus');
+  const done = Math.floor((pm.total - left) / 60e3);
+  [...b.children].forEach((c, i) => c.classList.toggle('f', i < done));
+  $('pmTg').textContent = pm.run ? '一時停止' : idle ? '開始' : '再開';
+}
+$('pomo').addEventListener('click', e => {
+  const b = e.target.closest('[data-pm]'); if (!b) return;
+  const a = b.dataset.pm;
+  if (a === 'toggle') { if (pm.run) { pm.left = Math.max(0, pm.end - nowMs()); pm.run = false; } else { pm.end = nowMs() + pm.left; pm.run = true; } }
+  else if (a === 'skip') { const ph = pmOther(pm.ph); if (pm.run) { const t = pmMins(ph) * 60e3; pm = { ph, run: true, end: nowMs() + t, left: 0, total: t }; } else pmIdle(ph); }
+  else if (a === 'reset') pmIdle('focus');
+  savePm(); renderPomo();
+});
+
 /* ================= 学校の1日 ================= */
 const rng = (s, e) => [toMin(s), toMin(e)];
 function periodsMin(d) { const dc = dayCfg(d); return dc ? dc.p.map(([s, e]) => rng(s, e)).filter(([s, e]) => s != null && e != null && e > s) : []; }
@@ -1007,6 +1056,7 @@ function renderClock() {
   const show = st.mode !== 'off' && st.mode !== 'after';
   $('rmap').hidden = !show;
   if (show) $('rmap').innerHTML = schoolRoute(d, st, $('rmap').clientWidth || 520);
+  renderPomo();
   return st;
 }
 
@@ -1669,11 +1719,11 @@ function renderLayout() {
   placeRoute();
   const hosts = [...Object.values(SIDES).map(id => $(id)), $('topRow')];
   $('pages').querySelectorAll('.spage').forEach(pg => hosts.push(pg));
-  for (const host of hosts) [...host.children].forEach(el => { if (Object.values(FIXED).includes(el.id)) pool.appendChild(el); else el.remove(); });
+  for (const host of hosts) [...host.children].forEach(el => { if (el.id === 'pomo') return; if (Object.values(FIXED).includes(el.id)) pool.appendChild(el); else el.remove(); });
   $('pages').innerHTML = '';
   const mk = k => { let el = FIXED[k] ? $(FIXED[k]) : null; if (!el) { el = document.createElement('section'); el.className = 'tile'; el.dataset.tile = k; } el.dataset.k = k; return el; };
   if (useNew) {
-    const clock = $('clockTile'); clock.dataset.k = 'clock'; clock.classList.remove('grow', 'mini'); $('topRow').appendChild(clock);
+    const clock = $('clockTile'); clock.dataset.k = 'clock'; clock.classList.remove('grow', 'mini'); $('topRow').insertBefore(clock, $('pomo'));
     const keys = stripKeys(), n = Math.max(1, Math.ceil(keys.length / 4));
     stripPage = Math.min(stripPage, n - 1);
     for (let p = 0; p < n; p++) {
