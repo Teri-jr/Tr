@@ -747,12 +747,124 @@ body.portrait .v2fc{grid-template-columns:1fr}body.portrait .v2routew{margin:6px
 body.portrait .v2split,body.portrait .v2tt,body.portrait .v2cal,body.portrait .v2wx,body.portrait .v2hol,body.portrait .v2sn,body.portrait .v2sl,body.portrait .v2cols,body.portrait .v2mon,body.portrait .v2strip,body.portrait .v2chart{flex:none;height:auto;min-height:0}
 body.portrait .v2rows{min-height:520px}body.portrait .v2g{min-height:460px}body.portrait .v2chart svg{flex:none;height:240px}body.portrait .v2wks{min-height:340px}body.portrait .v2fc{min-height:320px}body.portrait .v2kc{min-height:280px}body.portrait .v2qd canvas{flex:none;height:300px}
 .fhead b{white-space:nowrap}body.portrait .fhead .fhint{display:none}
+
+/* ===== 表示モード(標準・夜・鉄道) ===== */
+.mseg{display:flex;border:1px solid var(--rule);margin-left:8px;overflow:hidden;flex:none}
+.mseg button{padding:5px 14px;font-size:13px;color:var(--sub)}
+.mseg button+button{border-left:1px solid var(--rule)}
+.mseg button.on{background:var(--ink);color:var(--bg);font-weight:700}
+.mnote{font-size:12px;color:var(--dim);white-space:nowrap}
+body.editing .mseg,body.editing .mnote,body.portrait .mnote{display:none}
+body.nopomo #pomo{display:none}
+#nightView,#railView{position:absolute;left:0;right:0;top:52px;bottom:0;display:none}
+body.night:not(.editing):not(.portrait) #nightView{display:grid}
+body.rail:not(.editing):not(.portrait) #railView{display:block}
+body.night:not(.editing):not(.portrait) #page,body.rail:not(.editing):not(.portrait) #page{display:none}
+body.night:not(.editing):not(.portrait) #nowband,body.rail:not(.editing):not(.portrait) #nowband{display:none}
+/* 夜(Nocturne):色の変数を入れかえるだけ。面は塗りつぶさず、アクセントは線と光で */
+body.night{--bg:#161826;--ink:#e9e9ed;--sub:#9397ab;--dim:#75798c;--rule:#3f424d;--card:#232532;--track:#3f424d;--seg:#232532;--segdone:#423a6a;
+  --red:#9184d9;--sl:#9184d9;--onpill:#161826;--grn:#8fd1a0;--lunchbg:#2a2840;
+  --jp:Inter,system-ui,"Zen Kaku Gothic New","Hiragino Sans","Hiragino Kaku Gothic ProN",sans-serif;--num:Inter,system-ui,"Zen Kaku Gothic New",sans-serif}
+body.night #stage{background-image:radial-gradient(ellipse 70% 55% at 18% -10%,rgba(145,132,217,.20),transparent 70%),radial-gradient(ellipse 50% 40% at 100% 110%,rgba(53,59,128,.35),transparent 70%)}
+body.night b,body.night h3{font-weight:500}
+body.night .late{color:#ff8f7a}body.night .okc{color:#8fd1a0}
+body.night .chip,body.night .gear,body.night .mseg{border-radius:8px}
+body.night .bar{border-bottom:0;background:linear-gradient(to right,transparent,rgba(233,233,237,.16) 48px,rgba(233,233,237,.16) calc(100% - 48px),transparent) no-repeat 22px bottom/calc(100% - 44px) 1px}
+body.night .rm .rb{top:31px;height:6px;border-radius:3px}
+#nightView{grid-template-columns:1fr 316px;gap:22px;padding:16px 22px 22px}
+.nv-main{display:flex;flex-direction:column;gap:18px;min-width:0;min-height:0}
+#nvTop{display:flex;align-items:center;gap:36px;padding:10px 12px 0}
+#nvTop .c1{flex:1;min-width:0}
+.nv-date{font-size:15px;color:var(--sub)}
+.nv-time{font-size:160px;font-weight:300;line-height:.9;letter-spacing:-.05em;margin-top:6px;display:flex;align-items:flex-start;white-space:nowrap}
+.nv-time .c{color:var(--red);position:relative;top:-8px;margin:0 4px}
+.nv-time .sec{font-size:34px;color:var(--dim);margin:16px 0 0 12px;letter-spacing:0}
+.nv-ring{position:relative;width:216px;height:216px;flex:none;cursor:pointer}
+.nv-ring svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.nv-ring .in{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.nv-ring .l{font-size:11px;letter-spacing:.1em;color:#b5abfc}.nv-ring .t{font-size:52px;font-weight:400;letter-spacing:-.02em;line-height:1.1}.nv-ring .s{font-size:12px;color:var(--sub)}
+.nv-sl{flex:1;min-height:0;border-radius:14px;background:var(--card);box-shadow:0 0 0 1px var(--rule);padding:20px 24px 16px;display:flex;flex-direction:column;overflow:hidden}
+.nv-slh{display:flex;align-items:center;gap:10px}
+.nv-slh i{width:8px;height:8px;border-radius:50%;background:var(--red);box-shadow:0 0 10px var(--red)}
+.nv-slh span{font-size:10.5px;letter-spacing:.14em;color:var(--red);font-weight:500}
+.nv-slh .openapp{margin-left:auto;border:0;font-size:12px;color:var(--sub);font-weight:400}
+.nv-st{display:flex;align-items:flex-end;gap:16px;margin-top:10px}
+.nv-st .k{font-size:13px;color:var(--sub)}.nv-st .nm{font-size:40px;font-weight:500;line-height:1.15}.nv-st .nm small{font-size:17px;color:var(--sub);font-weight:400;margin-left:6px}
+.nv-st .r{margin-left:auto;text-align:right;flex:none}
+.nv-st .big{font-size:72px;font-weight:400;line-height:1;color:#d2cefd;letter-spacing:-.03em}.nv-st .big small{font-size:22px;margin-left:4px;color:var(--sub);letter-spacing:0}
+.nv-sub{font-size:13px;color:var(--sub);margin-top:6px}
+.nv-sl .rmw{margin-top:22px}
+.nv-foot{margin-top:auto;padding-top:10px;display:flex;gap:22px;font-size:12.5px;color:var(--sub);background:linear-gradient(to right,transparent,rgba(233,233,237,.16) 48px,rgba(233,233,237,.16) calc(100% - 48px),transparent) no-repeat top/100% 1px}
+.nv-foot b{color:var(--ink);font-weight:500}
+.nv-side{display:flex;flex-direction:column;gap:14px;min-height:0;overflow:hidden}
+.nvc{border-radius:8px;background:var(--card);padding:14px 16px;min-width:0;overflow:hidden;flex:none}
+.nvc h3{font-size:10.5px;letter-spacing:.12em;color:var(--red);font-weight:500;margin-bottom:6px}
+.nv-side .tt li,.nv-side .todo li{padding:5px 0}
+.nv-side .tt .p,.nv-side .tt .s,.nv-side .tt .t{font-size:14.5px}.nv-side .todo li{font-size:14px}
+/* 鉄道(駅・車内の表示風)。色は固定(ライトテーマでも同じ) */
+.rv-l{position:absolute;left:0;top:0;width:800px;bottom:0;border-right:1px solid var(--rule);display:flex;flex-direction:column}
+.rv-r{position:absolute;left:800px;right:0;top:0;bottom:0;display:flex;flex-direction:column;overflow:hidden}
+#rvTop{height:262px;flex:none;display:flex;align-items:center;gap:26px;padding:0 28px}
+#rvTop .c1{flex:1;min-width:0}
+.rv-dt{display:flex;align-items:center;gap:10px;color:var(--sub);font-size:15px}
+.rv-dt .dc{font-family:var(--num);font-size:13px;font-weight:700;letter-spacing:.06em;background:var(--ink);color:var(--bg);padding:2px 8px}
+.rv-clock{margin-top:14px;display:flex;align-items:center;gap:6px}
+.fu{width:84px;height:136px;position:relative;border-radius:5px;background:linear-gradient(#22211e 50%,#1c1b19 50%);color:#ece8df;font-family:"Barlow Condensed","Helvetica Neue",Arial,sans-serif;font-size:120px;font-weight:500;line-height:136px;text-align:center;overflow:hidden}
+.fu::after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;margin-top:-.5px;background:#0b0b0a}
+.fcol{font-family:"Barlow Condensed",sans-serif;font-size:96px;font-weight:500;color:#ff5b3a;line-height:1;margin:0 2px;position:relative;top:-6px}
+.rv-door{width:236px;flex:none;background:#0f0f0e;border:1px solid #2b2a28;color:#ece8df;cursor:pointer}
+.rv-door .h{background:#f5b301;color:#141413;font-size:12.5px;font-weight:700;padding:5px 12px}
+.rv-door .b{padding:12px 14px 14px}
+.rv-door .m{font-size:12px;line-height:1.4;color:#8d8a83;margin-bottom:6px}
+.rv-door .t{font-family:"Barlow Condensed",sans-serif;font-variant-numeric:tabular-nums;font-size:80px;line-height:1;font-weight:500;color:#f5b301}
+.rv-door .cells{display:grid;gap:2px;margin-top:10px;height:12px}.rv-door .cells i{background:#2f2e2b}.rv-door .cells i.f{background:#f5b301}
+.rv-sign{margin:0 28px;flex:none;background:#ece8df;color:#141413}
+.rv-sign .a{display:flex;align-items:center;gap:22px;padding:18px 24px 14px}
+.rv-sign .no{width:72px;height:72px;flex:none;border:7px solid #ff5b3a;border-radius:10px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:"Barlow Condensed",sans-serif;line-height:.9}
+.rv-sign .no b{font-weight:700}.rv-sign .no b:first-child{font-size:15px}.rv-sign .no b:last-child{font-size:30px}
+.rv-sign .tx{min-width:0;flex:1}
+.rv-sign .tx .k{font-size:13px;color:#4a4844;font-weight:700;letter-spacing:.1em}
+.rv-sign .tx .nm{font-size:58px;font-weight:900;line-height:1.05;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rv-sign .rt{margin-left:auto;text-align:right;flex:none}
+.rv-sign .rt .tm{font-family:"Barlow Condensed",sans-serif;font-size:20px;color:#4a4844}
+.rv-sign .rt .lf{font-size:15px;font-weight:700}.rv-sign .rt .lf span{font-family:"Barlow Condensed",sans-serif;font-size:52px;color:#e0431f;line-height:1}
+.rv-sign .k1{height:6px;background:#141413}
+.rv-sign .k2{height:34px;background:#ff5b3a;display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:15px;font-weight:700;color:#141413;white-space:nowrap;overflow:hidden;gap:12px}
+.rv-sign .k2 .md{font-size:12px;font-weight:500}
+.rv-route{flex:1;min-height:0;padding:18px 28px 0}
+.rv-route .rmw{margin-top:0}
+#rvBoard{background:#0f0f0e;border-bottom:1px solid #2b2a28;color:#ece8df;flex:none}
+.rv-bh,.rv-row{display:grid;grid-template-columns:54px 54px 62px 1fr 64px;align-items:center;column-gap:6px;padding:0 20px}
+.rv-bh{font-size:11.5px;color:#8d8a83;padding-top:10px;padding-bottom:6px}
+.rv-row{height:46px;border-top:1px solid #1c1b19}
+.rv-row .lb{font-size:13px;font-weight:700;color:#8d8a83}.rv-row .kd{font-size:12px;color:#f5b301}
+.rv-row .tm{font-family:"Barlow Condensed",sans-serif;font-size:26px;color:#f5b301}.rv-row .ds{font-size:17px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rv-row .rr{font-size:13px;color:#8d8a83}
+.rv-todo{padding:16px 22px;border-bottom:1px solid var(--rule);flex:none;max-height:300px;overflow:hidden}
+.rv-todo li{padding:7px 0}
+.rv-sl{padding:16px 22px;flex:1;min-height:0;overflow:hidden}
+.rv-sl .a{display:flex;align-items:center;gap:12px}
+.rv-sl .sym{width:44px;height:44px;flex:none;border:5px solid #f5b301;border-radius:8px;background:#ece8df;color:#141413;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:"Barlow Condensed",sans-serif;line-height:.9}
+.rv-sl .sym b:first-child{font-size:12px}.rv-sl .sym b:last-child{font-size:16px}
+.rv-sl .a .k{font-size:12.5px;color:var(--sub)}.rv-sl .a .v{font-size:17px;font-weight:700}
+.rv-sl .ls{display:flex;margin-top:14px}.rv-sl .ls>div{flex:1;border-top:5px solid var(--sl);padding-top:6px;min-width:0}
+.rv-sl .ls .no{font-family:var(--num);font-size:11px;font-weight:700;color:var(--sl)}.rv-sl .ls .nm{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rv-sl .ls .tm{font-family:var(--num);font-size:14px;color:var(--sub)}
+.rv-sl .ls .dn{opacity:.45}
+.rv-sl .ft{display:flex;align-items:baseline;justify-content:space-between;margin-top:14px;padding-top:10px;border-top:1px solid var(--rule);font-size:13px;color:var(--sub)}
+.rv-sl .ft .big{font-family:var(--num);font-size:44px;font-weight:500;line-height:1;color:var(--ink)}.rv-sl .ft .big small{font-size:16px;font-family:var(--jp);margin:0 4px;color:var(--sub)}
+/* 設定「表示モード」 */
+.mthumbs{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:6px}
+.mthumbs button{border:1px solid var(--rule);padding:10px;text-align:left}.mthumbs button.on{border-color:var(--ink)}
+.mthumbs .pv{height:96px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:1px solid var(--rule)}
+.mthumbs b{display:block;font-size:15px;margin-top:8px}.mthumbs small{display:block;font-size:12px;color:var(--sub);line-height:1.5}
+.sx .msrow{display:flex;align-items:center;gap:10px;margin:6px 0}
 </style>
 </head>
 <body>
 <div id="stage">
   <div class="bar" id="bar">
     <div class="logo"><img src="logo-64.png" width="28" height="28" alt=""><span>Platform</span></div>
+    <div class="mseg" id="mseg"><button data-mode="std">標準</button><button data-mode="night">夜</button><button data-mode="rail">鉄道</button></div><span class="mnote" id="mnote">時間で自動切替</span>
     <div id="nowband"></div>
     <div id="chips" style="display:flex;gap:8px"></div>
     <div class="right"><span class="stx" id="stSound"></span><span class="stx" id="stWake"></span><span class="edc">長押しで動かす ・ × で外す</span><button class="gear edc" id="editAdd">+ タイルを追加</button><button class="gear edc" id="editDone" style="border-color:var(--ink);font-weight:700">完了</button><button class="gear stx" id="fsBtn" hidden>全画面</button><button class="gear stx" id="openSettings">設定</button></div>
@@ -767,6 +879,8 @@ body.portrait .v2rows{min-height:520px}body.portrait .v2g{min-height:460px}body.
     <div class="col" id="colC"></div>
     <div class="col" id="colR"></div>
   </div>
+  <div id="nightView"><div class="nv-main"><div id="nvTop"></div><div class="nv-sl" id="nvSL"></div></div><div class="nv-side" id="nvSide"></div></div>
+  <div id="railView"><div class="rv-l"><div id="rvTop"></div><div class="rv-sign" id="rvSign"></div><div class="rv-route" id="rvRoute"></div></div><div class="rv-r"><div id="rvBoard"></div><div class="rv-todo todo" id="rvTodo"></div><div class="rv-sl" id="rvSL"></div></div></div>
   <div id="pool" hidden>
     <section class="tile tt" id="ttTile"></section>
     <section class="tile todo" id="todoTile"></section>
@@ -801,7 +915,7 @@ body.portrait .v2rows{min-height:520px}body.portrait .v2g{min-height:460px}body.
 
 <script>
 'use strict';
-const APP_VERSION = '2.15.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.16.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -842,10 +956,25 @@ const DEFAULT_CFG = {
   countdowns: [{ name: '共通テスト', date: '2027-01-16' }, { name: '', date: '' }],
   termCats: ['日本史', '古文単語', '化学', '物理', '現代文', '四字熟語'],
   qFull: 5, qBeep: 3, // 震度の段階(0〜9)。5 = 5弱。qFull 0 = 緊急地震速報はすべて全画面
-  qiPref: 5, qiMax: 0, qiMag: 0, qiTsunami: true // 地震情報を全画面にする条件(0 = 使わない)
+  qiPref: 5, qiMax: 0, qiMag: 0, qiTsunami: true, // 地震情報を全画面にする条件(0 = 使わない)
+  pomoOn: true, // 自習タイマーを出す
+  mode: 'std', modeAuto: true, // 表示モード(std 標準 / night 夜 / rail 鉄道)。modeAuto = 時間帯で自動で切り替える
+  modeSched: { slots: [{ from: '08:30', mode: 'rail' }, { from: '15:20', mode: 'std' }, { from: '19:00', mode: 'night' }], off: 'std' }, // 時間帯の始まりとモード。off = 休みの日
+  anim: 'auto', flapBoard: true, flapTiles: false, flapSound: false // 数字の動き(auto / flap / push / blur / none)、パタパタの使い道
 };
 let cfg = Object.assign({}, DEFAULT_CFG, store.get('cfg') || {});
 const saveCfg = () => store.set('cfg', cfg);
+// 表示モードの設定:古い形式の保存でもエラーにならないよう、足りない・壊れた項目は初期値で埋める
+function fixMode() {
+  const ok = m => m === 'std' || m === 'night' || m === 'rail';
+  if (!ok(cfg.mode)) cfg.mode = 'std';
+  const ms = cfg.modeSched;
+  if (ms === DEFAULT_CFG.modeSched || !ms || !Array.isArray(ms.slots) || !ms.slots.length || ms.slots.some(x => !x || toMin(x.from) == null || !ok(x.mode))) cfg.modeSched = JSON.parse(JSON.stringify(DEFAULT_CFG.modeSched));
+  if (!ok(cfg.modeSched.off)) cfg.modeSched.off = 'std';
+  if (!['auto', 'flap', 'push', 'blur', 'none'].includes(cfg.anim)) cfg.anim = 'auto';
+  cfg.modeAuto = cfg.modeAuto !== false; cfg.pomoOn = cfg.pomoOn !== false;
+}
+fixMode();
 let todos = store.get('todos') || [];
 const saveTodos = () => store.set('todos', todos);
 
@@ -914,11 +1043,47 @@ function fit() {
 addEventListener('resize', fit);
 
 /* ================= テーマ ================= */
+/* ================= 表示モード(標準・夜・鉄道) =================
+   時間帯の設定(modeSched)だけで自動で切り替える。手で変えたら、次の時間帯の境目までそのまま */
+let modeHold = store.get('modeHold'), interLoaded = false;
+function modeAt(d) {
+  const ms = cfg.modeSched;
+  if (!isSchoolDay(d)) return ms.off;
+  const m = minOfDay(d), sl = [...ms.slots].sort((a, b) => toMin(a.from) - toMin(b.from));
+  let cur = sl[sl.length - 1].mode; // 朝いちばんの時間帯より前は、いちばん最後の時間帯のつづき
+  for (const x of sl) if (toMin(x.from) <= m) cur = x.mode;
+  return cur;
+}
+function nextModeEdge(d) { // 次の時間帯の境目(ms)。0時も境目(休みの日と授業の日で変わるため)
+  const m = minOfDay(d), edges = [...cfg.modeSched.slots.map(x => toMin(x.from)), 1440].sort((a, b) => a - b);
+  return sod(d).getTime() + edges.find(x => x > m) * 60e3;
+}
+function effMode() {
+  if (!cfg.modeAuto) return cfg.mode;
+  if (modeHold && nowMs() < modeHold.until) return modeHold.mode;
+  return modeAt(now());
+}
+function setMode(m) {
+  cfg.mode = m;
+  if (cfg.modeAuto) { modeHold = { mode: m, until: nextModeEdge(now()) }; store.set('modeHold', modeHold); }
+  saveCfg(); applyMode(); renderAll();
+}
+function applyMode() {
+  const m = effMode(), b = document.body;
+  b.classList.toggle('night', m === 'night'); b.classList.toggle('rail', m === 'rail'); b.classList.toggle('nopomo', !cfg.pomoOn);
+  if (m === 'night' && !interLoaded) { interLoaded = true; const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&display=swap'; document.head.appendChild(l); } // Inter は夜のときだけ
+  document.querySelectorAll('#mseg button').forEach(x => x.classList.toggle('on', x.dataset.mode === m));
+  $('mnote').hidden = !cfg.modeAuto;
+  if (typeof placeRoute === 'function') placeRoute();
+  return m;
+}
+
 function applyTheme() {
   let light = cfg.theme === 'light';
   if (cfg.theme === 'auto') { const m = minOfDay(now()), a = toMin(cfg.lightFrom) ?? 390, b = toMin(cfg.darkFrom) ?? 1080; light = a < b ? m >= a && m < b : m >= a || m < b; }
   document.body.classList.toggle('light', light);
-  document.querySelector('meta[name=theme-color]').content = light ? '#eceeef' : '#141413';
+  const mode = applyMode();
+  document.querySelector('meta[name=theme-color]').content = mode === 'night' ? '#161826' : light ? '#eceeef' : '#141413';
 }
 
 /* ================= 自習タイマー(ポモドーロ) =================
@@ -950,13 +1115,133 @@ function renderPomo() {
   [...b.children].forEach((c, i) => c.classList.toggle('f', i < done));
   $('pmTg').textContent = pm.run ? '一時停止' : idle ? '開始' : '再開';
 }
-$('pomo').addEventListener('click', e => {
-  const b = e.target.closest('[data-pm]'); if (!b) return;
-  const a = b.dataset.pm;
+function pomoAct(a) {
   if (a === 'toggle') { if (pm.run) { pm.left = Math.max(0, pm.end - nowMs()); pm.run = false; } else { pm.end = nowMs() + pm.left; pm.run = true; } }
   else if (a === 'skip') { const ph = pmOther(pm.ph); if (pm.run) { const t = pmMins(ph) * 60e3; pm = { ph, run: true, end: nowMs() + t, left: 0, total: t }; } else pmIdle(ph); }
   else if (a === 'reset') pmIdle('focus');
-  savePm(); renderPomo();
+  savePm(); renderClock();
+}
+$('pomo').addEventListener('click', e => { const b = e.target.closest('[data-pm]'); if (b) pomoAct(b.dataset.pm); });
+document.addEventListener('click', e => { const b = e.target.closest('#nightView [data-pm],#railView [data-pm]'); if (b) pomoAct(b.dataset.pm); }); // 夜・鉄道では、タイマーを押すと 開始/一時停止
+
+/* ================= 夜・鉄道モードの画面 ================= */
+const setHtml = (el, h) => { if (el._h !== h) { el._h = h; el.innerHTML = h; } }; // 変わったときだけ描き直す(押している途中のボタンが消えないように)
+function pmInfo() {
+  const left = pm.run ? Math.max(0, pm.end - nowMs()) : pm.left, sec = Math.ceil(left / 1000);
+  return { left, txt: `${Math.floor(sec / 60)}:${pad(sec % 60)}`, frac: pm.total ? left / pm.total : 1, n: Math.round(pm.total / 60e3), done: Math.floor((pm.total - left) / 60e3), focus: pm.ph === 'focus', idle: !pm.run && pm.left === pm.total, run: pm.run };
+}
+const pmState = P => `${P.focus ? '集中' : '休憩'}${P.idle ? ' ・ 停止中' : P.run ? '' : ' ・ 一時停止中'}`;
+function slSums(d) { // 今日・昨日・7日の勉強時間(分)
+  const g = k => { const x = slDay(ymd(addDays(d, -k))); if (x) x._ds = ymd(addDays(d, -k)); return x; };
+  let week = 0; for (let i = 0; i < 7; i++) week += slStudied(g(i));
+  return { today: slStudied(g(0)), yd: slStudied(g(1)), week };
+}
+const bigMin = n => n >= 60 ? `${Math.floor(n / 60)}<small>時間</small>${n % 60}<small>分</small>` : `${n}<small>分</small>`;
+// 「いま」「次」のタスクの言い方(夜モード・鉄道モード共通)
+function slBrief(sc) {
+  const { rows, start, planEnd, end, deadline, nm } = sc;
+  const run = rows.find(r => r.st === 'run'), nextR = rows.find(r => r.st === 'wait'), allDone = rows.every(r => r.st === 'done'), started = rows.some(r => r.st === 'done') || !!run;
+  const delay = Math.round(end - planEnd), room = deadline ? Math.round(deadline - end) : null;
+  return { run, nextR, allDone, started, delay, room, label: run ? '運行中' : allDone ? '終点着' : started ? '停車中' : '発車前' };
+}
+const slSegs = rows => rows.map((r, i) => ({ k: 'cls', a: r.s, b: Math.max(r.e, r.s + 1), n: i + 1, name: r.t.name, st: r.st === 'run' ? 'cur' : r.st }));
+
+function renderNight(st, d) {
+  const P = pmInfo(), sc = slSchedule(), C = 2 * Math.PI * 96;
+  // 上:時計 + 円形のタイマー
+  const ring = cfg.pomoOn ? `<div class="nv-ring" data-pm="toggle"><svg width="216" height="216" viewBox="0 0 216 216"><circle cx="108" cy="108" r="96" fill="none" stroke="var(--rule)" stroke-width="6"/><circle id="nvRing" cx="108" cy="108" r="96" fill="none" stroke="var(--red)" stroke-width="6" stroke-linecap="round" stroke-dasharray="${C.toFixed(2)}" style="filter:drop-shadow(0 0 6px rgba(145,132,217,.7))"/></svg><div class="in"><span class="l">自習タイマー</span><span class="t n" id="nvPT"></span><span class="s" id="nvPS"></span></div></div>` : '';
+  setHtml($('nvTop'), `<div class="c1" data-open="clock"><div class="nv-date">${d.getMonth() + 1}月${d.getDate()}日 ${WD[d.getDay()]}曜日${HOLIDAYS[ymd(d)] ? ' ・ ' + esc(HOLIDAYS[ymd(d)]) : ''}</div><div class="nv-time n">${d.getHours()}<span class="c">:</span>${pad(d.getMinutes())}${cfg.showSec ? '<span class="sec" id="nvSec"></span>' : ''}</div></div>${ring}`);
+  if ($('nvSec')) $('nvSec').textContent = pad(d.getSeconds());
+  if (cfg.pomoOn) { $('nvPT').textContent = P.txt; $('nvPS').textContent = pmState(P); $('nvRing').style.strokeDashoffset = (C * (1 - P.frac)).toFixed(2); }
+  // 中:StudyLine を主役に
+  const S = slSums(d), foot = `<div class="nv-foot"><span>今日 <b>${hm(S.today * 60000)}</b></span><span>昨日 <b>${hm(S.yd * 60000)}</b></span><span style="margin-left:auto">7日で <b>${(S.week / 60).toFixed(1)}時間</b></span></div>`;
+  const head = lab => `<div class="nv-slh"><i></i><span>STUDYLINE${lab ? ' ・ ' + lab : ''}</span><button class="openapp" data-app="studyline">開く →</button></div>`;
+  let sl;
+  if (!sc) sl = `${head('')}<p class="empty" style="margin-top:14px">今日のダイヤはまだありません。右上の「開く」から StudyLine を開いて作ると、ここに出ます。</p>${foot}`;
+  else {
+    const B = slBrief(sc), { rows, start, planEnd, end, deadline, nm } = sc, cur = B.run || B.nextR;
+    const delayTxt = B.delay > 0 ? `<span class="late">${B.delay}分遅れ</span>` : B.delay < 0 ? `<span class="okc">${-B.delay}分早い</span>` : '定時';
+    const roomTxt = B.room == null ? '' : ` ・ 就寝期限 ${fmtDay(deadline)} まで ${B.room >= 0 ? `<span class="okc">余裕 ${hm(B.room * 60000)}</span>` : `<span class="late">${hm(-B.room * 60000)} オーバー</span>`}`;
+    let big = '';
+    if (B.run) big = `<div class="k">${B.nextR ? `次の ${esc(B.nextR.t.name)} まで` : '終点まで'}</div><div class="big n">${bigMin(Math.max(0, Math.ceil(B.run.e - nm)))}</div>`;
+    else if (!B.started && start - nm > 0) big = `<div class="k">発車まで</div><div class="big n">${bigMin(Math.ceil(start - nm))}</div>`;
+    sl = `${head(B.label)}<div class="nv-st"><div style="min-width:0"><div class="k">${B.allDone ? '' : B.run ? 'いまの駅' : '次の駅'}</div><div class="nm">${B.allDone ? '今日のダイヤは完了' : esc(cur.t.name)}${!B.allDone && cur.t.memo ? `<small>${esc(cur.t.memo)}</small>` : ''}</div></div><div class="r">${big}</div></div>
+      <div class="nv-sub">${B.run ? `${fmtMin(B.run.s)} 発 ・ ` : ''}${delayTxt} ・ 終点 ${fmtDay(end)} 着${B.allDone ? '' : 'の見込み'}${roomTxt}</div>
+      <div class="rmw">${routeMap(slSegs(rows), { t0: rows[0].s, t1: end, now: nm, w: 740, gaps: false, c: 'var(--sl)', ticks: [rows[0].s, end] })}</div>${foot}`;
+  }
+  setHtml($('nvSL'), sl);
+  // 右:時間割・やること・天気(今のタイルと同じ内容)
+  setHtml($('nvSide'), `<div class="nvc tt" data-open="tt">${$('ttTile').innerHTML}</div><div class="nvc todo" data-open="todo">${$('todoTile').innerHTML}</div><div class="nvc" data-open="weather">${$('wxTile').innerHTML}</div>`);
+}
+
+// 発車標:次に動く予定を3つ(今日の残り → 足りなければ次の授業日)
+function railDepart(d) {
+  const out = [], m = minOfDay(d);
+  const add = (day, later) => {
+    const ps = periodsMin(day), post = postMin(day), pre = later ? dayLabel(d, day) + ' ' : '';
+    ps.forEach(([a], i) => {
+      if (i > 0 && a - ps[i - 1][1] >= 30 && (later || ps[i - 1][1] > m)) out.push({ t: ps[i - 1][1], kind: '休み', dest: pre + '昼休み', room: '' });
+      if (later || a > m) { const sj = subjOf(day, i) || `${i + 1}限`; out.push({ t: a, kind: /自習/.test(sj) ? '自習' : '授業', dest: pre + sj, room: roomOf(day, i) }); }
+    });
+    if (post && (later || post[1] > m)) out.push({ t: post[1], kind: '放課後', dest: pre + post[0], room: '' });
+  };
+  if (isSchoolDay(d)) add(d, false);
+  if (out.length < 3) add(nextSchoolDay(d), true);
+  return out.slice(0, 3);
+}
+
+function renderRail(st, d) {
+  const P = pmInfo(), sc = slSchedule(), m = minOfDay(d), h = d.getHours(), mi = d.getMinutes();
+  const sj = i => subjOf(d, i) || `${i + 1}限`;
+  // 上:日付・時計(あとで反転フラップになる)・ドア上表示風タイマー
+  const unit = (id, v) => `<span class="fu" data-u="${id}">${v}</span>`;
+  const door = cfg.pomoOn ? `<div class="rv-door" data-pm="toggle"><div class="h">自習タイマー</div><div class="b"><div class="m" id="rvPS"></div><div class="t n" id="rvPT"></div><div class="cells" id="rvPC" style="grid-template-columns:repeat(${P.n},1fr)">${'<i></i>'.repeat(P.n)}</div></div></div>` : '';
+  setHtml($('rvTop'), `<div class="c1" data-open="clock"><div class="rv-dt"><span class="dc">${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][d.getDay()]}</span><span>${WD[d.getDay()]}曜日${HOLIDAYS[ymd(d)] ? ' ・ ' + esc(HOLIDAYS[ymd(d)]) : ''}</span></div><div class="rv-clock">${unit('h10', h < 10 ? '' : Math.floor(h / 10))}${unit('h1', h % 10)}<span class="fcol">:</span>${unit('m10', Math.floor(mi / 10))}${unit('m1', mi % 10)}</div></div>${door}`);
+  if (cfg.pomoOn) { $('rvPT').textContent = P.txt; $('rvPS').textContent = pmState(P); [...$('rvPC').children].forEach((c, i) => c.classList.toggle('f', i < P.done)); }
+  // 駅名標:いまの授業
+  let no = '--', k = '', nm = '', tm = '', lf = '', l = '', c = '', r = '';
+  const ps = st.ps || [], gapName = (a, b) => b - a >= 30 ? '昼休み' : `${Math.round(b - a)}分休み`;
+  if (st.mode === 'class') {
+    const i = st.i, [a, b] = ps[i], nx = i + 1 < ps.length;
+    no = pad(i + 1); k = `${i + 1}限 ・ 授業中`; nm = sj(i); tm = `${fmtMin(a)} – ${fmtMin(b)}`; lf = `あと <span>${Math.ceil(st.left)}</span> 分`;
+    l = i > 0 ? `← ${i}限 ${esc(sj(i - 1))}` : ''; c = nx ? `次の停車 ${gapName(b, ps[i + 1][0])}(${fmtMin(b)}〜${fmtMin(ps[i + 1][0])})` : `次の停車 ${esc(st.post ? st.post[0] : '帰り')}`; r = nx ? `${i + 2}限 ${esc(sj(i + 1))} →` : '';
+  } else if (st.mode === 'break') {
+    const n = st.next, prevEnd = n > 0 ? ps[n - 1][1] : n === 0 && st.pre.length ? st.pre[st.pre.length - 1][2] : null;
+    nm = n >= 0 ? (prevEnd != null ? gapName(prevEnd, ps[n][0]) : '休み時間') : '帰りの準備'; no = n >= 0 ? pad(n + 1) : '--'; k = n >= 0 ? `次は ${n + 1}限 ${esc(sj(n))}` : '';
+    tm = n >= 0 && prevEnd != null ? `${fmtMin(prevEnd)} – ${fmtMin(ps[n][0])}` : ''; lf = `あと <span>${Math.ceil(st.left)}</span> 分`;
+    l = n > 0 ? `← ${n}限 ${esc(sj(n - 1))}` : ''; r = n >= 0 ? `${n + 1}限 ${esc(sj(n))} →` : '';
+  } else if (st.mode === 'pre' || st.mode === 'shr') { nm = st.name; lf = `あと <span>${Math.ceil(st.left)}</span> 分`; r = st.mode === 'pre' && ps.length ? `1限 ${esc(sj(0))} →` : ''; }
+  else if (st.mode === 'before') { nm = `${st.label}まで`; lf = `あと <span>${Math.ceil(st.left)}</span> 分`; r = `1限 ${esc(sj(0))} →`; }
+  else nm = st.mode === 'after' ? '今日の授業はおわり' : '今日はお休み';
+  setHtml($('rvSign'), `<div class="a"><span class="no"><b>TT</b><b>${no}</b></span><div class="tx"><div class="k">${k}</div><div class="nm">${esc(nm)}</div></div><div class="rt"><div class="tm">${tm}</div><div class="lf">${lf}</div></div></div><div class="k1"></div><div class="k2"><span>${l}</span><span class="md">${c}</span><span>${r}</span></div>`);
+  // 右:発車標(あとで反転フラップになる)
+  const dep = railDepart(d), LB = ['先発', '次発', '次々発'];
+  setHtml($('rvBoard'), `<div class="rv-bh"><span></span><span>種別</span><span>時刻</span><span>行先</span><span>教室</span></div>${LB.map((lb, i) => { const x = dep[i]; return `<div class="rv-row"><span class="lb">${lb}</span>${x ? `<span class="kd">${x.kind}</span><span class="tm n">${fmtMin(x.t)}</span><span class="ds">${esc(x.dest)}</span><span class="rr">${esc(x.room)}</span>` : '<span></span><span></span><span></span><span></span>'}</div>`; }).join('')}`);
+  // やること(今のタイルと同じ内容)
+  setHtml($('rvTodo'), $('todoTile').innerHTML);
+  // StudyLine の路線記号
+  let sl;
+  if (!sc) sl = `<div class="a"><span class="sym"><b>SL</b><b>--</b></span><div><div class="k">StudyLine</div><div class="v">今日のダイヤはまだありません</div></div></div>`;
+  else {
+    const B = slBrief(sc), { rows, start, planEnd, end, nm } = sc, idx = rows.findIndex(r => r.st !== 'done');
+    sl = `<div class="a"><span class="sym"><b>SL</b><b>${pad(Math.max(0, idx < 0 ? rows.length - 1 : idx) + 1)}</b></span><div><div class="k">StudyLine ・ ${B.label}</div><div class="v">${fmtDay(start)} 発 ・ ${rows.length}駅 ・ ${hm((planEnd - start) * 60000)}</div></div></div>
+      <div class="ls">${rows.slice(0, 5).map((r, i) => `<div class="${r.st === 'done' ? 'dn' : ''}"><div class="no">SL${pad(i + 1)}</div><div class="nm">${esc(r.t.name)}</div><div class="tm">${fmtDay(r.s)}</div></div>`).join('')}</div>
+      <div class="ft"><span>${B.run ? 'あと' : B.started ? '終点まで' : '発車まで'}</span><span class="big n">${B.allDone ? '完了' : bigMin(Math.max(0, Math.ceil(B.run ? B.run.e - nm : B.started ? end - nm : start - nm)))}</span></div>`;
+  }
+  setHtml($('rvSL'), `<div data-open="studyline">${sl}</div>`);
+}
+// 夜・鉄道の画面から、押したところを全画面で開く(button・チェック・タイマーは除く)
+function openFullKey(k) { const t = FV[k] ? { dataset: { k } } : document.querySelector(`[data-k="${k}"]`); if (t) openFull(t); }
+document.addEventListener('click', e => {
+  const o = e.target.closest('#nightView [data-open],#railView [data-open]');
+  if (!o || e.target.closest('button,a,input,li[data-id],[data-pm]')) return;
+  openFullKey(o.dataset.open);
+});
+$('mseg').addEventListener('click', e => { const b = e.target.closest('[data-mode]'); if (b) setMode(b.dataset.mode); });
+// 夜・鉄道の画面のやること(押すと済)
+document.addEventListener('click', e => {
+  if (e.target.closest('#nightView #todoAdd,#railView #todoAdd')) { openSettings('s-todo'); return; }
+  const li = e.target.closest('#nightView li[data-id],#railView li[data-id]'); if (li) toggleTodo(li.dataset.id);
 });
 
 /* ================= 学校の1日 ================= */
@@ -1057,6 +1342,7 @@ function renderClock() {
   $('rmap').hidden = !show;
   if (show) $('rmap').innerHTML = schoolRoute(d, st, $('rmap').clientWidth || 520);
   renderPomo();
+  if (!editing && !document.body.classList.contains('portrait')) { if (document.body.classList.contains('night')) renderNight(st, d); else if (document.body.classList.contains('rail')) renderRail(st, d); }
   return st;
 }
 
@@ -1707,8 +1993,8 @@ let stripPage = 0, swipedAt = 0;
 const stripKeys = () => [...cfg.layout.left, ...cfg.layout.center.filter(k => k !== 'clock'), ...cfg.layout.right];
 // 路線図の置き場所:通常は中段、時計を全画面にしている間・3列の表示のときは時計の中
 function placeRoute() {
-  const inMid = document.body.classList.contains('newl') && !(fullTile && fullTile.id === 'clockTile');
-  (inMid ? $('midRow') : $('clockTile')).appendChild($('rmap'));
+  const B = document.body, fullClock = fullTile && fullTile.id === 'clockTile', mv = !editing && !B.classList.contains('portrait');
+  (fullClock ? $('clockTile') : mv && B.classList.contains('rail') ? $('rvRoute') : B.classList.contains('newl') ? $('midRow') : $('clockTile')).appendChild($('rmap'));
 }
 function renderLayout() {
   const useNew = !editing && !document.body.classList.contains('portrait');
@@ -2964,7 +3250,7 @@ const GAS_CODE = `function doGet() {
     .setMimeType(ContentService.MimeType.JSON);
 }`;
 let ttDay = 1, sTab = 'tiles', sPlus = null;
-const STABS = [['tiles', 'タイル', ['s-chips']], ['tt', '時間割', ['s-tt']], ['todo', 'やること', ['s-todo']], ['cd', 'カウントダウン・通知', ['s-cd', 's-soon'], 1], ['quake', '地震', ['s-quake']], ['link', '連携', ['s-gcal', 's-gtodo', 's-apps']], ['view', '表示', ['s-view', 's-loc', 's-terms', 's-about']]];
+const STABS = [['tiles', 'タイル', ['s-chips']], ['tt', '時間割', ['s-tt']], ['todo', 'やること', ['s-todo']], ['cd', 'カウントダウン・通知', ['s-cd', 's-soon'], 1], ['quake', '地震', ['s-quake']], ['link', '連携', ['s-gcal', 's-gtodo', 's-apps']], ['mode', '表示モード', ['s-mode']], ['view', '表示', ['s-view', 's-loc', 's-terms', 's-about']]];
 function openSettings(anchor) {
   closeFull();
   if (anchor) { const t = STABS.find(x => x[2].includes(anchor)); if (t) sTab = t[0]; } else sTab = 'tiles';
@@ -3052,6 +3338,29 @@ function renderSettings() {
   $('settings').innerHTML = `<div class="sx">
   <header><h1>設定</h1><div class="stabs">${STABS.map(t => `<button data-stab="${t[0]}" class="${t[0] === sTab ? 'on' : ''}">${t[1]}</button>`).join('')}</div><button class="done" id="sDone">完了</button></header>
   <div class="sbody">
+
+  <section id="s-mode"><h2>表示モード</h2>
+    <div class="mthumbs">
+      <button data-modeset="std" class="${effMode() === 'std' ? 'on' : ''}"><div class="pv" style="background:#141413"><span style="font-family:'Barlow Condensed',sans-serif;font-size:40px;font-weight:300;line-height:1;color:#ece8df">10<span style="color:#ff5b3a">:</span>22</span><span style="width:70%;height:5px;background:#3a3833"></span></div><b>標準</b><small>今と同じ見た目</small></button>
+      <button data-modeset="night" class="${effMode() === 'night' ? 'on' : ''}"><div class="pv" style="background:#161826;background-image:radial-gradient(ellipse at 20% 0%,rgba(145,132,217,.3),transparent 70%);border-radius:8px"><span style="font-family:Inter,sans-serif;font-size:36px;font-weight:300;line-height:1;color:#e9e9ed">20<span style="color:#9184d9">:</span>14</span><span style="width:70%;height:4px;border-radius:2px;background:#9184d9;box-shadow:0 0 8px #9184d9"></span></div><b>夜</b><small>夜の自習向け。StudyLine を大きく</small></button>
+      <button data-modeset="rail" class="${effMode() === 'rail' ? 'on' : ''}"><div class="pv" style="background:#141413"><span style="display:flex;gap:3px">${['1', '0', '2', '2'].map(x => `<span style="width:20px;height:34px;background:linear-gradient(#22211e 50%,#1c1b19 50%);color:#ece8df;font:500 30px/34px 'Barlow Condensed',sans-serif;text-align:center">${x}</span>`).join('')}</span><span style="width:70%;height:5px;background:#ff5b3a"></span></div><b>鉄道</b><small>駅名標と発車標の見た目</small></button>
+    </div>
+    <p class="note">いま選んでいるのは「${{ std: '標準', night: '夜', rail: '鉄道' }[effMode()]}」です。上のバーの「標準・夜・鉄道」でも切り替えられます。</p>
+    <h4 style="margin-top:16px">時間で自動で切り替える</h4>
+    <div class="row"><label><input type="checkbox" id="modeAuto" ${cfg.modeAuto ? 'checked' : ''}>時間帯ごとにモードを自動で切り替える</label></div>
+    ${cfg.modeSched.slots.map((x, i) => `<div class="msrow"><input type="time" data-msf="${i}" value="${esc(pad5(x.from))}"> から <select data-msm="${i}">${['std', 'night', 'rail'].map(v => opt(v, x.mode, { std: '標準', night: '夜', rail: '鉄道' }[v])).join('')}</select></div>`).join('')}
+    <div class="msrow">授業のない日 <select id="modeOff">${['std', 'night', 'rail'].map(v => opt(v, cfg.modeSched.off, { std: '標準', night: '夜', rail: '鉄道' }[v])).join('')}</select></div>
+    <p class="note">いちばん早い時間帯より前は、いちばん最後の時間帯のつづきです。上のバーで手で切り替えると、次の時間帯の境目までそのままになります。</p>
+    <h4 style="margin-top:16px">数字の動き</h4>
+    <div class="row"><select id="anim">${[['auto', 'モードに合わせる'], ['flap', 'パタパタ'], ['push', '押し上げ'], ['blur', 'ぼかし'], ['none', 'なし']].map(([v, l]) => opt(v, cfg.anim, l)).join('')}</select></div>
+    <p class="note">「モードに合わせる」は、標準は押し上げ、夜はぼかし、鉄道はパタパタです。</p>
+    <div class="row"><label><input type="checkbox" id="flapBoard" ${cfg.flapBoard ? 'checked' : ''}>発車標もパタパタにする</label></div>
+    <div class="row"><label><input type="checkbox" id="flapTiles" ${cfg.flapTiles ? 'checked' : ''}>やること・予定もパタパタにする</label></div>
+    <div class="row"><label><input type="checkbox" id="flapSound" ${cfg.flapSound ? 'checked' : ''}>めくる音を鳴らす(授業中は鳴らしません)</label></div>
+    <h4 style="margin-top:16px">自習タイマー</h4>
+    <div class="row"><label><input type="checkbox" id="pomoOn" ${cfg.pomoOn ? 'checked' : ''}>自習タイマーを表示する</label></div>
+    <p class="note">オフにすると、時計だけの画面(これまでと同じ)になります。</p>
+  </section>
 
   <section id="s-view"><h2>表示</h2>
     <div class="row">${['dark', 'light', 'auto'].map(v => `<label><input type="radio" name="theme" value="${v}" ${cfg.theme === v ? 'checked' : ''}>${{ dark: 'ダーク', light: 'ライト', auto: '時間で自動' }[v]}</label>`).join('')}</div>
@@ -3217,6 +3526,7 @@ $('settings').addEventListener('click', e => {
   if (t.id === 'cdAdd') { cfg.countdowns.push({ name: '', date: '' }); return rs(); }
   if (t.dataset.cddel != null) { cfg.countdowns.splice(+t.dataset.cddel, 1); return rs(); }
   if (t.dataset.cdev != null) { cfg.countdowns = cfg.countdowns.filter(c => c.name || c.date); cfg.countdowns.push({ name: t.dataset.cdev, date: t.dataset.cdd2 }); return rs(); }
+  if (t.dataset.modeset) { setMode(t.dataset.modeset); return renderSettings(); }
   if (t.dataset.stab) { sTab = t.dataset.stab; sPlus = null; renderSettings(); $('settings').scrollTop = 0; return; }
   if (t.dataset.boff) { const k = t.dataset.boff; for (const side in cfg.layout) cfg.layout[side] = cfg.layout[side].filter(x => x !== k); saveCfg(); renderLayout(); return renderSettings(); }
   if (t.dataset.bplus) { sPlus = sPlus === t.dataset.bplus ? null : t.dataset.bplus; return renderSettings(); }
@@ -3264,6 +3574,15 @@ $('settings').addEventListener('change', e => {
   else if (t.id === 'showSec') cfg.showSec = t.checked;
   else if (t.id === 'shiftOn') { cfg.shift = t.checked; fit(); }
   else if (t.dataset.gtl) { const id = t.dataset.gtl; cfg.gtHide = t.checked ? (cfg.gtHide || []).filter(x => x !== id) : [...(cfg.gtHide || []), id]; saveCfg(); renderTodo(); return; }
+  else if (t.id === 'pomoOn') cfg.pomoOn = t.checked;
+  else if (t.id === 'modeAuto') cfg.modeAuto = t.checked;
+  else if (t.dataset.msf != null) { cfg.modeSched.slots[+t.dataset.msf].from = pad5(t.value) || cfg.modeSched.slots[+t.dataset.msf].from; modeHold = null; store.set('modeHold', null); }
+  else if (t.dataset.msm != null) { cfg.modeSched.slots[+t.dataset.msm].mode = t.value; modeHold = null; store.set('modeHold', null); }
+  else if (t.id === 'modeOff') { cfg.modeSched.off = t.value; modeHold = null; store.set('modeHold', null); }
+  else if (t.id === 'anim') cfg.anim = t.value;
+  else if (t.id === 'flapBoard') cfg.flapBoard = t.checked;
+  else if (t.id === 'flapTiles') cfg.flapTiles = t.checked;
+  else if (t.id === 'flapSound') cfg.flapSound = t.checked;
   else if (t.id === 'soonOn') cfg.soonOn = t.checked;
   else if (t.id === 'soonStart') cfg.soonStart = t.checked;
   else if (t.id === 'soonBeep') cfg.soonBeep = t.checked;
