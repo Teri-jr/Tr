@@ -1113,7 +1113,7 @@ body:not(.nopomo) .nv-time{font-size:160px}
 
 <script>
 'use strict';
-const APP_VERSION = '2.24.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.24.1'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1155,7 +1155,7 @@ const DEFAULT_CFG = {
   termCats: ['日本史', '古文単語', '化学', '物理', '現代文', '四字熟語'],
   qFull: 5, qBeep: 3, // 震度の段階(0〜9)。5 = 5弱。qFull 0 = 緊急地震速報はすべて全画面
   qiPref: 5, qiMax: 0, qiMag: 0, qiTsunami: true, // 地震情報を全画面にする条件(0 = 使わない)
-  blackAfter: true, // 今日の授業が終わったら画面を黒にする(翌朝5時まで。さわると1分だけ戻る)
+  blackEnd: false, // 今日の授業が終わったら画面を黒にする(翌朝5時まで。さわると1分だけ戻る)。初期設定はオフ
   pomoOn: false, // 自習タイマーを出す(2.23.0 から初期値はオフ。StudyLine のポモドーロとタイマーのタイルがあるため)
   stdLayout: 'cols', // 標準モードの配置(cols 3列 / big 大きい時計+下段のページ送り)
   ai: null, // AI のショートカット [{name, url, note}](fixAi で初期値を入れる)
@@ -3952,7 +3952,7 @@ function renderSettings() {
     <h4 style="margin-top:14px">焼き付き防止</h4>
     <div class="row"><label><input type="checkbox" id="shiftOn" ${cfg.shift ? 'checked' : ''}>3分ごとに画面を数ピクセルずらす</label></div>
     <div class="row"><label><input type="checkbox" id="dimOn" ${cfg.dimOn ? 'checked' : ''}>夜は暗くする</label><input type="time" id="dimFrom" value="${esc(pad5(cfg.dimFrom))}"> 〜 <input type="time" id="dimTo" value="${esc(pad5(cfg.dimTo))}"></div>
-    <div class="row"><label><input type="checkbox" id="blackAfter" ${cfg.blackAfter ? 'checked' : ''}>今日の授業が終わったら画面を黒にする(翌朝5時まで)</label></div>
+    <div class="row"><label><input type="checkbox" id="blackEnd" ${cfg.blackEnd ? 'checked' : ''}>今日の授業が終わったら画面を黒にする(翌朝5時まで)</label></div>
     <div class="row">暗さ <select id="dimLv">${[[50, '少し'], [70, 'ふつう'], [85, 'かなり']].map(([v, l]) => opt(v, cfg.dimLv, l)).join('')}</select></div>
     <p class="note">暗いときに画面をさわると、1分だけ明るく戻ります。地震の表示が出たら、すぐ明るくなります。</p>
     <p class="note">置きっぱなしにするときは、充電しながら使ってください。開いている間は画面が自動で消えないようにしています(iPadOS 16.4 以降)。</p>
@@ -4190,7 +4190,7 @@ $('settings').addEventListener('change', e => {
   else if (t.id === 'dimFrom') cfg.dimFrom = unpad(t.value);
   else if (t.id === 'dimTo') cfg.dimTo = unpad(t.value);
   else if (t.id === 'dimLv') cfg.dimLv = +t.value;
-  else if (t.id === 'blackAfter') cfg.blackAfter = t.checked;
+  else if (t.id === 'blackEnd') cfg.blackEnd = t.checked;
   else if (t.dataset.tts != null || t.dataset.ttr != null) {
     const i = +(t.dataset.tts ?? t.dataset.ttr), arr = cfg.tt[ttDay] = cfg.tt[ttDay] || [];
     arr[i] = Object.assign({ s: '', r: '' }, arr[i]); arr[i][t.dataset.tts != null ? 's' : 'r'] = t.value.trim().slice(0, 20);
@@ -4248,7 +4248,7 @@ function inDim() {
 }
 // 今日の授業が終わったら画面を真っ黒にする(翌朝5時まで)。さわると1分だけ戻る。授業のない日はしない
 function blackNow() {
-  if (!cfg.blackAfter) return false;
+  if (!cfg.blackEnd) return false;
   const d = now();
   if (isSchoolDay(d) && schoolState(d).mode === 'after') return true;
   return minOfDay(d) < 300 && isSchoolDay(addDays(d, -1));
