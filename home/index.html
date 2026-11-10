@@ -1599,19 +1599,19 @@ class RollClock {
   }
   flip(sl, a, b, kind) {
     if (sl._anim) { sl._anim.forEach(x => x.cancel()); sl._anim = null; }
-    sl.className = 'rcs'; sl.textContent = '';
+    clearTimeout(sl._tm); sl.className = 'rcs'; sl.textContent = '';
     const mkc = t => { const e = document.createElement('span'); e.className = 'rci'; e.textContent = t; return e; };
-    const plain = () => { if (sl._anim) sl._anim.forEach(x => x.cancel()); sl._anim = null; sl.className = 'rcs'; sl.textContent = ''; sl.appendChild(mkc(b)); };
+    const plain = () => { clearTimeout(sl._tm); if (sl._anim) sl._anim.forEach(x => x.cancel()); sl._anim = null; sl.className = 'rcs'; sl.textContent = ''; sl.appendChild(mkc(b)); };
     if ((kind !== 'push' && kind !== 'blur') || !sl.animate) { plain(); return; }
     if (kind === 'push') {
       sl.classList.add('push'); const col = document.createElement('span'); col.style.display = 'block'; col.append(mkc(a), mkc(b)); sl.appendChild(col);
       const an = col.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-50%)' }], { duration: 550, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'forwards' });
-      sl._anim = [an]; an.onfinish = () => { if (sl._anim && sl._anim[0] === an) plain(); };
+      sl._anim = [an]; an.onfinish = () => { if (sl._anim && sl._anim[0] === an) plain(); }; sl._tm = setTimeout(() => { if (sl._anim && sl._anim[0] === an) plain(); }, 650); // 終了イベントが来なくても、必ず片付ける
     } else {
       const o = mkc(a), n = mkc(b); o.style.cssText += ';position:absolute;left:0;top:0'; sl.append(n, o);
       const a1 = o.animate([{ opacity: 1, filter: 'blur(0px)', transform: 'translateY(0)' }, { opacity: 0, filter: 'blur(10px)', transform: 'translateY(-18px)' }], { duration: 500, easing: 'ease', fill: 'forwards' });
       const a2 = n.animate([{ opacity: 0, filter: 'blur(10px)', transform: 'translateY(18px)' }, { opacity: 1, filter: 'blur(0px)', transform: 'translateY(0)' }], { duration: 700, delay: 150, easing: 'ease', fill: 'both' });
-      sl._anim = [a1, a2]; a2.onfinish = () => { if (sl._anim && sl._anim[1] === a2) plain(); };
+      sl._anim = [a1, a2]; a2.onfinish = () => { if (sl._anim && sl._anim[1] === a2) plain(); }; sl._tm = setTimeout(() => { if (sl._anim && sl._anim[1] === a2) plain(); }, 950);
     }
   }
 }
@@ -2560,7 +2560,7 @@ function fvTabsUp() {
   if (tb && tb.parentNode === bar) { ft.appendChild(tb); if (!bar.textContent.trim() && !bar.querySelector('button,input,select')) bar.remove(); }
 }
 $('fullTabs').addEventListener('click', e => { const b = e.target.closest('[data-fa]'); if (b && fullK) fvAction(b.dataset.fa, b.dataset.v); });
-function renderFullView() { if (fullK && FV[fullK]) { $('fullBody').innerHTML = `<div class="fv v2 fv-${fullK}">${FV[fullK]()}</div>`; fvTabsUp(); if (fullK === 'clock') fvClockTick(now()); $('fullBody').querySelectorAll('[data-fit]').forEach(e => fitText(e, +e.dataset.fit)); if (fullK === 'quakes') requestAnimationFrame(drawQuakeMini); if (fullK === 'weather' && fs.wmode === 'radar') requestAnimationFrame(rdInit); else rdStop(); } }
+function renderFullView() { if (fullK && FV[fullK]) { const keep = fullK === 'clock' ? $('fcHM') : null; $('fullBody').innerHTML = `<div class="fv v2 fv-${fullK}">${FV[fullK]()}</div>`; if (keep && keep._rc && $('fcHM')) $('fcHM').replaceWith(keep); /* 動いている最中の数字は、描き直しても引き継ぐ */ fvTabsUp(); if (fullK === 'clock') fvClockTick(now()); $('fullBody').querySelectorAll('[data-fit]').forEach(e => fitText(e, +e.dataset.fit)); if (fullK === 'quakes') requestAnimationFrame(drawQuakeMini); if (fullK === 'weather' && fs.wmode === 'radar') requestAnimationFrame(rdInit); else rdStop(); } }
 const tabs = (fa, items, cur) => `<div class="fvtabs">${items.map(([v, l]) => `<button data-fa="${fa}" data-v="${esc(v)}" class="${String(v) === String(cur) ? 'on' : ''}">${l}</button>`).join('')}</div>`;
 // その日にかかる予定(終日の予定は終わりの日を含まない)
 function eventsOn(d) {
