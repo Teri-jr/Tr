@@ -1114,7 +1114,7 @@ body:not(.nopomo) .nv-time{font-size:160px}
 
 <script>
 'use strict';
-const APP_VERSION = '2.25.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.25.1'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1156,7 +1156,7 @@ const DEFAULT_CFG = {
   termCats: ['日本史', '古文単語', '化学', '物理', '現代文', '四字熟語'],
   qFull: 5, qBeep: 3, // 震度の段階(0〜9)。5 = 5弱。qFull 0 = 緊急地震速報はすべて全画面
   qiPref: 5, qiMax: 0, qiMag: 0, qiTsunami: true, // 地震情報を全画面にする条件(0 = 使わない)
-  flapBlank: true, // 今日の授業が終わったら、鉄道モードの時計と発車標をパタパタして黒(空白)にする(翌朝5時まで)
+  flapBlank: true, // 今日の授業が終わったら、鉄道モードの発車標をパタパタして黒(空白)にする(翌朝5時まで)
   pomoOn: false, // 自習タイマーを出す(2.23.0 から初期値はオフ。StudyLine のポモドーロとタイマーのタイルがあるため)
   stdLayout: 'cols', // 標準モードの配置(cols 3列 / big 大きい時計+下段のページ送り)
   ai: null, // AI のショートカット [{name, url, note}](fixAi で初期値を入れる)
@@ -1414,7 +1414,7 @@ function renderRail(st, d) {
   const fresh = Date.now() - railLast > 3000; railLast = Date.now(); flapQuiet = st.mode === 'class'; railInit();
   const flap = effAnim() === 'flap';
   const blank = flapBlankNow(), par = blank !== railBlankPrev; railBlankPrev = blank;
-  railClock(d, flap && !fresh, blank, par);
+  railClock(d, flap && !fresh, false, false); // 時計は黒にしない
   // 上:日付・ドア上表示風タイマー
   setHtml($('rvDt'), `<span class="dc">${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][d.getDay()]}</span><span>${WD[d.getDay()]}曜日${HOLIDAYS[ymd(d)] ? ' ・ ' + esc(HOLIDAYS[ymd(d)]) : ''}</span>`);
   setHtml($('rvDoor'), cfg.pomoOn ? `<div class="rv-door" data-pm="toggle"><div class="h">自習タイマー</div><div class="b"><div class="m" id="rvPS"></div><div class="t n" id="rvPT"></div><div class="cells" id="rvPC" style="grid-template-columns:repeat(${P.n},1fr)">${'<i></i>'.repeat(P.n)}</div></div></div>` : '');
@@ -1568,7 +1568,7 @@ function railInit() {
   railUnits = { c, rows, SD, RD };
 }
 // 時計:分が変わるたびに、値が変わったユニットだけ回る(59→00 のときは分十も回る)
-// 黒(空白)にする・もどすときは、全部いっせいに(par)。ふだんは、変わる桁を左から1個ずつ順番にめくる
+// ふだんは、変わる桁を左から1個ずつ順番にめくる。blank は使わない(時計は黒にしない)
 function railClock(d, anim, blank, par) {
   const h = d.getHours(), m = d.getMinutes(), c = railUnits.c;
   const vals = blank ? ['', '', '', ''] : [h < 10 ? '' : String(Math.floor(h / 10)), String(h % 10), String(Math.floor(m / 10)), String(m % 10)];
@@ -1583,8 +1583,8 @@ function afterSchool() {
   return (isSchoolDay(d) && schoolState(d).mode === 'after') || (minOfDay(d) < 300 && isSchoolDay(addDays(d, -1)));
 }
 let flapDemo = 0, railBlankPrev = false; // flapDemo: この時刻まで黒にする(確認用のボタン)
-const flapBlankNow = () => Date.now() < flapDemo || (cfg.flapBlank && afterSchool());
-document.addEventListener('click', e => { if (e.target.closest('#rvDemo')) { flapDemo = Date.now() + 7000; if (typeof renderClock === 'function') renderClock(); } }); // 黒にして、7秒後にもどる
+const flapBlankNow = () => { const base = cfg.flapBlank && afterSchool(); return Date.now() < flapDemo ? !base : base; }; // ボタン: 黒なら7秒だけ表示に、ふだんなら7秒だけ黒に
+document.addEventListener('click', e => { if (e.target.closest('#rvDemo')) { flapDemo = Date.now() + 7000; if (typeof renderClock === 'function') renderClock(); } }); // 7秒だけ、いまと逆の表示にして、もどす
 // 発車標:先発 → 次発 → 次々発、各段は 時刻(4桁同時)→ 種別+行先 → 教室 の順。前のグループが止まってから 250ms あけて次が回る
 function railBoard(dep, anim, par) {
   const sig = JSON.stringify(dep); if (sig === boardSig) return; boardSig = sig;
@@ -3969,7 +3969,7 @@ function renderSettings() {
     <p class="note">「モードに合わせる」は、標準は押し上げ、夜はぼかし、鉄道はパタパタです。</p>
     <div class="row"><label><input type="checkbox" id="flapBoard" ${cfg.flapBoard ? 'checked' : ''}>発車標もパタパタにする</label></div>
     <div class="row"><label><input type="checkbox" id="flapTiles" ${cfg.flapTiles ? 'checked' : ''}>やること・予定もパタパタにする</label></div>
-    <div class="row"><label><input type="checkbox" id="flapBlank" ${cfg.flapBlank ? 'checked' : ''}>今日の授業が終わったら、時計と発車標をパタパタして黒(空白)にする(翌朝5時まで)</label></div>
+    <div class="row"><label><input type="checkbox" id="flapBlank" ${cfg.flapBlank ? 'checked' : ''}>今日の授業が終わったら、発車標をパタパタして黒(空白)にする(翌朝5時まで)</label></div>
     <div class="row"><label><input type="checkbox" id="flapSound" ${cfg.flapSound ? 'checked' : ''}>めくる音を鳴らす(授業中は鳴らしません)</label></div>
     <h4 style="margin-top:16px">標準モードの配置</h4>
     <div class="row"><select id="stdLayout">${opt('cols', cfg.stdLayout, '3列(タイルを全部いちどに出す)')}${opt('big', cfg.stdLayout, '大きい時計(タイルは下段でページ送り)')}</select></div>
