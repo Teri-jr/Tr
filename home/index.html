@@ -17,11 +17,11 @@
 /* 1180×820(iPad 第10世代 横向き)の画面を作り、画面サイズに合わせて拡大縮小する */
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#141413;--ink:#ece8df;--sub:#8d8a83;--dim:#4a4844;--rule:#2b2a28;--card:#1b1b19;--track:#2f2e2b;--seg:#24231f;--segdone:#3a3833;
-  --red:#ff5b3a;--blue:#6fa8dc;--yel:#e8c65a;--grn:#79c28a;--sl:#f5b301;--onpill:#141413;--lunchbg:#2a2617;
+  --red:#ff5b3a;--blue:#6fa8dc;--yel:#e8c65a;--grn:#79c28a;--sl:#f5b301;--onpill:#141413;--lunchbg:#2a2617;--curbg:#2a1712;
   --jp:"Zen Kaku Gothic New","Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
   --num:"Barlow Condensed","Helvetica Neue",Arial,sans-serif}
 body.light{--bg:#eceeef;--ink:#16181b;--sub:#656a70;--dim:#a6abb0;--rule:#d3d7db;--card:#f7f8f9;--track:#d6dadd;--seg:#dde1e4;--segdone:#c7ccd1;
-  --red:#e0431f;--blue:#2f78c4;--yel:#a87a05;--grn:#2f9a55;--sl:#c98a00;--onpill:#fff;--lunchbg:#f0e6c4}
+  --red:#e0431f;--blue:#2f78c4;--yel:#a87a05;--grn:#2f9a55;--sl:#c98a00;--onpill:#fff;--lunchbg:#f0e6c4;--curbg:#fbe3da}
 html,body{height:100%;background:var(--bg);overflow:hidden}
 body{-webkit-touch-callout:none;color:var(--ink);font-family:var(--jp);font-size:14px;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
@@ -216,7 +216,8 @@ body.editing #nowband{display:none}
 #full{position:absolute;inset:0;z-index:9;background:var(--bg);display:flex;flex-direction:column}
 #full[hidden]{display:none}
 .fhead{height:52px;flex:none;display:flex;align-items:center;gap:12px;padding:0 18px;border-bottom:1px solid var(--rule)}
-.fhead b{font-size:17px;margin-right:auto}.fhead .fhint{font-size:12px;color:var(--sub)}
+.fhead b{font-size:17px}.fhead .fhint{font-size:12px;color:var(--sub);margin-left:auto}
+#fullTabs .fvtabs{gap:0;flex-wrap:nowrap;border:1px solid var(--rule)}#fullTabs .fvtabs button{border:0;padding:5px 14px;font-size:13px;min-width:0;color:var(--sub);white-space:nowrap}#fullTabs .fvtabs button+button{border-left:1px solid var(--rule)}#fullTabs .fvtabs button.on{background:var(--ink);color:var(--bg);font-weight:700}
 .fbody{flex:1;min-height:0;display:flex;overflow:auto}
 #full .tile{flex:1;border:0;zoom:1.6;padding:20px 28px;overflow:auto;display:flex;flex-direction:column}
 #full .clockt{zoom:1;align-items:center;justify-content:center}
@@ -627,7 +628,7 @@ em.r{color:var(--red);font-style:normal}em.b{color:var(--blue);font-style:normal
 /* やること */
 .v2cols{flex:1;min-height:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
 .v2col{padding:16px 16px;border-right:1px solid var(--rule);display:flex;flex-direction:column;gap:8px;overflow:auto}.v2col:last-child{border:0}
-.v2col .ch{display:flex;align-items:baseline;justify-content:space-between;padding-bottom:8px;border-bottom:2px solid var(--c);margin-bottom:4px}.v2col .ch b{font-size:16px}.v2col .ch span{font-size:30px;color:var(--c)}
+.v2col .ch{display:flex;align-items:baseline;justify-content:space-between;padding-bottom:8px;border-bottom:2px solid var(--c);margin-bottom:4px}.v2col .ch b{font-size:16px;color:var(--ink)}.v2col .ch b small{display:block;font-size:11px;letter-spacing:.1em;color:var(--c);font-weight:700}.v2col .ch span{font-size:30px;color:var(--c)}
 .v2cd{background:var(--card);border:1px solid var(--rule);padding:12px 14px;display:flex;gap:12px;align-items:flex-start;text-align:left}
 .v2cd .bx{width:22px;height:22px;border:2px solid var(--sub);flex:none;margin-top:2px}.v2cd .cx{flex:1;min-width:0}
 .v2cd b{font-size:17px;display:block;line-height:1.35;word-break:break-word}
@@ -637,7 +638,7 @@ em.r{color:var(--red);font-style:normal}em.b{color:var(--blue);font-style:normal
 .v2add{margin-top:auto;border:1px dashed var(--dim);padding:12px;color:var(--sub);font-size:14px}
 /* 予定 */
 .v2split.ag{grid-template-columns:380px 1fr}
-.v2hero .ttl{font-size:30px;font-weight:900;line-height:1.25;margin-top:8px;word-break:break-word}.v2hero .big{font-size:100px;line-height:.9;margin-top:14px}
+.v2hero .ttl{font-size:30px;font-weight:900;line-height:1.25;margin-top:8px;word-break:break-word}.v2hero .big{font-size:150px;white-space:nowrap;line-height:.9;margin-top:14px}
 .v2agl{padding:14px 26px;overflow:auto}
 .v2dy{display:grid;grid-template-columns:104px 1fr;border-bottom:1px solid var(--rule);padding:8px 0}
 .v2dy .dd{font-size:32px;line-height:1;text-align:left;align-self:start;padding-top:4px}.v2dy .dd small{display:block;font-family:var(--jp);font-size:12px;color:var(--sub);margin-top:4px}.v2dy .dd.t{color:var(--red)}.v2dy .dd.su:not(.t){color:var(--red)}
@@ -763,7 +764,7 @@ body.night:not(.editing):not(.portrait) #page,body.rail:not(.editing):not(.portr
 body.night:not(.editing):not(.portrait) #nowband,body.rail:not(.editing):not(.portrait) #nowband{display:none}
 /* 夜(Nocturne):色の変数を入れかえるだけ。面は塗りつぶさず、アクセントは線と光で */
 body.night{--bg:#161826;--ink:#e9e9ed;--sub:#9397ab;--dim:#75798c;--rule:#3f424d;--card:#232532;--track:#3f424d;--seg:#232532;--segdone:#423a6a;
-  --red:#9184d9;--sl:#9184d9;--onpill:#161826;--grn:#8fd1a0;--lunchbg:#2a2840;
+  --red:#9184d9;--sl:#9184d9;--onpill:#161826;--grn:#8fd1a0;--lunchbg:#2a2840;--curbg:#2b2748;
   --jp:Inter,system-ui,"Zen Kaku Gothic New","Hiragino Sans","Hiragino Kaku Gothic ProN",sans-serif;--num:Inter,system-ui,"Zen Kaku Gothic New",sans-serif}
 body.night #stage{background-image:radial-gradient(ellipse 70% 55% at 18% -10%,rgba(145,132,217,.20),transparent 70%),radial-gradient(ellipse 50% 40% at 100% 110%,rgba(53,59,128,.35),transparent 70%)}
 body.night b,body.night h3{font-weight:500}
@@ -862,6 +863,40 @@ body.night .rm .rb{top:31px;height:6px;border-radius:3px}
 .mthumbs .pv{height:96px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:1px solid var(--rule)}
 .mthumbs b{display:block;font-size:15px;margin-top:8px}.mthumbs small{display:block;font-size:12px;color:var(--sub);line-height:1.5}
 .sx .msrow{display:flex;align-items:center;gap:10px;margin:6px 0}
+/* 全画面 3a 時間割(1週間) */
+.v3tt{flex:1;min-height:0;display:grid;grid-template-columns:1fr 320px}
+.v3ttm{padding:18px 24px;display:flex;flex-direction:column;min-height:0;overflow:auto}
+.v3dh,.v3pr{display:grid;grid-template-columns:76px repeat(5,minmax(0,1fr));gap:4px}
+.v3dh{margin-bottom:6px}.v3dh span{text-align:center;font-size:15px;font-weight:700;padding:6px 0}.v3dh span.t{background:var(--red);color:var(--onpill)}
+.v3pr{height:70px}.v3pr .lb{display:flex;flex-direction:column;justify-content:center}.v3pr .lb .no{font-family:var(--num);font-size:26px;font-weight:600;line-height:1}.v3pr .lb .tm{font-family:var(--num);font-size:14px;color:var(--sub)}
+.tw-c{position:relative;background:var(--card);border:1px solid var(--rule);padding:8px 12px;display:flex;flex-direction:column;justify-content:center;overflow:hidden;min-width:0}
+.tw-c i{position:absolute;left:0;bottom:0;height:4px;background:var(--red)}
+.tw-c b{font-size:19px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tw-c span{font-size:11.5px;color:var(--sub)}
+.tw-c.cur{border-color:var(--red);background:var(--curbg)}.tw-c.past{opacity:.45}
+.v3brk{display:grid;grid-template-columns:76px 1fr;gap:4px;height:14px;align-items:center}.v3brk span{font-size:10.5px;color:var(--dim)}.v3brk em{height:1px;border-top:1px dashed var(--rule)}
+.v3lun{display:grid;grid-template-columns:76px 1fr;gap:4px;height:38px;margin:4px 0}.v3lun .t{font-family:var(--num);font-size:14px;color:var(--yel);align-self:center}
+.v3lun div{border:1px solid var(--yel);background:var(--lunchbg);display:flex;align-items:center;justify-content:center;gap:14px;color:var(--yel);font-size:15px;font-weight:700}.v3lun div span{font-weight:400;font-size:13px}
+.v3side{border-left:1px solid var(--rule);display:flex;flex-direction:column;overflow:auto;min-height:0}
+.v3sign{background:#ece8df;color:#141413;margin:18px 18px 0;flex:none}
+.v3sign .a{padding:14px 16px 10px}.v3sign .k{font-size:12px;font-weight:700;color:#4a4844;letter-spacing:.1em}.v3sign .nm{font-size:40px;font-weight:900;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v3sign .r{display:flex;justify-content:space-between;align-items:baseline;margin-top:4px}.v3sign .r .tm{font-family:"Barlow Condensed",sans-serif;font-size:17px;color:#4a4844}.v3sign .r .lf{font-size:13px;font-weight:700}.v3sign .r .lf span{font-family:"Barlow Condensed",sans-serif;font-size:28px;color:#e0431f}
+.v3sign .b1{height:5px;background:#141413}.v3sign .b2{height:24px;background:#ff5b3a;display:flex;align-items:center;justify-content:flex-end;padding:0 12px;font-size:13px;font-weight:700}
+.v3sec{padding:20px 22px 0}.v3sec .lab{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:.12em;margin-bottom:8px}
+.v3sec .ln{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--rule);font-size:15px}.v3sec .ln span+span{font-size:12px;color:var(--sub)}
+.v3sec .gb{display:flex;align-items:baseline;gap:10px}.v3sec .gb b{font-family:var(--num);font-size:44px;font-weight:500}.v3sec .gb span{font-size:13px;color:var(--sub)}
+/* 全画面 3c 天気 */
+.v3top{height:330px;flex:none;display:grid;grid-template-columns:1fr 460px;border-bottom:1px solid var(--rule)}
+.v3now{padding:30px 28px;display:flex;flex-direction:column;justify-content:center;min-width:0;overflow:hidden}
+.v3now .a{display:flex;align-items:center;gap:20px;min-width:0}.v3now svg{width:110px;height:100px;flex:none}
+.v3now .tp{font-size:190px;font-weight:300;line-height:.85;letter-spacing:-3px;white-space:nowrap}
+.v3now .tx{font-size:30px;font-weight:700}.v3now .s{font-size:16px;color:var(--sub);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.v3now .s b{font-family:var(--num);font-size:24px;font-weight:500}
+.v3now .um{margin-top:22px;font-size:20px;font-weight:700}.v3now .um span{font-weight:400;color:var(--sub);font-size:16px}
+.v3r{border-left:1px solid var(--rule);display:flex;flex-direction:column;min-width:0}
+.v3cmw{flex:1;display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--rule)}
+.v3cm{padding:14px 16px;display:flex;align-items:center;gap:12px;min-width:0}
+.v3cm .lab{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:.12em}.v3cm .tm{font-family:var(--num);font-size:20px;color:var(--sub)}
+.v3cm .v{font-family:var(--num);font-size:60px;line-height:1}.v3cm .w{font-size:14px}.v3cm .rn{font-size:13px;color:var(--blue)}
+.v3r .v2days{padding:12px 12px 14px;gap:8px}.v3r .v2day{padding:8px 10px;min-width:0}.v3r .v2day b{font-size:22px;white-space:nowrap}.v3r .v2day span{font-size:12px;white-space:nowrap}.v3r .v2day small{white-space:nowrap;font-size:12px}
 </style>
 </head>
 <body>
@@ -898,7 +933,7 @@ body.night .rm .rb{top:31px;height:6px;border-radius:3px}
   </div>
   <section class="pop" id="slot" hidden></section>
   <div class="addp" id="addPanel" hidden></div>
-  <div id="full" hidden><div class="fhead"><b id="fullName"></b><span class="fhint">3分さわらないと元に戻ります</span><button class="gear" id="fullSet">設定</button><button class="gear" id="fullClose">✕ 閉じる</button></div><div class="fbody" id="fullBody"></div></div>
+  <div id="full" hidden><div class="fhead"><b id="fullName"></b><span class="ftabs" id="fullTabs"></span><span class="fhint">3分さわらないと元に戻ります</span><button class="gear" id="fullSet">設定</button><button class="gear" id="fullClose">✕ 閉じる</button></div><div class="fbody" id="fullBody"></div></div>
   <div id="dragTag" hidden></div>
   <div id="eew" hidden>
     <div class="map"><canvas id="eewMap" width="1280" height="1640"></canvas>
@@ -919,7 +954,7 @@ body.night .rm .rb{top:31px;height:6px;border-radius:3px}
 
 <script>
 'use strict';
-const APP_VERSION = '2.17.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.18.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -2050,9 +2085,16 @@ function checkSoon() {
     if (events) soonFirst = false;
   }
   updateSoon();
-  for (const el of document.querySelectorAll('[data-to]')) el.textContent = fmtLeft(+el.dataset.to - t, !!el.dataset.short);
+  for (const el of document.querySelectorAll('[data-to]')) { el.textContent = fmtLeft(+el.dataset.to - t, !!el.dataset.short); if (el.dataset.fit) fitText(el, +el.dataset.fit); }
   const rc = $('v2ringC'); if (rc && tmr && tmr.paused == null) rc.style.strokeDashoffset = (2 * Math.PI * 210 * (1 - Math.max(0, Math.min(1, (tmr.end - t) / tmr.total)))).toFixed(1);
   const sb = $('v2snbar'); if (sb) sb.style.width = Math.max(0, Math.min(100, 100 * (1 - (+sb.dataset.st - t) / 3600e3))).toFixed(1) + '%';
+}
+function fitText(el, max) {
+  const n = el.textContent.length; if (el._fl === n) return;
+  el.style.fontSize = max + 'px'; const w = el.clientWidth;
+  if (w <= 0) return; // まだ表示されていない(幅が計れない)ときは、あとでもう一度
+  el._fl = n;
+  if (el.scrollWidth > w) el.style.fontSize = Math.floor(max * w / el.scrollWidth) + 'px';
 }
 // 古い記録を消す
 for (const m of [soonDone, soonMuted]) for (const k in m) if (m[k] < Date.now() - 2 * 864e5) delete m[k];
@@ -2230,6 +2272,7 @@ function openFull(t) {
   fullTouched = nowMs();
   if (FV[k]) { fullK = k; fs = {}; renderFullView(); }
   else {
+    $('fullTabs').innerHTML = '';
     fullTile = t; fullCls = t.className;
     fullPh = document.createElement('div'); fullPh.className = 'fullph'; t.before(fullPh);
     t.classList.remove('mini', 'grow');
@@ -2243,7 +2286,7 @@ function openFull(t) {
 }
 function setFullHead(k) { $('fullName').textContent = TILE_NAME[k] || ''; $('fullSet').hidden = !FULL_SETTINGS[k]; }
 function closeFull() {
-  if (fullK) { fullK = null; $('fullBody').innerHTML = ''; $('full').hidden = true; return; }
+  if (fullK) { fullK = null; $('fullBody').innerHTML = ''; $('fullTabs').innerHTML = ''; $('full').hidden = true; return; }
   if (!fullTile) return;
   const t = fullTile; fullTile = null;
   t.className = fullCls;
@@ -2266,7 +2309,14 @@ $('fullBody').addEventListener('click', e => {
 addEventListener('keydown', e => { if (e.key === 'Escape' && (fullTile || fullK)) closeFull(); });
 
 /* ---- 全画面の詳しい画面 ---- */
-function renderFullView() { if (fullK && FV[fullK]) { $('fullBody').innerHTML = `<div class="fv v2 fv-${fullK}">${FV[fullK]()}</div>`; if (fullK === 'quakes') requestAnimationFrame(drawQuakeMini); if (fullK === 'weather' && fs.wmode === 'radar') requestAnimationFrame(rdInit); else rdStop(); } }
+// 最初のバーのタブを、上のバー(タイル名の右)へ移す。バーに何も残らなければバーごと消す
+function fvTabsUp() {
+  const ft = $('fullTabs'); ft.innerHTML = '';
+  const bar = $('fullBody').querySelector('.v2bar'), tb = bar && bar.querySelector('.fvtabs');
+  if (tb && tb.parentNode === bar) { ft.appendChild(tb); if (!bar.textContent.trim() && !bar.querySelector('button,input,select')) bar.remove(); }
+}
+$('fullTabs').addEventListener('click', e => { const b = e.target.closest('[data-fa]'); if (b && fullK) fvAction(b.dataset.fa, b.dataset.v); });
+function renderFullView() { if (fullK && FV[fullK]) { $('fullBody').innerHTML = `<div class="fv v2 fv-${fullK}">${FV[fullK]()}</div>`; fvTabsUp(); $('fullBody').querySelectorAll('[data-fit]').forEach(e => fitText(e, +e.dataset.fit)); if (fullK === 'quakes') requestAnimationFrame(drawQuakeMini); if (fullK === 'weather' && fs.wmode === 'radar') requestAnimationFrame(rdInit); else rdStop(); } }
 const tabs = (fa, items, cur) => `<div class="fvtabs">${items.map(([v, l]) => `<button data-fa="${fa}" data-v="${esc(v)}" class="${String(v) === String(cur) ? 'on' : ''}">${l}</button>`).join('')}</div>`;
 // その日にかかる予定(終日の予定は終わりの日を含まない)
 function eventsOn(d) {
@@ -2474,6 +2524,43 @@ function fv2TT() {
     <div class="v2tl"><div class="v2tlh"><b>${ymd(date) === ymd(d) ? '今日の流れ' : WD[wd] + '曜の流れ'}</b><span>${ps.length}時間${end != null ? ' ・ 下校 ' + fmtMin(end) : ''}</span></div>
     ${ps.length ? `<div class="v2rows">${rows}</div>` : '<p class="empty">この曜日は授業がありません。</p>'}</div></div></div>`;
 }
+// 時間割(1週間):月〜金 × 各限。今日の列とそのときの授業が光る。昼休みは横に長い帯
+function fv3TT() {
+  const mode = fs.ttv || 'week', head = v2bar(tabs('ttv', [['week', '1週間'], ['day', '1日']], mode));
+  if (mode === 'day') return head + fv2TT();
+  const d = now(), st = schoolState(d), m = minOfDay(d), tw = d.getDay(), DAYS = [1, 2, 3, 4, 5];
+  const refW = DAYS.includes(tw) && cfg.days[tw] && cfg.days[tw].p.length ? tw : 1;
+  let ref = sod(d); for (let i = 0; i < 7 && ref.getDay() !== refW; i++) ref = addDays(ref, 1);
+  const ps = periodsMin(ref);
+  const colPs = w => (cfg.days[w] && cfg.days[w].p ? cfg.days[w].p.map(([a, b]) => rng(a, b)) : []);
+  let rows = '';
+  ps.forEach(([a, b], i) => {
+    rows += `<div class="v3pr"><div class="lb"><span class="no">${i + 1}</span><span class="tm">${fmtMin(a)}</span></div>${DAYS.map(w => {
+      const it = ((cfg.tt[w] || [])[i]) || {}, cp = colPs(w)[i], today = w === tw && isSchoolDay(d);
+      let cls = '', pf = 0;
+      if (today && cp) { if (m >= cp[1]) cls = 'past'; else if (m >= cp[0]) { cls = 'cur'; pf = (m - cp[0]) / (cp[1] - cp[0]) * 100; } }
+      return `<div class="tw-c ${cls}">${cls === 'cur' ? `<i style="width:${pf.toFixed(1)}%"></i>` : ''}<b>${esc(it.s || (cp ? '—' : ''))}</b><span>${esc(it.r || '')}</span></div>`;
+    }).join('')}</div>`;
+    if (i + 1 < ps.length) {
+      const gap = ps[i + 1][0] - b;
+      rows += gap >= 30 ? `<div class="v3lun"><span class="t">${fmtMin(b)}</span><div>昼休み<span>${fmtMin(b)} – ${fmtMin(ps[i + 1][0])} · ${gap}分</span></div></div>` : `<div class="v3brk"><span>休 ${gap}分</span><em></em></div>`;
+    }
+  });
+  // 右:いまの駅名標・今日の持ちもの・今日の帰り
+  const sub = i => esc(subjOf(d, i) || `${i + 1}限`);
+  let k = '', nm = '今日は授業がありません', tm = '', lf = '', band = '';
+  if (st.mode === 'class') { const [a, b] = st.ps[st.i], nx = st.i + 1 < st.ps.length; k = `${st.i + 1}限 · 授業中`; nm = sub(st.i); tm = `${fmtMin(a)} – ${fmtMin(b)}`; lf = `あと <span>${Math.ceil(st.left)}</span> 分`; band = nx ? `${st.i + 2}限 ${sub(st.i + 1)} →` : ''; }
+  else if (st.mode === 'break') { k = '休み時間 · 次は'; nm = st.next >= 0 ? sub(st.next) : '帰りの準備'; lf = `あと <span>${Math.ceil(st.left)}</span> 分`; }
+  else if (st.mode === 'after') nm = '今日の授業はおわり';
+  else if (st.mode === 'pre' || st.mode === 'shr') { nm = esc(st.name); lf = `あと <span>${Math.ceil(st.left)}</span> 分`; }
+  else if (st.mode === 'before') { nm = `${esc(st.label)}まで`; lf = `あと <span>${Math.ceil(st.left)}</span> 分`; }
+  const bring = allTodos().filter(t => t.bring && !t.done).sort((a, b) => dueInfo(a).ord - dueInfo(b).ord).slice(0, 6);
+  const dd = isSchoolDay(d) ? d : nextSchoolDay(d), post = postMin(dd), dps = periodsMin(dd), end = post ? post[2] : dps.length ? dps[dps.length - 1][1] : null;
+  const side = `<div class="v3sign"><div class="a"><div class="k">${k}</div><div class="nm">${nm}</div><div class="r"><span class="tm">${tm}</span><span class="lf">${lf}</span></div></div><div class="b1"></div><div class="b2">${band}</div></div>
+    <div class="v3sec"><div class="lab">今日の持ちもの</div>${bring.length ? bring.map(t => `<div class="ln"><span>${esc(t.text)}</span><span>${esc(dueInfo(t).label)}</span></div>`).join('') : '<p class="empty">ありません</p>'}</div>
+    <div class="v3sec"><div class="lab">${dd === d ? '今日の帰り' : dayLabel(d, dd) + 'の帰り'}</div>${end != null ? `<div class="gb"><b>${fmtMin(end)}</b><span>${post ? esc(post[0]) + ' のあと' : '最後の授業のあと'}</span></div>` : '<p class="empty">授業がありません</p>'}</div>`;
+  return head + `<div class="v3tt"><div class="v3ttm"><div class="v3dh"><span></span>${DAYS.map(w => `<span class="${w === tw ? 't' : ''}">${WD[w]}</span>`).join('')}</div>${ps.length ? rows : '<p class="empty">時間割がまだありません。設定で入れてください。</p>'}</div><div class="v3side">${side}</div></div>`;
+}
 // 天気の一言(タイルと同じ決まり)
 function wxSay(after) {
   const d = now(), st = schoolState(d), H = wx.hourly, D = wx.daily;
@@ -2561,7 +2648,8 @@ document.addEventListener('pointerup', rgEnd); document.addEventListener('pointe
 document.addEventListener('wheel', e => { if (!e.target.closest('#rdMap')) return; e.preventDefault(); rd.z = Math.min(13, Math.max(5, rd.z + (e.deltaY < 0 ? 1 : -1))); rdDraw(); }, { passive: false });
 // 天気: 今の天気を大きく、傘の一言、気温の線と雨の棒(上で雨雲レーダーに切りかえ)
 function fv2Weather() {
-  const wm = fs.wmode || 'fc', top = v2bar(`${tabs('wmode', [['fc', '予報'], ['radar', '雨雲レーダー']], wm)}`);
+  const wm = fs.wmode || 'fc', sel = +(fs.wd || 0), names = ['今日', '明日', 'あさって'];
+  const top = v2bar(`<div class="fvtabs">${names.map((n, i) => `<button data-fa="wdd" data-v="${i}" class="${wm === 'fc' && sel === i ? 'on' : ''}">${n}</button>`).join('')}<button data-fa="wmode" data-v="radar" class="${wm === 'radar' ? 'on' : ''}">雨雲レーダー</button></div>`);
   if (wm === 'radar') return top + fvRadar();
   return top + fv2WeatherFc();
 }
@@ -2571,10 +2659,15 @@ function fv2WeatherFc() {
   const isToday = date === ymd(now());
   const [txt, kind] = WCODE(isToday ? wx.cur.weather_code : D.weather_code[di]);
   const cs = isToday ? wxSay(false) : { head: `${['今日', '明日', 'あさって'][sel]}は${WCODE(D.weather_code[di])[0]}${D.precipitation_probability_max[di] == null ? '' : ' ' + D.precipitation_probability_max[di] + '%'}`, say: umbrella(D.precipitation_probability_max[di], D.weather_code[di]), p: D.precipitation_probability_max[di] };
-  const rainy = (cs.p != null && cs.p >= 30) || cs.wet;
   const names = ['今日', '明日', 'あさって'];
   const cards = D.time.slice(d0, d0 + 3).map((t, i) => { const j = d0 + i; return `<button class="v2day ${i === sel ? 'on' : ''}" data-fa="wd" data-v="${i}"><span>${names[i]} ${mdw(parseYmd(t))}</span><b class="n"><em class="r">${Math.round(D.temperature_2m_max[j])}°</em> / <em class="b">${Math.round(D.temperature_2m_min[j])}°</em></b><small>${esc(WCODE(D.weather_code[j])[0])} ・ ☂ ${pct(D.precipitation_probability_max[j])}%</small></button>`; }).join('');
-  // グラフ
+  // 登校・下校の時間(その日の時間割から)
+  const wdn = parseYmd(date).getDay(), dcf = cfg.days[wdn] && cfg.days[wdn].p && cfg.days[wdn].p.length ? cfg.days[wdn] : cfg.days[1];
+  const first = dcf.pre && dcf.pre.length ? toMin(dcf.pre[0][1]) : toMin(dcf.p[0][0]), lastEnd = dcf.post ? toMin(dcf.post[2]) : toMin(dcf.p[dcf.p.length - 1][1]);
+  const goH = first == null ? 8 : Math.floor(first / 60), homeH = lastEnd == null ? 16 : Math.round(lastEnd / 60);
+  const at = h => { const i = H.time.findIndex(t => t.startsWith(date) && +t.slice(11, 13) === h); return i < 0 ? null : { t: H.temperature_2m[i], w: WCODE(H.weather_code[i])[0], p: H.precipitation_probability[i] }; };
+  const cm = [['登校', goH], ['下校', homeH]].map(([k, h], j) => { const x = at(h); return `<div class="v3cm" ${j ? 'style="border-left:1px solid var(--rule)"' : ''}><div><div class="lab">${k}</div><div class="tm">${h}:00</div></div><span class="v">${x && x.t != null ? Math.round(x.t) + '°' : '—'}</span><div><div class="w">${x ? esc(x.w) : ''}</div><div class="rn">雨 ${x ? pct(x.p) + '%' : '—'}</div></div></div>`; }).join('');
+  // グラフ:線 = 気温(太さ3)、青い棒 = 降水確率、赤い縦線 = いま、黄色の点線の枠 = 登校・下校の時間
   const hrs = H.time.map((t, i) => ({ t, i })).filter(x => x.t.startsWith(date));
   const W = 1100, Hh = 300, top = 34, bh = 110, bt = Hh - 34;
   const T = hrs.map(x => H.temperature_2m[x.i]).filter(v => v != null), tMax = Math.max(...T), tMin = Math.min(...T);
@@ -2589,10 +2682,12 @@ function fv2WeatherFc() {
   const pts = hrs.map((x, k) => H.temperature_2m[x.i] == null ? null : `${X(k).toFixed(1)},${Y(H.temperature_2m[x.i]).toFixed(1)}`).filter(Boolean).join(' ');
   g += `<polyline points="${pts}" class="tl2"/>`;
   hrs.forEach((x, k) => { if (k % 3 === 0 && H.temperature_2m[x.i] != null) g += `<text x="${X(k).toFixed(1)}" y="${(Y(H.temperature_2m[x.i]) - 10).toFixed(1)}" class="tt2">${Math.round(H.temperature_2m[x.i])}°</text>`; });
-  if (isToday && cs.goHome != null) { const k = hrs.findIndex(x => +x.t.slice(11, 13) === cs.goHome); if (k >= 0) g += `<rect x="${(X(k) - 22).toFixed(1)}" y="${top - 8}" width="44" height="${bt - top + 8}" class="gh"/><text x="${X(k).toFixed(1)}" y="${top - 14}" class="ghl">帰り</text>`; }
+  for (const [h, lb] of [[goH, '登校'], [homeH, '下校']]) { const k = hrs.findIndex(x => +x.t.slice(11, 13) === h); if (k >= 0) g += `<rect x="${(X(k) - 22).toFixed(1)}" y="${top - 8}" width="44" height="${bt - top + 8}" class="gh"/><text x="${X(k).toFixed(1)}" y="${top - 14}" class="ghl">${lb}</text>`; }
   if (isToday) { const nh = now().getHours() + now().getMinutes() / 60, x = X(nh); g += `<line x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${top - 4}" y2="${bt}" class="nl"/><text x="${(x + 6).toFixed(1)}" y="${top + 4}" class="nlt">いま</text>`; }
-  return `<div class="v2wx"><div class="v2wtop"><div class="v2wnow">${wxIcon(kind, isToday && !wx.cur.is_day)}<div class="tp n">${Math.round(isToday ? wx.cur.temperature_2m : D.temperature_2m_max[di])}<sup>°</sup></div><div><div class="tx">${esc(txt)}</div><div class="hl n"><em class="r">${Math.round(D.temperature_2m_max[di])}°</em> / <em class="b">${Math.round(D.temperature_2m_min[di])}°</em></div><div class="fl">${esc(wx.pref || loc().pref)}${cfg.loc ? '' : '(場所 未設定)'}${wx.err ? ' ・ 更新できません' : ''}</div></div></div>
-    <div class="v2wsay"><div class="v2call ${rainy ? 'wet' : ''}"><span class="ic">${rainy ? '☂' : '☀'}</span><div><b>${esc(cs.head)}</b><span>${esc(cs.say)}</span></div></div><div class="v2days">${cards}</div></div></div>
+  const hiN = Math.round(D.temperature_2m_max[di]), loN = Math.round(D.temperature_2m_min[di]);
+  return `<div class="v2wx"><div class="v3top"><div class="v3now"><div class="a">${wxIcon(kind, isToday && !wx.cur.is_day)}<span class="tp n">${Math.round(isToday ? wx.cur.temperature_2m : D.temperature_2m_max[di])}°</span><div><div class="tx">${esc(txt)}</div><div class="s">最高 <b style="color:var(--red)">${hiN}°</b>　最低 <b style="color:var(--blue)">${loN}°</b></div><div class="s">降水 <b style="color:var(--ink)">${pct(D.precipitation_probability_max[di])}%</b> ・ ${esc(wx.pref || loc().pref)}${cfg.loc ? '' : '(場所 未設定)'}${wx.err ? ' ・ 更新できません' : ''}</div></div></div>
+    <div class="um">${esc(cs.say)}<span> ${esc(cs.head)}</span></div></div>
+    <div class="v3r"><div class="v3cmw">${cm}</div><div class="v2days">${cards}</div></div></div>
     <div class="v2chart"><div class="lab">1時間ごと ・ 線 = 気温 / 棒 = 降水確率</div><svg viewBox="0 0 ${W} ${Hh}" preserveAspectRatio="none">${g}</svg></div></div>`;
 }
 // カレンダー: マスに予定の名前、続く予定は帯
@@ -2635,7 +2730,7 @@ function fv2Todo() {
   const col = t => { if (!t.due) return 3; const k = dayDiff(t0, parseYmd(t.due)); return k <= 0 ? 0 : k === 1 ? 1 : k <= 14 ? 2 : 3; };
   const cols = [['今日まで・期限切れ', 'var(--red)'], ['明日', 'var(--yel)'], ['この2週間', 'var(--blue)'], ['それ以降・期限なし', 'var(--sub)']];
   const card = t => { const di = dueInfo(t); return `<button class="v2cd ${t.done ? 'done' : ''}" data-fa="todo" data-v="${esc(t.id)}"><span class="bx"></span><span class="cx"><b>${esc(t.text)}</b><span class="m">${t.due ? `<em class="${di.hot && !t.done ? 'r' : ''}">${di.label}${di.label !== md(parseYmd(t.due)) ? '' : `(${WD[parseYmd(t.due).getDay()]})`}</em>` : ''}${t.bring ? '<em class="y">持ちもの</em>' : t.gt ? '' : '<em>課題</em>'}${t.gt ? `<em class="g">G・${esc((t.lt || 'ToDo').slice(0, 8))}</em>` : ''}${t.done ? '<em>済</em>' : ''}</span></span></button>`; };
-  return head + `<div class="v2cols">${cols.map(([n, c], i) => { const l = all.filter(t => col(t) === i); return `<div class="v2col" style="--c:${c}"><div class="ch"><b>${n}</b><span class="n">${l.filter(t => !t.done).length}</span></div>${l.map(card).join('') || '<p class="empty">なし</p>'}${i === 3 ? '<button class="v2add" data-fa="todoadd">+ やることを追加</button>' : ''}</div>`; }).join('')}</div>`;
+  return head + `<div class="v2cols">${cols.map(([n, c], i) => { const l = all.filter(t => col(t) === i); return `<div class="v2col" style="--c:${c}"><div class="ch"><b><small>${i + 1}番線</small>${n}</b><span class="n">${l.filter(t => !t.done).length}</span></div>${l.map(card).join('') || '<p class="empty">なし</p>'}${i === 3 ? '<button class="v2add" data-fa="todoadd">+ やることを追加</button>' : ''}</div>`; }).join('')}</div>`;
 }
 // 予定: 左に次の予定、右は日ごとに
 function fv2Sched() {
@@ -2644,7 +2739,7 @@ function fv2Sched() {
   const groups = {};
   for (const e of list) { const k = ymd(new Date(Math.max(new Date(e.start).getTime(), sod(now()).getTime()))); (groups[k] = groups[k] || []).push(e); }
   const nt = nextTimed()[0], two = up.filter(e => new Date(e.start).getTime() < sod(addDays(now(), 14)).getTime());
-  const left = nt ? `<div class="lab yel">次の予定</div><div class="ttl">${esc(nt.title)}</div><div class="sub">${esc(evWhen(nt))}</div><div class="big n" data-to="${new Date(nt.start).getTime()}">${fmtLeft(new Date(nt.start).getTime() - nowMs())}</div><div class="sub">後に始まります</div>`
+  const left = nt ? `<div class="lab yel">次の予定</div><div class="ttl">${esc(nt.title)}</div><div class="sub">${esc(evWhen(nt))}</div><div class="big n" data-fit="150" style="white-space:nowrap" data-to="${new Date(nt.start).getTime()}">${fmtLeft(new Date(nt.start).getTime() - nowMs())}</div><div class="sub">後に始まります</div>`
     : `<div class="lab">次の予定</div><p class="empty" style="margin-top:10px">${cfg.gasUrl ? (events ? 'この先、時間の決まった予定はありません。' : '読み込み中…') : '「設定」→「連携」で Googleカレンダーをつなぐと出ます。'}</p>`;
   return `${v2bar(`${tabs('f', [['all', 'この先'], ['week', '1週間'], ['allday', '終日だけ']], f)}<span class="fvnote">${eventsAt ? `${new Date(eventsAt).getHours()}:${pad(new Date(eventsAt).getMinutes())} に読み込み` : ''}${eventsErr ? ` ・ <span class="late">${esc(eventsErr)}</span>` : ''}</span><button data-fa="reload" class="v2btn">読み込み直す</button>`)}
     <div class="v2split ag"><div class="v2hero">${left}<div class="v2nx"><div class="lab">この先 2週間</div><b class="n" style="font-size:44px">${two.length}</b><small> 件</small><div class="sub">時間の決まった予定 ${two.filter(e => !e.allDay).length} ・ 終日 ${two.filter(e => e.allDay).length}</div></div></div>
@@ -2808,7 +2903,7 @@ function fv2Soon() {
     <div class="v2snl">${l.slice(1, 4).map(x => { const s2 = new Date(x.start).getTime(); return `<div><span class="sub">${dayLabel(now(), new Date(x.start))}</span><em class="n" data-to="${s2}" data-short="1">${fmtLeft(s2 - nowMs(), true)}</em><b>${esc(x.title)}</b><span class="sub n">${esc(evWhen(x).replace(/^\S+ /, ''))}</span></div>`; }).join('') || '<div><span class="sub">そのあとの予定はありません</span></div>'}</div></div>`;
 }
 
-const FV = { calendar: fv2Calendar, sched: fv2Sched, tt: fv2TT, weather: fv2Weather, todo: fv2Todo, count: fv2Count, holiday: fv2Holiday, terms: fv2Terms, studyline: fv2Study, kioku: fv2Kioku, quakes: fv2Quakes, timer: fv2Timer, soon: fv2Soon };
+const FV = { calendar: fv2Calendar, sched: fv2Sched, tt: fv3TT, weather: fv2Weather, todo: fv2Todo, count: fv2Count, holiday: fv2Holiday, terms: fv2Terms, studyline: fv2Study, kioku: fv2Kioku, quakes: fv2Quakes, timer: fv2Timer, soon: fv2Soon };
 function fvAction(a, v) {
   if (a === 'day') { fs.day = v; if (fullK === 'calendar') { const d = parseYmd(v); fs.month = ymd(new Date(d.getFullYear(), d.getMonth(), 1)); } }
   else if (a === 'mon') { const base = fs.month ? parseYmd(fs.month) : new Date(now().getFullYear(), now().getMonth(), 1); fs.month = ymd(new Date(base.getFullYear(), base.getMonth() + +v, 1)); }
@@ -2832,6 +2927,8 @@ function fvAction(a, v) {
   else if (a === 'kg') { if (kioku.shown) { kiokuClick({ target: { closest: s => s === '[data-g]' ? { dataset: { g: v } } : null } }); } }
   else if (a === 'qi') { fs.qi = +v; }
   else if (a === 'wmode') { fs.wmode = v; }
+  else if (a === 'wdd') { fs.wmode = 'fc'; fs.wd = +v; }
+  else if (a === 'ttv') { fs.ttv = v; }
   else if (a === 'rdplay') { rdToggle(); return; }
   else if (a === 'year') { fs.year = !fs.year; }
   else if (a === 'cdadd') { closeFull(); openSettings('s-cd'); return; }
