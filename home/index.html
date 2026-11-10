@@ -924,6 +924,29 @@ body.night .rm .rb{top:31px;height:6px;border-radius:3px}
 .v3wk .h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}.v3wk .h .lab{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:.12em}.v3wk .h span:last-child{font-size:14px;color:var(--sub)}.v3wk .h b{font-family:var(--num);font-size:28px;color:var(--ink);font-weight:500}
 .v3wk .g{display:grid;grid-template-columns:repeat(26,1fr);gap:3px}.v3wk .g i{aspect-ratio:1;background:var(--ink)}.v3wk .g i.p{background:var(--segdone)}.v3wk .g i.c{background:var(--red)}
 .fv-terms .v2fc .f b{font-size:66px}
+/* 全画面 3i StudyLine(路線図・時刻表・7日間の棒) */
+.v2sl3{flex:1;min-height:0;display:grid;grid-template-columns:1fr 320px}
+.v2sl3 .l{min-width:0;min-height:0;overflow:auto;display:flex;flex-direction:column}
+.v2sl3 .v2routew{margin:6px 30px 10px}
+.v2sl3 .v2slh{grid-template-columns:1fr;gap:12px;padding:20px 30px 16px}.v2sl3 .v2slh .tk{font-size:32px}.v2sl3 .v2slh .kp{gap:28px;flex-wrap:wrap}.v2sl3 .v2slh .kp div{text-align:left}.v2sl3 .v2slh .kp b{font-size:30px}
+.v2sl3 .tb{padding:6px 30px 18px}
+.v2sl3 .tb .tr{display:grid;grid-template-columns:60px 1fr 90px 90px 90px;align-items:baseline;padding:10px 0;border-bottom:1px solid var(--rule);font-size:16px}
+.v2sl3 .tb .th{font-size:12px;color:var(--sub);padding:6px 0}
+.v2sl3 .tb .no{font-family:var(--num);font-size:15px;font-weight:700;color:var(--sl)}.v2sl3 .tb .n{color:var(--sub)}.v2sl3 .tb .tr.done{opacity:.55}.v2sl3 .tb .tr.run .nm{color:var(--sl);font-weight:700}
+.v2sl3 .tb small{display:block;font-size:12px;color:var(--sub)}
+.v2sl3 .r{border-left:1px solid var(--rule);padding:24px 22px;display:flex;flex-direction:column;min-height:0}
+.v2sl3 .r .tot{font-size:56px;font-weight:500;line-height:1.1}.v2sl3 .r .tot small{font-size:18px;font-family:var(--jp);color:var(--sub);margin-left:4px}
+.v2sl3 .r .v2wkc{padding:0 0 4px;gap:6px;margin-top:16px;border-bottom:1px solid var(--rule);min-height:0}
+.v2sl3 .r .v2wkc button{gap:4px}.v2sl3 .r .v2wkc i{width:70%}.v2sl3 .r .v2wkc b{font-size:13px;color:var(--sub);font-weight:400}.v2sl3 .r .v2wkc span{font-size:12px}
+.v2sl3 .r .ft{display:flex;justify-content:space-between;margin-top:16px;font-size:13px;color:var(--sub)}.v2sl3 .r .ft b{color:var(--ink);font-weight:500}
+/* 全画面 3j 記憶回路 / 3l タイマー / 3m 次の予定まで */
+.v2kst .tot{font-size:110px}
+.v2kp{display:flex;gap:6px;flex:none}.v2kp i{flex:1;height:6px;background:var(--track)}.v2kp i.f{background:var(--grn)}
+.v2kc .ct{position:absolute;right:20px;top:18px;font-size:12px;color:var(--sub)}
+.v2kc .w{font-size:clamp(60px,10vw,120px);font-weight:500}
+.v2ring{width:min(540px,60vh,100%)}.v2ring .bg,.v2ring .fg{stroke-width:14}
+.v2ring .in b{font-size:170px;width:82%;text-align:center;white-space:nowrap}
+.v2snm .bigc{font-size:290px;align-self:stretch;text-align:center;white-space:nowrap;padding:0 24px}
 </style>
 </head>
 <body>
@@ -981,7 +1004,7 @@ body.night .rm .rb{top:31px;height:6px;border-radius:3px}
 
 <script>
 'use strict';
-const APP_VERSION = '2.19.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.20.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -2817,7 +2840,7 @@ function fv2Count() {
 function fv2Study() {
   const today = sod(now()), sel = fs.day ? parseYmd(fs.day) : today, ds = ymd(sel), isT = ds === ymd(today), d = slDay(ds);
   const sc = isT ? slSchedule() : null, base = sel.getTime();
-  let head = '', route = '';
+  let head = '', route = '', table = '';
   if (!d || !d.tasks.length) head = `<p class="empty">${isT ? '今日のダイヤはまだありません。「StudyLine を開く」から作るとここに出ます。' : 'この日の記録はありません。'}</p>`;
   else {
     d._ds = ds;
@@ -2831,13 +2854,14 @@ function fv2Study() {
     let cursor = sc ? sc.rows[0].s : (rows.find(r => r.s != null) || { s: 0 }).s;
     const segs = rows.map((r, i) => { const s0 = r.s != null ? r.s : cursor, e0 = r.e != null ? r.e : Math.max(s0 + slDur(r.t), sc && r.st === 'run' ? sc.nm : 0); cursor = e0; return { k: 'cls', a: s0, b: Math.max(e0, s0 + 1), n: i + 1, name: r.t.name, st: r.st === 'run' ? 'cur' : r.st }; });
     const t0 = Math.min(...segs.map(x => x.a)), t1 = Math.max(...segs.map(x => x.b));
-    route = `<div class="v2routew"><div class="rmw">${routeMap(segs, { t0, t1, now: isT && sc ? sc.nm : null, w: 640, gaps: false, c: 'var(--sl)', ticks: [t0, t1] })}</div></div>`;
+    route = `<div class="v2routew"><div class="rmw">${routeMap(segs, { t0, t1, now: isT && sc ? sc.nm : null, w: 540, gaps: false, c: 'var(--sl)', ticks: [t0, t1] })}</div></div>`;
+    table = `<div class="tb"><div class="tr th"><span>駅</span><span>内容</span><span>発</span><span>着</span><span>時間</span></div>${rows.map((r, i) => `<div class="tr ${r.st}"><span class="no">SL${pad(i + 1)}</span><span class="nm">${esc(r.t.name)}${r.t.memo ? `<small>${esc(r.t.memo)}</small>` : ''}${r.t.pomo ? ' 🍅' : ''}</span><span class="n">${fmtDay(segs[i].a)}</span><span class="n">${r.st === 'run' ? '運行中' : fmtDay(segs[i].b)}</span><span class="n">${slDur(r.t)}分</span></div>`).join('')}</div>`;
   }
   let mx = 60; const wk = [];
   for (let i = 6; i >= 0; i--) { const x = addDays(today, -i), dd = slDay(ymd(x)); if (dd) dd._ds = ymd(x); const v = slStudied(dd); wk.push([x, v]); mx = Math.max(mx, v); }
   const bars = wk.map(([x, v]) => `<button class="${ymd(x) === ds ? 'on' : ''}" data-fa="day" data-v="${ymd(x)}"><b class="n">${v >= 1 ? (v / 60).toFixed(1) + 'h' : ''}</b><i style="height:${(v / mx * 100).toFixed(0)}%"></i><span>${ymd(x) === ymd(today) ? '今日' : md(x)}</span></button>`).join('');
-  return `${v2bar(`<button data-fa="sday" data-v="-1" class="v2btn">‹</button><b>${mdw(sel)}${isT ? ' 今日' : ''}</b><button data-fa="sday" data-v="1" class="v2btn" ${isT ? 'disabled' : ''}>›</button><button data-fa="today" class="v2btn">今日</button><span class="fvnote">下の棒を押すとその日を見られます</span><button class="v2btn openapp" data-app="studyline">StudyLine を開く</button>`)}
-    <div class="v2sl">${head}${route}<div class="lab" style="padding:0 30px 6px">この7日の勉強時間</div><div class="v2wkc">${bars}</div></div>`;
+  return `${v2bar(`<button data-fa="sday" data-v="-1" class="v2btn">‹</button><b>${mdw(sel)}${isT ? ' 今日' : ''}</b><button data-fa="sday" data-v="1" class="v2btn" ${isT ? 'disabled' : ''}>›</button><button data-fa="today" class="v2btn">今日</button><span class="fvnote">右の棒を押すとその日を見られます</span><button class="v2btn openapp" data-app="studyline">StudyLine を開く</button>`)}
+    <div class="v2sl3"><div class="l">${head}${route}${table}</div><div class="r"><div class="lab">7日間の勉強時間</div><div class="tot n">${(wk.reduce((a, [, v]) => a + v, 0) / 60).toFixed(1)}<small>時間</small></div><div class="v2wkc">${bars}</div><div class="ft"><span>昨日 <b>${hm(wk[5][1] * 60000)}</b></span><span>1日平均 <b>${hm(wk.reduce((a, [, v]) => a + v, 0) / 7 * 60000)}</b></span></div></div></div>`;
 }
 // 受験の語句: 表と裏を左右に。覚えた語句は出にくく
 let termMem = store.get('termMem') || [], termHist = [];
@@ -2866,13 +2890,14 @@ function fv2Kioku() {
   if (!kioku.cur && list.length) { kioku.cur = list[0]; kioku.shown = false; }
   const doneToday = id => Object.values(vDb(id)).filter(r => r && r.last === t).length;
   const decks = VOCAB.map(v => { const due = list.filter(x => x.sub === v.id).length, dn = doneToday(v.id); return `<div class="v2dk"><b>${v.name}</b><span class="n">${due}</span><div class="pb"><i style="width:${due + dn ? (dn / (due + dn) * 100).toFixed(0) : 100}%"></i></div><small>今日 ${dn}語 済</small></div>`; }).join('');
+  const dnAll = VOCAB.reduce((a, v) => a + doneToday(v.id), 0), totAll = dnAll + list.length, kfill = totAll ? Math.round(dnAll / totAll * 12) : 12;
   const left = `<div class="v2kst"><div class="lab">今日の復習 のこり</div><b class="tot n">${list.length}</b>${decks}<button class="v2btn openapp" data-app="kioku" style="margin-top:auto">記憶回路を開く</button></div>`;
   if (!list.length) return `<div class="v2split kk">${left}<div class="v2kq"><div class="v2kc"><b class="a">今日の復習はおわりです</b><span class="ex">新しい単語は記憶回路で覚えましょう。</span></div></div></div>`;
   const c = kioku.cur, w = c.w, isK = c.sub === 'kanji', kana = isK && /^[゠-ヿ・ー]+$/.test(w.english);
   const tag = `${VOCAB.find(v => v.id === c.sub).name}${isK ? (kana ? ' ・ 書き' : ' ・ 読み') : ''}${isWeak(c.r) ? ' ・ 苦手' : ''}`;
   const nextLab = g => { const iv = vSchedule(c.r, g, t).ivl; return iv === 0 ? '今日もう一度' : iv === 1 ? '明日' : iv + '日後'; };
   const gr = [['✕ 全然', '#ff5b3a'], ['△ 惜しい', '#e8c65a'], ['○ 正解', '#79c28a'], ['◎ 余裕', '#6fa8dc']];
-  return `<div class="v2split kk">${left}<div class="v2kq"><button class="v2kc" data-fa="kshow"><span class="tg">${esc(tag)}</span><span class="w ${isK ? 'jp' : ''}">${esc(w.english)}</span>${kioku.shown ? `<span class="a">${esc(w.japanese)}</span>${w.definition && !isK ? `<span class="ex">${esc(w.definition)}</span>` : ''}` : '<span class="ex">押すと答え</span>'}</button>
+  return `<div class="v2split kk">${left}<div class="v2kq"><div class="v2kp">${[...Array(12)].map((_, i) => `<i class="${i < kfill ? 'f' : ''}"></i>`).join('')}</div><button class="v2kc" data-fa="kshow"><span class="tg">${esc(tag)}</span><span class="ct n">${dnAll + 1} / ${totAll}</span><span class="w ${isK ? 'jp' : ''}">${esc(w.english)}</span>${kioku.shown ? `<span class="a">${esc(w.japanese)}</span>${w.definition && !isK ? `<span class="ex">${esc(w.definition)}</span>` : ''}` : '<span class="ex">押すと答え</span>'}</button>
     <div class="v2gr">${gr.map(([l, col], g) => `<button data-fa="kg" data-v="${g}" style="--c:${col}" ${kioku.shown ? '' : 'disabled'}>${l}<small>${nextLab(g)}</small></button>`).join('')}</div></div></div>`;
 }
 // 最近の地震: 色つきの震度で一覧、右に地図とくわしく
@@ -2915,7 +2940,7 @@ let tmrHist = store.get('tmrHist') || [];
 function fv2Timer() {
   const left = tmr ? (tmr.paused ?? tmr.end - nowMs()) : 0, frac = tmr ? Math.max(0, Math.min(1, left / tmr.total)) : 0, C = 2 * Math.PI * 210;
   const ring = `<div class="v2ring"><svg viewBox="0 0 470 470"><circle cx="235" cy="235" r="210" class="bg"/><circle id="v2ringC" cx="235" cy="235" r="210" class="fg" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - frac)).toFixed(1)}" transform="rotate(-90 235 235)"/></svg>
-    <div class="in">${tmr ? `<span>${esc(tmr.label)} のタイマー</span><b class="n" ${tmr.paused == null ? `data-to="${tmr.end}"` : ''}>${fmtLeft(left)}</b><span>${tmr.paused != null ? '一時停止中' : tmS(tmr.end).slice(0, -3) + ' に終わります'}</span>` : '<span>タイマーは止まっています</span><b class="n">0:00</b><span>右から始めてください</span>'}</div></div>`;
+    <div class="in">${tmr ? `<span>${esc(tmr.label)} のタイマー</span><b class="n" data-fit="170" ${tmr.paused == null ? `data-to="${tmr.end}"` : ''}>${fmtLeft(left)}</b><span>${tmr.paused != null ? '一時停止中' : tmS(tmr.end).slice(0, -3) + ' に終わります'}</span>` : '<span>タイマーは止まっています</span><b class="n">0:00</b><span>右から始めてください</span>'}</div></div>`;
   const ctl = tmr ? `<div class="v2bt3"><button data-tm="pause">${tmr.paused != null ? '再開' : '一時停止'}</button><button data-tm="add">+1分</button><button data-tm="add5">+5分</button><button data-tm="stop" class="ss">やめる</button></div>` : '';
   return `<div class="v2split tmv"><div class="v2tmc">${ring}${ctl}</div><div class="v2tms tmr"><div class="lab">すぐ始める</div><div class="v2pre">${[1, 3, 5, 10, 15, 25, 30, 45, 60].map(m => `<button data-tm="start" data-v="${m}" class="n">${m}<small>分</small></button>`).join('')}</div>
     <div class="lab" style="margin-top:10px">分・時刻で</div><div class="v2inp"><input type="number" min="1" max="999" inputmode="numeric" placeholder="分を入れる" id="tmMin" aria-label="分"><button data-tm="min">分で開始</button></div><div class="v2inp"><input type="time" id="tmAt" aria-label="時刻"><button data-tm="at">この時刻まで</button></div>
@@ -2926,7 +2951,7 @@ function fv2Soon() {
   const l = nextTimed();
   if (!l.length) return v2pad(`<p class="empty">${cfg.gasUrl ? (events ? 'この先、時間の決まった予定はありません。' : '予定を読み込んでいます…') : '「設定」→「連携」で Googleカレンダーをつなぐと出ます。'}</p>`);
   const e = l[0], st = new Date(e.start).getTime(), lead = Math.min(...(cfg.soonLeads && cfg.soonLeads.length ? cfg.soonLeads : [5]));
-  return `<div class="v2sn"><div class="v2snm"><div class="lab yel">つぎの予定</div><div class="tt3">${esc(e.title)}</div><div class="tm n">${esc(evWhen(e))}</div><div class="bigc n" data-to="${st}">${fmtLeft(st - nowMs())}</div>
+  return `<div class="v2sn"><div class="v2snm"><div class="lab yel">つぎの予定</div><div class="tt3">${esc(e.title)}</div><div class="tm n">${esc(evWhen(e))}</div><div class="bigc n" data-fit="290" data-to="${st}">${fmtLeft(st - nowMs())}</div>
     <div class="bar3"><i id="v2snbar" data-st="${st}" style="width:${Math.max(0, Math.min(100, 100 * (1 - (st - nowMs()) / 3600e3))).toFixed(1)}%"></i></div><div class="sub">${cfg.soonOn ? `${(cfg.soonLeads || []).map(leadLabel).join('・')}前に全画面でお知らせします` : '予定のお知らせはオフです'} ・ 線は残り1時間から</div></div>
     <div class="v2snl">${l.slice(1, 4).map(x => { const s2 = new Date(x.start).getTime(); return `<div><span class="sub">${dayLabel(now(), new Date(x.start))}</span><em class="n" data-to="${s2}" data-short="1">${fmtLeft(s2 - nowMs(), true)}</em><b>${esc(x.title)}</b><span class="sub n">${esc(evWhen(x).replace(/^\S+ /, ''))}</span></div>`; }).join('') || '<div><span class="sub">そのあとの予定はありません</span></div>'}</div></div>`;
 }
