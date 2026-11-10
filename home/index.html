@@ -815,7 +815,7 @@ body.night .rm .rb{top:31px;height:6px;border-radius:3px}
 .flf.fa{transform-origin:50% 100%;z-index:2;display:none}.flf.fb{transform-origin:50% 0;z-index:2;display:none}
 .fli{position:absolute;left:0;right:0;white-space:nowrap;overflow:hidden}
 .fln{position:absolute;left:0;right:0;top:50%;height:1px;margin-top:-.5px;background:#0b0b0a;z-index:3}
-.rv-sec{align-self:flex-start;margin:14px 0 0 10px;font-size:44px;font-weight:400;color:var(--sub);width:1.15em}
+.rv-secs{align-self:flex-start;margin:16px 0 0 8px;display:flex;gap:3px}.rv-secs[hidden]{display:none}
 .fcs{display:flex;flex-direction:column;gap:22px;padding:0 4px}.fcs i{width:12px;height:12px;background:#ff5b3a;animation:plBlink 1s steps(1) infinite}
 @keyframes plBlink{50%{opacity:.25}}
 .rv-door{width:236px;flex:none;background:#0f0f0e;border:1px solid #2b2a28;color:#ece8df;cursor:pointer}
@@ -1062,7 +1062,7 @@ body.night .rm .rb{top:31px;height:6px;border-radius:3px}
 
 <script>
 'use strict';
-const APP_VERSION = '2.21.1'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.22.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1344,7 +1344,6 @@ function renderRail(st, d) {
   const fresh = Date.now() - railLast > 3000; railLast = Date.now(); flapQuiet = st.mode === 'class'; railInit();
   const flap = effAnim() === 'flap';
   railClock(d, flap && !fresh);
-  { const rs = $('rvSec'); rs.hidden = !cfg.showSec; rs.textContent = pad(d.getSeconds()); }
   // 上:日付・ドア上表示風タイマー
   setHtml($('rvDt'), `<span class="dc">${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][d.getDay()]}</span><span>${WD[d.getDay()]}曜日${HOLIDAYS[ymd(d)] ? ' ・ ' + esc(HOLIDAYS[ymd(d)]) : ''}</span>`);
   setHtml($('rvDoor'), cfg.pomoOn ? `<div class="rv-door" data-pm="toggle"><div class="h">自習タイマー</div><div class="b"><div class="m" id="rvPS"></div><div class="t n" id="rvPT"></div><div class="cells" id="rvPC" style="grid-template-columns:repeat(${P.n},1fr)">${'<i></i>'.repeat(P.n)}</div></div></div>` : '');
@@ -1440,7 +1439,7 @@ class FlapUnit {
     ];
     this.timer = setTimeout(() => {
       this.anims.forEach(a => a.cancel()); this.anims = []; this.fa.style.display = this.fb.style.display = 'none';
-      this.idx = ni; this.paint(this.bot, nx); flapClick();
+      this.idx = ni; this.paint(this.bot, nx); if (!this.o.quiet) flapClick();
       this.next();
     }, D);
   }
@@ -1461,7 +1460,9 @@ function railInit() {
   const c = { h1: mk(clk, ['', '1', '2'], co), h2: mk(clk, D10, co) };
   clk.insertAdjacentHTML('beforeend', '<span class="fcs"><i></i><i></i></span>');
   c.m1 = mk(clk, MT, co); c.m2 = mk(clk, D10, co);
-  clk.insertAdjacentHTML('beforeend', '<span class="rv-sec n" id="rvSec"></span>'); // 秒はフラップにせず、数字だけ(設定の「秒を表示」に合わせる)
+  clk.insertAdjacentHTML('beforeend', '<span class="rv-secs" id="rvSecs"></span>'); // 秒も小さなフラップ(設定の「秒を表示」に合わせる)。毎秒めくれるので音は鳴らさない
+  const so = { w: 32, hh: 58, fs: 50, ff: NUM, fw: 500, D: 200, rad: 4, quiet: true };
+  c.s1 = mk($('rvSecs'), MT, so); c.s2 = mk($('rvSecs'), D10, so);
   // 発車標のドラム:先頭に空白の板。行先・教室の板は、いまの時間割から集める(足りなければあとから後ろに足す)
   const subs = [], rooms = [];
   for (const arr of Object.values(cfg.tt || {})) for (const x of arr || []) if (x) { if (x.s && !subs.includes(x.s)) subs.push(x.s); if (x.r && !rooms.includes(x.r)) rooms.push(x.r); }
@@ -1484,6 +1485,8 @@ function railClock(d, anim) {
   const h = d.getHours(), m = d.getMinutes(), c = railUnits.c;
   c.h1.go(h < 10 ? '' : String(Math.floor(h / 10)), 0, anim); c.h2.go(String(h % 10), 0, anim);
   c.m1.go(String(Math.floor(m / 10)), 0, anim); c.m2.go(String(m % 10), 0, anim);
+  $('rvSecs').hidden = !cfg.showSec;
+  if (cfg.showSec) { const sc = d.getSeconds(); c.s1.go(String(Math.floor(sc / 10)), 0, anim); c.s2.go(String(sc % 10), 0, anim); }
 }
 // 発車標:先発 → 次発 → 次々発、各段は 時刻(4桁同時)→ 種別+行先 → 教室 の順。前のグループが止まってから 250ms あけて次が回る
 function railBoard(dep, anim) {
