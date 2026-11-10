@@ -809,9 +809,13 @@ body.night .rm .rb{top:31px;height:6px;border-radius:3px}
 .rv-dt{display:flex;align-items:center;gap:10px;color:var(--sub);font-size:15px}
 .rv-dt .dc{font-family:var(--num);font-size:13px;font-weight:700;letter-spacing:.06em;background:var(--ink);color:var(--bg);padding:2px 8px}
 .rv-clock{margin-top:14px;display:flex;align-items:center;gap:6px}
-.fu{width:84px;height:136px;position:relative;border-radius:5px;background:linear-gradient(#22211e 50%,#1c1b19 50%);color:#ece8df;font-family:"Barlow Condensed","Helvetica Neue",Arial,sans-serif;font-size:120px;font-weight:500;line-height:136px;text-align:center;overflow:hidden}
-.fu::after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;margin-top:-.5px;background:#0b0b0a}
-.fcol{font-family:"Barlow Condensed",sans-serif;font-size:96px;font-weight:500;color:#ff5b3a;line-height:1;margin:0 2px;position:relative;top:-6px}
+.fl{position:relative;flex:none}
+.flf{position:absolute;left:0;right:0;overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.flf.fa{transform-origin:50% 100%;z-index:2;display:none}.flf.fb{transform-origin:50% 0;z-index:2;display:none}
+.fli{position:absolute;left:0;right:0;white-space:nowrap;overflow:hidden}
+.fln{position:absolute;left:0;right:0;top:50%;height:1px;margin-top:-.5px;background:#0b0b0a;z-index:3}
+.fcs{display:flex;flex-direction:column;gap:22px;padding:0 4px}.fcs i{width:12px;height:12px;background:#ff5b3a;animation:plBlink 1s steps(1) infinite}
+@keyframes plBlink{50%{opacity:.25}}
 .rv-door{width:236px;flex:none;background:#0f0f0e;border:1px solid #2b2a28;color:#ece8df;cursor:pointer}
 .rv-door .h{background:#f5b301;color:#141413;font-size:12.5px;font-weight:700;padding:5px 12px}
 .rv-door .b{padding:12px 14px 14px}
@@ -834,12 +838,12 @@ body.night .rm .rb{top:31px;height:6px;border-radius:3px}
 .rv-route{flex:1;min-height:0;padding:18px 28px 0}
 .rv-route .rmw{margin-top:0}
 #rvBoard{background:#0f0f0e;border-bottom:1px solid #2b2a28;color:#ece8df;flex:none}
-.rv-bh,.rv-row{display:grid;grid-template-columns:54px 54px 62px 1fr 64px;align-items:center;column-gap:6px;padding:0 20px}
+.rv-bh,.rv-row{display:grid;grid-template-columns:38px 46px 64px 1fr 54px;align-items:center;column-gap:3px;padding:0 14px 0 16px}
 .rv-bh{font-size:11.5px;color:#8d8a83;padding-top:10px;padding-bottom:6px}
-.rv-row{height:46px;border-top:1px solid #1c1b19}
-.rv-row .lb{font-size:13px;font-weight:700;color:#8d8a83}.rv-row .kd{font-size:12px;color:#f5b301}
-.rv-row .tm{font-family:"Barlow Condensed",sans-serif;font-size:26px;color:#f5b301}.rv-row .ds{font-size:17px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.rv-row .rr{font-size:13px;color:#8d8a83}
+.rv-row{padding-top:6px;padding-bottom:6px;border-top:1px solid #2b2a28}
+.rv-row>div{min-width:0}.rv-row .tm{display:flex;align-items:center;gap:1px}
+.rv-note{padding:5px 20px 7px;border-top:1px solid #2b2a28;font-size:11px;color:#4a4844;min-height:25px}
+.rv-row .lb{font-size:11px;font-weight:700;color:#8d8a83;white-space:nowrap}#rvBoard .rv-row:nth-child(2) .lb{color:#f5b301}
 .rv-todo{padding:16px 22px;border-bottom:1px solid var(--rule);flex:none;max-height:300px;overflow:hidden}
 .rv-todo li{padding:7px 0}
 .rv-sl{padding:16px 22px;flex:1;min-height:0;overflow:hidden}
@@ -880,7 +884,7 @@ body.night .rm .rb{top:31px;height:6px;border-radius:3px}
     <div class="col" id="colR"></div>
   </div>
   <div id="nightView"><div class="nv-main"><div id="nvTop"></div><div class="nv-sl" id="nvSL"></div></div><div class="nv-side" id="nvSide"></div></div>
-  <div id="railView"><div class="rv-l"><div id="rvTop"></div><div class="rv-sign" id="rvSign"></div><div class="rv-route" id="rvRoute"></div></div><div class="rv-r"><div id="rvBoard"></div><div class="rv-todo todo" id="rvTodo"></div><div class="rv-sl" id="rvSL"></div></div></div>
+  <div id="railView"><div class="rv-l"><div id="rvTop"><div class="c1" data-open="clock"><div class="rv-dt" id="rvDt"></div><div class="rv-clock" id="rvClk"></div></div><div id="rvDoor"></div></div><div class="rv-sign" id="rvSign"></div><div class="rv-route" id="rvRoute"></div></div><div class="rv-r"><div id="rvBoard"></div><div class="rv-todo todo" id="rvTodo"></div><div class="rv-sl" id="rvSL"></div></div></div>
   <div id="pool" hidden>
     <section class="tile tt" id="ttTile"></section>
     <section class="tile todo" id="todoTile"></section>
@@ -915,7 +919,7 @@ body.night .rm .rb{top:31px;height:6px;border-radius:3px}
 
 <script>
 'use strict';
-const APP_VERSION = '2.16.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.17.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1178,12 +1182,12 @@ function renderNight(st, d) {
 function railDepart(d) {
   const out = [], m = minOfDay(d);
   const add = (day, later) => {
-    const ps = periodsMin(day), post = postMin(day), pre = later ? dayLabel(d, day) + ' ' : '';
+    const ps = periodsMin(day), post = postMin(day);
     ps.forEach(([a], i) => {
-      if (i > 0 && a - ps[i - 1][1] >= 30 && (later || ps[i - 1][1] > m)) out.push({ t: ps[i - 1][1], kind: '休み', dest: pre + '昼休み', room: '' });
-      if (later || a > m) { const sj = subjOf(day, i) || `${i + 1}限`; out.push({ t: a, kind: /自習/.test(sj) ? '自習' : '授業', dest: pre + sj, room: roomOf(day, i) }); }
+      if (i > 0 && a - ps[i - 1][1] >= 30 && (later || ps[i - 1][1] > m)) out.push({ t: ps[i - 1][1], kind: '休み', dest: '昼休み', room: '', later });
+      if (later || a > m) { const sj = subjOf(day, i) || `${i + 1}限`; out.push({ t: a, kind: /自習/.test(sj) ? '自習' : '授業', dest: sj, room: roomOf(day, i), later }); }
     });
-    if (post && (later || post[1] > m)) out.push({ t: post[1], kind: '放課後', dest: pre + post[0], room: '' });
+    if (post && (later || post[1] > m)) out.push({ t: post[1], kind: '放課後', dest: post[0], room: '', later });
   };
   if (isSchoolDay(d)) add(d, false);
   if (out.length < 3) add(nextSchoolDay(d), true);
@@ -1193,10 +1197,13 @@ function railDepart(d) {
 function renderRail(st, d) {
   const P = pmInfo(), sc = slSchedule(), m = minOfDay(d), h = d.getHours(), mi = d.getMinutes();
   const sj = i => subjOf(d, i) || `${i + 1}限`;
-  // 上:日付・時計(あとで反転フラップになる)・ドア上表示風タイマー
-  const unit = (id, v) => `<span class="fu" data-u="${id}">${v}</span>`;
-  const door = cfg.pomoOn ? `<div class="rv-door" data-pm="toggle"><div class="h">自習タイマー</div><div class="b"><div class="m" id="rvPS"></div><div class="t n" id="rvPT"></div><div class="cells" id="rvPC" style="grid-template-columns:repeat(${P.n},1fr)">${'<i></i>'.repeat(P.n)}</div></div></div>` : '';
-  setHtml($('rvTop'), `<div class="c1" data-open="clock"><div class="rv-dt"><span class="dc">${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][d.getDay()]}</span><span>${WD[d.getDay()]}曜日${HOLIDAYS[ymd(d)] ? ' ・ ' + esc(HOLIDAYS[ymd(d)]) : ''}</span></div><div class="rv-clock">${unit('h10', h < 10 ? '' : Math.floor(h / 10))}${unit('h1', h % 10)}<span class="fcol">:</span>${unit('m10', Math.floor(mi / 10))}${unit('m1', mi % 10)}</div></div>${door}`);
+  // 時計・発車標のフラップ(見ていなかった間にたまった分は回さず、いまの表示に合わせる)
+  const fresh = Date.now() - railLast > 3000; railLast = Date.now(); flapQuiet = st.mode === 'class'; railInit();
+  const flap = effAnim() === 'flap';
+  railClock(d, flap && !fresh);
+  // 上:日付・ドア上表示風タイマー
+  setHtml($('rvDt'), `<span class="dc">${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][d.getDay()]}</span><span>${WD[d.getDay()]}曜日${HOLIDAYS[ymd(d)] ? ' ・ ' + esc(HOLIDAYS[ymd(d)]) : ''}</span>`);
+  setHtml($('rvDoor'), cfg.pomoOn ? `<div class="rv-door" data-pm="toggle"><div class="h">自習タイマー</div><div class="b"><div class="m" id="rvPS"></div><div class="t n" id="rvPT"></div><div class="cells" id="rvPC" style="grid-template-columns:repeat(${P.n},1fr)">${'<i></i>'.repeat(P.n)}</div></div></div>` : '');
   if (cfg.pomoOn) { $('rvPT').textContent = P.txt; $('rvPS').textContent = pmState(P); [...$('rvPC').children].forEach((c, i) => c.classList.toggle('f', i < P.done)); }
   // 駅名標:いまの授業
   let no = '--', k = '', nm = '', tm = '', lf = '', l = '', c = '', r = '';
@@ -1214,9 +1221,10 @@ function renderRail(st, d) {
   else if (st.mode === 'before') { nm = `${st.label}まで`; lf = `あと <span>${Math.ceil(st.left)}</span> 分`; r = `1限 ${esc(sj(0))} →`; }
   else nm = st.mode === 'after' ? '今日の授業はおわり' : '今日はお休み';
   setHtml($('rvSign'), `<div class="a"><span class="no"><b>TT</b><b>${no}</b></span><div class="tx"><div class="k">${k}</div><div class="nm">${esc(nm)}</div></div><div class="rt"><div class="tm">${tm}</div><div class="lf">${lf}</div></div></div><div class="k1"></div><div class="k2"><span>${l}</span><span class="md">${c}</span><span>${r}</span></div>`);
-  // 右:発車標(あとで反転フラップになる)
-  const dep = railDepart(d), LB = ['先発', '次発', '次々発'];
-  setHtml($('rvBoard'), `<div class="rv-bh"><span></span><span>種別</span><span>時刻</span><span>行先</span><span>教室</span></div>${LB.map((lb, i) => { const x = dep[i]; return `<div class="rv-row"><span class="lb">${lb}</span>${x ? `<span class="kd">${x.kind}</span><span class="tm n">${fmtMin(x.t)}</span><span class="ds">${esc(x.dest)}</span><span class="rr">${esc(x.room)}</span>` : '<span></span><span></span><span></span><span></span>'}</div>`; }).join('')}`);
+  // 右:発車標
+  const dep = railDepart(d);
+  railBoard(dep, flap && cfg.flapBoard && !fresh);
+  $('rvNote').textContent = dep.some(x => x.later) ? '明日の予定をふくみます' : '';
   // やること(今のタイルと同じ内容)
   setHtml($('rvTodo'), $('todoTile').innerHTML);
   // StudyLine の路線記号
@@ -1230,6 +1238,123 @@ function renderRail(st, d) {
   }
   setHtml($('rvSL'), `<div data-open="studyline">${sl}</div>`);
 }
+/* ================= 反転フラップ(パタパタ) =================
+   1ユニット = 1つの独立したドラム。決まった順の板の並びを、一方向にだけ1枚ずつ回して目標の板で止まる。
+   1枚の動き:上半分は新しい板がすぐ見え、下半分は前の板が残る → 前の板の上半分が奥へ倒れ(前半 D/2)、
+   新しい板の下半分が手前に倒れてくる(後半 D/2)。表裏1枚を180°回す方式は使わない(上半分・下半分を別の要素で倒す) */
+const FLAPS = [];
+let flapQuiet = false, flapClickAt = 0;
+function flapClick() { // 1枚倒れるごとの「カタッ」(設定がオフ・授業中は鳴らさない)
+  if (!cfg.flapSound || flapQuiet || !actx || actx.state !== 'running') return;
+  const t = performance.now(); if (t - flapClickAt < 35) return; flapClickAt = t;
+  tone(1500 + Math.random() * 500, 0, .025, .07, 'square');
+}
+class FlapUnit {
+  constructor(drum, o) {
+    const O = this.o = Object.assign({ D: 200, rad: 4, bgTop: '#22211e', bgBot: '#1c1b19', color: '#ece8df', align: 'center', px: 0, fw: 500, w: 60, hh: 100, fs: 60 }, o);
+    this.drum = drum; this.idx = 0; this.tgt = 0; this.state = 'idle'; this.timer = 0; this.anims = [];
+    const root = this.root = document.createElement('div');
+    root.className = 'fl';
+    root.style.cssText = `width:${typeof O.w === 'number' ? O.w + 'px' : O.w};height:${O.hh}px;perspective:${O.hh * 5}px;font-family:${O.ff};font-size:${O.fs}px;font-weight:${O.fw}`;
+    const face = top => {
+      const b = document.createElement('div'), i = document.createElement('div');
+      b.className = 'flf'; b.style.cssText = `height:50%;top:${top ? 0 : '50%'};background:${top ? O.bgTop : O.bgBot};border-radius:${top ? `${O.rad}px ${O.rad}px 0 0` : `0 0 ${O.rad}px ${O.rad}px`}`;
+      i.className = 'fli'; i.style.cssText = `height:${O.hh}px;top:${top ? 0 : -O.hh / 2}px;line-height:${O.hh}px;text-align:${O.align};padding:0 ${O.px}px`;
+      b.appendChild(i); b.fi = i; return b;
+    };
+    this.top = face(true); this.bot = face(false); this.fa = face(true); this.fb = face(false);
+    this.fa.classList.add('fa'); this.fb.classList.add('fb');
+    const ln = document.createElement('div'); ln.className = 'fln';
+    root.append(this.top, this.bot, this.fa, this.fb, ln);
+    this.show(0); FLAPS.push(this);
+  }
+  item(i) { const x = this.drum[i]; return typeof x === 'object' ? x : { t: x }; }
+  ix(v) { const i = this.drum.findIndex(x => (typeof x === 'object' ? x.t : x) === v); return i < 0 ? 0 : i; }
+  dist(v) { const n = this.drum.length; return (this.ix(v) - this.idx + n) % n; } // あと何枚めくるか(一方向)
+  paint(f, it) { f.fi.textContent = it.t; f.fi.style.color = it.c || this.o.color; }
+  cancel() { clearTimeout(this.timer); this.timer = 0; this.anims.forEach(a => a.cancel()); this.anims = []; this.fa.style.display = this.fb.style.display = 'none'; this.state = 'idle'; }
+  show(i) { this.cancel(); this.idx = this.tgt = i; const it = this.item(i); this.paint(this.top, it); this.paint(this.bot, it); }
+  snap() { this.show(this.tgt); } // アニメーションなしで、いまの表示に合わせる
+  go(v, wait, anim) {
+    const ti = this.ix(v);
+    if (anim === false || document.hidden || !this.fa.animate) { this.show(ti); return; }
+    if (ti === this.tgt && (this.state !== 'idle' || ti === this.idx)) return; // もうそこへ向かっている
+    this.tgt = ti;
+    if (this.state === 'run') return; // 回っている途中は、目標だけ変えてそのまま続ける
+    clearTimeout(this.timer); this.state = 'wait';
+    this.timer = setTimeout(() => this.next(), wait || 0);
+  }
+  next() {
+    if (this.idx === this.tgt) { this.state = 'idle'; return; }
+    this.state = 'run';
+    const D = this.o.D, ni = (this.idx + 1) % this.drum.length, pv = this.item(this.idx), nx = this.item(ni);
+    this.paint(this.top, nx); this.paint(this.bot, pv); this.paint(this.fa, pv); this.paint(this.fb, nx);
+    this.fa.style.display = this.fb.style.display = 'block';
+    this.anims = [
+      this.fa.animate([{ transform: 'rotateX(0deg)' }, { transform: 'rotateX(-90deg)' }], { duration: D / 2, easing: 'cubic-bezier(.55,0,1,.6)', fill: 'both' }), // 重力で加速して倒れる
+      this.fb.animate([{ transform: 'rotateX(90deg)' }, { transform: 'rotateX(0deg)' }], { duration: D / 2, delay: D / 2, easing: 'cubic-bezier(.2,.6,.4,1)', fill: 'both' })
+    ];
+    this.timer = setTimeout(() => {
+      this.anims.forEach(a => a.cancel()); this.anims = []; this.fa.style.display = this.fb.style.display = 'none';
+      this.idx = ni; this.paint(this.bot, nx); flapClick();
+      this.next();
+    }, D);
+  }
+}
+// タブが裏に回って戻ったとき、溜まった分を全部回さずに、いまの表示へ合わせる
+document.addEventListener('visibilitychange', () => { if (!document.hidden) FLAPS.forEach(u => u.snap()); });
+const effAnim = () => cfg.anim === 'auto' ? { std: 'push', night: 'blur', rail: 'flap' }[effMode()] : cfg.anim;
+
+// 鉄道モードの時計(時十・時一・分十・分一は別ユニット。「:」は固定)と発車標(先発・次発・次々発は固定の文字)
+let railUnits = null, railLast = 0, boardSig = '';
+const BOARD_D = 260, BOARD_GAP = 250;
+function railInit() {
+  if (railUnits) return;
+  const NUM = '"Barlow Condensed","Helvetica Neue",Arial,sans-serif', JPF = '"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",sans-serif';
+  const D10 = [...'0123456789'], MT = [...'012345'];
+  const mk = (host, drum, o) => { const u = new FlapUnit(drum, o); host.appendChild(u.root); return u; };
+  const clk = $('rvClk'), co = { w: 84, hh: 136, fs: 120, ff: NUM, fw: 500, D: 210, rad: 6 };
+  const c = { h1: mk(clk, ['', '1', '2'], co), h2: mk(clk, D10, co) };
+  clk.insertAdjacentHTML('beforeend', '<span class="fcs"><i></i><i></i></span>');
+  c.m1 = mk(clk, MT, co); c.m2 = mk(clk, D10, co);
+  // 発車標のドラム:先頭に空白の板。行先・教室の板は、いまの時間割から集める(足りなければあとから後ろに足す)
+  const subs = [], rooms = [];
+  for (const arr of Object.values(cfg.tt || {})) for (const x of arr || []) if (x) { if (x.s && !subs.includes(x.s)) subs.push(x.s); if (x.r && !rooms.includes(x.r)) rooms.push(x.r); }
+  const extra = ['昼休み']; for (const dc of Object.values(cfg.days || {})) { if (dc && dc.post && dc.post[0]) extra.push(dc.post[0]); for (const q of (dc && dc.pre) || []) if (q[0]) extra.push(q[0]); }
+  const KD = [{ t: '' }, { t: '授業' }, { t: '実験', c: '#79c28a' }, { t: '自習', c: '#6fa8dc' }, { t: '休み', c: '#e8c65a' }, { t: '行事', c: '#ff5b3a' }, { t: '放課後', c: '#6fa8dc' }];
+  const SD = ['', ...subs, ...extra.filter((x, i) => extra.indexOf(x) === i && !subs.includes(x))], RD = ['', ...rooms];
+  const BH = ['', '1', '2'], BD = ['', ...D10], BM = ['', ...MT];
+  const base = { hh: 34, rad: 2, D: BOARD_D, ff: JPF, fw: 700, fs: 15 }, dg = { ...base, w: 13, fs: 25, ff: NUM, fw: 500, color: '#f5b301', rad: 1 };
+  $('rvBoard').innerHTML = `<div class="rv-bh"><span></span><span>種別</span><span>時刻</span><span>行先</span><span>教室</span></div>` +
+    ['先発', '次発', '次々発'].map(lb => `<div class="rv-row"><span class="lb">${lb}</span><div class="k"></div><div class="tm"></div><div class="ds"></div><div class="rm2"></div></div>`).join('') + '<div class="rv-note" id="rvNote"></div>';
+  const rows = [...$('rvBoard').querySelectorAll('.rv-row')].map(row => {
+    const t = row.querySelector('.tm'), colon = '<span style="font-family:' + NUM + ';font-size:20px;color:#f5b301;width:8px;text-align:center">:</span>';
+    const a = mk(t, BH, dg), b = mk(t, BD, dg); t.insertAdjacentHTML('beforeend', colon); const cc = mk(t, BM, dg), d = mk(t, BD, dg);
+    return { k: mk(row.querySelector('.k'), KD, { ...base, w: 46, fs: 13 }), a, b, c: cc, d, s: mk(row.querySelector('.ds'), SD, { ...base, w: '100%', fs: 17, align: 'left', px: 6 }), r: mk(row.querySelector('.rm2'), RD, { ...base, w: 54, fs: 12, fw: 400, align: 'left', px: 4 }), SD, RD };
+  });
+  railUnits = { c, rows, SD, RD };
+}
+// 時計:分が変わるたびに、値が変わったユニットだけ回る(59→00 のときは分十も回る)
+function railClock(d, anim) {
+  const h = d.getHours(), m = d.getMinutes(), c = railUnits.c;
+  c.h1.go(h < 10 ? '' : String(Math.floor(h / 10)), 0, anim); c.h2.go(String(h % 10), 0, anim);
+  c.m1.go(String(Math.floor(m / 10)), 0, anim); c.m2.go(String(m % 10), 0, anim);
+}
+// 発車標:先発 → 次発 → 次々発、各段は 時刻(4桁同時)→ 種別+行先 → 教室 の順。前のグループが止まってから 250ms あけて次が回る
+function railBoard(dep, anim) {
+  const sig = JSON.stringify(dep); if (sig === boardSig) return; boardSig = sig;
+  const ens = (drum, v) => { if (v && !drum.some(x => (typeof x === 'object' ? x.t : x) === v)) drum.push(v); };
+  let T = 0;
+  const grp = (pairs) => { const n = Math.max(0, ...pairs.map(([u, v]) => u.dist(v))), w = T; if (n && anim) T += n * BOARD_D + BOARD_GAP; pairs.forEach(([u, v]) => u.go(v, w, anim)); };
+  railUnits.rows.forEach((U, r) => {
+    const f = dep[r] || { kind: '', t: null, dest: '', room: '' }; ens(U.SD, f.dest); ens(U.RD, f.room);
+    const h = f.t == null ? null : Math.floor(f.t / 60), m = f.t == null ? null : Math.round(f.t % 60);
+    grp([[U.a, h == null || h < 10 ? '' : String(Math.floor(h / 10))], [U.b, h == null ? '' : String(h % 10)], [U.c, m == null ? '' : String(Math.floor(m / 10))], [U.d, m == null ? '' : String(m % 10)]]);
+    grp([[U.k, f.kind], [U.s, f.dest]]);
+    grp([[U.r, f.room]]);
+  });
+}
+
 // 夜・鉄道の画面から、押したところを全画面で開く(button・チェック・タイマーは除く)
 function openFullKey(k) { const t = FV[k] ? { dataset: { k } } : document.querySelector(`[data-k="${k}"]`); if (t) openFull(t); }
 document.addEventListener('click', e => {
