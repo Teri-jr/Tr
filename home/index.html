@@ -811,8 +811,9 @@ body.night .rm .rb{top:31px;height:6px;border-radius:3px}
 .rv-dt .dc{font-family:var(--num);font-size:13px;font-weight:700;letter-spacing:.06em;background:var(--ink);color:var(--bg);padding:2px 8px}
 .rv-clock{margin-top:14px;display:flex;align-items:center;gap:6px}
 .fl{position:relative;flex:none}
-.flf{position:absolute;left:0;right:0;overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden}
-.flf.fa{transform-origin:50% 100%;z-index:2;display:none}.flf.fb{transform-origin:50% 0;z-index:2;display:none}
+.flf{position:absolute;left:0;right:0;overflow:hidden}
+.flf.fa,.flf.fb{z-index:2;visibility:hidden;will-change:transform}.flf.fa{transform-origin:50% 100%}.flf.fb{transform-origin:50% 0}
+.fsh{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none}
 .fli{position:absolute;left:0;right:0;white-space:nowrap;overflow:hidden}
 .fln{position:absolute;left:0;right:0;top:50%;height:1px;margin-top:-.5px;background:#0b0b0a;z-index:3}
 .rv-secs{align-self:flex-start;margin:16px 0 0 8px;display:flex;gap:3px}.rv-secs[hidden]{display:none}
@@ -1114,7 +1115,7 @@ body:not(.nopomo) .nv-time{font-size:160px}
 
 <script>
 'use strict';
-const APP_VERSION = '2.25.1'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.25.2'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1456,8 +1457,10 @@ function renderRail(st, d) {
 }
 /* ================= 反転フラップ(パタパタ) =================
    1ユニット = 1つの独立したドラム。決まった順の板の並びを、一方向にだけ1枚ずつ回して目標の板で止まる。
-   1枚の動き:上半分は新しい板がすぐ見え、下半分は前の板が残る → 前の板の上半分が奥へ倒れ(前半 D/2)、
-   新しい板の下半分が手前に倒れてくる(後半 D/2)。表裏1枚を180°回す方式は使わない(上半分・下半分を別の要素で倒す) */
+   1枚の動き:上半分は新しい板がすぐ見え、下半分は前の板が残る → 前の板の上半分が手前に倒れて(前半)、
+   新しい板の下半分が落ちてきて小さく跳ねる(後半)。3D の回転は使わず、縦の伸び縮みと影で見せる
+   (iPad の Safari で 3D の重なり順が崩れたり、板を出し入れするたびに画面がちらついたりしたため)。
+   倒れる板(fa・fb)は消さずに置いたまま、見え隠れだけを切り替える */
 const FLAPS = [];
 let flapQuiet = false, flapClickAt = 0;
 function flapClick() { // 1枚倒れるごとの「カタッ」(設定がオフ・授業中は鳴らさない)
@@ -1468,10 +1471,10 @@ function flapClick() { // 1枚倒れるごとの「カタッ」(設定がオフ�
 class FlapUnit {
   constructor(drum, o) {
     const O = this.o = Object.assign({ D: 200, rad: 4, bgTop: '#22211e', bgBot: '#1c1b19', color: '#ece8df', align: 'center', px: 0, fw: 500, w: 60, hh: 100, fs: 60 }, o);
-    this.drum = drum; this.idx = 0; this.tgt = 0; this.state = 'idle'; this.timer = 0; this.anims = [];
+    this.drum = drum; this.idx = 0; this.tgt = 0; this.state = 'idle'; this.timer = 0; this.anims = []; this.token = 0;
     const root = this.root = document.createElement('div');
     root.className = 'fl';
-    root.style.cssText = `width:${typeof O.w === 'number' ? O.w + 'px' : O.w};height:${O.hh}px;perspective:${O.hh * 5}px;font-family:${O.ff};font-size:${O.fs}px;font-weight:${O.fw}`;
+    root.style.cssText = `width:${typeof O.w === 'number' ? O.w + 'px' : O.w};height:${O.hh}px;font-family:${O.ff};font-size:${O.fs}px;font-weight:${O.fw}`;
     const face = top => {
       const b = document.createElement('div'), i = document.createElement('div');
       b.className = 'flf'; b.style.cssText = `height:50%;top:${top ? 0 : '50%'};background:${top ? O.bgTop : O.bgBot};border-radius:${top ? `${O.rad}px ${O.rad}px 0 0` : `0 0 ${O.rad}px ${O.rad}px`}`;
@@ -1480,6 +1483,7 @@ class FlapUnit {
     };
     this.top = face(true); this.bot = face(false); this.fa = face(true); this.fb = face(false);
     this.fa.classList.add('fa'); this.fb.classList.add('fb');
+    for (const f of [this.fa, this.fb]) { f.sh = document.createElement('i'); f.sh.className = 'fsh'; f.appendChild(f.sh); } // 倒れるほど暗くなる影
     const ln = document.createElement('div'); ln.className = 'fln';
     root.append(this.top, this.bot, this.fa, this.fb, ln);
     this.show(0); FLAPS.push(this);
@@ -1501,7 +1505,7 @@ class FlapUnit {
     return (this.idx + 1) % m;
   }
   paint(f, it) { f.fi.textContent = it.t; f.fi.style.color = it.c || this.o.color; }
-  cancel() { clearTimeout(this.timer); this.timer = 0; this.anims.forEach(a => a.cancel()); this.anims = []; this.fa.style.display = this.fb.style.display = 'none'; this.state = 'idle'; }
+  cancel() { this.token++; clearTimeout(this.timer); this.timer = 0; this.anims.forEach(a => a.cancel()); this.anims = []; this.fa.style.visibility = this.fb.style.visibility = 'hidden'; this.state = 'idle'; }
   show(i) { this.cancel(); this.idx = this.tgt = i; const it = this.item(i); this.paint(this.top, it); this.paint(this.bot, it); }
   snap() { this.show(this.tgt); } // アニメーションなしで、いまの表示に合わせる
   go(v, wait, anim) {
@@ -1516,18 +1520,25 @@ class FlapUnit {
   next() {
     if (this.idx === this.tgt) { this.state = 'idle'; return; }
     this.state = 'run';
-    const D = this.o.D, ni = this.nextIdx(), pv = this.item(this.idx), nx = this.item(ni);
+    const D = this.o.D, h = D * .45, l = D - h, ni = this.nextIdx(), pv = this.item(this.idx), nx = this.item(ni), tk = ++this.token;
     this.paint(this.top, nx); this.paint(this.bot, pv); this.paint(this.fa, pv); this.paint(this.fb, nx);
-    this.fa.style.display = this.fb.style.display = 'block';
+    const fa = this.fa, fb = this.fb;
     this.anims = [
-      this.fa.animate([{ transform: 'rotateX(0deg)' }, { transform: 'rotateX(-90deg)' }], { duration: D / 2, easing: 'cubic-bezier(.55,0,1,.6)', fill: 'both' }), // 重力で加速して倒れる
-      this.fb.animate([{ transform: 'rotateX(90deg)' }, { transform: 'rotateX(0deg)' }], { duration: D / 2, delay: D / 2, easing: 'cubic-bezier(.2,.6,.4,1)', fill: 'both' })
+      fa.animate([{ transform: 'scaleY(1)' }, { transform: 'scaleY(0)' }], { duration: h, easing: 'cubic-bezier(.55,0,1,.45)', fill: 'forwards' }), // 重力で加速して倒れる
+      fa.sh.animate([{ opacity: 0 }, { opacity: .55 }], { duration: h, easing: 'ease-in', fill: 'forwards' }),
+      fb.animate([ // 落ちてきて、着いたところで小さく跳ねる
+        { transform: 'scaleY(0)', easing: 'cubic-bezier(.45,0,1,1)' }, { transform: 'scaleY(1)', offset: .72, easing: 'ease-out' },
+        { transform: 'scaleY(.9)', offset: .86, easing: 'ease-in' }, { transform: 'scaleY(1)' }], { duration: l, delay: h, fill: 'both' }),
+      fb.sh.animate([{ opacity: .55 }, { opacity: 0 }], { duration: l * .72, delay: h, fill: 'both' })
     ];
-    this.timer = setTimeout(() => {
-      this.anims.forEach(a => a.cancel()); this.anims = []; this.fa.style.display = this.fb.style.display = 'none';
-      this.idx = ni; this.paint(this.bot, nx); if (!this.o.quiet) flapClick();
+    fa.style.visibility = fb.style.visibility = 'visible';
+    this.anims[2].finished.then(() => {
+      if (tk !== this.token) return;
+      this.paint(this.bot, nx); fa.style.visibility = fb.style.visibility = 'hidden'; // 下の板を先に描いてから隠す(同じコマで入れ替わる)
+      this.anims.forEach(a => a.cancel()); this.anims = [];
+      this.idx = ni; if (!this.o.quiet) flapClick();
       this.next();
-    }, D);
+    }, () => {});
   }
 }
 // タブが裏に回って戻ったとき、溜まった分を全部回さずに、いまの表示へ合わせる
@@ -1536,7 +1547,7 @@ const effAnim = () => cfg.anim === 'auto' ? { std: 'push', night: 'blur', rail: 
 
 // 鉄道モードの時計(時十・時一・分十・分一は別ユニット。「:」は固定)と発車標(先発・次発・次々発は固定の文字)
 let railUnits = null, railLast = 0, boardSig = '';
-const BOARD_D = 260, BOARD_GAP = 250;
+const BOARD_D = 260, BOARD_GAP = 250, BOARD_SWEEP = 150;
 function railInit() {
   if (railUnits) return;
   const NUM = '"Barlow Condensed","Helvetica Neue",Arial,sans-serif', JPF = '"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",sans-serif';
@@ -1590,14 +1601,15 @@ function railBoard(dep, anim, par) {
   const sig = JSON.stringify(dep); if (sig === boardSig) return; boardSig = sig;
   const ens = (drum, v) => { if (v && !drum.some(x => (typeof x === 'object' ? x.t : x) === v)) drum.push(v); };
   let T = 0;
-  // 1個ずつ順番にめくる。グループ(時刻 → 種別+行先 → 教室)が終わったら、250ms あけて次へ
-  const grp = (pairs) => { let any = false; pairs.forEach(([u, v]) => { const n = u.dist(v), w = par ? 0 : T; if (n && anim && !par) { T += n * BOARD_D + 50; any = true; } u.go(v, w, anim); }); if (any) T += BOARD_GAP; };
+  // 1段目の左から右へ(種別 → 時刻4桁 → 行先 → 教室)、終わったら2段目の左へ。変わらない板は飛ばす
+  // ふだん:1個ずつ、前の板が止まってから次へ(段が変わるときは 250ms あける)
+  // 黒にする・もどす(par):全部を待つと長すぎるので、同じ順番で 150ms ずつずらして回し始める
+  const row = (pairs) => { let any = false; pairs.forEach(([u, v]) => { const n = u.dist(v); u.go(v, T, anim); if (n && anim) { T += par ? BOARD_SWEEP : n * BOARD_D + 50; any = true; } }); if (any && !par) T += BOARD_GAP; };
   railUnits.rows.forEach((U, r) => {
     const f = dep[r] || { kind: '', t: null, dest: '', room: '' }; ens(U.SD, f.dest); ens(U.RD, f.room);
     const h = f.t == null ? null : Math.floor(f.t / 60), m = f.t == null ? null : Math.round(f.t % 60);
-    grp([[U.a, h == null || h < 10 ? '' : String(Math.floor(h / 10))], [U.b, h == null ? '' : String(h % 10)], [U.c, m == null ? '' : String(Math.floor(m / 10))], [U.d, m == null ? '' : String(m % 10)]]);
-    grp([[U.k, f.kind], [U.s, f.dest]]);
-    grp([[U.r, f.room]]);
+    row([[U.k, f.kind], [U.a, h == null || h < 10 ? '' : String(Math.floor(h / 10))], [U.b, h == null ? '' : String(h % 10)],
+      [U.c, m == null ? '' : String(Math.floor(m / 10))], [U.d, m == null ? '' : String(m % 10)], [U.s, f.dest], [U.r, f.room]]);
   });
 }
 
