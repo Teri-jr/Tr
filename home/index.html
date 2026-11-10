@@ -897,6 +897,33 @@ body.night .rm .rb{top:31px;height:6px;border-radius:3px}
 .v3cm .lab{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:.12em}.v3cm .tm{font-family:var(--num);font-size:20px;color:var(--sub)}
 .v3cm .v{font-family:var(--num);font-size:60px;line-height:1}.v3cm .w{font-size:14px}.v3cm .rn{font-size:13px;color:var(--blue)}
 .v3r .v2days{padding:12px 12px 14px;gap:8px}.v3r .v2day{padding:8px 10px;min-width:0}.v3r .v2day b{font-size:22px;white-space:nowrap}.v3r .v2day span{font-size:12px;white-space:nowrap}.v3r .v2day small{white-space:nowrap;font-size:12px}
+/* 全画面 3f カウントダウン(路線図) */
+.v2cdm .v{font-size:250px;line-height:.86;letter-spacing:-4px}
+.v2cdm .row4{margin-top:22px;gap:0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}.v2cdm .row4 div{background:none;border:0;padding:12px 0}.v2cdm .row4 div+div{border-left:1px solid var(--rule);padding-left:18px}
+.v2cdm .row4 b{display:inline;font-size:40px}.v2cdm .row4 span{margin-left:6px}
+.cdroute{position:relative;height:100px;margin-top:auto;flex:none}
+.cdroute .ln{position:absolute;left:0;right:0;top:14px;height:8px;background:var(--red)}
+.cdroute .st{position:absolute;top:0}
+.cdroute .st .dot{width:24px;height:24px;border-radius:50%;background:var(--bg);border:5px solid var(--ink);margin:6px 0 0}
+.cdroute .st.end .dot{border-radius:3px;border-color:var(--red)}
+.cdroute .st .nm{font-size:15px;font-weight:700;margin-top:8px;white-space:nowrap}.cdroute .st .dd{font-family:var(--num);font-size:16px;color:var(--sub);white-space:nowrap}
+.cdroute .now{position:absolute;left:0;top:2px;width:36px;height:32px;background:var(--ink);color:var(--bg);font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;clip-path:polygon(0 0,78% 0,100% 50%,78% 100%,0 100%)}
+/* 全画面 3g 次の休み(発車標風) */
+.v3hol{flex:1;min-height:0;display:flex;flex-direction:column;padding:26px 36px;overflow:hidden}
+.v3hol .top{display:flex;align-items:flex-end;gap:40px;flex:none}
+.v3hol .top .v{font-size:180px;font-weight:500;line-height:.86}.v3hol .top .v small{font-family:var(--jp);font-size:30px;color:var(--sub);margin-left:8px}
+.v3hol .top .t{font-size:30px;font-weight:700}.v3hol .top .d{font-size:15px;color:var(--sub)}
+.v3bd{background:#0f0f0e;border:1px solid var(--rule);margin-top:24px;color:#ece8df;flex:none}
+.v3bd .h,.v3bd .r{display:grid;grid-template-columns:90px 280px 110px 1fr;align-items:center;padding:0 20px}
+.v3bd .h{font-size:12px;color:#8d8a83;padding-top:9px;padding-bottom:6px}.v3bd .r{padding-top:9px;padding-bottom:9px;border-top:1px solid #2b2a28}
+.v3bd .k{font-size:13px;font-weight:700;padding:2px 8px;border:1px solid var(--c);color:var(--c)}
+.v3bd .dt{font-family:"Barlow Condensed",sans-serif;font-size:26px;color:#f5b301;white-space:nowrap}
+.v3bd .an{font-size:15px}.v3bd .an b{font-family:"Barlow Condensed",sans-serif;font-size:26px;font-weight:500}
+.v3bd .nm{font-size:20px;font-weight:700}.v3bd .nm span{font-size:13px;color:#e8c65a;font-weight:400;margin-left:10px}
+.v3wk{margin-top:auto;flex:none;padding-top:14px}
+.v3wk .h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}.v3wk .h .lab{font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:.12em}.v3wk .h span:last-child{font-size:14px;color:var(--sub)}.v3wk .h b{font-family:var(--num);font-size:28px;color:var(--ink);font-weight:500}
+.v3wk .g{display:grid;grid-template-columns:repeat(26,1fr);gap:3px}.v3wk .g i{aspect-ratio:1;background:var(--ink)}.v3wk .g i.p{background:var(--segdone)}.v3wk .g i.c{background:var(--red)}
+.fv-terms .v2fc .f b{font-size:66px}
 </style>
 </head>
 <body>
@@ -954,7 +981,7 @@ body.night .rm .rb{top:31px;height:6px;border-radius:3px}
 
 <script>
 'use strict';
-const APP_VERSION = '2.18.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.19.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -2745,35 +2772,35 @@ function fv2Sched() {
     <div class="v2split ag"><div class="v2hero">${left}<div class="v2nx"><div class="lab">この先 2週間</div><b class="n" style="font-size:44px">${two.length}</b><small> 件</small><div class="sub">時間の決まった予定 ${two.filter(e => !e.allDay).length} ・ 終日 ${two.filter(e => e.allDay).length}</div></div></div>
     <div class="v2agl">${Object.keys(groups).sort().map(k => { const d = parseYmd(k); return `<div class="v2dy"><button class="dd n ${k === ymd(now()) ? 't' : ''} ${d.getDay() === 0 || HOLIDAYS[k] ? 'su' : ''}" data-fa="openday" data-v="${k}">${md(d)}<small>${WD[d.getDay()]} ・ ${dayLabel(now(), d).replace(/^\d.*$/, '') || dayDiff(now(), d) + '日後'}</small></button><div>${groups[k].map(e => { const st = new Date(e.start).getTime(); return `<div class="v2ei" style="--c:${evColor(e)}"><span class="tm n">${evTime(e)}</span><i></i><b>${esc(e.title)}</b><span class="rr">${!e.allDay && st > nowMs() && st - nowMs() < 864e5 ? `あと <span data-to="${st}" data-short="1">${fmtLeft(st - nowMs(), true)}</span>` : e.allDay && new Date(e.end) - new Date(e.start) > 864e5 ? `${md(new Date(e.start))}〜${md(addDays(new Date(e.end), -1))}` : ''}</span></div>`; }).join('')}</div></div>`; }).join('') || `<p class="empty">${events ? '予定はありません。' : '読み込み中…'}</p>`}</div></div>`;
 }
-// 1年をブロックで(月ごとに1行、1日1マス)
-function yearBlocks(d) {
-  const y = d.getFullYear(); let rows = '', done = 0, all = 0;
-  for (let m = 0; m < 12; m++) {
-    let cells = ''; const n = new Date(y, m + 1, 0).getDate();
-    for (let i = 1; i <= 31; i++) {
-      if (i > n) { cells += '<span class="nx"></span>'; continue; }
-      const z = new Date(y, m, i), k = ymd(z), past = z < sod(d); all++; if (past) done++;
-      cells += `<span class="${k === ymd(d) ? 'td' : past ? 'ps' : HOLIDAYS[k] ? 'hl' : isSchoolDay(z) ? 'sc' : 'of'}" title="${md(z)}${HOLIDAYS[k] ? ' ' + esc(HOLIDAYS[k]) : ''}"></span>`;
-    }
-    rows += `<span class="mn">${m + 1}月</span>${cells}`;
-  }
-  return `<div class="v2year"><div class="lab">${y}年 ・ 1マス = 1日 ・ 過ぎた日 ${done} / ${all}</div><div class="yg">${rows}</div><div class="v2leg"><span><i class="ps"></i>過ぎた日</span><span><i class="td"></i>今日</span><span><i class="sc"></i>授業</span><span><i class="of"></i>休み</span><span><i class="hl"></i>祝日</span></div></div>`;
-}
-// 次の休み
+// 次の休み:発車標のように並べ、今年の残りを52週のマスで
 function fv2Holiday() {
   const d = sod(now()), o = nextOff();
-  let x = d, n = 0, lng = null;
-  while (n < 400 && !lng) { if (!isSchoolDay(x)) { const from = x; let len = 0; while (!isSchoolDay(x) && len < 90) { x = addDays(x, 1); len++; n++; } if (len >= 3 && ymd(from) !== ymd(d)) lng = { from, len }; else if (len >= 3 && o.today) lng = { from, len }; } else { x = addDays(x, 1); n++; } }
-  const y1 = new Date(d.getFullYear() + 1, 0, 1), left = dayDiff(d, y1) - 1; let sch = 0; for (let z = addDays(d, 1); z < y1; z = addDays(z, 1)) if (isSchoolDay(z)) sch++;
-  const frac = (nowMs() - new Date(d.getFullYear(), 0, 1)) / (y1 - new Date(d.getFullYear(), 0, 1));
-  const lt = lng ? addDays(lng.from, lng.len - 1) : null, lnames = lng ? [...new Set([...Array(lng.len)].map((_, i) => HOLIDAYS[ymd(addDays(lng.from, i))]).filter(Boolean))].join('・') : '';
-  const mon = addDays(d, -((d.getDay() + 6) % 7));
-  let grid = '<span class="w"></span>' + ['月', '火', '水', '木', '金', '土', '日'].map(w => `<span class="h">${w}</span>`).join('');
-  for (let r = 0; r < 8; r++) { grid += `<span class="w">${md(addDays(mon, r * 7))}〜</span>`; for (let c = 0; c < 7; c++) { const z = addDays(mon, r * 7 + c), k = ymd(z); grid += `<span class="${HOLIDAYS[k] ? 'hl' : isSchoolDay(z) ? 'sc' : 'of'} ${k === ymd(d) ? 'td' : ''} ${z < d ? 'past' : ''}" title="${esc(HOLIDAYS[k] || '')}">${z.getDate()}</span>`; } }
-  return `<div class="v2hol"><div class="v2hh"><div><div class="lab">${o.today ? '今日はお休み' : '次の休みまで'}</div><div class="v n">${o.today ? o.len : o.days}<small>${o.today ? '連休' : '日後'}</small></div><div class="d">${mdw(o.from)}から ${o.len}連休</div></div>
-    <div><div class="lab grn">次の長い休み</div>${lng ? `<div class="v n grn">${lng.len}<small>連休</small></div><div class="d">${mdw(lng.from)} 〜 ${mdw(lt)}${lnames ? ' ・ ' + esc(lnames) : ''} ・ ${dayDiff(d, lng.from) ? dayDiff(d, lng.from) + '日後' : '今'}</div>` : '<div class="d">この先1年に3連休以上はありません</div>'}</div>
-    <button class="yr ${fs.year ? 'on' : ''}" data-fa="year"><div class="lab">${d.getFullYear()}年の残り</div><div class="v n">${left}<small>日</small></div><div class="d">授業日 あと ${sch}日 ・ ${(frac * 100).toFixed(1)}% 経過 ・ <u>${fs.year ? '8週間に戻す' : '1年を見る'}</u></div></button></div>
-    ${fs.year ? yearBlocks(d) : ''}<div class="v2strip" ${fs.year ? 'hidden' : ''}><div class="lab">この先 8週間</div><div class="v2wks">${grid}</div><div class="v2leg"><span><i class="sc"></i>授業</span><span><i class="of"></i>休み</span><span><i class="hl"></i>祝日</span><span><i class="td"></i>今日</span><span class="fvnote">土日・祝日・年末年始と、授業のない土曜(第${(cfg.satWeeks || []).join('・')}週以外)</span></div></div></div>`;
+  const out = []; let x = d, n = 0;
+  while (out.length < 5 && n < 400) {
+    if (!isSchoolDay(x)) { const from = x; let len = 0; const names = []; while (!isSchoolDay(x) && len < 60) { const h = HOLIDAYS[ymd(x)]; if (h && !names.includes(h)) names.push(h); x = addDays(x, 1); len++; n++; } out.push({ from, len, names }); }
+    else { x = addDays(x, 1); n++; }
+  }
+  // あと授業日(次の休みの前まで)
+  const left = []; if (!o.today) for (let z = d; z < o.from; z = addDays(z, 1)) if (isSchoolDay(z)) left.push(z);
+  const y = d.getFullYear(), y1 = new Date(y + 1, 0, 1), remain = dayDiff(d, y1) - 1; let sch = 0; for (let z = addDays(d, 1); z < y1; z = addDays(z, 1)) if (isSchoolDay(z)) sch++;
+  const cur = Math.min(51, Math.floor(dayDiff(new Date(y, 0, 1), d) / 7));
+  const kind = h => h.len >= 3 ? ['連休', 'var(--yel)'] : h.names.length ? ['祝日', 'var(--red)'] : ['休み', '#8d8a83'];
+  const rows = out.map(h => { const [k, c] = kind(h), to = addDays(h.from, h.len - 1), dn = dayDiff(d, h.from);
+    return `<div class="r" style="--c:${c}"><span><span class="k">${k}</span></span><span class="dt">${mdw(h.from)}${h.len > 1 ? ` 〜 ${mdw(to)}` : ''}</span><span class="an">${dn > 0 ? `<b>${dn}</b> 日後` : '<b>いま</b>'}</span><span class="nm">${esc(h.names.join('・'))}${h.len > 1 ? `<span ${h.names.length ? '' : 'style="margin-left:0"'}>${h.len}連休</span>` : ''}</span></div>`; }).join('');
+  const lt = left.length === 1 ? `${WD[left[0].getDay()]}曜の1日だけ` : `${left.length}日`;
+  return `<div class="v3hol"><div class="top"><div><div class="lab" style="font-size:12.5px;font-weight:700;color:var(--sub);letter-spacing:.12em">${o.today ? '今日はお休み' : '次の休み'}</div><div class="v n">${o.today ? o.len : o.days}<small>${o.today ? '連休' : '日後'}</small></div></div>
+    <div style="padding-bottom:12px"><div class="t">${mdw(o.from)}から ${o.len}連休</div><div class="d">${o.today ? '授業のない日がつづきます' : `あと授業日は ${lt}`}</div></div></div>
+    <div class="v3bd"><div class="h"><span>種別</span><span>日にち</span><span>あと</span><span>名前</span></div>${rows}</div>
+    <div class="v3wk"><div class="h"><span class="lab">${y}年の残り ・ 1マス = 1週間</span><span>あと <b>${remain}</b> 日 ・ 授業日 <b>${sch}</b> 日</span></div><div class="g">${[...Array(52)].map((_, i) => `<i class="${i < cur ? 'p' : i === cur ? 'c' : ''}"></i>`).join('')}</div></div></div>`;
+}
+// 目標までの路線図:今日から いちばん遠い目標(終点)まで、ほかの目標は途中の駅(位置は日数の割合)
+function cdRoute(l) {
+  const far = Math.max(1, l[l.length - 1].days);
+  const st = l.map((c, i) => {
+    const x = Math.min(100, c.days / far * 100), end = i === l.length - 1, dt = parseYmd(c.date);
+    return `<div class="st ${end ? 'end' : ''}" style="left:${x.toFixed(2)}%;transform:translateX(${end ? '-100%' : x < 8 ? '0' : '-50%'});text-align:${end ? 'right' : x < 8 ? 'left' : 'center'}"><div class="dot" style="${end ? 'margin-left:auto' : x < 8 ? '' : 'margin:6px auto 0'}"></div><div class="nm">${esc(c.name)}</div><div class="dd">${md(dt)} ・ ${c.days ? c.days + '日後' : '今日'}</div></div>`;
+  }).join('');
+  return `<div class="cdroute"><div class="ln"></div>${st}<div class="now">今日</div></div>`;
 }
 // カウントダウン
 function fv2Count() {
@@ -2781,7 +2808,8 @@ function fv2Count() {
   if (!l.length) return v2pad(`<p class="empty">${cdEmpty()}</p><button class="v2btn" data-fa="cdadd">+ カウントダウンを追加</button>`);
   const c = l[0], dt = parseYmd(c.date); let sch = 0, off = 0; for (let x = addDays(sod(now()), 1); x <= dt; x = addDays(x, 1)) isSchoolDay(x) ? sch++ : off++;
   return `<div class="v2split cd"><div class="v2cdm"><div class="lab">いちばん近い目標</div><div class="nm">${esc(c.name)}${c.days ? 'まで' : ''}</div><div class="v n">${c.days ? `${c.days}<small>日</small>` : '<span style="font-size:.5em">今日</span>'}</div><div class="sub">${dt.getFullYear()}/${mdw(dt)} ・ ${Math.floor(c.days / 7)}週と${c.days % 7}日</div>
-    <div class="row4"><div><b class="n">${sch}</b><span>授業日</span></div><div><b class="n">${off}</b><span>休みの日</span></div><div><b class="n">${Math.max(0, Math.floor((dt.getTime() - nowMs()) / 3600e3)).toLocaleString()}</b><span>時間</span></div></div></div>
+    <div class="row4"><div><b class="n">${sch}</b><span>授業日</span></div><div><b class="n">${off}</b><span>休みの日</span></div><div><b class="n">${Math.max(0, Math.floor((dt.getTime() - nowMs()) / 3600e3)).toLocaleString()}</b><span>時間</span></div></div>
+    ${cdRoute(l)}</div>
     <div class="v2cds"><div class="lab">ほかのカウントダウン</div>${l.slice(1).map(x => { const d2 = parseYmd(x.date); let s2 = 0; for (let z = addDays(sod(now()), 1); z <= d2; z = addDays(z, 1)) if (isSchoolDay(z)) s2++; return `<div class="v2cdc"><div><b>${esc(x.name)}</b><small>${d2.getFullYear() !== now().getFullYear() ? d2.getFullYear() + '/' : ''}${mdw(d2)} ・ 授業日 ${s2}日</small></div><div class="n2 n">${x.days}<small> 日</small></div></div>`; }).join('') || '<p class="empty">ほかにはありません</p>'}
     <button class="v2add" data-fa="cdadd">+ カウントダウンを追加(カレンダーからも)</button></div></div>`;
 }
@@ -2828,7 +2856,7 @@ function fv2Terms() {
     <button class="bk ${shown ? '' : 'hid'}" data-fa="tflip">${shown ? `<div class="lab yel">意味</div><p>${esc(t.desc)}</p>${t.note ? `<div class="lab" style="margin-top:10px">メモ</div><p class="sub">${esc(t.note)}</p>` : ''}` : '<span>押すと意味が出ます</span>'}</button></div>`
     : `<div class="v2fc"><button class="bk" data-fa="tflip"><div class="lab yel">${esc(t.cat)} ・ この説明にあう語句は?</div><p>${esc(t.desc)}</p>${known ? '<em class="kn">覚えた ✓</em>' : ''}</button>
     <button class="f ${shown ? '' : 'hid'}" data-fa="tflip">${shown ? `<span class="c">${esc(t.cat)}</span><b>${esc(t.term)}</b>${t.yomi ? `<span>${esc(t.yomi)}</span>` : ''}${t.note ? `<span class="sub">${esc(t.note)}</span>` : ''}` : '<span>押すと語句が出ます</span>'}</button></div>`;
-  return head + `<div class="v2split tm">${catsH}<div class="v2fcw">${card}<div class="v2ctrl"><button data-fa="tprev" ${termHist.length ? '' : 'disabled'}>‹ 前へ</button><button data-fa="tmem" data-v="0">まだ覚えてない</button><button data-fa="tmem" data-v="1">覚えた ✓</button><button data-fa="tnext2" class="p">次へ ›</button></div></div></div>`;
+  return head + `<div class="v2split tm">${catsH}<div class="v2fcw">${card}<div class="v2ctrl"><button data-fa="tprev" ${termHist.length ? '' : 'disabled'}>← 前</button><button data-fa="tmem" data-v="0">まだ</button><button data-fa="tmem" data-v="1">覚えた</button><button data-fa="tnext2" class="p">次 →</button></div></div></div>`;
 }
 // 記憶回路: 単語を特大で、採点ボタンに次に出る日
 function fv2Kioku() {
@@ -2930,7 +2958,6 @@ function fvAction(a, v) {
   else if (a === 'wdd') { fs.wmode = 'fc'; fs.wd = +v; }
   else if (a === 'ttv') { fs.ttv = v; }
   else if (a === 'rdplay') { rdToggle(); return; }
-  else if (a === 'year') { fs.year = !fs.year; }
   else if (a === 'cdadd') { closeFull(); openSettings('s-cd'); return; }
   renderFullView();
 }
