@@ -1005,6 +1005,52 @@ body.night .rm .rb{top:31px;height:6px;border-radius:3px}
 .v7n .rt .pm{flex:1;padding-bottom:10px}.v7n .rt .pm .a{display:flex;justify-content:space-between;font-size:13px;color:var(--sub)}.v7n .rt .pm .a b{font-size:22px;color:var(--ink);font-weight:400}
 .v7n .rt .pm .bar{height:6px;border-radius:3px;background:var(--rule);margin-top:8px;overflow:hidden}.v7n .rt .pm .bar i{display:block;height:100%;background:var(--red);border-radius:3px;box-shadow:0 0 10px rgba(145,132,217,.7)}
 .v7n .rt .ft{margin-top:28px;padding-top:14px;font-size:14px;color:var(--sub);background:linear-gradient(to right,transparent,rgba(233,233,237,.16) 48px,rgba(233,233,237,.16) calc(100% - 48px),transparent) no-repeat top/100% 1px}
+
+/* 2.23.0:3列に戻した標準・詰めた夜と鉄道・AI のショートカット */
+#nowband{overflow:hidden;flex:0 1 auto}#nowband b,#nowband .nx{overflow:hidden;text-overflow:ellipsis}#nowband .np{flex:none}
+#colC>#pomo{width:auto;flex:none;border-left:0;border-bottom:1px solid var(--rule);flex-direction:row;align-items:center;gap:18px;padding:12px 28px}
+#colC>#pomo .pmh{flex-direction:column;align-items:flex-start;gap:5px;flex:none}
+#colC>#pomo .pmt{font-size:54px;margin:0;flex:none;min-width:132px}
+#colC>#pomo .pmb{flex:1;min-width:40px}
+#colC>#pomo .pmc{margin:0;flex:none;gap:6px}
+#colC>#pomo .pmc button{flex:none;padding:8px 12px}
+body.editing #pomo{display:none}
+body:not(.newl) #nowband .nx{display:none}body:not(.newl):not(.night):not(.rail) .mnote{display:none}
+.ail{max-width:900px}.ail .row{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;margin:0 0 6px}.ail .row input{min-width:0}.ail .row .btn{flex:none}
+.aig{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.aig a{display:flex;flex-direction:column;justify-content:center;gap:3px;border:1px solid var(--rule);background:var(--card);padding:12px 16px;min-height:62px;color:var(--ink);text-decoration:none;min-width:0}
+.aig a:active{opacity:.6}
+.aig a b{font-family:var(--num);font-size:22px;font-weight:600;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.aig a span{font-size:12px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini .aig{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.mini .aig a{padding:8px 10px;min-height:44px}.mini .aig a b{font-size:17px}.mini .aig a span{display:none}
+body.night .aig a{border-radius:8px}
+#rvTop{height:272px}
+.rv-info{width:256px;flex:none;background:#0f0f0e;border:1px solid #2b2a28;cursor:pointer;overflow:hidden}
+.rv-info .h{background:#f5b301;color:#141413;font-size:12.5px;font-weight:700;padding:5px 12px}
+.rv-info .b{padding:10px 14px 12px}.rv-info .b h3{display:none}
+.rv-sign .a{padding:26px 26px 20px}.rv-sign .no{width:88px;height:88px}.rv-sign .no b:first-child{font-size:18px}.rv-sign .no b:last-child{font-size:38px}
+.rv-sign .tx .nm{font-size:72px}.rv-sign .tx .k{font-size:14px}.rv-sign .rt .lf span{font-size:64px}.rv-sign .rt .tm{font-size:24px}
+.rv-sign .k2{height:42px;font-size:17px}.rv-sign .k2 .md{font-size:13px}
+.rv-route{flex:none;padding:22px 28px 6px}
+.rv-cd{flex:1;min-height:0;margin:0 28px;border-top:1px solid var(--rule);overflow:hidden;display:grid;grid-template-columns:1fr 1.7fr;align-items:center}
+.rv-cd>div{padding:0 22px 0 0;min-width:0;cursor:pointer}.rv-cd>div+div{padding:0 0 0 22px;border-left:1px solid var(--rule)}
+.rv-cd h3{margin-bottom:6px}.rv-cd .big2 .v{font-size:60px}.rv-cd .back{display:none}
+.rv-sl{flex:none;padding:12px 22px}
+body:not(.nopomo) .nv-time{font-size:160px}
+.nv-time{font-size:172px}
+.nv-sl{padding:16px 24px 12px}.nv-st{margin-top:4px}.nv-st .big{font-size:60px}.nv-st .nm{font-size:36px}.nv-sl .rmw{margin-top:10px}.nv-sl .rm{height:74px}.nv-sl .rt{top:54px}
+.nv-sl:has(.empty){flex:none}.nv-sl:has(.empty) .nv-foot{margin-top:14px}
+.nv-row2{display:flex;gap:18px;flex:none;height:172px;min-height:0}
+.nv-main:has(.nv-sl .empty) .nv-row2{flex:1;height:auto;max-height:300px}
+.nv-row2>.nvc{flex:1;min-width:0;border-radius:14px;box-shadow:0 0 0 1px var(--rule);padding:16px 22px;display:flex;flex-direction:column;cursor:pointer}
+.nv-row2>.nvcd{flex:.7;justify-content:center}
+.wk{flex:1;min-height:0;display:flex;gap:10px;align-items:stretch;margin-top:4px}
+.wk>div{flex:1;height:100%;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:5px}
+.wk i{display:block;width:100%;max-width:44px;max-height:calc(100% - 44px);background:var(--segdone);border-radius:4px 4px 0 0;flex:none}
+.wk .v{font-size:13px;color:var(--sub)}.wk .w{font-size:12px;color:var(--sub)}
+.wk .td i{background:var(--red);box-shadow:0 0 12px rgba(145,132,217,.5)}.wk .td .w,.wk .td .v{color:var(--ink)}
+#nvCal .cal{flex:1;align-content:space-evenly}#nvCal .cal span{font-size:15px}
+.nvcd .big2 .v{font-size:64px}.nvcd .big2 .k{font-size:12.5px}.nvcd .big2 .d{font-size:11.5px;margin-top:2px}
 </style>
 </head>
 <body>
@@ -1026,8 +1072,8 @@ body.night .rm .rb{top:31px;height:6px;border-radius:3px}
     <div class="col" id="colC"></div>
     <div class="col" id="colR"></div>
   </div>
-  <div id="nightView"><div class="nv-main"><div id="nvTop"></div><div class="nv-sl" id="nvSL"></div></div><div class="nv-side" id="nvSide"></div></div>
-  <div id="railView"><div class="rv-l"><div id="rvTop"><div class="c1" data-open="clock"><div class="rv-dt" id="rvDt"></div><div class="rv-clock" id="rvClk"></div></div><div id="rvDoor"></div></div><div class="rv-sign" id="rvSign"></div><div class="rv-route" id="rvRoute"></div></div><div class="rv-r"><div id="rvBoard"></div><div class="rv-todo todo" id="rvTodo"></div><div class="rv-sl" id="rvSL"></div></div></div>
+  <div id="nightView"><div class="nv-main"><div id="nvTop"></div><div class="nv-sl" id="nvSL"></div><div class="nv-row2"><div class="nvc" id="nvWeek" data-open="studyline"></div><div class="nvc" id="nvCal" data-open="calendar"></div><div class="nvc nvcd" id="nvCd" data-open="count"></div></div></div><div class="nv-side" id="nvSide"></div></div>
+  <div id="railView"><div class="rv-l"><div id="rvTop"><div class="c1" data-open="clock"><div class="rv-dt" id="rvDt"></div><div class="rv-clock" id="rvClk"></div></div><div id="rvDoor"></div></div><div class="rv-sign" id="rvSign"></div><div class="rv-route" id="rvRoute"></div><div class="rv-cd" id="rvCd"></div></div><div class="rv-r"><div id="rvBoard"></div><div class="rv-todo todo" id="rvTodo"></div><div class="rv-sl" id="rvSL"></div></div></div>
   <div id="pool" hidden>
     <section class="tile tt" id="ttTile"></section>
     <section class="tile todo" id="todoTile"></section>
@@ -1062,7 +1108,7 @@ body.night .rm .rb{top:31px;height:6px;border-radius:3px}
 
 <script>
 'use strict';
-const APP_VERSION = '2.22.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.23.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1104,7 +1150,9 @@ const DEFAULT_CFG = {
   termCats: ['日本史', '古文単語', '化学', '物理', '現代文', '四字熟語'],
   qFull: 5, qBeep: 3, // 震度の段階(0〜9)。5 = 5弱。qFull 0 = 緊急地震速報はすべて全画面
   qiPref: 5, qiMax: 0, qiMag: 0, qiTsunami: true, // 地震情報を全画面にする条件(0 = 使わない)
-  pomoOn: true, // 自習タイマーを出す
+  pomoOn: false, // 自習タイマーを出す(2.23.0 から初期値はオフ。StudyLine のポモドーロとタイマーのタイルがあるため)
+  stdLayout: 'cols', // 標準モードの配置(cols 3列 / big 大きい時計+下段のページ送り)
+  ai: null, // AI のショートカット [{name, url, note}](fixAi で初期値を入れる)
   mode: 'std', modeAuto: true, // 表示モード(std 標準 / night 夜 / rail 鉄道)。modeAuto = 時間帯で自動で切り替える
   modeSched: { slots: [{ from: '08:30', mode: 'rail' }, { from: '15:20', mode: 'std' }, { from: '19:00', mode: 'night' }], off: 'std' }, // 時間帯の始まりとモード。off = 休みの日
   anim: 'auto', flapBoard: true, flapTiles: false, flapSound: false // 数字の動き(auto / flap / push / blur / none)、パタパタの使い道
@@ -1119,9 +1167,19 @@ function fixMode() {
   if (ms === DEFAULT_CFG.modeSched || !ms || !Array.isArray(ms.slots) || !ms.slots.length || ms.slots.some(x => !x || toMin(x.from) == null || !ok(x.mode))) cfg.modeSched = JSON.parse(JSON.stringify(DEFAULT_CFG.modeSched));
   if (!ok(cfg.modeSched.off)) cfg.modeSched.off = 'std';
   if (!['auto', 'flap', 'push', 'blur', 'none'].includes(cfg.anim)) cfg.anim = 'auto';
-  cfg.modeAuto = cfg.modeAuto !== false; cfg.pomoOn = cfg.pomoOn !== false;
+  if (!cfg.v223) { cfg.v223 = 1; cfg.pomoOn = false; } // 2.23.0:自習タイマーをいちどオフに(設定でまた出せる)
+  cfg.modeAuto = cfg.modeAuto !== false; cfg.pomoOn = cfg.pomoOn === true;
+  if (cfg.stdLayout !== 'big') cfg.stdLayout = 'cols';
 }
 fixMode();
+// AI のショートカット:名前と https の URL があるものだけ残す
+const DEFAULT_AI = [['Claude', 'https://claude.ai/', '文章・記述の添削'], ['ChatGPT', 'https://chatgpt.com/', '質問・解説'], ['Gemini', 'https://gemini.google.com/', 'Google と連携'], ['NotebookLM', 'https://notebooklm.google.com/', '資料をまとめる'], ['Perplexity', 'https://www.perplexity.ai/', '調べもの']];
+const aiUrlOk = u => /^https:\/\/[^\s"'<>]+$/.test(u || '');
+function fixAi() {
+  if (!Array.isArray(cfg.ai)) cfg.ai = DEFAULT_AI.map(([name, url, note]) => ({ name, url, note }));
+  cfg.ai = cfg.ai.filter(x => x && typeof x === 'object').map(x => ({ name: String(x.name || '').slice(0, 16), url: String(x.url || '').trim().slice(0, 300), note: String(x.note || '').slice(0, 20) })).slice(0, 12);
+}
+fixAi();
 let todos = store.get('todos') || [];
 const saveTodos = () => store.set('todos', todos);
 
@@ -1176,7 +1234,7 @@ function fit() {
   const top = $('sai').offsetHeight || 0, w = innerWidth, h = innerHeight - top;
   const portrait = w < h || w < 760, wasP = document.body.classList.contains('portrait');
   document.body.classList.toggle('portrait', portrait);
-  if (wasP !== portrait && typeof renderLayout === 'function' && document.body.classList.contains('newl') !== (!editing && !portrait)) renderLayout();
+  if (wasP !== portrait && typeof renderLayout === 'function' && document.body.classList.contains('newl') !== (!editing && !portrait && cfg.stdLayout === 'big')) renderLayout();
   const st = $('stage');
   if (portrait) { st.style.transform = ''; st.style.width = ''; st.style.height = ''; }
   else {
@@ -1319,9 +1377,14 @@ function renderNight(st, d) {
   setHtml($('nvSL'), sl);
   // 右:時間割・やること・天気(今のタイルと同じ内容)
   setHtml($('nvSide'), `<div class="nvc tt" data-open="tt">${$('ttTile').innerHTML}</div><div class="nvc todo" data-open="todo">${$('todoTile').innerHTML}</div><div class="nvc" data-open="weather">${$('wxTile').innerHTML}</div>`);
+  // 下段:7日間の学習・カレンダー・カウントダウン
+  const days = []; for (let i = 6; i >= 0; i--) { const x = addDays(d, -i), g = slDay(ymd(x)); if (g) g._ds = ymd(x); days.push({ w: WD[x.getDay()], m: slStudied(g), td: i === 0 }); }
+  const mx = Math.max(60, ...days.map(x => x.m));
+  setHtml($('nvWeek'), `<h3>7日間の学習 <span>合計 ${(days.reduce((a, x) => a + x.m, 0) / 60).toFixed(1)}時間</span></h3><div class="wk">${days.map(x => `<div class="${x.td ? 'td' : ''}"><span class="v n">${x.m >= 3 ? (x.m / 60).toFixed(1) : ''}</span><i style="height:${Math.max(2, x.m / mx * 100).toFixed(1)}%"></i><span class="w">${x.w}</span></div>`).join('')}</div>`);
+  setHtml($('nvCal'), renderCalendar()); setHtml($('nvCd'), renderCount());
 }
 
-// 発車標:次に動く予定を3つ(今日の残り → 足りなければ次の授業日)
+// 発車標:次に動く予定を6つ(今日の残り → 足りなければ次の授業日)
 function railDepart(d) {
   const out = [], m = minOfDay(d);
   const add = (day, later) => {
@@ -1333,8 +1396,8 @@ function railDepart(d) {
     if (post && (later || post[1] > m)) out.push({ t: post[1], kind: '放課後', dest: post[0], room: '', later });
   };
   if (isSchoolDay(d)) add(d, false);
-  if (out.length < 3) add(nextSchoolDay(d), true);
-  return out.slice(0, 3);
+  if (out.length < 6) add(nextSchoolDay(d), true);
+  return out.slice(0, 6);
 }
 
 function renderRail(st, d) {
@@ -1348,6 +1411,8 @@ function renderRail(st, d) {
   setHtml($('rvDt'), `<span class="dc">${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][d.getDay()]}</span><span>${WD[d.getDay()]}曜日${HOLIDAYS[ymd(d)] ? ' ・ ' + esc(HOLIDAYS[ymd(d)]) : ''}</span>`);
   setHtml($('rvDoor'), cfg.pomoOn ? `<div class="rv-door" data-pm="toggle"><div class="h">自習タイマー</div><div class="b"><div class="m" id="rvPS"></div><div class="t n" id="rvPT"></div><div class="cells" id="rvPC" style="grid-template-columns:repeat(${P.n},1fr)">${'<i></i>'.repeat(P.n)}</div></div></div>` : '');
   if (cfg.pomoOn) { $('rvPT').textContent = P.txt; $('rvPS').textContent = pmState(P); [...$('rvPC').children].forEach((c, i) => c.classList.toggle('f', i < P.done)); }
+  if (!cfg.pomoOn) setHtml($('rvDoor'), `<div class="rv-info" data-open="weather"><div class="h">天気</div><div class="b">${$('wxTile').innerHTML}</div></div>`); // タイマーを出さないときは、同じ場所に天気
+  setHtml($('rvCd'), `<div data-open="count">${renderCount()}</div><div data-open="holiday">${renderHoliday()}</div>`);
   // 駅名標:いまの授業
   let no = '--', k = '', nm = '', tm = '', lf = '', l = '', c = '', r = '';
   const ps = st.ps || [], gapName = (a, b) => b - a >= 30 ? '昼休み' : `${Math.round(b - a)}分休み`;
@@ -1362,12 +1427,12 @@ function renderRail(st, d) {
     l = n > 0 ? `← ${n}限 ${esc(sj(n - 1))}` : ''; r = n >= 0 ? `${n + 1}限 ${esc(sj(n))} →` : '';
   } else if (st.mode === 'pre' || st.mode === 'shr') { nm = st.name; lf = `あと <span>${Math.ceil(st.left)}</span> 分`; r = st.mode === 'pre' && ps.length ? `1限 ${esc(sj(0))} →` : ''; }
   else if (st.mode === 'before') { nm = `${st.label}まで`; lf = `あと <span>${Math.ceil(st.left)}</span> 分`; r = `1限 ${esc(sj(0))} →`; }
-  else nm = st.mode === 'after' ? '今日の授業はおわり' : '今日はお休み';
+  else { nm = st.mode === 'after' ? '今日の授業はおわり' : '今日はお休み'; const nd = nextSchoolDay(d); c = `次の登校 ${md(nd)}(${WD[nd.getDay()]})`; r = `1限 ${esc(subjOf(nd, 0) || '')} →`; } // 帯を空にしない
   setHtml($('rvSign'), `<div class="a"><span class="no"><b>TT</b><b>${no}</b></span><div class="tx"><div class="k">${k}</div><div class="nm">${esc(nm)}</div></div><div class="rt"><div class="tm">${tm}</div><div class="lf">${lf}</div></div></div><div class="k1"></div><div class="k2"><span>${l}</span><span class="md">${c}</span><span>${r}</span></div>`);
   // 右:発車標
   const dep = railDepart(d);
   railBoard(dep, flap && cfg.flapBoard && !fresh);
-  $('rvNote').textContent = dep.some(x => x.later) ? '明日の予定をふくみます' : '';
+  $('rvNote').textContent = dep.some(x => x.later) ? '次の登校日の予定をふくみます' : '';
   // やること(今のタイルと同じ内容)
   setHtml($('rvTodo'), $('todoTile').innerHTML);
   // StudyLine の路線記号
@@ -1472,7 +1537,7 @@ function railInit() {
   const BH = ['', '1', '2'], BD = ['', ...D10], BM = ['', ...MT];
   const base = { hh: 34, rad: 2, D: BOARD_D, ff: JPF, fw: 700, fs: 15 }, dg = { ...base, w: 13, fs: 25, ff: NUM, fw: 500, color: '#f5b301', rad: 1 };
   $('rvBoard').innerHTML = `<div class="rv-bh"><span></span><span>種別</span><span>時刻</span><span>行先</span><span>教室</span></div>` +
-    ['先発', '次発', '次々発'].map(lb => `<div class="rv-row"><span class="lb">${lb}</span><div class="k"></div><div class="tm"></div><div class="ds"></div><div class="rm2"></div></div>`).join('') + '<div class="rv-note" id="rvNote"></div>';
+    ['先発', '次発', '次々発', '', '', ''].map(lb => `<div class="rv-row"><span class="lb">${lb}</span><div class="k"></div><div class="tm"></div><div class="ds"></div><div class="rm2"></div></div>`).join('') + '<div class="rv-note" id="rvNote"></div>';
   const rows = [...$('rvBoard').querySelectorAll('.rv-row')].map(row => {
     const t = row.querySelector('.tm'), colon = '<span style="font-family:' + NUM + ';font-size:20px;color:#f5b301;width:8px;text-align:center">:</span>';
     const a = mk(t, BH, dg), b = mk(t, BD, dg); t.insertAdjacentHTML('beforeend', colon); const cc = mk(t, BM, dg), d = mk(t, BD, dg);
@@ -2085,6 +2150,12 @@ function renderCount() {
   if (!l.length) return `<h3>カウントダウン</h3><p class="empty">${cdEmpty()}</p>`;
   return `<h3>カウントダウン</h3><div class="big2">${l.slice(0, 2).map(c => `<div><div class="k">${esc(c.name)}${c.days ? 'まで' : ''}</div><div class="v n">${cdNum(c)}</div><div class="d">${md(parseYmd(c.date))}(${WD[parseYmd(c.date).getDay()]}) ・ 残り${Math.floor(c.days / 7)}週</div></div>`).join('')}</div>`;
 }
+// AI のショートカット(押すと Safari か各サービスのアプリで開く。Platform の中には埋め込めない)
+function renderAi() {
+  const l = cfg.ai.filter(x => x.name && aiUrlOk(x.url));
+  if (!l.length) return '<h3>AI</h3><p class="empty">「設定」→「AI」で追加できます。</p>';
+  return `<h3>AI <span>押すと開きます</span></h3><div class="aig">${l.map(x => `<a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer"><b>${esc(x.name)}</b>${x.note ? `<span>${esc(x.note)}</span>` : ''}</a>`).join('')}</div>`;
+}
 function nextOff() {
   const d = now(); let x = d, i = 0;
   if (!isSchoolDay(d)) return { today: true, from: d, len: offLen(d) };
@@ -2250,21 +2321,23 @@ const CHIP = {
   calendar: { name: 'カレンダー', render: renderCalendar, chip: () => `カレンダー` },
   soon: { name: '次の予定まで', render: renderSoonTile, chip: () => { const e = nextTimed()[0]; return e ? `${esc(e.title.slice(0, 8))} <b data-to="${new Date(e.start).getTime()}" data-short="1">${fmtLeft(new Date(e.start).getTime() - nowMs(), true)}</b>` : '次の予定'; } },
   timer: { name: 'タイマー', render: renderTimer, chip: () => tmr ? `タイマー <b ${tmr.paused == null ? `data-to="${tmr.end}"` : ''}>${fmtLeft(tmr.paused ?? tmr.end - nowMs())}</b>` : 'タイマー' },
+  ai: { name: 'AI', render: renderAi, chip: () => '<b style="font-family:var(--jp);font-size:13px;font-weight:700">AI</b>' },
   quakes: { name: '最近の地震', render: renderQuakes, chip: () => { const q = quakeHist[0]; return q ? `地震 ${q.maxI ? shindoChip(q.maxI) : ''}` : '最近の地震'; } }
 };
 const FIXED = { tt: 'ttTile', todo: 'todoTile', clock: 'clockTile', weather: 'wxTile', sched: 'schedTile' };
 const TILE_NAME = { tt: '時間割', todo: 'やること', clock: '時計', weather: '天気', sched: '予定', ...Object.fromEntries(Object.entries(CHIP).map(([k, v]) => [k, v.name])) };
-const TILE_DESC = { tt: '今日(放課後は明日)の時間割', todo: '課題と持ちもの', clock: '時計と時限バー', weather: '気温・降水確率・傘', sched: 'Googleカレンダーの予定', studyline: '今日のダイヤ・運行状況', kioku: '今日の復習を1語ずつ採点', count: '共通テストなどまでの日数', holiday: '次の連休・今年の残り', terms: '受験の語句をカードでめくる', calendar: '4週間分のカレンダー', quakes: '最近の地震と震度(気象庁)', soon: 'Googleカレンダーの次の予定までの残り時間', timer: '時間・時刻を決めてカウントダウン' };
+const TILE_DESC = { tt: '今日(放課後は明日)の時間割', todo: '課題と持ちもの', clock: '時計と時限バー', weather: '気温・降水確率・傘', sched: 'Googleカレンダーの予定', studyline: '今日のダイヤ・運行状況', kioku: '今日の復習を1語ずつ採点', count: '共通テストなどまでの日数', holiday: '次の連休・今年の残り', terms: '受験の語句をカードでめくる', calendar: '4週間分のカレンダー', quakes: '最近の地震と震度(気象庁)', ai: 'Claude・ChatGPT などを開くショートカット', soon: 'Googleカレンダーの次の予定までの残り時間', timer: '時間・時刻を決めてカウントダウン' };
 const GROW = new Set(['clock', 'todo', 'sched']);
 const SIDES = { left: 'colL', center: 'colC', right: 'colR' };
 const DEFAULT_LAYOUT = { left: ['tt', 'todo', 'kioku'], center: ['clock', 'studyline'], right: ['weather', 'count', 'calendar', 'sched'] };
-const DEFAULT_BAR = ['holiday', 'terms'];
+const DEFAULT_BAR = ['holiday', 'terms', 'ai'];
 function fixLayout() {
   if (!cfg.layout || typeof cfg.layout !== 'object') { cfg.layout = JSON.parse(JSON.stringify(DEFAULT_LAYOUT)); cfg.bar = DEFAULT_BAR.slice(); }
   const seen = new Set();
   for (const side of Object.keys(SIDES)) cfg.layout[side] = (Array.isArray(cfg.layout[side]) ? cfg.layout[side] : []).filter(k => TILE_NAME[k] && !seen.has(k) && seen.add(k));
   if (!seen.has('clock')) cfg.layout.center.unshift('clock'); // 時計はかならず置く
   cfg.bar = (Array.isArray(cfg.bar) ? cfg.bar : []).filter(k => CHIP[k] && !seen.has(k));
+  if (!cfg.aiBar) { cfg.aiBar = 1; if (!seen.has('ai') && !cfg.bar.includes('ai')) cfg.bar.push('ai'); } // 2.23.0:AI のショートカットをいちど上のバーに足す(設定で外せる)
 }
 fixLayout();
 const inLayout = k => Object.values(cfg.layout).some(a => a.includes(k));
@@ -2278,7 +2351,7 @@ function placeRoute() {
   (fullClock ? $('clockTile') : mv && B.classList.contains('rail') ? $('rvRoute') : B.classList.contains('newl') ? $('midRow') : $('clockTile')).appendChild($('rmap'));
 }
 function renderLayout() {
-  const useNew = !editing && !document.body.classList.contains('portrait');
+  const useNew = !editing && !document.body.classList.contains('portrait') && cfg.stdLayout === 'big';
   document.body.classList.toggle('newl', useNew);
   const scr = Object.values(SIDES).map(id => $(id).scrollTop); // 並べ直しても、列のスクロール位置はそのまま
   document.querySelectorAll('.tdel').forEach(x => x.remove());
@@ -2286,11 +2359,11 @@ function renderLayout() {
   placeRoute();
   const hosts = [...Object.values(SIDES).map(id => $(id)), $('topRow')];
   $('pages').querySelectorAll('.spage').forEach(pg => hosts.push(pg));
-  for (const host of hosts) [...host.children].forEach(el => { if (el.id === 'pomo') return; if (Object.values(FIXED).includes(el.id)) pool.appendChild(el); else el.remove(); });
+  for (const host of hosts) [...host.children].forEach(el => { if (el.id === 'pomo') { $('topRow').appendChild(el); return; } if (Object.values(FIXED).includes(el.id)) pool.appendChild(el); else el.remove(); });
   $('pages').innerHTML = '';
   const mk = k => { let el = FIXED[k] ? $(FIXED[k]) : null; if (!el) { el = document.createElement('section'); el.className = 'tile'; el.dataset.tile = k; } el.dataset.k = k; return el; };
   if (useNew) {
-    const clock = $('clockTile'); clock.dataset.k = 'clock'; clock.classList.remove('grow', 'mini'); $('topRow').insertBefore(clock, $('pomo'));
+    const clock = $('clockTile'); clock.dataset.k = 'clock'; clock.classList.remove('grow', 'mini'); $('topRow').appendChild($('pomo')); $('topRow').insertBefore(clock, $('pomo'));
     const keys = stripKeys(), n = Math.max(1, Math.ceil(keys.length / 4));
     stripPage = Math.min(stripPage, n - 1);
     for (let p = 0; p < n; p++) {
@@ -2312,6 +2385,7 @@ function renderLayout() {
       }
       if (!grow && col.lastElementChild) col.lastElementChild.classList.add('grow');
     }
+    { const c = $('clockTile'); if (c.parentNode && c.parentNode.id !== 'pool') c.after($('pomo')); else $('topRow').appendChild($('pomo')); } // 3列:自習タイマーは時計のすぐ下に横長で
   }
   renderTiles();
   if (editing) document.querySelectorAll('#page .tile').forEach(el => { if (el.dataset.k !== 'clock') el.insertAdjacentHTML('beforeend', '<button class="tdel" aria-label="外す">×</button>'); });
@@ -3695,7 +3769,7 @@ const GAS_CODE = `function doGet() {
     .setMimeType(ContentService.MimeType.JSON);
 }`;
 let ttDay = 1, sTab = 'tiles', sPlus = null;
-const STABS = [['tiles', 'タイル', ['s-chips']], ['tt', '時間割', ['s-tt']], ['todo', 'やること', ['s-todo']], ['cd', 'カウントダウン・通知', ['s-cd', 's-soon'], 1], ['quake', '地震', ['s-quake']], ['link', '連携', ['s-gcal', 's-gtodo', 's-apps']], ['mode', '表示モード', ['s-mode']], ['view', '表示', ['s-view', 's-loc', 's-terms', 's-about']]];
+const STABS = [['tiles', 'タイル', ['s-chips']], ['tt', '時間割', ['s-tt']], ['todo', 'やること', ['s-todo']], ['cd', 'カウントダウン・通知', ['s-cd', 's-soon'], 1], ['quake', '地震', ['s-quake']], ['link', '連携', ['s-gcal', 's-gtodo', 's-apps']], ['ai', 'AI', ['s-ai']], ['mode', '表示モード', ['s-mode']], ['view', '表示', ['s-view', 's-loc', 's-terms', 's-about']]];
 function openSettings(anchor) {
   closeFull();
   if (anchor) { const t = STABS.find(x => x[2].includes(anchor)); if (t) sTab = t[0]; } else sTab = 'tiles';
@@ -3802,9 +3876,11 @@ function renderSettings() {
     <div class="row"><label><input type="checkbox" id="flapBoard" ${cfg.flapBoard ? 'checked' : ''}>発車標もパタパタにする</label></div>
     <div class="row"><label><input type="checkbox" id="flapTiles" ${cfg.flapTiles ? 'checked' : ''}>やること・予定もパタパタにする</label></div>
     <div class="row"><label><input type="checkbox" id="flapSound" ${cfg.flapSound ? 'checked' : ''}>めくる音を鳴らす(授業中は鳴らしません)</label></div>
+    <h4 style="margin-top:16px">標準モードの配置</h4>
+    <div class="row"><select id="stdLayout">${opt('cols', cfg.stdLayout, '3列(タイルを全部いちどに出す)')}${opt('big', cfg.stdLayout, '大きい時計(タイルは下段でページ送り)')}</select></div>
     <h4 style="margin-top:16px">自習タイマー</h4>
     <div class="row"><label><input type="checkbox" id="pomoOn" ${cfg.pomoOn ? 'checked' : ''}>自習タイマーを表示する</label></div>
-    <p class="note">オフにすると、時計だけの画面(これまでと同じ)になります。</p>
+    <p class="note">オフのときは、鉄道モードの同じ場所に天気が出ます。StudyLine のポモドーロや「タイマー」のタイルがあるので、ふだんはオフで足ります。</p>
   </section>
 
   <section id="s-view"><h2>表示</h2>
@@ -3935,6 +4011,13 @@ function renderSettings() {
     <p class="note">コードの中の「合言葉」を知らないと読めないようにしてあります。URL とコードは人に教えないでください。URL はこの iPad の中にだけ保存します。</p>
   </section>
 
+  <section id="s-ai"><h2>AI のショートカット</h2>
+    <p class="note">上のバーの「AI」を押すと出る一覧です。押すと Safari か、そのサービスのアプリで開きます(Platform の中には開けません)。</p>
+    <div class="ail">${cfg.ai.map((x, i) => `<div class="row"><input type="text" data-ain="${i}" value="${esc(x.name)}" placeholder="名前" style="width:9em"><input type="url" data-aiu="${i}" value="${esc(x.url)}" placeholder="https://…" style="flex:1" inputmode="url" autocapitalize="off"><input type="text" data-aid="${i}" value="${esc(x.note)}" placeholder="ひとこと(なくてもよい)" style="width:12em"><button class="btn sub" data-aiup="${i}" ${i ? '' : 'disabled'} aria-label="上へ">↑</button><button class="btn sub" data-aidel="${i}" aria-label="消す">×</button></div>`).join('')}</div>
+    <div class="row" style="margin-top:8px"><button class="btn sub" id="aiAdd" ${cfg.ai.length >= 12 ? 'disabled' : ''}>追加</button><button class="btn sub" id="aiReset">最初の並びに戻す</button></div>
+    <p class="note">URL は https:// から入れてください。名前か URL が空の行は一覧に出ません。「AI」のボタン自体は「タイル」タブの「上のバー」で出し入れできます。</p>
+  </section>
+
   <section id="s-apps"><h2>StudyLine・記憶回路</h2>
     <p>ホーム画面に追加したアプリは、アプリごとにデータの保存場所が分かれます。<b>StudyLine と記憶回路は、Platform の中の「開く」から使ってください。</b>そうすると、ダイヤや復習の記録がそのまま Platform に出ます。</p>
     <div class="row"><button class="btn" data-openapp="studyline">StudyLine を開く</button><button class="btn" data-openapp="kioku">記憶回路を開く</button></div>
@@ -3969,6 +4052,10 @@ $('settings').addEventListener('click', e => {
   if (t.id === 'leadAdd') { const n = +$('leadN').value, m = Math.round(n * +$('leadU').value); if (!(n > 0) || m > 7 * 1440) { toast('1分〜7日前の間で入れてください'); return; } cfg.soonLeads = [...new Set([...(cfg.soonLeads || []), m])].sort((a, b) => a - b); return rs(); }
   if (t.id === 'soonUnmute') { soonMuted = {}; store.set('soonMute', soonMuted); return rs(); }
   if (t.id === 'cdAdd') { cfg.countdowns.push({ name: '', date: '' }); return rs(); }
+  if (t.id === 'aiAdd') { if (cfg.ai.length < 12) cfg.ai.push({ name: '', url: '', note: '' }); return rs(); }
+  if (t.id === 'aiReset') { if (!confirm('AI のショートカットを最初の並びに戻しますか?')) return; cfg.ai = null; fixAi(); renderSlot(); renderTiles(); return rs(); }
+  if (t.dataset.aidel != null) { cfg.ai.splice(+t.dataset.aidel, 1); renderSlot(); renderTiles(); return rs(); }
+  if (t.dataset.aiup != null) { const i = +t.dataset.aiup; if (i > 0) [cfg.ai[i - 1], cfg.ai[i]] = [cfg.ai[i], cfg.ai[i - 1]]; renderSlot(); renderTiles(); return rs(); }
   if (t.dataset.cddel != null) { cfg.countdowns.splice(+t.dataset.cddel, 1); return rs(); }
   if (t.dataset.cdev != null) { cfg.countdowns = cfg.countdowns.filter(c => c.name || c.date); cfg.countdowns.push({ name: t.dataset.cdev, date: t.dataset.cdd2 }); return rs(); }
   if (t.dataset.modeset) { setMode(t.dataset.modeset); return renderSettings(); }
@@ -4019,7 +4106,11 @@ $('settings').addEventListener('change', e => {
   else if (t.id === 'showSec') cfg.showSec = t.checked;
   else if (t.id === 'shiftOn') { cfg.shift = t.checked; fit(); }
   else if (t.dataset.gtl) { const id = t.dataset.gtl; cfg.gtHide = t.checked ? (cfg.gtHide || []).filter(x => x !== id) : [...(cfg.gtHide || []), id]; saveCfg(); renderTodo(); return; }
-  else if (t.id === 'pomoOn') cfg.pomoOn = t.checked;
+  else if (t.id === 'pomoOn') { cfg.pomoOn = t.checked; saveCfg(); applyTheme(); renderLayout(); renderAll(); return; }
+  else if (t.id === 'stdLayout') { cfg.stdLayout = t.value === 'big' ? 'big' : 'cols'; saveCfg(); renderLayout(); renderAll(); return; }
+  else if (t.dataset.ain != null) { cfg.ai[+t.dataset.ain].name = t.value.trim().slice(0, 16); saveCfg(); renderSlot(); renderTiles(); return; }
+  else if (t.dataset.aiu != null) { const u = t.value.trim().slice(0, 300); if (u && !aiUrlOk(u)) toast('URL は https:// から入れてください'); cfg.ai[+t.dataset.aiu].url = u; saveCfg(); renderSlot(); renderTiles(); return; }
+  else if (t.dataset.aid != null) { cfg.ai[+t.dataset.aid].note = t.value.trim().slice(0, 20); saveCfg(); renderSlot(); renderTiles(); return; }
   else if (t.id === 'modeAuto') cfg.modeAuto = t.checked;
   else if (t.dataset.msf != null) { cfg.modeSched.slots[+t.dataset.msf].from = pad5(t.value) || cfg.modeSched.slots[+t.dataset.msf].from; modeHold = null; store.set('modeHold', null); }
   else if (t.dataset.msm != null) { cfg.modeSched.slots[+t.dataset.msm].mode = t.value; modeHold = null; store.set('modeHold', null); }
