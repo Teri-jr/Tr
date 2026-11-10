@@ -815,6 +815,7 @@ body.night .rm .rb{top:31px;height:6px;border-radius:3px}
 .flf.fa{transform-origin:50% 100%;z-index:2;display:none}.flf.fb{transform-origin:50% 0;z-index:2;display:none}
 .fli{position:absolute;left:0;right:0;white-space:nowrap;overflow:hidden}
 .fln{position:absolute;left:0;right:0;top:50%;height:1px;margin-top:-.5px;background:#0b0b0a;z-index:3}
+.rv-sec{align-self:flex-start;margin:14px 0 0 10px;font-size:44px;font-weight:400;color:var(--sub);width:1.15em}
 .fcs{display:flex;flex-direction:column;gap:22px;padding:0 4px}.fcs i{width:12px;height:12px;background:#ff5b3a;animation:plBlink 1s steps(1) infinite}
 @keyframes plBlink{50%{opacity:.25}}
 .rv-door{width:236px;flex:none;background:#0f0f0e;border:1px solid #2b2a28;color:#ece8df;cursor:pointer}
@@ -1061,7 +1062,7 @@ body.night .rm .rb{top:31px;height:6px;border-radius:3px}
 
 <script>
 'use strict';
-const APP_VERSION = '2.21.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.21.1'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1343,6 +1344,7 @@ function renderRail(st, d) {
   const fresh = Date.now() - railLast > 3000; railLast = Date.now(); flapQuiet = st.mode === 'class'; railInit();
   const flap = effAnim() === 'flap';
   railClock(d, flap && !fresh);
+  { const rs = $('rvSec'); rs.hidden = !cfg.showSec; rs.textContent = pad(d.getSeconds()); }
   // 上:日付・ドア上表示風タイマー
   setHtml($('rvDt'), `<span class="dc">${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][d.getDay()]}</span><span>${WD[d.getDay()]}曜日${HOLIDAYS[ymd(d)] ? ' ・ ' + esc(HOLIDAYS[ymd(d)]) : ''}</span>`);
   setHtml($('rvDoor'), cfg.pomoOn ? `<div class="rv-door" data-pm="toggle"><div class="h">自習タイマー</div><div class="b"><div class="m" id="rvPS"></div><div class="t n" id="rvPT"></div><div class="cells" id="rvPC" style="grid-template-columns:repeat(${P.n},1fr)">${'<i></i>'.repeat(P.n)}</div></div></div>` : '');
@@ -1459,6 +1461,7 @@ function railInit() {
   const c = { h1: mk(clk, ['', '1', '2'], co), h2: mk(clk, D10, co) };
   clk.insertAdjacentHTML('beforeend', '<span class="fcs"><i></i><i></i></span>');
   c.m1 = mk(clk, MT, co); c.m2 = mk(clk, D10, co);
+  clk.insertAdjacentHTML('beforeend', '<span class="rv-sec n" id="rvSec"></span>'); // 秒はフラップにせず、数字だけ(設定の「秒を表示」に合わせる)
   // 発車標のドラム:先頭に空白の板。行先・教室の板は、いまの時間割から集める(足りなければあとから後ろに足す)
   const subs = [], rooms = [];
   for (const arr of Object.values(cfg.tt || {})) for (const x of arr || []) if (x) { if (x.s && !subs.includes(x.s)) subs.push(x.s); if (x.r && !rooms.includes(x.r)) rooms.push(x.r); }
