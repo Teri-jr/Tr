@@ -1051,6 +1051,11 @@ body:not(.nopomo) .nv-time{font-size:160px}
 .wk .td i{background:var(--red);box-shadow:0 0 12px rgba(145,132,217,.5)}.wk .td .w,.wk .td .v{color:var(--ink)}
 #nvCal .cal{flex:1;align-content:space-evenly}#nvCal .cal span{font-size:15px}
 .nvcd .big2 .v{font-size:64px}.nvcd .big2 .k{font-size:12.5px}.nvcd .big2 .d{font-size:11.5px;margin-top:2px}
+/* 数字の動き(押し上げ・ぼかし) */
+.rch{display:flex;align-items:flex-start}
+.rcs{display:inline-block;position:relative;vertical-align:top;height:var(--rlh);line-height:var(--rlh)}
+.rcs.push{overflow:hidden}
+.rci{display:block;height:var(--rlh);line-height:var(--rlh);white-space:nowrap}
 </style>
 </head>
 <body>
@@ -1108,7 +1113,7 @@ body:not(.nopomo) .nv-time{font-size:160px}
 
 <script>
 'use strict';
-const APP_VERSION = '2.23.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.24.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1150,6 +1155,7 @@ const DEFAULT_CFG = {
   termCats: ['日本史', '古文単語', '化学', '物理', '現代文', '四字熟語'],
   qFull: 5, qBeep: 3, // 震度の段階(0〜9)。5 = 5弱。qFull 0 = 緊急地震速報はすべて全画面
   qiPref: 5, qiMax: 0, qiMag: 0, qiTsunami: true, // 地震情報を全画面にする条件(0 = 使わない)
+  blackAfter: true, // 今日の授業が終わったら画面を黒にする(翌朝5時まで。さわると1分だけ戻る)
   pomoOn: false, // 自習タイマーを出す(2.23.0 から初期値はオフ。StudyLine のポモドーロとタイマーのタイルがあるため)
   stdLayout: 'cols', // 標準モードの配置(cols 3列 / big 大きい時計+下段のページ送り)
   ai: null, // AI のショートカット [{name, url, note}](fixAi で初期値を入れる)
@@ -1355,8 +1361,8 @@ function renderNight(st, d) {
   const P = pmInfo(), sc = slSchedule(), C = 2 * Math.PI * 96;
   // 上:時計 + 円形のタイマー
   const ring = cfg.pomoOn ? `<div class="nv-ring" data-pm="toggle"><svg width="216" height="216" viewBox="0 0 216 216"><circle cx="108" cy="108" r="96" fill="none" stroke="var(--rule)" stroke-width="6"/><circle id="nvRing" cx="108" cy="108" r="96" fill="none" stroke="var(--red)" stroke-width="6" stroke-linecap="round" stroke-dasharray="${C.toFixed(2)}" style="filter:drop-shadow(0 0 6px rgba(145,132,217,.7))"/></svg><div class="in"><span class="l">自習タイマー</span><span class="t n" id="nvPT"></span><span class="s" id="nvPS"></span></div></div>` : '';
-  setHtml($('nvTop'), `<div class="c1" data-open="clock"><div class="nv-date">${d.getMonth() + 1}月${d.getDate()}日 ${WD[d.getDay()]}曜日${HOLIDAYS[ymd(d)] ? ' ・ ' + esc(HOLIDAYS[ymd(d)]) : ''}</div><div class="nv-time n">${d.getHours()}<span class="c">:</span>${pad(d.getMinutes())}${cfg.showSec ? '<span class="sec" id="nvSec"></span>' : ''}</div></div>${ring}`);
-  if ($('nvSec')) $('nvSec').textContent = pad(d.getSeconds());
+  setHtml($('nvTop'), `<div class="c1" data-open="clock"><div class="nv-date">${d.getMonth() + 1}月${d.getDate()}日 ${WD[d.getDay()]}曜日${HOLIDAYS[ymd(d)] ? ' ・ ' + esc(HOLIDAYS[ymd(d)]) : ''}</div><div class="nv-time n" id="nvTime"></div></div>${ring}`);
+  drawRoll($('nvTime'), d, { colon: '<span class="c">:</span>', lh: .9, secId: 'nvSec' });
   if (cfg.pomoOn) { $('nvPT').textContent = P.txt; $('nvPS').textContent = pmState(P); $('nvRing').style.strokeDashoffset = (C * (1 - P.frac)).toFixed(2); }
   // 中:StudyLine を主役に
   const S = slSums(d), foot = `<div class="nv-foot"><span>今日 <b>${hm(S.today * 60000)}</b></span><span>昨日 <b>${hm(S.yd * 60000)}</b></span><span style="margin-left:auto">7日で <b>${(S.week / 60).toFixed(1)}時間</b></span></div>`;
@@ -1548,8 +1554,11 @@ function railInit() {
 // 時計:分が変わるたびに、値が変わったユニットだけ回る(59→00 のときは分十も回る)
 function railClock(d, anim) {
   const h = d.getHours(), m = d.getMinutes(), c = railUnits.c;
-  c.h1.go(h < 10 ? '' : String(Math.floor(h / 10)), 0, anim); c.h2.go(String(h % 10), 0, anim);
-  c.m1.go(String(Math.floor(m / 10)), 0, anim); c.m2.go(String(m % 10), 0, anim);
+  // 変わる桁は、左から1個ずつ順番にめくる(前の桁が止まってからつぎの桁)
+  let T = 0;
+  for (const [u, v] of [[c.h1, h < 10 ? '' : String(Math.floor(h / 10))], [c.h2, String(h % 10)], [c.m1, String(Math.floor(m / 10))], [c.m2, String(m % 10)]]) {
+    const n = anim ? u.dist(v) : 0; u.go(v, T, anim); if (n) T += n * u.o.D + 50;
+  }
   $('rvSecs').hidden = !cfg.showSec;
   if (cfg.showSec) { const sc = d.getSeconds(); c.s1.go(String(Math.floor(sc / 10)), 0, anim); c.s2.go(String(sc % 10), 0, anim); }
 }
@@ -1558,7 +1567,8 @@ function railBoard(dep, anim) {
   const sig = JSON.stringify(dep); if (sig === boardSig) return; boardSig = sig;
   const ens = (drum, v) => { if (v && !drum.some(x => (typeof x === 'object' ? x.t : x) === v)) drum.push(v); };
   let T = 0;
-  const grp = (pairs) => { const n = Math.max(0, ...pairs.map(([u, v]) => u.dist(v))), w = T; if (n && anim) T += n * BOARD_D + BOARD_GAP; pairs.forEach(([u, v]) => u.go(v, w, anim)); };
+  // 1個ずつ順番にめくる。グループ(時刻 → 種別+行先 → 教室)が終わったら、250ms あけて次へ
+  const grp = (pairs) => { let any = false; pairs.forEach(([u, v]) => { const n = u.dist(v), w = T; if (n && anim) { T += n * BOARD_D + 50; any = true; } u.go(v, w, anim); }); if (any) T += BOARD_GAP; };
   railUnits.rows.forEach((U, r) => {
     const f = dep[r] || { kind: '', t: null, dest: '', room: '' }; ens(U.SD, f.dest); ens(U.RD, f.room);
     const h = f.t == null ? null : Math.floor(f.t / 60), m = f.t == null ? null : Math.round(f.t % 60);
@@ -1566,6 +1576,52 @@ function railBoard(dep, anim) {
     grp([[U.k, f.kind], [U.s, f.dest]]);
     grp([[U.r, f.room]]);
   });
+}
+
+/* ================= 数字の動き:押し上げ・ぼかし(時計の 時十・時一・分十・分一) =================
+   押し上げ:古い数字と新しい数字を縦に並べて translateY(0 → -50%)、550ms
+   ぼかし:古い数字は opacity 1→0・blur 0→10px・上へ18px(500ms)、新しい数字はその逆(700ms、150ms遅れ)
+   動かすのは transform / opacity / filter だけ。見ていなかった間の変化は動かさず、そのまま表示する */
+class RollClock {
+  constructor(host, o) {
+    this.o = o; this.ch = ['', '', '', '']; this.last = 0;
+    host.textContent = ''; host.classList.add('rch'); host.style.setProperty('--rlh', o.lh + 'em');
+    const mk = () => { const sl = document.createElement('span'); sl.className = 'rcs'; return sl; };
+    this.slots = [mk(), mk(), mk(), mk()];
+    const colon = document.createElement('span'); colon.innerHTML = o.colon;
+    host.append(this.slots[0], this.slots[1], colon.firstChild, this.slots[2], this.slots[3]);
+  }
+  set(h, m, kind) {
+    const v = [h < 10 ? '' : String(Math.floor(h / 10)), String(h % 10), String(Math.floor(m / 10)), String(m % 10)], t = Date.now();
+    const ani = (kind === 'push' || kind === 'blur') && this.last && t - this.last < 2500 && !document.hidden;
+    this.last = t;
+    v.forEach((c, i) => { if (c === this.ch[i] && this.slots[i].firstChild) return; const old = this.ch[i]; this.ch[i] = c; this.flip(this.slots[i], old, c, ani ? kind : 'none'); });
+  }
+  flip(sl, a, b, kind) {
+    if (sl._anim) { sl._anim.forEach(x => x.cancel()); sl._anim = null; }
+    sl.className = 'rcs'; sl.textContent = '';
+    const mkc = t => { const e = document.createElement('span'); e.className = 'rci'; e.textContent = t; return e; };
+    const plain = () => { if (sl._anim) sl._anim.forEach(x => x.cancel()); sl._anim = null; sl.className = 'rcs'; sl.textContent = ''; sl.appendChild(mkc(b)); };
+    if ((kind !== 'push' && kind !== 'blur') || !sl.animate) { plain(); return; }
+    if (kind === 'push') {
+      sl.classList.add('push'); const col = document.createElement('span'); col.style.display = 'block'; col.append(mkc(a), mkc(b)); sl.appendChild(col);
+      const an = col.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-50%)' }], { duration: 550, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'forwards' });
+      sl._anim = [an]; an.onfinish = () => { if (sl._anim && sl._anim[0] === an) plain(); };
+    } else {
+      const o = mkc(a), n = mkc(b); o.style.cssText += ';position:absolute;left:0;top:0'; sl.append(n, o);
+      const a1 = o.animate([{ opacity: 1, filter: 'blur(0px)', transform: 'translateY(0)' }, { opacity: 0, filter: 'blur(10px)', transform: 'translateY(-18px)' }], { duration: 500, easing: 'ease', fill: 'forwards' });
+      const a2 = n.animate([{ opacity: 0, filter: 'blur(10px)', transform: 'translateY(18px)' }, { opacity: 1, filter: 'blur(0px)', transform: 'translateY(0)' }], { duration: 700, delay: 150, easing: 'ease', fill: 'both' });
+      sl._anim = [a1, a2]; a2.onfinish = () => { if (sl._anim && sl._anim[1] === a2) plain(); };
+    }
+  }
+}
+const rollKind = () => { const a = effAnim(); return a === 'push' || a === 'blur' ? a : 'none'; };
+// 時計の本体(host)に RollClock を作り、秒(あれば)を付ける
+function drawRoll(el, d, o) {
+  if (!el._rc) { el.textContent = ''; const hm = document.createElement('span'); el.appendChild(hm); el._rc = new RollClock(hm, o); }
+  let sc = el.querySelector('.sec');
+  if (cfg.showSec) { if (!sc) { sc = document.createElement('span'); sc.className = 'sec'; if (o.secId) sc.id = o.secId; el.appendChild(sc); requestAnimationFrame(fitClock); } sc.textContent = pad(d.getSeconds()); } else if (sc) sc.remove();
+  el._rc.set(d.getHours(), d.getMinutes(), el.closest('#pool') ? 'none' : rollKind()); // 画面に出ていない時計は動かさない
 }
 
 // 夜・鉄道の画面から、押したところを全画面で開く(button・チェック・タイマーは除く)
@@ -1653,7 +1709,7 @@ function schoolRoute(d, st, w, o = {}) {
 function renderClock() {
   const d = now();
   $('date').innerHTML = `<b>${d.getMonth() + 1}月${d.getDate()}日</b>　${WD[d.getDay()]}曜日${HOLIDAYS[ymd(d)] ? '　' + esc(HOLIDAYS[ymd(d)]) : ''}`;
-  $('clock').innerHTML = `${d.getHours()}<span class="colon">:</span>${pad(d.getMinutes())}${cfg.showSec ? `<span class="sec">${pad(d.getSeconds())}</span>` : ''}`;
+  drawRoll($('clock'), d, { colon: '<span class="colon">:</span>', lh: .88 });
   const st = schoolState(d);
   let t = '';
   const sub = (dd, i) => { const s = subjOf(dd, i); return s ? `<b>${esc(s)}</b>${roomOf(dd, i) ? `(${esc(roomOf(dd, i))})` : ''}` : `<b>${i + 1}限</b>`; };
@@ -2504,7 +2560,7 @@ function fvTabsUp() {
   if (tb && tb.parentNode === bar) { ft.appendChild(tb); if (!bar.textContent.trim() && !bar.querySelector('button,input,select')) bar.remove(); }
 }
 $('fullTabs').addEventListener('click', e => { const b = e.target.closest('[data-fa]'); if (b && fullK) fvAction(b.dataset.fa, b.dataset.v); });
-function renderFullView() { if (fullK && FV[fullK]) { $('fullBody').innerHTML = `<div class="fv v2 fv-${fullK}">${FV[fullK]()}</div>`; fvTabsUp(); $('fullBody').querySelectorAll('[data-fit]').forEach(e => fitText(e, +e.dataset.fit)); if (fullK === 'quakes') requestAnimationFrame(drawQuakeMini); if (fullK === 'weather' && fs.wmode === 'radar') requestAnimationFrame(rdInit); else rdStop(); } }
+function renderFullView() { if (fullK && FV[fullK]) { $('fullBody').innerHTML = `<div class="fv v2 fv-${fullK}">${FV[fullK]()}</div>`; fvTabsUp(); if (fullK === 'clock') fvClockTick(now()); $('fullBody').querySelectorAll('[data-fit]').forEach(e => fitText(e, +e.dataset.fit)); if (fullK === 'quakes') requestAnimationFrame(drawQuakeMini); if (fullK === 'weather' && fs.wmode === 'radar') requestAnimationFrame(rdInit); else rdStop(); } }
 const tabs = (fa, items, cur) => `<div class="fvtabs">${items.map(([v, l]) => `<button data-fa="${fa}" data-v="${esc(v)}" class="${String(v) === String(cur) ? 'on' : ''}">${l}</button>`).join('')}</div>`;
 // その日にかかる予定(終日の予定は終わりの日を含まない)
 function eventsOn(d) {
@@ -3123,7 +3179,7 @@ function fvClock1d(d, st, sc) {
   } else if (school) route = `<div class="hd"><span style="left:0">学校</span></div><div class="rw" style="display:block">${schoolRoute(d, st, W, { legend: false })}</div>`;
   else if (sc) { const rows = sc.rows; route = `<div class="hd"><span style="left:0;color:var(--sl)">STUDYLINE</span></div><div class="rw" style="display:block"><div class="rmw">${routeMap(slSegs(rows), { t0: rows[0].s, t1: sc.end, now: sc.nm, w: W, gaps: false, c: 'var(--sl)', ticks: [rows[0].s, sc.end] })}</div></div>`; }
   return `<div class="v7"><div class="v7top ${cfg.pomoOn ? '' : 'solo'}"><div class="v7l"><div class="v7dt"><b>${d.getMonth() + 1}月${d.getDate()}日</b>　${WD[d.getDay()]}曜日${HOLIDAYS[ymd(d)] ? '　' + esc(HOLIDAYS[ymd(d)]) : ''}</div>
-    <div class="v7clock n" id="fcClock" data-fit="320"><span id="fcHM">${fcTime(d)}</span>${cfg.showSec ? '<span class="sec" id="fcSec"></span>' : ''}</div><div class="v7txt">${fcLine(d, st)}</div></div>${pomo}</div>
+    <div class="v7clock n" id="fcClock" data-fit="320"><span id="fcHM"></span>${cfg.showSec ? '<span class="sec" id="fcSec"></span>' : ''}</div><div class="v7txt">${fcLine(d, st)}</div></div>${pomo}</div>
     <div class="v7b">${route || '<p class="empty">今日の学校の流れも、StudyLine のダイヤもありません。</p>'}</div></div>`;
 }
 // 1e(夜):左に「この先の停車駅」を縦に、右に時計とタイマー
@@ -3145,7 +3201,7 @@ function fvClock1e(d, st, sc, B) {
   }
   const tm = cfg.pomoOn ? `<div class="pm"><div class="a"><span>自習タイマー ・ ${P.focus ? '集中' : '休憩'}</span><b id="fcPT"></b></div><div class="bar"><i id="fcPB" style="width:0"></i></div></div>` : '';
   return `<div class="v7n"><div class="st"><div class="lab">この先の停車駅</div><div class="sl"><div class="tr"></div><div class="tf" style="height:calc((100% - 44px) * ${(fill / 100).toFixed(3)})"></div><div class="ls">${items.map(x => `<div class="it ${x.c}"><span class="d"></span><span><span class="n">${esc(x.n)}</span><span class="s">${esc(x.s)}</span></span><span class="t">${x.t}</span></div>`).join('') || '<p class="empty">この先の予定はありません</p>'}</div></div></div>
-    <div class="rt"><div class="dd">${d.getMonth() + 1}月${d.getDate()}日 ${WD[d.getDay()]}曜日</div><div class="v7clock n" id="fcClock" data-fit="250"><span id="fcHM">${fcTime(d)}</span>${cfg.showSec ? '<span class="sec" id="fcSec"></span>' : ''}</div>
+    <div class="rt"><div class="dd">${d.getMonth() + 1}月${d.getDate()}日 ${WD[d.getDay()]}曜日</div><div class="v7clock n" id="fcClock" data-fit="250"><span id="fcHM"></span>${cfg.showSec ? '<span class="sec" id="fcSec"></span>' : ''}</div>
     ${big || tm ? `<div class="row">${big ? `<div><div class="k">${esc(big[0])}</div><div class="big n">${big[1]}<small>分</small></div></div>` : ''}${tm}</div>` : ''}<div class="ft">${foot}</div></div></div>`;
 }
 // 2c:授業中に StudyLine が走っているとき。学校の線と StudyLine の線の複線(自習のコマは斜線、乗り換え ↓ / 戻る ↑)
@@ -3183,16 +3239,22 @@ function fvClock2c(d, st, sc, B) {
   const gapName = i + 1 < ps.length ? (ps[i + 1][0] - b >= 30 ? '昼休み' : `${Math.round(ps[i + 1][0] - b)}分休み`) : '';
   const pomo = cfg.pomoOn ? `<div class="pm"><span>自習タイマー ・ ${P.focus ? '集中' : '休憩'}</span><span class="t n" id="fcPT"></span></div>${fcPomo(P)}` : '';
   return `<div class="v7"><div class="v7top wide"><div class="v7l"><div class="v7dt"><b>${d.getMonth() + 1}月${d.getDate()}日</b>　${WD[d.getDay()]}曜日</div>
-    <div class="v7clock n" id="fcClock" data-fit="270"><span id="fcHM">${fcTime(d)}</span>${cfg.showSec ? '<span class="sec" id="fcSec"></span>' : ''}</div>
+    <div class="v7clock n" id="fcClock" data-fit="270"><span id="fcHM"></span>${cfg.showSec ? '<span class="sec" id="fcSec"></span>' : ''}</div>
     <div class="v7txt">${i + 1}限 <b>${sj(i)}</b>（${fmtMin(a)}〜${fmtMin(b)}）　／　次は <b>${gapName || '帰りの時間'}</b>${gapName ? ` → ${nx}` : ''}</div></div>
     <div class="v7r sl"><div class="tg"><span>StudyLine 運行中</span><span>${sj(i)}の時間に乗り換え</span></div><div class="k">いまの駅</div><div class="nm">${esc(run.t.name)}</div>
     <div class="lf"><span>終わりまで</span><span class="v n">${Math.max(0, Math.ceil(Math.min(run.e, b) - sc.nm))}</span><span>分</span></div><div class="bk">${fmtMin(b)} に学校の線へ戻ります ・ ${delay > 0 ? `<span class="late">${delay}分遅れ</span>` : delay < 0 ? `<span class="okc">${-delay}分早い</span>` : '定時'}</div>${pomo}</div></div>
     <div class="v7b" style="height:262px;padding:18px 0 0"><div class="dl">${h}</div></div></div>`;
 }
+let fcLast = null;
 // 秒ごとの更新(時計・タイマー)。全画面そのものは1分ごとに描き直す
 function fvClockTick(d) {
   const c = $('fcClock'); if (!c) return;
-  const hmv = `${d.getHours()}:${pad(d.getMinutes())}`, t = $('fcHM'); if (t && t._v !== hmv) { t._v = hmv; t.innerHTML = fcTime(d); }
+  const t = $('fcHM');
+  if (t) { // 1分ごとに画面を描き直すので、前の分を覚えておいて、そこから動かす
+    if (!t._rc) { t._rc = new RollClock(t, { colon: '<span class="c">:</span>', lh: .86 }); if (fcLast && Date.now() - fcLast.at < 5000) t._rc.set(fcLast.h, fcLast.m, 'none'); }
+    t._rc.set(d.getHours(), d.getMinutes(), rollKind());
+  }
+  fcLast = { h: d.getHours(), m: d.getMinutes(), at: Date.now() };
   const sec = $('fcSec'); if (sec) sec.textContent = pad(d.getSeconds());
   fitText(c, +c.dataset.fit);
   const P = pmInfo(), pt = $('fcPT'); if (pt) { pt.textContent = P.txt; if (pt.dataset.fit) fitText(pt, +pt.dataset.fit); }
@@ -3890,6 +3952,7 @@ function renderSettings() {
     <h4 style="margin-top:14px">焼き付き防止</h4>
     <div class="row"><label><input type="checkbox" id="shiftOn" ${cfg.shift ? 'checked' : ''}>3分ごとに画面を数ピクセルずらす</label></div>
     <div class="row"><label><input type="checkbox" id="dimOn" ${cfg.dimOn ? 'checked' : ''}>夜は暗くする</label><input type="time" id="dimFrom" value="${esc(pad5(cfg.dimFrom))}"> 〜 <input type="time" id="dimTo" value="${esc(pad5(cfg.dimTo))}"></div>
+    <div class="row"><label><input type="checkbox" id="blackAfter" ${cfg.blackAfter ? 'checked' : ''}>今日の授業が終わったら画面を黒にする(翌朝5時まで)</label></div>
     <div class="row">暗さ <select id="dimLv">${[[50, '少し'], [70, 'ふつう'], [85, 'かなり']].map(([v, l]) => opt(v, cfg.dimLv, l)).join('')}</select></div>
     <p class="note">暗いときに画面をさわると、1分だけ明るく戻ります。地震の表示が出たら、すぐ明るくなります。</p>
     <p class="note">置きっぱなしにするときは、充電しながら使ってください。開いている間は画面が自動で消えないようにしています(iPadOS 16.4 以降)。</p>
@@ -4127,6 +4190,7 @@ $('settings').addEventListener('change', e => {
   else if (t.id === 'dimFrom') cfg.dimFrom = unpad(t.value);
   else if (t.id === 'dimTo') cfg.dimTo = unpad(t.value);
   else if (t.id === 'dimLv') cfg.dimLv = +t.value;
+  else if (t.id === 'blackAfter') cfg.blackAfter = t.checked;
   else if (t.dataset.tts != null || t.dataset.ttr != null) {
     const i = +(t.dataset.tts ?? t.dataset.ttr), arr = cfg.tt[ttDay] = cfg.tt[ttDay] || [];
     arr[i] = Object.assign({ s: '', r: '' }, arr[i]); arr[i][t.dataset.tts != null ? 's' : 'r'] = t.value.trim().slice(0, 20);
@@ -4182,11 +4246,19 @@ function inDim() {
   if (a == null || b == null || a === b) return false;
   return a < b ? m >= a && m < b : m >= a || m < b;
 }
-function updateDim() {
-  const on = inDim() && nowMs() > dimWake && !fullMode && !soonCur && $('qb').hidden && $('settings').hidden && $('appView').hidden;
-  const D = $('dim'); D.hidden = !on; if (on) D.style.opacity = (cfg.dimLv || 70) / 100;
+// 今日の授業が終わったら画面を真っ黒にする(翌朝5時まで)。さわると1分だけ戻る。授業のない日はしない
+function blackNow() {
+  if (!cfg.blackAfter) return false;
+  const d = now();
+  if (isSchoolDay(d) && schoolState(d).mode === 'after') return true;
+  return minOfDay(d) < 300 && isSchoolDay(addDays(d, -1));
 }
-addEventListener('pointerdown', () => { if (!$('dim').hidden || inDim()) { dimWake = nowMs() + 60e3; updateDim(); } }, { capture: true });
+function updateDim() {
+  const blk = blackNow();
+  const on = (inDim() || blk) && nowMs() > dimWake && !fullMode && !soonCur && $('qb').hidden && $('settings').hidden && $('appView').hidden;
+  const D = $('dim'); D.hidden = !on; if (on) D.style.opacity = blk ? 1 : (cfg.dimLv || 70) / 100;
+}
+addEventListener('pointerdown', () => { if (!$('dim').hidden || inDim() || blackNow()) { dimWake = nowMs() + 60e3; updateDim(); } }, { capture: true });
 setInterval(() => { updateDim(); if (!document.body.classList.contains('portrait') && cfg.shift && Math.floor(Date.now() / 1000) % 180 === 0) fit(); }, 1000);
 function loop() { tick(false); setTimeout(loop, 1000 - (Date.now() % 1000) + 5); }
 setInterval(eewTick, 250);
