@@ -840,7 +840,7 @@ body.night .rm .rb{top:31px;height:6px;border-radius:3px}
 .rv-sign .k2 .md{font-size:12px;font-weight:500}
 .rv-route{flex:1;min-height:0;padding:18px 28px 0}
 .rv-route .rmw{margin-top:0}
-#rvBoard{background:#0f0f0e;border-bottom:1px solid #2b2a28;color:#ece8df;flex:none}
+#rvBoard{background:#0f0f0e;border-bottom:1px solid #2b2a28;color:#ece8df;flex:none;cursor:pointer}
 .rv-bh,.rv-row{display:grid;grid-template-columns:38px 46px 64px 1fr 54px;align-items:center;column-gap:3px;padding:0 14px 0 16px}
 .rv-bh{font-size:11.5px;color:#8d8a83;padding-top:10px;padding-bottom:6px}
 .rv-row{padding-top:6px;padding-bottom:6px;border-top:1px solid #2b2a28}
@@ -1189,7 +1189,7 @@ body.rail:not(.portrait) #full .ftabs .fvtabs button.tadd{border:2px solid #f5b3
 .xfer{background:#f5b301;color:#141413;padding:1px 8px;margin-right:8px;font-size:12px;letter-spacing:.06em}
 
 /* ===== 2.27.0 発車標のランプ・パタパタするボタン・縦向きの鉄道モード ===== */
-#rvBoard .rv-row .lb{transition:color .15s}#rvBoard.sw .rv-row .lb{color:#2b2a28!important}
+#rvBoard .rv-row .lb{transition:color .15s}#rvBoard.lampoff .rv-row .lb{color:#2b2a28!important}
 body.rail:not(.portrait) #full .ftabs .fvtabs button.tflap{border:1px solid #8d8a83;color:#ece8df}
 body.portrait.rail:not(.editing) #page{display:none}
 body.portrait.rail:not(.editing) #nowband{display:none}
@@ -1270,7 +1270,7 @@ body.portrait .mtk .r2 .v{font-size:52px}
 
 <script>
 'use strict';
-const APP_VERSION = '2.27.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.27.1'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1547,8 +1547,8 @@ function renderNight(st, d) {
   setHtml($('nvCal'), renderCalendar()); setHtml($('nvCd'), renderCount());
 }
 
-// 発車標:次に動く予定を6つ(今日の残り → 足りなければ次の授業日)
-function railDepart(d) {
+// 発車標:今日これから動く予定を、上から6つまで(今日の残り → 足りなければ次の授業日)
+function railDepart(d, next) {
   const out = [], m = minOfDay(d);
   const add = (day, later) => {
     const ps = periodsMin(day), post = postMin(day);
@@ -1558,8 +1558,8 @@ function railDepart(d) {
     });
     if (post && (later || post[1] > m)) out.push({ t: post[1], kind: '放課後', dest: post[0], room: '', later });
   };
-  if (isSchoolDay(d)) add(d, false);
-  if (out.length < 6) add(nextSchoolDay(d), true);
+  if (next) add(nextSchoolDay(d), true); // 「パタパタする」で確かめるとき用(今日の分がもうないとき)
+  else if (isSchoolDay(d)) add(d, false); // 今日の分だけ。発車した段は上へ繰り上がり、下の段から空白になっていく(次の登校日の分では埋めない)
   return out.slice(0, 6);
 }
 
@@ -1569,7 +1569,6 @@ function renderRail(st, d) {
   // 時計・発車標のフラップ(見ていなかった間にたまった分は回さず、いまの表示に合わせる)
   const fresh = Date.now() - railLast > 3000; railLast = Date.now(); flapQuiet = st.mode === 'class'; railInit();
   const flap = effAnim() === 'flap';
-  const blank = flapBlankNow(), par = blank !== railBlankPrev; railBlankPrev = blank;
   railClock(d, flap && !fresh, false, false); // 時計は黒にしない
   { const ck = $('rvClk'), pt = document.body.classList.contains('portrait'), pp = ck.parentNode, cs = pt ? getComputedStyle(pp) : null, w = pt ? pp.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) : 0; if (ck._zw !== w || (pt && ck.scrollWidth > ck.clientWidth + 1)) { ck._zw = w; ck.style.zoom = ''; if (pt && ck.scrollWidth > w && w > 0) ck.style.zoom = (w / ck.scrollWidth).toFixed(3); } } // 縦向きは、時計を幅に合わせて縮める
   // 上:日付・ドア上表示風タイマー
@@ -1595,9 +1594,10 @@ function renderRail(st, d) {
   else { nm = st.mode === 'after' ? '今日の授業はおわり' : '今日はお休み'; const nd = nextSchoolDay(d); c = `次の登校 ${md(nd)}(${WD[nd.getDay()]})`; r = `1限 ${esc(subjOf(nd, 0) || '')} →`; } // 帯を空にしない
   setHtml($('rvSign'), `<div class="a"><span class="no"><b>TT</b><b>${no}</b></span><div class="tx"><div class="k">${k}</div><div class="nm">${esc(nm)}</div></div><div class="rt"><div class="tm">${tm}</div><div class="lf">${lf}</div></div></div><div class="k1"></div><div class="k2"><span>${l}</span><span class="md">${c}</span><span>${r}</span></div>`);
   // 右:発車標
-  const dep = railDepart(d);
-  railBoard(blank ? [] : dep, flap && cfg.flapBoard && !fresh, par);
-  $('rvNote').textContent = dep.some(x => x.later) ? '次の登校日の予定をふくみます' : '';
+  const today = railDepart(d), demo = Date.now() < flapDemo; // ボタン:表示があるときは7秒だけ空白に、空白のときは7秒だけ次の登校日の分を出す
+  const dep = demo ? (today.length ? [] : railDepart(d, true)) : today;
+  railBoard(dep, flap && cfg.flapBoard && !fresh);
+  $('rvNote').textContent = dep.some(x => x.later) ? '次の登校日の予定(確認用)' : '';
   // やること(今のタイルと同じ内容)
   setHtml($('rvTodo'), railTodoBoard(5, true));
   // StudyLine の路線記号
@@ -1619,10 +1619,17 @@ function renderRail(st, d) {
    倒れる板(fa・fb)は消さずに置いたまま、見え隠れだけを切り替える */
 const FLAPS = [];
 let flapQuiet = false, flapClickAt = 0;
-function flapClick() { // 1枚倒れるごとの「カタッ」(設定がオフ・授業中は鳴らさない)
+let flapBuf = null;
+function flapClick() { // 1枚倒れるごとの「パタッ」(設定がオフ・授業中は鳴らさない)。電子音ではなく、短い雑音を低めにこもらせた打音
   if (!cfg.flapSound || flapQuiet || !actx || actx.state !== 'running') return;
-  const t = performance.now(); if (t - flapClickAt < 35) return; flapClickAt = t;
-  tone(1500 + Math.random() * 500, 0, .025, .07, 'square');
+  const t = performance.now(); if (t - flapClickAt < 45) return; flapClickAt = t;
+  try {
+    if (!flapBuf) { const n = Math.floor(actx.sampleRate * .045); flapBuf = actx.createBuffer(1, n, actx.sampleRate); const d = flapBuf.getChannelData(0); for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 4); }
+    const src = actx.createBufferSource(), bp = actx.createBiquadFilter(), g = actx.createGain();
+    src.buffer = flapBuf; src.playbackRate.value = .75 + Math.random() * .35;
+    bp.type = 'bandpass'; bp.frequency.value = 1100 + Math.random() * 500; bp.Q.value = .7;
+    g.gain.value = .32; src.connect(bp); bp.connect(g); g.connect(actx.destination); src.start();
+  } catch (e) {}
 }
 class FlapUnit {
   constructor(drum, o) {
@@ -1725,7 +1732,7 @@ function railInit() {
   const SD = ['', ...subs, ...extra.filter((x, i) => extra.indexOf(x) === i && !subs.includes(x))], RD = ['', ...rooms];
   const BH = ['', '1', '2'], BD = ['', ...D10], BM = ['', ...MT];
   const base = { hh: 34, rad: 2, D: BOARD_D, ff: JPF, fw: 700, fs: 15 }, dg = { ...base, w: 13, fs: 25, ff: NUM, fw: 500, color: '#f5b301', rad: 1 };
-  $('rvBoard').innerHTML = `<div class="rv-bh"><span></span><span>種別</span><span>時刻</span><span>行先</span><span>教室</span></div>` +
+  $('rvBoard').dataset.open = 'tt'; $('rvBoard').innerHTML = `<div class="rv-bh"><span></span><span>種別</span><span>時刻</span><span>行先</span><span>教室</span></div>` +
     ['先発', '次発', '次々発', '', '', ''].map(lb => `<div class="rv-row"><span class="lb">${lb}</span><div class="k"></div><div class="tm"></div><div class="ds"></div><div class="rm2"></div></div>`).join('') + '<div class="rv-note"><span id="rvNote"></span><button id="rvDemo" type="button">パタパタする</button></div>';
   const rows = [...$('rvBoard').querySelectorAll('.rv-row')].map((row, ri) => {
     const t = row.querySelector('.tm'), colon = '<span style="font-family:' + NUM + ';font-size:20px;color:#f5b301;width:8px;text-align:center">:</span>';
@@ -1749,8 +1756,7 @@ function afterSchool() {
   const d = now();
   return (isSchoolDay(d) && schoolState(d).mode === 'after') || (minOfDay(d) < 300 && isSchoolDay(addDays(d, -1)));
 }
-let flapDemo = 0, railBlankPrev = false; // flapDemo: この時刻まで黒にする(確認用のボタン)
-const flapBlankNow = () => { const base = cfg.flapBlank && afterSchool(); return Date.now() < flapDemo ? !base : base; }; // ボタン: 黒なら7秒だけ表示に、ふだんなら7秒だけ黒に
+let flapDemo = 0; // この時刻まで、いまと逆の表示にする(確認用の「パタパタする」ボタン)
 document.addEventListener('click', e => { if (e.target.closest('#rvDemo')) { flapDemo = Date.now() + 7000; if (typeof renderClock === 'function') renderClock(); } }); // 7秒だけ、いまと逆の表示にして、もどす
 // 発車標:先発 → 次発 → 次々発、各段は 時刻(4桁同時)→ 種別+行先 → 教室 の順。前のグループが止まってから 250ms あけて次が回る
 // 発車標全体の動き(本物の発車案内表示機と同じ順番):
@@ -1758,8 +1764,8 @@ document.addEventListener('click', e => { if (e.target.closest('#rvDemo')) { fla
 //  2. 段は上から順に動き始める(次発が先発へ繰り上がるため)
 //  3. 段の中は 種別 → 時刻(時 → 分)→ 行先 → 教室 の順に、わずかにずらして回し始める
 //  4. 前の板が止まるのは待たない。めくる枚数が少ない板から先にパタッと止まり、多い板は最後まで回る
-// 黒にする・もどす(par)ときも同じ順番
-function railBoard(dep, anim, par) {
+// 空白にする・もどすときも同じ順番
+function railBoard(dep, anim) {
   const sig = JSON.stringify(dep); if (sig === boardSig) return; boardSig = sig;
   const ens = (drum, v) => { if (v && !drum.some(x => (typeof x === 'object' ? x.t : x) === v)) drum.push(v); };
   const plan = railUnits.rows.map(U => {
@@ -1775,7 +1781,7 @@ function railBoard(dep, anim, par) {
     for (const g of groups) { const gm = g.some(([u, v]) => u.dist(v) > 0); g.forEach(([u, v]) => u.go(v, t, anim)); if (gm && anim) { t += BOARD_ITEM; moved = true; } }
     if (moved) rowT += BOARD_ROW;
   }
-  if (moving) { const B = $('rvBoard'); B.classList.add('sw'); clearTimeout(B._sw); B._sw = setTimeout(() => B.classList.remove('sw'), BOARD_LAMP + 900); } // ランプ:消灯 → フラップが動き出したあとに点く
+  if (moving) { const B = $('rvBoard'); B.classList.add('lampoff'); clearTimeout(B._sw); B._sw = setTimeout(() => B.classList.remove('lampoff'), BOARD_LAMP + 900); } // ランプ:消灯 → フラップが動き出したあとに点く
 }
 
 /* ================= 数字の動き:押し上げ・ぼかし(時計の 時十・時一・分十・分一) =================
@@ -4387,7 +4393,7 @@ function renderSettings() {
     <p class="note">「モードに合わせる」は、標準は押し上げ、夜はぼかし、鉄道はパタパタです。</p>
     <div class="row"><label><input type="checkbox" id="flapBoard" ${cfg.flapBoard ? 'checked' : ''}>発車標もパタパタにする</label></div>
     <div class="row"><label><input type="checkbox" id="flapTiles" ${cfg.flapTiles ? 'checked' : ''}>やること・予定もパタパタにする</label></div>
-    <div class="row"><label><input type="checkbox" id="flapBlank" ${cfg.flapBlank ? 'checked' : ''}>今日の授業が終わったら、発車標をパタパタして黒(空白)にする(翌朝5時まで)</label></div>
+    <p class="note">発車標は今日の分だけを出します。発車した段は上へ繰り上がり、今日の授業が終わると下の段から空白になっていきます。</p>
     <div class="row"><label><input type="checkbox" id="flapSound" ${cfg.flapSound ? 'checked' : ''}>めくる音を鳴らす(授業中は鳴らしません)</label></div>
     <h4 style="margin-top:16px">標準モードの配置</h4>
     <div class="row"><select id="stdLayout">${opt('cols', cfg.stdLayout, '3列(タイルを全部いちどに出す)')}${opt('big', cfg.stdLayout, '大きい時計(タイルは下段でページ送り)')}</select></div>
@@ -4640,7 +4646,6 @@ $('settings').addEventListener('change', e => {
   else if (t.id === 'dimFrom') cfg.dimFrom = unpad(t.value);
   else if (t.id === 'dimTo') cfg.dimTo = unpad(t.value);
   else if (t.id === 'dimLv') cfg.dimLv = +t.value;
-  else if (t.id === 'flapBlank') cfg.flapBlank = t.checked;
   else if (t.dataset.tts != null || t.dataset.ttr != null) {
     const i = +(t.dataset.tts ?? t.dataset.ttr), arr = cfg.tt[ttDay] = cfg.tt[ttDay] || [];
     arr[i] = Object.assign({ s: '', r: '' }, arr[i]); arr[i][t.dataset.tts != null ? 's' : 'r'] = t.value.trim().slice(0, 20);
