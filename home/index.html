@@ -1279,7 +1279,7 @@ body.portrait .rtb .rows .trow{padding:0 8px;grid-template-columns:60px 56px min
 
 <script>
 'use strict';
-const APP_VERSION = '2.28.2'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.28.3'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1721,6 +1721,22 @@ class FlapUnit {
     }, () => {});
   }
 }
+// 段ごとに順番にめくる:上の段の板がぜんぶ止まってから、次の段が回り始める(最後にそろうのはいちばん下の段)
+// rows = [[ [ユニット, 値, その段の中での待ち(ms)], ... ], ...]。同じ owner で新しく呼ぶと、前の続きはやめる
+function flapRows(owner, rows, anim, gap) {
+  const tok = owner._ftok = (owner._ftok || 0) + 1;
+  if (!anim) { rows.forEach(r => r.forEach(([u, v]) => u.go(v, 0, false))); return; }
+  (async () => {
+    for (const row of rows) {
+      if (owner._ftok !== tok) return;
+      const moving = row.some(([u, v]) => u.dist(v) > 0);
+      row.forEach(([u, v, w]) => u.go(v, w || 0, true));
+      if (!moving) continue;
+      await new Promise(res => { const t0 = Date.now(), chk = () => (owner._ftok !== tok || row.every(([u]) => u.state === 'idle' && u.idx === u.tgt) || Date.now() - t0 > 20000) ? res() : setTimeout(chk, 60); chk(); });
+      await new Promise(res => setTimeout(res, gap == null ? 180 : gap));
+    }
+  })();
+}
 // タブが裏に回って戻ったとき、溜まった分を全部回さずに、いまの表示へ合わせる
 document.addEventListener('visibilitychange', () => { if (!document.hidden) FLAPS.forEach(u => u.snap()); });
 const effAnim = () => cfg.anim === 'auto' ? { std: 'push', night: 'blur', rail: 'flap' }[effMode()] : cfg.anim;
@@ -1754,7 +1770,7 @@ function railInit() {
   const rows = [...$('rvBoard').querySelectorAll('.rv-row')].map((row, ri) => {
     const t = row.querySelector('.tm'), colon = '<span style="font-family:' + NUM + ';font-size:20px;color:#f5b301;width:8px;text-align:center">:</span>';
     const a = mk(t, BH, dg), b = mk(t, BD, dg); t.insertAdjacentHTML('beforeend', colon); const cc = mk(t, BM, dg), d = mk(t, BD, dg);
-    return { i: ri, k: mk(row.querySelector('.k'), KD, { ...base, w: 46, fs: 13 }), a, b, c: cc, d, s: mk(row.querySelector('.ds'), SD, { ...base, w: '100%', fs: 17, align: 'left', px: 6, fit: true }), r: mk(row.querySelector('.rm2'), RD, { ...base, w: 54, fs: 12, fw: 400, align: 'left', px: 4 }), SD, RD };
+    return { i: ri, k: mk(row.querySelector('.k'), KD, { ...base, w: 46, fs: 13 }), a, b, c: cc, d, s: mk(row.querySelector('.ds'), SD, { ...base, w: '100%', fs: 17, align: 'left', px: 6, fit: true, wrap: true }), r: mk(row.querySelector('.rm2'), RD, { ...base, w: 54, fs: 12, fw: 400, align: 'left', px: 4 }), SD, RD };
   });
   railUnits = { c, rows, SD, RD };
 }
@@ -1792,12 +1808,9 @@ function railBoard(dep, anim) {
       [[U.c, m == null ? '' : String(Math.floor(m / 10))], [U.d, m == null ? '' : String(m % 10)]], [[U.s, f.dest]], [[U.r, f.room]]];
   });
   const moving = anim && plan.some(g => g.some(x => x.some(([u, v]) => u.dist(v) > 0)));
-  let rowT = moving ? BOARD_LAMP : 0;
-  for (const groups of plan) {
-    let t = rowT, moved = false;
-    for (const g of groups) { const gm = g.some(([u, v]) => u.dist(v) > 0); g.forEach(([u, v]) => u.go(v, t, anim)); if (gm && anim) { t += BOARD_ITEM; moved = true; } }
-    if (moved) rowT += BOARD_ROW;
-  }
+  // 段ごとに順番に(上の段がそろってから次の段)。段の中は 種別 → 時刻 → 行先 → 教室 と少しずつずらす
+  const rows = plan.map((groups, ri) => { let t = ri === 0 && moving ? BOARD_LAMP : 0; const out = []; for (const g of groups) { const gm = g.some(([u, v]) => u.dist(v) > 0); g.forEach(([u, v]) => out.push([u, v, t])); if (gm) t += BOARD_ITEM; } return out; });
+  flapRows(railUnits, rows, anim);
   if (moving) { const B = $('rvBoard'); B.classList.add('lampoff'); clearTimeout(B._sw); B._sw = setTimeout(() => B.classList.remove('lampoff'), BOARD_LAMP + 900); } // ランプ:消灯 → フラップが動き出したあとに点く
 }
 
@@ -3608,16 +3621,7 @@ function railTTBuild(el, anim) {
     const u = new FlapUnit(subs, o), host = el.querySelector('#' + cl.id); host.prepend(u.root); if (cur) host.classList.add('cur'); if (past) host.classList.add('past');
     if (cl.s) { if (anim) (rowsU[cl.i] = rowsU[cl.i] || []).push([u, cl.s, days.indexOf(cl.w)]); else u.show(u.ix(cl.s)); }
   }
-  // 段ごとに:上の段がぜんぶ止まってから、次の段が回り始める(段の中は左から少しずつずらす)
-  if (anim) (async () => {
-    for (const row of rowsU) {
-      if (!row) continue;
-      if (!el.isConnected && el._key == null) return;
-      row.forEach(([u, v, c]) => u.go(v, c * 60, true));
-      await new Promise(res => { const t0 = Date.now(), chk = () => (row.every(([u]) => u.state === 'idle' && u.idx === u.tgt) || Date.now() - t0 > 15000) ? res() : setTimeout(chk, 60); chk(); });
-      await new Promise(res => setTimeout(res, 150));
-    }
-  })();
+  if (anim) flapRows(el, rowsU.filter(Boolean).map(r => r.map(([u, v, c]) => [u, v, c * 60])), true); // 上の段がそろってから次の段(段の中は左から少しずつ)
 }
 
 // ---- 天気:LED の発車標
@@ -3708,16 +3712,17 @@ class RailTodo {
     if (sig === this.sig) return;
     const anim = this.sig !== null && effAnim() === 'flap' && !document.hidden; this.sig = sig; // 最初の表示はそのまま出す。そのあとの変化はめくる
     for (const v of vals) { if (!this.dd.some(x => x.t === v.d)) this.dd.push({ t: v.d, c: v.done ? '#8d8a83' : v.late ? '#ff5b3a' : '#f5b301' }); if (!this.td.includes(v.tx)) this.td.push(v.tx); }
-    let rowT = 0;
+    const plan = [];
     this.rows.forEach((R, i) => {
       const v = vals[i] || { k: '', d: '', tx: '', id: '', done: false };
-      let t = rowT, moved = false;
-      for (const [u, x] of [[R.k, v.k], [R.d, v.d], [R.t, v.tx]]) { const mv = u.dist(x) > 0; u.go(x, t, anim); if (mv && anim) { t += BOARD_ITEM; moved = true; } }
-      if (moved) rowT += BOARD_ROW;
+      let t = 0; const row = [];
+      for (const [u, x] of [[R.k, v.k], [R.d, v.d], [R.t, v.tx]]) { const mv = u.dist(x) > 0; row.push([u, x, t]); if (mv) t += BOARD_ITEM; }
+      plan.push(row);
       R.el.classList.toggle('dn', !!v.done); R.el.classList.toggle('none', !v.id);
       R.ck.dataset.ck = v.id; R.ck.setAttribute('aria-label', v.done ? '済を取り消す' : '済にする'); if (!this.mini) { R.ck.dataset.fa = 'todo'; R.ck.dataset.v = v.id; }
       R.lb.textContent = v.id ? (v.done ? '到着' : lbs[i] || '') : '';
     });
+    flapRows(this, plan, anim); // 上の段がそろってから次の段
     if (this.cnt) this.cnt.textContent = `${open}件`;
     if (this.tick) { const soon = list.filter(t => !t.done && t.due && dayDiff(now(), parseYmd(t.due)) <= 1).length, late = list.filter(t => !t.done && t.due && dayDiff(now(), parseYmd(t.due)) < 0).length;
       this.tick.innerHTML = (list.length ? `<span>◆ 明日までのもの ${soon}件</span>${late ? `<span class="r">◆ 期限切れ ${late}件</span>` : ''}` : '<span>◆ 発車予定はありません。右上の「+ 追加」から足せます</span>') + '<span>◆ 済にするには右の四角を押します</span><span>◆ 持ち物は前の日の夜に確認しましょう</span>'; }
