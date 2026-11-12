@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#141413">
 <title>Platform</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Barlow+Condensed:wght@300;400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Barlow+Condensed:wght@300;400;500;600;700&display=swap">
 <style>
 /* 1180×820(iPad 第10世代 横向き)の画面を作り、画面サイズに合わせて拡大縮小する */
 *{box-sizing:border-box;margin:0;padding:0}
@@ -1058,6 +1058,135 @@ body:not(.nopomo) .nv-time{font-size:160px}
 .rcs{display:inline-block;position:relative;vertical-align:top;height:var(--rlh);line-height:var(--rlh)}
 .rcs.push{overflow:hidden}
 .rci{display:block;height:var(--rlh);line-height:var(--rlh);white-space:nowrap}
+
+/* ===== 2.26.0 鉄道モードの全画面(body.rail のときだけ) ===== */
+.rbadge,.ren,.rmini,.fhead .cr{display:none}.fttl{display:contents}
+body.rail:not(.portrait) #full{--rc:#ff5b3a}body.rail:not(.portrait) #full.slh{--rc:#f5b301}
+body.rail:not(.portrait) #full .fhead{height:64px;background:#0b0b0a;border-bottom:4px solid var(--rc);padding:0 14px 0 0;gap:14px}
+body.rail:not(.portrait) #full .rbadge{display:flex;align-self:stretch;width:64px;flex:none;align-items:center;justify-content:center;background:var(--rc)}
+body.rail:not(.portrait) #full .rbadge:before{content:none}
+body.rail:not(.portrait) #full .rbadge{flex-direction:column;gap:0}
+body.rail:not(.portrait) #full .rbadge b{display:block;width:44px;background:#fff;color:#141413;text-align:center;font-family:"Barlow Condensed",sans-serif;font-weight:700;line-height:1}
+body.rail:not(.portrait) #full .rbadge b:first-child{font-size:11px;padding-top:5px;border-radius:7px 7px 0 0}body.rail:not(.portrait) #full .rbadge b:last-child{font-size:20px;padding-bottom:4px;border-radius:0 0 7px 7px}
+body.rail:not(.portrait) #full .fttl{display:flex;flex-direction:column;justify-content:center}
+body.rail:not(.portrait) #full #fullName{font-size:22px;font-weight:900;letter-spacing:.06em;color:#ece8df}
+body.rail:not(.portrait) #full .ren{display:block;font:500 12px "Barlow Condensed",sans-serif;font-style:normal;color:#8d8a83;letter-spacing:.16em}
+body.rail:not(.portrait) #full .fhint{display:none}
+body.rail:not(.portrait) #full .rmini{display:flex;gap:3px;margin-left:auto}
+body.rail:not(.portrait) #full .rmini i{font-style:normal;width:22px;height:32px;background:linear-gradient(#22211e 50%,#1c1b19 50%);font:500 26px/32px "Barlow Condensed",sans-serif;text-align:center;color:#ece8df;position:relative}
+body.rail:not(.portrait) #full .rmini i:after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:#0b0b0a}
+body.rail:not(.portrait) #full .rmini em{font:500 24px/32px "Barlow Condensed",sans-serif;font-style:normal;color:#ff5b3a}
+body.rail:not(.portrait) #full .fhead .gear{border:2px solid #ece8df;color:#ece8df;padding:7px 14px;font-weight:700;font-size:14px}
+body.rail:not(.portrait) #full #fullClose .cx{display:none}body.rail:not(.portrait) #full #fullClose .cr{display:inline-flex;align-items:center;gap:8px}
+body.rail:not(.portrait) #full #fullClose .cr:before{content:"";border-top:7px solid transparent;border-bottom:7px solid transparent;border-right:9px solid #ece8df}
+body.rail:not(.portrait) #full .ftabs .fvtabs{display:flex;gap:0}
+body.rail:not(.portrait) #full .ftabs .fvtabs button{border:1px solid #2b2a28;padding:7px 14px;font-size:13px;color:#8d8a83;border-radius:0;background:none}
+body.rail:not(.portrait) #full .ftabs .fvtabs button.on{background:#f5b301;color:#141413;font-weight:700;border-color:#f5b301}
+body.rail:not(.portrait) #full .ftabs .fvtabs button.tadd{border:2px solid #f5b301;color:#f5b301;font-weight:700}
+.rfv{flex:1;min-height:0;position:relative;overflow:hidden;color:#ece8df}
+.gate.plain{border:2px solid #f5b301;color:#f5b301;padding:8px 16px;font-size:14px;font-weight:700;background:none}
+.rc-lab{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700;color:#8d8a83;letter-spacing:.1em}.rc-lab b{background:#ff5b3a;color:#141413;padding:3px 12px;letter-spacing:.06em}.rc-lab b.sl{background:#f5b301}
+.rc-left{background:#ece8df;color:#141413;padding:12px 18px 10px;display:flex;flex-direction:column}.rc-left>span:first-child{font-size:16px;font-weight:700}
+.rc-left>span:last-child{align-self:flex-end;display:flex;align-items:baseline}.rc-left b{font-size:96px;line-height:.95;color:#e0431f;font-weight:600}.rc-left small{font-size:20px;font-weight:700;margin:0 4px}
+/* 時計 */
+.rc-top{display:grid;grid-template-columns:1fr 290px;gap:22px;padding:28px 30px 0}
+.rc-clk{display:flex;align-items:flex-start;gap:8px}.rc-clk .fl{flex:none}
+.rc-cs{display:flex;flex-direction:column;gap:48px;padding:84px 6px 0}.rc-cs i{width:18px;height:18px;background:#ff5b3a}
+.rc-sec{display:flex;gap:6px;margin-left:4px}.rc-sec[hidden]{display:none}
+.rc-side{display:flex;flex-direction:column;gap:12px}.rc-side .rc-left{flex:1}
+.rc-dep{display:grid;grid-template-columns:1fr 1fr;border:1px solid #2b2a28}.rc-dep>div{padding:8px 12px;display:flex;flex-direction:column}.rc-dep>div+div{border-left:1px solid #2b2a28}
+.rc-dep span{font-size:12px;color:#8d8a83}.rc-dep b{font-size:30px;font-weight:500}
+.rc-now{display:grid;grid-template-columns:1fr 290px;gap:22px;padding:26px 30px 22px;align-items:end;border-bottom:1px solid #2b2a28}
+.rc-nl{min-width:0}.rc-nm{font-size:92px;font-weight:900;line-height:1.08;white-space:nowrap;margin-top:6px}
+.rc-next{border:2px solid #f5b301;padding:12px 16px}.rc-next .k{font-size:13px;color:#f5b301;font-weight:700;letter-spacing:.14em}.rc-next .v{font-size:24px;font-weight:900;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rc-next .v small{font-size:20px;color:#8d8a83;margin-left:10px;font-weight:500}
+.rc-route{padding:16px 30px 0}.rc-rh{display:flex;justify-content:space-between;font-size:13px;color:#8d8a83;letter-spacing:.12em;font-weight:700}
+.rc-route .rmw{zoom:1.4;margin-top:4px}.rc-route .rml{display:none}
+/* 時間割 */
+.tg2{margin:16px 22px 0;display:grid;grid-template-columns:92px repeat(var(--tc,6),minmax(0,1fr));gap:6px 8px;align-content:start}
+.tg2 .wd{height:34px;display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:14px;color:#8d8a83;font-weight:700;line-height:1.1}.tg2 .wd small{font-size:10.5px;font-weight:500}
+.tg2 .wd.today{color:#141413;background:#f5b301}.tg2 .wd.sat{color:#6fa8dc}.tg2 .wd.sat.today{color:#141413}
+.tg2 .hr{display:flex;align-items:center;gap:8px}.tg2 .hr b{width:40px;height:72px;background:linear-gradient(#22211e 50%,#1c1b19 50%);font:500 58px/72px "Barlow Condensed",sans-serif;text-align:center;color:#f5b301;position:relative}
+.tg2 .hr b:after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:#0b0b0a}.tg2 .hr span{font-size:15px;color:#8d8a83}
+.tg2 .cell{position:relative;height:88px;min-width:0}.tg2 .cell .trm{position:absolute;right:10px;bottom:8px;z-index:4;font-size:13px;color:#8d8a83;pointer-events:none}
+.tg2 .cell.cur .trm{color:#e0431f;font-weight:700}.tg2 .cell.past .trm{color:#4a4844}
+.tg2 .lunch2{grid-column:1/-1;height:30px;display:flex;align-items:center;justify-content:center;gap:14px;font-size:13px;font-weight:700;color:#f5b301;background:#1d1a12}
+/* 天気(LED) */
+.led{position:absolute;inset:16px 22px 18px;background:#050505;border:10px solid #1c1b19;border-radius:6px;font-family:"DotGothic16",monospace;display:flex;flex-direction:column;overflow:hidden}
+.led:after{content:"";position:absolute;inset:0;background-image:radial-gradient(circle,transparent 0 1.1px,rgba(0,0,0,.5) 1.5px);background-size:4px 4px;pointer-events:none}
+.led .o{color:#ff9a1f;text-shadow:0 0 8px rgba(255,140,20,.7)}.led .g{color:#5fe36a;text-shadow:0 0 8px rgba(80,230,100,.6)}.led .r{color:#ff4b3a;text-shadow:0 0 8px rgba(255,70,50,.7)}.led .b{color:#6fc3ff;text-shadow:0 0 8px rgba(90,180,255,.6)}.led .w{color:#f3efe6;text-shadow:0 0 8px rgba(255,255,255,.4)}
+.lempty{margin:auto;font-size:36px}
+.ltop{display:flex;align-items:center;gap:26px;padding:14px 26px 10px;border-bottom:2px solid #1c1b19}.ltop .t{font-size:100px;line-height:1}.ltop .s{font-size:32px;line-height:1.35}
+.ltop .u{margin-left:auto;text-align:right;font-size:38px;line-height:1.3}.ltop .u small{font-size:20px}
+.led .lh,.led .lr{display:grid;grid-template-columns:150px 170px 130px 160px 1fr;align-items:center;padding:0 26px;column-gap:14px}
+.led .lh{height:32px;font:700 13px "Zen Kaku Gothic New",sans-serif;color:#8d8a83;background:#111;letter-spacing:.2em}
+.led .lr{flex:1;font-size:34px;border-bottom:1px solid #151515;white-space:nowrap}.led .n2{text-align:right;padding-right:20px}.led .nt{font-size:26px}
+.ltk{height:52px;display:flex;align-items:center;font-size:28px;white-space:nowrap;padding-left:26px;border-top:2px solid #1c1b19;gap:56px;overflow:hidden}
+/* カウントダウン(乗車券) */
+.tkwrap{display:flex;flex-direction:column;align-items:center;padding-top:36px;gap:64px;height:100%}
+.tkempty{font-size:18px;color:#8d8a83;margin:60px 0 20px;text-align:center}
+.ticket{width:880px;height:400px;background:#e9eef0;color:#1c2a33;position:relative;border-radius:6px;padding:26px 40px;flex:none;
+ background-image:repeating-linear-gradient(45deg,rgba(64,110,140,.08) 0 2px,transparent 2px 9px),repeating-linear-gradient(-45deg,rgba(64,110,140,.08) 0 2px,transparent 2px 9px);box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.ticket:before,.ticket:after{content:"";position:absolute;top:50%;width:30px;height:30px;border-radius:50%;background:#141413;transform:translateY(-50%)}.ticket:before{left:-15px}.ticket:after{right:-15px}
+.tk1{display:flex;align-items:center;gap:16px}.tk1 .ty{border:2px solid #1c2a33;padding:2px 14px;font-size:22px;font-weight:900;letter-spacing:.3em}.tk1 .tk1s{font-size:15px;font-weight:700}.tk1 .no{margin-left:auto;font-size:16px;letter-spacing:.1em}
+.tk2{display:flex;align-items:center;gap:26px;margin-top:20px;white-space:nowrap}.tk2 .a{font-size:46px;font-weight:900;letter-spacing:.1em}.tk2 .ar{font-size:40px}.tk2 .b{font-weight:900;letter-spacing:.06em;overflow:hidden;text-overflow:ellipsis}
+.tk3{display:flex;justify-content:space-between;align-items:flex-end;margin-top:18px}.tk3 .val{font-size:18px;font-weight:700;line-height:1.7}.tk3 .val b{font-size:24px}.tk3 .via{font-size:15px}
+.tk3 .cd{text-align:right;flex:none}.tk3 .cd .k{font-size:16px;font-weight:700}.tk3 .cd .v{font-size:120px;line-height:.9;font-weight:700;color:#c8341b}.tk3 .cd .v small{font-size:30px;font-weight:900;color:#1c2a33;margin-left:6px;font-family:"Zen Kaku Gothic New",sans-serif}
+.tk4{position:absolute;left:40px;right:40px;bottom:16px;display:flex;justify-content:space-between;font-size:13px;color:#4b5a63;border-top:1px dashed #9aabb5;padding-top:8px}
+.punch{position:absolute;right:200px;top:24px;width:26px;height:26px;background:#141413;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.trip{width:1060px;position:relative;height:120px;flex:none}
+.trip .ln{position:absolute;left:4%;right:4%;top:44px;height:12px;background:#ff5b3a}.trip .ln i{position:absolute;left:0;top:0;bottom:0;background:#3a3833}
+.tst{position:absolute;top:32px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;width:150px}
+.tst .d{width:34px;height:34px;border-radius:50%;background:#141413;border:7px solid #ece8df}.tst.goal .d{border-radius:5px;border-color:#ff5b3a;width:40px;height:40px;margin-top:-3px}.tst.now .d{border-color:#ff5b3a}
+.tst .nm{position:absolute;top:-30px;font-size:16px;font-weight:700;white-space:nowrap}.tst .t{margin-top:6px;font-size:17px;color:#8d8a83}.tst.goal .nm{font-size:20px;color:#ff5b3a}.tst.now .nm{color:#ff5b3a}
+/* やること(発車標) */
+.dep2{position:absolute;inset:0;background:#0f0f0e;display:flex;flex-direction:column}
+.dep2 .h,.dep2 .trow{display:grid;grid-template-columns:76px 120px 150px 1fr 120px;align-items:center;column-gap:8px;padding:0 20px}
+.dep2 .h{height:44px;font-size:12.5px;color:#8d8a83;border-bottom:1px solid #2b2a28}.dep2 .h span{text-align:center}.dep2 .h span:nth-child(4){text-align:left}
+.dep2 ul{list-style:none;flex:1}.dep2 .trow{height:68px;border-bottom:1px solid #2b2a28;cursor:pointer}
+.trow .lb{font-size:13px;font-weight:700;color:#8d8a83}.dep2 .trow:first-child .lb{color:#f5b301}
+.trow .c{background:linear-gradient(#22211e 50%,#1c1b19 50%);height:48px;display:flex;align-items:center;padding:0 12px;font-size:22px;font-weight:700;position:relative;white-space:nowrap;overflow:hidden;color:#ece8df}
+.trow .c:after{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:#0b0b0a}
+.trow .c.k{justify-content:center;font-size:16px}.trow .c.k.o{color:#f5b301}.trow .c.k.b{color:#6fa8dc}.trow .c.k.g{color:#79c28a}
+.trow .c.du{justify-content:center;font:500 30px "Barlow Condensed",sans-serif;color:#f5b301}.trow .c.du.jp{font-family:"Zen Kaku Gothic New",sans-serif;font-size:20px;font-weight:900}.rtb .trow .c.du.jp{font-size:15px}.trow .c.du.late{color:#ff5b3a;font-family:"Zen Kaku Gothic New",sans-serif;font-size:22px;font-weight:900}.trow .c.du.none{color:#8d8a83;font-family:"Zen Kaku Gothic New",sans-serif;font-size:16px}
+.trow .ck{width:30px;height:30px;border:2px solid #8d8a83;justify-self:center}.trow.dn{opacity:.45}.trow.dn .ck{background:#8d8a83}.trow.dn .c.tx{text-decoration:line-through}
+.scroll{background:#0b0b0a;border-top:1px solid #2b2a28;height:52px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;font-size:20px;font-weight:700;color:#f5b301;padding-left:24px;gap:40px;flex:none}.scroll .r{color:#ff5b3a}
+/* StudyLine */
+.slv{position:absolute;inset:0;display:grid;grid-template-columns:1fr 420px}
+.slv .l{padding:26px 36px 20px;display:flex;flex-direction:column;border-right:1px solid #2b2a28;min-width:0}
+.slk{font-size:18px;color:#8d8a83;margin-top:20px}.slnm{font-size:104px;font-weight:900;line-height:1.05;white-space:nowrap}.slen{font-size:22px;letter-spacing:.2em;color:#8d8a83}
+.slp{font-size:15px;color:#8d8a83;line-height:1.7;margin-top:10px}
+.slv .rc-left{margin-top:22px;flex-direction:row;justify-content:space-between;align-items:center}.slv .rc-left b{font-size:64px}
+.slv .trio{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid #2b2a28;margin-top:18px}.slv .trio>div{padding:10px 12px}.slv .trio>div+div{border-left:1px solid #2b2a28}
+.slv .trio .k{font-size:12px;color:#8d8a83}.slv .trio .v{font-size:30px;font-weight:600;white-space:nowrap}.slv .trio .v small{font:500 13px "Zen Kaku Gothic New",sans-serif;color:#8d8a83;margin-left:4px}
+.slbars{margin-top:auto;padding-top:14px}.slbars .k{font-size:12px;color:#8d8a83;margin-bottom:6px}.slbars .bs{display:flex;gap:10px;height:110px;align-items:stretch}
+.slbars .bs>div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px}.slbars i{display:block;width:100%;background:#3a3833;max-height:calc(100% - 38px)}.slbars span{font-size:13px;color:#8d8a83}.slbars b{font-size:12px;color:#8d8a83;font-weight:500}
+.slbars .td i{background:#f5b301}.slbars .td b,.slbars .td span{color:#ece8df}
+.vlist{padding:18px 22px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.vrow{display:grid;grid-template-columns:56px 1fr auto;align-items:center;flex:1;min-height:58px;max-height:100px;position:relative}
+.vrow .dt{width:30px;height:30px;border-radius:50%;background:#141413;border:7px solid #f5b301;z-index:2;justify-self:center}
+.vrow.done .dt{border-color:#4a4844}.vrow.end .dt{border-radius:4px}
+.vrow:before{content:"";position:absolute;left:23px;width:10px;top:0;bottom:0;background:#f5b301}.vrow:first-child:before{top:50%}.vrow.end:before{bottom:50%}.vrow.done:before{background:#3a3833}
+.vrow .vt{min-width:0}.vrow .nm{font-size:28px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.vrow .nm small{font-size:14px;color:#8d8a83;font-weight:500;margin-left:10px}.vrow .no{font-size:14px;font-weight:700;color:#f5b301;letter-spacing:.1em}
+.vrow .t{font-size:28px;color:#8d8a83;text-align:right}.vrow .t small{display:block;font-size:13px}
+.vrow.vnx .nm{color:#f5b301}.vrow.done .nm{color:#4a4844}.vfoot{padding:14px 0 0 56px;flex:none}
+/* ふだんの鉄道モード */
+.rv-info .h{background:#6fa8dc!important}
+.rv-info .b2{display:flex;align-items:center;gap:12px;padding:10px 14px}.rv-info .b2 svg{width:46px;height:46px;flex:none}.rv-info .b2 .t{font-size:60px;line-height:1;font-weight:500}.rv-info .b2 .s{font-size:13px;line-height:1.5}.rv-info .b2 .s b{font-size:18px}
+.rv-info .f{border-top:1px solid #2b2a28;padding:6px 14px;font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rv-info .f i{width:10px;height:10px;border-radius:50%;flex:none}.rv-info .f.g{color:#79c28a}.rv-info .f.g i{background:#79c28a;box-shadow:0 0 8px #79c28a}.rv-info .f.o{color:#f5b301}.rv-info .f.o i{background:#f5b301;box-shadow:0 0 8px #f5b301}.rv-info .f.r{color:#ff5b3a}.rv-info .f.r i{background:#ff5b3a;box-shadow:0 0 8px #ff5b3a}
+.mtk{background:#e9eef0;color:#1c2a33;border-radius:4px;padding:10px 16px;position:relative;background-image:repeating-linear-gradient(45deg,rgba(64,110,140,.08) 0 2px,transparent 2px 9px),repeating-linear-gradient(-45deg,rgba(64,110,140,.08) 0 2px,transparent 2px 9px)}
+.mtk:before,.mtk:after{content:"";position:absolute;top:50%;width:16px;height:16px;border-radius:50%;background:#141413;transform:translateY(-50%)}.mtk:before{left:-8px}.mtk:after{right:-8px}
+.mtk .r1{display:flex;align-items:center;gap:10px;font-size:11.5px;font-weight:700;white-space:nowrap}.mtk .r1 b{border:1.5px solid #1c2a33;padding:0 8px;letter-spacing:.2em;font-size:12px}.mtk .r1 .n{margin-left:auto;font-size:13px}
+.mtk .r2{display:flex;align-items:flex-end;justify-content:space-between;margin-top:4px;gap:8px}.mtk .r2 .to{font-size:26px;font-weight:900;min-width:0;flex:1;white-space:nowrap;overflow:hidden}.mtk .r2 .to span{display:block}.mtk .r2 .to small{display:block;font-size:11.5px;font-weight:500;color:#4b5a63}
+.mtk .r2 .v{font-size:64px;line-height:.9;font-weight:700;color:#c8341b;flex:none}.mtk .r2 .v small{font-size:16px;font-weight:900;color:#1c2a33;margin-left:3px;font-family:"Zen Kaku Gothic New",sans-serif}
+.rv-cd>div{cursor:pointer}.rv-cd{grid-template-columns:1.25fr 1fr!important}
+.hol .k{font-size:12px;color:#8d8a83;font-weight:700;letter-spacing:.1em}.hol .v{font-size:52px;line-height:1;font-weight:500}.hol .v small{font:700 15px "Zen Kaku Gothic New",sans-serif;color:#8d8a83;margin-left:4px}.hol .d{font-size:12.5px;color:#8d8a83;margin-top:2px}
+.rv-todo.todo{padding:0!important}.rtb{background:#0f0f0e}.rtbh{display:grid;grid-template-columns:110px 64px 1fr 30px;align-items:center;column-gap:3px;padding:0 14px 0 16px;height:34px;font-size:11.5px;color:#8d8a83}
+.rtbh b{color:#f5b301;font-size:12px;letter-spacing:.12em}.rtbh .add{width:24px;height:24px;line-height:20px}
+.rtb ul{list-style:none}.rtb .trow{display:grid;grid-template-columns:38px 68px 64px 1fr 30px;align-items:center;column-gap:3px;padding:0 14px 0 16px;height:46px;border-top:1px solid #2b2a28;cursor:pointer}
+.rtb .trow .lb{display:none}.rtb .trow{grid-template-columns:68px 64px 1fr 30px;padding-left:58px}.rtb .trow .c{height:34px;font-size:17px;padding:0 6px}.rtb .trow .c.k{font-size:13px;padding:0}.rtb .trow .c.du{font-size:25px;padding:0}.rtb .trow .c.du.late,.rtb .trow .c.du.none{font-size:14px}
+.rtb .trow .ck{width:22px;height:22px}.rtb .empty{padding:12px 16px}
+.xfer{background:#f5b301;color:#141413;padding:1px 8px;margin-right:8px;font-size:12px;letter-spacing:.06em}
 </style>
 </head>
 <body>
@@ -1094,7 +1223,7 @@ body:not(.nopomo) .nv-time{font-size:160px}
   </div>
   <section class="pop" id="slot" hidden></section>
   <div class="addp" id="addPanel" hidden></div>
-  <div id="full" hidden><div class="fhead"><b id="fullName"></b><span class="ftabs" id="fullTabs"></span><span class="fhint">3分さわらないと元に戻ります</span><button class="gear" id="fullSet">設定</button><button class="gear" id="fullClose">✕ 閉じる</button></div><div class="fbody" id="fullBody"></div></div>
+  <div id="full" hidden><div class="fhead"><span class="rbadge" id="fullBadge"></span><span class="fttl"><b id="fullName"></b><i class="ren" id="fullEn"></i></span><span class="ftabs" id="fullTabs"></span><span class="fhint">3分さわらないと元に戻ります</span><span class="rmini n" id="fullMini"></span><button class="gear" id="fullSet">設定</button><button class="gear" id="fullClose"><span class="cx">✕ 閉じる</span><span class="cr">戻る</span></button></div><div class="fbody" id="fullBody"></div></div>
   <div id="dragTag" hidden></div>
   <div id="eew" hidden>
     <div class="map"><canvas id="eewMap" width="1280" height="1640"></canvas>
@@ -1115,7 +1244,7 @@ body:not(.nopomo) .nv-time{font-size:160px}
 
 <script>
 'use strict';
-const APP_VERSION = '2.25.2'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.26.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1420,8 +1549,8 @@ function renderRail(st, d) {
   setHtml($('rvDt'), `<span class="dc">${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][d.getDay()]}</span><span>${WD[d.getDay()]}曜日${HOLIDAYS[ymd(d)] ? ' ・ ' + esc(HOLIDAYS[ymd(d)]) : ''}</span>`);
   setHtml($('rvDoor'), cfg.pomoOn ? `<div class="rv-door" data-pm="toggle"><div class="h">自習タイマー</div><div class="b"><div class="m" id="rvPS"></div><div class="t n" id="rvPT"></div><div class="cells" id="rvPC" style="grid-template-columns:repeat(${P.n},1fr)">${'<i></i>'.repeat(P.n)}</div></div></div>` : '');
   if (cfg.pomoOn) { $('rvPT').textContent = P.txt; $('rvPS').textContent = pmState(P); [...$('rvPC').children].forEach((c, i) => c.classList.toggle('f', i < P.done)); }
-  if (!cfg.pomoOn) setHtml($('rvDoor'), `<div class="rv-info" data-open="weather"><div class="h">天気</div><div class="b">${$('wxTile').innerHTML}</div></div>`); // タイマーを出さないときは、同じ場所に天気
-  setHtml($('rvCd'), `<div data-open="count">${renderCount()}</div><div data-open="holiday">${renderHoliday()}</div>`);
+  if (!cfg.pomoOn) setHtml($('rvDoor'), railWxBox()); // タイマーを出さないときは、同じ場所に天気
+  setHtml($('rvCd'), `<div data-open="count">${railTicketMini()}</div><div data-open="holiday">${railHolMini()}</div>`);
   // 駅名標:いまの授業
   let no = '--', k = '', nm = '', tm = '', lf = '', l = '', c = '', r = '';
   const ps = st.ps || [], gapName = (a, b) => b - a >= 30 ? '昼休み' : `${Math.round(b - a)}分休み`;
@@ -1443,13 +1572,13 @@ function renderRail(st, d) {
   railBoard(blank ? [] : dep, flap && cfg.flapBoard && !fresh, par);
   $('rvNote').textContent = dep.some(x => x.later) ? '次の登校日の予定をふくみます' : '';
   // やること(今のタイルと同じ内容)
-  setHtml($('rvTodo'), $('todoTile').innerHTML);
+  setHtml($('rvTodo'), railTodoBoard(5, true));
   // StudyLine の路線記号
   let sl;
   if (!sc) sl = `<div class="a"><span class="sym"><b>SL</b><b>--</b></span><div><div class="k">StudyLine</div><div class="v">今日のダイヤはまだありません</div></div></div>`;
   else {
     const B = slBrief(sc), { rows, start, planEnd, end, nm } = sc, idx = rows.findIndex(r => r.st !== 'done');
-    sl = `<div class="a"><span class="sym"><b>SL</b><b>${pad(Math.max(0, idx < 0 ? rows.length - 1 : idx) + 1)}</b></span><div><div class="k">StudyLine ・ ${B.label}</div><div class="v">${fmtDay(start)} 発 ・ ${rows.length}駅 ・ ${hm((planEnd - start) * 60000)}</div></div></div>
+    sl = `<div class="a"><span class="sym"><b>SL</b><b>${pad(Math.max(0, idx < 0 ? rows.length - 1 : idx) + 1)}</b></span><div><div class="k"><b class="xfer">のりかえ</b>StudyLine ・ ${B.label}</div><div class="v">${fmtDay(start)} 発 ・ ${rows.length}駅 ・ ${hm((planEnd - start) * 60000)}</div></div></div>
       <div class="ls">${rows.slice(0, 5).map((r, i) => `<div class="${r.st === 'done' ? 'dn' : ''}"><div class="no">SL${pad(i + 1)}</div><div class="nm">${esc(r.t.name)}</div><div class="tm">${fmtDay(r.s)}</div></div>`).join('')}</div>
       <div class="ft"><span>${B.run ? 'あと' : B.started ? '終点まで' : '発車まで'}</span><span class="big n">${B.allDone ? '完了' : bigMin(Math.max(0, Math.ceil(B.run ? B.run.e - nm : B.started ? end - nm : start - nm)))}</span></div>`;
   }
@@ -1781,6 +1910,7 @@ function renderClock() {
   if (show) $('rmap').innerHTML = schoolRoute(d, st, $('rmap').clientWidth || 520);
   renderPomo();
   if (fullK === 'clock') fvClockTick(d);
+  if (fullK && isRail()) railFullTick(d, st);
   if (!editing && !document.body.classList.contains('portrait')) { if (document.body.classList.contains('night')) renderNight(st, d); else if (document.body.classList.contains('rail')) renderRail(st, d); }
   return st;
 }
@@ -2572,7 +2702,12 @@ function openFull(t) {
   $('full').hidden = false;
   renderTiles(); requestAnimationFrame(fitClock);
 }
-function setFullHead(k) { $('fullName').textContent = TILE_NAME[k] || ''; $('fullSet').hidden = !FULL_SETTINGS[k]; }
+function setFullHead(k) {
+  const r = isRail(), h = RHEAD[k] || [TILE_NAME[k] || '', ''];
+  $('fullName').textContent = r ? h[0] : (TILE_NAME[k] || ''); $('fullEn').textContent = h[1] || '';
+  $('fullBadge').innerHTML = `<b>${h[3] || 'TT'}</b><b>${k === 'clock' ? railNo(now()) : (h[2] || '—')}</b>`;
+  $('full').classList.toggle('slh', k === 'studyline'); $('fullSet').hidden = !FULL_SETTINGS[k];
+}
 function closeFull() {
   if (fullK) { fullK = null; $('fullBody').innerHTML = ''; $('fullTabs').innerHTML = ''; $('full').hidden = true; return; }
   if (!fullTile) return;
@@ -2604,7 +2739,7 @@ function fvTabsUp() {
   if (tb && tb.parentNode === bar) { ft.appendChild(tb); if (!bar.textContent.trim() && !bar.querySelector('button,input,select')) bar.remove(); }
 }
 $('fullTabs').addEventListener('click', e => { const b = e.target.closest('[data-fa]'); if (b && fullK) fvAction(b.dataset.fa, b.dataset.v); });
-function renderFullView() { if (fullK && FV[fullK]) { const keep = fullK === 'clock' ? $('fcHM') : null; $('fullBody').innerHTML = `<div class="fv v2 fv-${fullK}">${FV[fullK]()}</div>`; if (keep && keep._rc && $('fcHM')) $('fcHM').replaceWith(keep); /* 動いている最中の数字は、描き直しても引き継ぐ */ fvTabsUp(); if (fullK === 'clock') fvClockTick(now()); $('fullBody').querySelectorAll('[data-fit]').forEach(e => fitText(e, +e.dataset.fit)); if (fullK === 'quakes') requestAnimationFrame(drawQuakeMini); if (fullK === 'weather' && fs.wmode === 'radar') requestAnimationFrame(rdInit); else rdStop(); } }
+function renderFullView() { if (fullK && isRail() && RFV[fullK] && !(fullK === 'weather' && fs.wmode === 'radar')) { railFullView(); return; } if (fullK && FV[fullK]) { const keep = fullK === 'clock' ? $('fcHM') : null; $('fullBody').innerHTML = `<div class="fv v2 fv-${fullK}">${FV[fullK]()}</div>`; if (keep && keep._rc && $('fcHM')) $('fcHM').replaceWith(keep); /* 動いている最中の数字は、描き直しても引き継ぐ */ fvTabsUp(); if (fullK === 'clock') fvClockTick(now()); $('fullBody').querySelectorAll('[data-fit]').forEach(e => fitText(e, +e.dataset.fit)); if (fullK === 'quakes') requestAnimationFrame(drawQuakeMini); if (fullK === 'weather' && fs.wmode === 'radar') requestAnimationFrame(rdInit); else rdStop(); } }
 const tabs = (fa, items, cur) => `<div class="fvtabs">${items.map(([v, l]) => `<button data-fa="${fa}" data-v="${esc(v)}" class="${String(v) === String(cur) ? 'on' : ''}">${l}</button>`).join('')}</div>`;
 // その日にかかる予定(終日の予定は終わりの日を含まない)
 function eventsOn(d) {
@@ -3308,6 +3443,240 @@ function fvClockTick(d) {
 }
 
 const FV = { clock: fvClock, calendar: fv2Calendar, sched: fv2Sched, tt: fv3TT, weather: fv2Weather, todo: fv2Todo, count: fv2Count, holiday: fv2Holiday, terms: fv2Terms, studyline: fv2Study, kioku: fv2Kioku, quakes: fv2Quakes, timer: fv2Timer, soon: fv2Soon };
+/* ================= 鉄道モードの全画面 =================
+   鉄道モードのときだけ、タイルを押したときの全画面を駅・車内の表示風にする。
+   時計と時間割はパタパタ(FlapUnit)を使うので、1分ごとの描き直しでは作り直さず、中身だけ動かす */
+const isRail = () => document.body.classList.contains('rail') && !document.body.classList.contains('portrait');
+const RHEAD = { clock: ['運行状況', 'NOW IN SERVICE'], tt: ['時刻表', 'TIMETABLE', '—'], weather: ['天気 発車標', 'WEATHER BOARD', 'WX'], count: ['きっぷ', 'COUNTDOWN TICKET', 'CD'], todo: ['やること 発車案内', 'TO DO DEPARTURES', 'TD'], studyline: ['StudyLine 今夜のダイヤ', 'STUDYLINE', '', 'SL'],
+  calendar: ['運行カレンダー', 'CALENDAR'], sched: ['予定', 'SCHEDULE'], holiday: ['次の休み', 'NEXT HOLIDAY'], terms: ['受験の語句', 'TERMS'], kioku: ['記憶回路', 'REVIEW'], quakes: ['最近の地震', 'EARTHQUAKES'], timer: ['タイマー', 'TIMER'], soon: ['次の予定まで', 'NEXT EVENT'] };
+const RNUM = '"Barlow Condensed","Helvetica Neue",Arial,sans-serif', RJP = '"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",sans-serif';
+function railNo(d) { const st = schoolState(d); return st.mode === 'class' ? pad(st.i + 1) : st.mode === 'break' && st.next >= 0 ? pad(st.next + 1) : '—'; }
+const dropFlaps = el => { for (let i = FLAPS.length - 1; i >= 0; i--) if (el.contains(FLAPS[i].root)) { FLAPS[i].cancel(); FLAPS.splice(i, 1); } };
+const rfCache = {}; // パタパタを使う画面は、作った要素を取っておいて使い回す
+function railFullView() {
+  const B = $('fullBody'), k = fullK, R = RFV[k];
+  if (R.keep) {
+    let el = rfCache[k]; const key = R.key ? R.key() : '', opening = !el || B.firstChild !== el;
+    if (!el || el._key !== key || (opening && R.replay)) { if (el) dropFlaps(el); el = document.createElement('div'); el.className = `rfv rfv-${k}`; el._key = key; R.build(el, opening); rfCache[k] = el; } // 開いたときはパタパタさせる。開いている間に時限が変わったときは、そのまま切り替える
+    if (B.firstChild !== el) { B.innerHTML = ''; B.appendChild(el); }
+    $('fullTabs').innerHTML = R.tabs ? R.tabs() : '';
+    if (R.update) R.update(el, now());
+    return;
+  }
+  B.innerHTML = `<div class="rfv rfv-${k}">${R.html()}</div>`;
+  $('fullTabs').innerHTML = R.tabs ? R.tabs() : '';
+  B.querySelectorAll('[data-fit]').forEach(e => fitText(e, +e.dataset.fit));
+}
+function railFullTick(d, st) {
+  const m = $('fullMini'); if (m) { const t = `${pad(d.getHours())}:${pad(d.getMinutes())}`; if (m._t !== t) { m._t = t; m.innerHTML = [...t].map(c => c === ':' ? '<em>:</em>' : `<i>${c}</i>`).join(''); } }
+  if (!fullK || !RFV[fullK]) return;
+  if (fullK === 'clock' && rfCache.clock && $('fullBody').contains(rfCache.clock)) railClockTick(rfCache.clock, d, st || schoolState(d));
+}
+
+// ---- 時計:車内表示風(大きなパタパタ時計・秒つき)
+function railNowInfo(d, st) {
+  const sj = i => subjOf(d, i) || `${i + 1}限`, ps = st.ps || [], gap = (a, b) => b - a >= 30 ? '昼休み' : `${Math.round(b - a)}分休み`;
+  if (st.mode === 'class') {
+    const i = st.i, [a, b] = ps[i], nx = i + 1 < ps.length;
+    return { tag: 'ただいま', sub: `${i + 1}限 ・ 授業中`, nm: sj(i), left: st.left, lk: '次の駅まで', da: fmtMin(a), db: fmtMin(b), nx: nx ? `${i + 2}限 ${sj(i + 1)}` : (st.post ? st.post[0] : '放課後'), nt: nx ? fmtMin(ps[i + 1][0]) : (st.post ? fmtMin(st.post[1]) : ''), stop: nx ? `${gap(b, ps[i + 1][0])} ${fmtMin(b)}` : '' };
+  }
+  if (st.mode === 'break') {
+    const n = st.next, pe = n > 0 ? ps[n - 1][1] : null;
+    return { tag: '停車中', sub: n >= 0 ? `次は ${n + 1}限` : '帰りの準備', nm: n >= 0 ? (pe != null ? gap(pe, ps[n][0]) : '休み時間') : '帰りの準備', left: st.left, lk: '発車まで', da: pe != null ? fmtMin(pe) : '', db: n >= 0 ? fmtMin(ps[n][0]) : (st.post ? fmtMin(st.post[1]) : ''), nx: n >= 0 ? `${n + 1}限 ${sj(n)}` : (st.post ? st.post[0] : ''), nt: n >= 0 ? fmtMin(ps[n][0]) : '' };
+  }
+  if (st.mode === 'pre' || st.mode === 'shr') return { tag: 'ただいま', sub: st.mode === 'pre' ? '朝' : '帰り', nm: st.name, left: st.left, lk: 'あと', nx: st.mode === 'pre' && ps.length ? `1限 ${sj(0)}` : '', nt: st.mode === 'pre' && ps.length ? fmtMin(ps[0][0]) : '' };
+  if (st.mode === 'before') return { tag: '始発前', sub: '今日の授業', nm: `${st.label}まで`, left: st.left, lk: '発車まで', nx: ps.length ? `1限 ${sj(0)}` : '', nt: ps.length ? fmtMin(ps[0][0]) : '' };
+  const nd = nextSchoolDay(d), p0 = periodsMin(nd)[0];
+  return { tag: st.mode === 'after' ? '終点' : '運休', sub: st.mode === 'after' ? '今日の運行はおわり' : '今日は授業なし', nm: st.mode === 'after' ? '今日の授業はおわり' : '今日はお休み', left: null, nx: `${dayLabel(d, nd)} 1限 ${subjOf(nd, 0) || ''}`, nt: p0 ? fmtMin(p0[0]) : '' };
+}
+function railClockBuild(el) {
+  el.innerHTML = `<div class="rc-top"><div class="rc-clk" id="rcClk"></div><div class="rc-side"><div class="rc-left"><span id="rcLk"></span><span><b class="n" id="rcLv"></b><small id="rcLu">分</small></span></div><div class="rc-dep"><div><span>出発</span><b class="n" id="rcDa"></b></div><div><span>到着</span><b class="n" id="rcDb"></b></div></div></div></div>
+    <div class="rc-now"><div class="rc-nl"><div class="rc-lab"><b id="rcTag"></b><span id="rcSub"></span></div><div class="rc-nm" id="rcNm"></div></div><div class="rc-next"><div class="k">次は ・ NEXT</div><div class="v"><span id="rcNx"></span><small class="n" id="rcNt"></small></div></div></div>
+    <div class="rc-route"><div class="rc-rh"><span>今日の停車駅</span><span id="rcRl"></span></div><div class="rmw" id="rcMap"></div></div>`;
+  const clk = el.querySelector('#rcClk'), D10 = [...'0123456789'], MT = [...'012345'];
+  const co = { w: 134, hh: 250, fs: 214, ff: RNUM, fw: 500, D: 210, rad: 8 }, so = { w: 66, hh: 108, fs: 92, ff: RNUM, fw: 500, D: 200, rad: 5, quiet: true };
+  const mk = (drum, o) => { const u = new FlapUnit(drum, o); clk.appendChild(u.root); return u; };
+  const c = { h1: mk(['', '1', '2'], co), h2: mk(D10, co) };
+  clk.insertAdjacentHTML('beforeend', '<span class="rc-cs"><i></i><i></i></span>');
+  c.m1 = mk(MT, co); c.m2 = mk(D10, co);
+  const sw = document.createElement('span'); sw.className = 'rc-sec'; clk.appendChild(sw);
+  c.s1 = new FlapUnit(MT, so); c.s2 = new FlapUnit(D10, so); sw.append(c.s1.root, c.s2.root);
+  el._c = c; el._last = 0;
+}
+function railClockTick(el, d, st) {
+  const c = el._c, fresh = Date.now() - el._last > 3000; el._last = Date.now();
+  const anim = !fresh && effAnim() === 'flap', h = d.getHours(), m = d.getMinutes(), sc = d.getSeconds();
+  const seq = [[c.h1, h < 10 ? '' : String(Math.floor(h / 10))], [c.h2, String(h % 10)], [c.m1, String(Math.floor(m / 10))], [c.m2, String(m % 10)]];
+  el.querySelector('.rc-sec').hidden = !cfg.showSec;
+  if (cfg.showSec) seq.push([c.s1, String(Math.floor(sc / 10))], [c.s2, String(sc % 10)]);
+  let T = 0; for (const [u, v] of seq) { const mv = u.dist(v) > 0; u.go(v, T, anim); if (mv && anim) T += 90; }
+  const I = railNowInfo(d, st), set = (id, v) => { const e = el.querySelector('#' + id); if (e && e._v !== v) { e._v = v; e.textContent = v; return e; } };
+  set('rcLk', I.lk || ''); set('rcLv', I.left == null ? '—' : String(Math.ceil(I.left))); set('rcLu', I.left == null ? '' : '分');
+  set('rcDa', I.da || '—'); set('rcDb', I.db || '—'); set('rcTag', I.tag); set('rcSub', I.sub || '');
+  const nm = set('rcNm', I.nm); if (nm) { nm._fl = null; fitText(nm, 92); }
+  set('rcNx', I.nx || '—'); set('rcNt', I.nt || '');
+  const ps = st.ps || [], pre = st.pre || [], a0 = pre.length ? pre[0][1] : ps.length ? ps[0][0] : null, z = st.post ? st.post[2] : ps.length ? ps[ps.length - 1][1] : null;
+  set('rcRl', a0 != null ? `TT 線 ・ ${fmtMin(a0)} 始発 → ${fmtMin(z)} 終点` : 'TT 線 ・ 本日 運休');
+  if (el._rmin !== m) { el._rmin = m; const mp = el.querySelector('#rcMap'), show = st.mode !== 'off' && st.mode !== 'after'; mp.hidden = !show; if (show) mp.innerHTML = schoolRoute(d, st, Math.round((mp.clientWidth || 1100) / 1.4)); const bg = $('fullBadge').lastChild; if (bg) bg.textContent = railNo(d); }
+}
+
+// ---- 時間割:パタパタの時刻表(開いたとき、左上から右へ・下の段へと、1枚ずつずらしてめくれる)
+function railTTRef() { const d = now(); return isSchoolDay(d) && schoolState(d).mode !== 'after' ? d : nextSchoolDay(d); }
+function railTTKey() { const d = railTTRef(), st = schoolState(now()); return `${ymd(d)}|${ymd(now()) === ymd(d) && st.mode === 'class' ? st.i : -1}|${st.mode === 'after' || st.mode === 'off' ? 'x' : (st.mode === 'class' ? st.i : st.next)}|${JSON.stringify(cfg.tt)}`; }
+function railTTBuild(el, anim) {
+  const ref = railTTRef(), today = ymd(ref) === ymd(now()), st = schoolState(now()), refW = ref.getDay();
+  const days = [1, 2, 3, 4, 5].concat((cfg.tt[6] || []).some(x => x && x.s) ? [6] : []);
+  const np = Math.max(...days.map(w => (cfg.tt[w] || []).length), (periodsMin(ref) || []).length, 1);
+  const rp = periodsMin(ref), lunchAfter = rp.findIndex((x, i) => i + 1 < rp.length && rp[i + 1][0] - x[1] >= 30);
+  const subs = ['']; for (const w of days) for (const x of cfg.tt[w] || []) if (x && x.s && !subs.includes(x.s)) subs.push(x.s);
+  el.style.setProperty('--tc', days.length);
+  let h = `<div class="tg2"><div class="wd">時限${today ? '' : `<small>${dayLabel(now(), ref)}の時刻</small>`}</div>${days.map(w => `<div class="wd${w === refW ? ' today' : ''}${w === 6 ? ' sat' : ''}">${WD[w]}${w === refW ? (today ? ' ・ 今日' : ` ・ ${dayLabel(now(), ref)}`) : ''}</div>`).join('')}`;
+  const cells = [];
+  for (let i = 0; i < np; i++) {
+    if (i === lunchAfter + 1 && lunchAfter >= 0) h += `<div class="lunch2">昼休み<span class="n">${fmtMin(rp[lunchAfter][1])} – ${fmtMin(rp[lunchAfter + 1][0])}</span></div>`;
+    h += `<div class="hr"><b>${i + 1}</b><span class="n">${rp[i] ? fmtMin(rp[i][0]) : ''}</span></div>`;
+    for (const w of days) { const x = (cfg.tt[w] || [])[i]; const id = `tc${i}_${w}`; h += `<div class="cell" id="${id}">${x && x.r ? `<span class="trm">${esc(x.r)}</span>` : ''}</div>`; cells.push({ id, w, i, s: x && x.s ? x.s : '' }); }
+  }
+  el.innerHTML = h + '</div>';
+  let T = 0;
+  for (const cl of cells) {
+    const isT = cl.w === refW, past = today && isT && ((st.mode === 'class' && cl.i < st.i) || (st.mode === 'break' && st.next >= 0 && cl.i < st.next) || (st.mode === 'break' && st.next < 0) || st.mode === 'shr');
+    const cur = today && isT && st.mode === 'class' && cl.i === st.i;
+    const o = { w: '100%', hh: 88, fs: cl.s.length > 8 ? 17 : cl.s.length > 6 ? 20 : 23, ff: RJP, fw: 700, align: 'left', px: 12, D: 120, rad: 3, color: cur ? '#141413' : past ? '#5a5853' : isT ? '#f5b301' : '#ece8df' };
+    if (cur) Object.assign(o, { bgTop: '#f2eee5', bgBot: '#e4e0d6' });
+    const u = new FlapUnit(subs, o), host = el.querySelector('#' + cl.id); host.prepend(u.root); if (cur) host.classList.add('cur'); if (past) host.classList.add('past');
+    if (cl.s) { if (anim) { u.go(cl.s, T, true); T += 55; } else u.show(u.ix(cl.s)); }
+  }
+}
+
+// ---- 天気:LED の発車標
+function railWeather() {
+  if (!wx) return `<div class="led"><div class="lempty o">${wxFail ? '天気を取得できませんでした' : '天気を読み込み中…'}</div></div>`;
+  const H = wx.hourly, D = wx.daily, d = now(), d0 = wxDay0(), sel = +(fs.wd || 0), di = Math.min(d0 + sel, D.time.length - 1), date = D.time[di], isToday = date === ymd(d);
+  const kc = code => { const k = WCODE(code)[1]; return /rain|snow|thunder/.test(k) ? 'b' : /sun/.test(k) ? 'o' : 'w'; };
+  const pc = p => p == null ? 'w' : p >= 50 ? 'r' : p >= 30 ? 'b' : 'g';
+  const say = isToday ? wxSay(false) : { say: umbrella(D.precipitation_probability_max[di], D.weather_code[di]), p: D.precipitation_probability_max[di] };
+  const rp = periodsMin(d), li = rp.findIndex((x, i) => i + 1 < rp.length && rp[i + 1][0] - x[1] >= 30), lunchH = isToday && isSchoolDay(d) && li >= 0 ? Math.floor(rp[li][1] / 60) : -1;
+  const goH = isToday && say.goHome != null ? say.goHome : -1;
+  const at = (ds, hh) => H.time.findIndex(t => t.startsWith(ds) && +t.slice(11, 13) === hh);
+  let idx;
+  if (isToday) { // いま・次の時間・昼休み・下校・夜、そして翌朝(行の数は8つまで)
+    const h0 = d.getHours(), want = [...new Set([h0, h0 + 1, lunchH, goH, 18, 20, 22].filter(h => h >= h0 && h <= 23))].sort((a, b) => a - b);
+    for (let h = h0 + 2; want.length < 7 && h <= 23; h += 2) if (!want.includes(h)) want.push(h);
+    want.sort((a, b) => a - b);
+    const nd = ymd(addDays(d, 1));
+    idx = [...want.slice(0, 7).map(h => at(date, h)), at(nd, 6)].filter(i => i >= 0);
+  } else idx = [6, 8, 10, 12, 14, 16, 18, 21].map(hh => at(date, hh)).filter(i => i >= 0);
+  const rows = idx.map(i => {
+    const hh = +H.time[i].slice(11, 13), day = H.time[i].slice(0, 10), p = H.precipitation_probability[i], t = Math.round(H.temperature_2m[i]), code = H.weather_code[i];
+    let note = '', nc = 'g';
+    if (day === date && hh === goH) { note = `下校 ・ ${p >= 50 ? '傘が必要' : p >= 30 ? '折りたたみ傘' : '傘不要'}`; nc = p >= 30 ? 'b' : 'g'; }
+    else if (day === date && hh === lunchH) note = '昼休み';
+    else if (/rain|snow|thunder/.test(WCODE(code)[1])) { note = WCODE(code)[0] + 'に注意'; nc = 'b'; }
+    else if (t <= 5) { note = '冷えこみ注意'; nc = 'r'; }
+    else if (day !== date && hh >= 5 && hh <= 8) note = 'あすの朝';
+    return `<div class="lr"><span class="o">${day !== date ? '翌' : ''}${hh}:00</span><span class="${kc(code)}">${WCODE(code)[0]}</span><span class="w n2">${t}°</span><span class="${pc(p)} n2">${pct(p)}%</span><span class="${nc} nt">${note}</span></div>`;
+  }).join('');
+  const [txt] = WCODE(isToday ? wx.cur.weather_code : D.weather_code[di]), names = ['今日', '明日', 'あさって'];
+  const big = isToday ? Math.round(wx.cur.temperature_2m) : Math.round(D.temperature_2m_max[di]);
+  const um = say.say, uc = /いりません/.test(um) ? 'g' : /折りたたみ/.test(um) ? 'o' : 'r';
+  const tk = [1, 2].map(k => di + k < D.time.length ? `${names[sel + k] || mdw(parseYmd(D.time[di + k]))} ${mdw(parseYmd(D.time[di + k]))} ${WCODE(D.weather_code[di + k])[0]} ${Math.round(D.temperature_2m_max[di + k])}°/${Math.round(D.temperature_2m_min[di + k])}°` : '').filter(Boolean);
+  return `<div class="led"><div class="ltop"><span class="w t">${big}°</span><span class="s"><span class="${kc(isToday ? wx.cur.weather_code : D.weather_code[di])}">${txt}</span> <span class="w">${esc(wx.pref || loc().pref)}${isToday ? '' : ' ・ ' + names[sel]}</span><br><span class="r">${Math.round(D.temperature_2m_max[di])}°</span><span class="w"> / </span><span class="b">${Math.round(D.temperature_2m_min[di])}°</span></span>
+    <span class="u"><span class="${uc}">${esc(um)}</span><br><small class="w">降水確率 最大${pct(D.precipitation_probability_max[di])}%${isToday && say.head ? ' ・ ' + esc(say.head) : ''}</small></span></div>
+    <div class="lh"><span>時刻</span><span>天気</span><span class="n2">気温</span><span class="n2">降水確率</span><span>ひとこと</span></div>${rows}
+    <div class="ltk">${tk.map(x => `<span class="o">${esc(x)}</span>`).join('')}<span class="${uc}">${esc(um)}</span></div></div>`;
+}
+const railWeatherTabs = () => { const wm = fs.wmode || 'fc', sel = +(fs.wd || 0); return `<div class="fvtabs">${['今日', '明日', 'あさって'].map((n, i) => `<button data-fa="wdd" data-v="${i}" class="${wm === 'fc' && sel === i ? 'on' : ''}">${n}</button>`).join('')}<button data-fa="wmode" data-v="radar" class="${wm === 'radar' ? 'on' : ''}">雨雲レーダー</button></div>`; };
+
+// ---- カウントダウン:乗車券
+function cdStats(c) { const dt = parseYmd(c.date); let sch = 0, off = 0; for (let x = addDays(sod(now()), 1); x <= dt; x = addDays(x, 1)) isSchoolDay(x) ? sch++ : off++; return { dt, sch, off, hrs: Math.max(0, Math.floor((dt.getTime() - nowMs()) / 3600e3)) }; }
+function railCdStops(c, l) { // 途中の駅:ほかのカウントダウンと祝日から、間があくように最大4つ
+  const t0 = sod(now()), dt = parseYmd(c.date), span = Math.max(1, dayDiff(t0, dt));
+  const cand = [...l.filter(x => x !== c && x.date < c.date).map(x => ({ nm: x.name, d: parseYmd(x.date), pri: 0 })),
+    ...Object.entries(HOLIDAYS).filter(([k]) => k > ymd(t0) && k < c.date).map(([k, v]) => ({ nm: v, d: parseYmd(k), pri: 1 }))].sort((a, b) => a.pri - b.pri || a.d - b.d);
+  const out = [];
+  for (const x of cand) { const f = dayDiff(t0, x.d) / span; if (f < .1 || f > .9 || out.some(y => Math.abs(y.f - f) < .16)) continue; out.push({ ...x, f }); if (out.length >= 4) break; }
+  return out.sort((a, b) => a.f - b.f);
+}
+function railCount() {
+  const l = cdList();
+  if (!l.length) return `<div class="tkwrap"><p class="tkempty">${cdEmpty()}</p><button class="gate plain" data-fa="cdadd">+ カウントダウンを追加</button></div>`;
+  const c = l[Math.min(+(fs.cdi || 0), l.length - 1)], S = cdStats(c), dt = S.dt, t0 = now(), stops = railCdStops(c, l);
+  const nmFs = c.name.length > 8 ? 40 : c.name.length > 6 ? 48 : 58;
+  const st = (f, nm, sub, cls = '') => `<div class="tst ${cls}" style="left:${(4 + f * 92).toFixed(1)}%"><div class="nm">${esc(nm)}</div><div class="d"></div><div class="t n">${sub}</div></div>`;
+  return `<div class="tkwrap"><div class="ticket"><div class="punch"></div>
+    <div class="tk1"><span class="ty">乗車券</span><span class="tk1s">片道 ・ 途中下車できません</span><span class="no n">No. ${dt.getFullYear()}-${pad(dt.getMonth() + 1)}${pad(dt.getDate())}</span></div>
+    <div class="tk2"><span class="a">今日</span><span class="ar">→</span><span class="b" style="font-size:${nmFs}px">${esc(c.name)}</span></div>
+    <div class="tk3"><div class="val">${t0.getFullYear()}年${t0.getMonth() + 1}月${t0.getDate()}日 から<br><b>${dt.getFullYear()}年 ${dt.getMonth() + 1}月${dt.getDate()}日(${WD[dt.getDay()]})</b> まで有効${stops.length ? `<br><span class="via">経由:${stops.map(x => esc(x.nm)).join(' ・ ')}</span>` : ''}</div>
+      <div class="cd"><div class="k">${c.days ? '到着まで あと' : '本日 到着'}</div><div class="v n">${c.days ? `${c.days}<small>日</small>` : '今日'}</div></div></div>
+    <div class="tk4"><span>授業日 あと ${S.sch}日 ・ 休みの日 ${S.off}日</span><span>残り ${Math.floor(c.days / 7)}週と${c.days % 7}日 ・ ${S.hrs.toLocaleString()}時間</span><span>TT 線 ・ Platform 発行</span></div></div>
+    <div class="trip"><div class="ln"><i style="width:4%"></i></div>${st(0, '今日', md(t0), 'now')}${stops.map(x => st(x.f, x.nm, `${md(x.d)} ・ ${dayDiff(sod(t0), x.d)}日`)).join('')}${st(1, c.name, `${md(dt)} ・ ${c.days}日`, 'goal')}</div></div>`;
+}
+const railCountTabs = () => { const l = cdList(), i = Math.min(+(fs.cdi || 0), Math.max(0, l.length - 1)); return l.length ? `<div class="fvtabs">${l.slice(0, 5).map((c, k) => `<button data-fa="cdi" data-v="${k}" class="${k === i ? 'on' : ''}">${esc(c.name)}</button>`).join('')}<button data-fa="cdadd">+ 追加</button></div>` : ''; };
+
+// ---- やること:発車標
+function railTodoRows() { cleanTodos(); const all = allTodos(); return [...all].sort((a, b) => (a.done - b.done) || (dueInfo(a).ord - dueInfo(b).ord)); }
+function railTodoBoard(max, mini) {
+  const list = railTodoRows(), open = list.filter(t => !t.done).length, lbs = ['先発', '次発', '次々発'];
+  const row = (t, i) => { const di = dueInfo(t), late = !t.done && di.hot; const kind = t.bring ? ['持ち物', 'o'] : t.gt ? ['G ToDo', 'g'] : ['課題', 'b'];
+    return `<li class="trow${t.done ? ' dn' : ''}" ${mini ? '' : 'data-fa="todo"'} data-id="${esc(t.id)}" data-v="${esc(t.id)}"><span class="lb">${t.done ? '到着' : lbs[i] || ''}</span><span class="c k ${t.done ? '' : kind[1]}">${t.done ? '済' : kind[0]}</span><span class="c du${late ? ' late' : ''}${di.label ? (/\d/.test(di.label) || t.done ? '' : ' jp') : ' none'}">${t.done ? '済' : di.label || '期限なし'}</span><span class="c tx">${esc(t.text)}</span><span class="ck"></span></li>`; };
+  const rows = list.slice(0, max).map(row).join('');
+  if (mini) return `<div class="rtb"><div class="rtbh"><b>やること</b><span>期限</span><span>${open}件</span><button class="add" id="todoAdd" aria-label="追加">+</button></div>${rows ? `<ul>${rows}</ul>` : '<p class="empty">発車予定はありません。「+」で追加できます。</p>'}</div>`;
+  const soon = list.filter(t => !t.done && t.due && dayDiff(now(), parseYmd(t.due)) <= 1).length, late = list.filter(t => !t.done && t.due && dayDiff(now(), parseYmd(t.due)) < 0).length;
+  return `<div class="dep2"><div class="h"><span></span><span>種別</span><span>期限</span><span>行先(やること)</span><span>済</span></div>${rows ? `<ul>${rows}</ul>` : '<p class="tkempty">発車予定はありません。右上の「+ 追加」から足せます。</p>'}
+    <div class="scroll"><span>◆ 明日までのもの ${soon}件</span>${late ? `<span class="r">◆ 期限切れ ${late}件</span>` : ''}<span>◆ 持ち物は前の日の夜に確認しましょう</span><span>◆ 行先を押すと済になります</span></div></div>`;
+}
+
+// ---- StudyLine:車内の路線案内
+function railStudy() {
+  const sc = slSchedule(), d = now(), S = slSums(d);
+  const days = []; for (let i = 6; i >= 0; i--) { const x = addDays(d, -i), g = slDay(ymd(x)); if (g) g._ds = ymd(x); days.push({ w: WD[x.getDay()], m: slStudied(g), td: i === 0 }); }
+  const mx = Math.max(60, ...days.map(x => x.m));
+  const bars = `<div class="slbars"><div class="k">7日間の運行実績 ・ 合計 ${(S.week / 60).toFixed(1)}時間</div><div class="bs">${days.map(x => `<div class="${x.td ? 'td' : ''}"><span class="n">${x.m >= 3 ? (x.m / 60).toFixed(1) : ''}</span><i style="height:${Math.max(2, x.m / mx * 100).toFixed(1)}%"></i><b>${x.w}</b></div>`).join('')}</div></div>`;
+  const open = '<button class="gate plain openapp sl" data-app="studyline">StudyLine を開く</button>';
+  if (!sc) return `<div class="slv"><div class="l"><div class="rc-lab"><b class="sl">運休</b>今夜のダイヤ</div><div class="slnm">ダイヤはまだありません</div><p class="slp">StudyLine を開いてダイヤを作ると、ここに今夜の停車駅が出ます。</p><div style="margin-top:20px">${open}</div>${bars}</div><div class="vlist"><p class="slp">今日 ${hm(S.today * 60000)} ・ 昨日 ${hm(S.yd * 60000)}</p></div></div>`;
+  const B = slBrief(sc), { rows, start, planEnd, end, deadline, nm } = sc, cur = B.run || B.nextR;
+  const leftMin = B.allDone ? 0 : Math.max(0, Math.ceil(B.run ? B.run.e - nm : B.started ? end - nm : start - nm));
+  const lk = B.allDone ? '今夜のダイヤは完了' : B.run ? `${B.nextR ? '次の駅まで' : '終点まで'}` : B.started ? '終点まで' : '発車まで';
+  const idx = rows.indexOf(cur), room = deadline ? Math.round(deadline - end) : null;
+  const vrow = (r, i) => `<div class="vrow ${r.st === 'done' ? 'done' : ''} ${r === cur ? 'vnx' : ''}"><div class="dt"></div><div class="vt"><div class="no n">SL${pad(i + 1)}</div><div class="nm">${esc(r.t.name)}${r.t.memo ? `<small>${esc(r.t.memo)}</small>` : ''}</div></div><div class="t n">${fmtDay(r.s)}<small>${Math.round(r.e - r.s)}分</small></div></div>`;
+  return `<div class="slv"><div class="l">
+    <div class="rc-lab"><b class="sl">${B.label}</b><span>${fmtDay(start)} 発 ・ ${rows.length}駅 ・ ${hm((planEnd - start) * 60000)}</span></div>
+    <div class="slk">${B.allDone ? '終点' : B.run ? 'いまの駅 ・ NOW' : '次は ・ NEXT'}</div>
+    <div class="slnm" data-fit="104">${B.allDone ? '到着' : esc(cur.t.name)}</div>
+    <div class="slen n">${B.allDone ? '' : `SL${pad(idx + 1)} ・ ${fmtDay(cur.s)} – ${fmtDay(cur.e)}`}</div>
+    <div class="rc-left sl"><span>${lk}</span><span>${B.allDone ? '' : leftMin >= 60 ? `<b class="n">${Math.floor(leftMin / 60)}</b><small>時間</small><b class="n">${leftMin % 60}</b><small>分</small>` : `<b class="n">${leftMin}</b><small>分</small>`}</span></div>
+    <div class="trio"><div><div class="k">終点 着</div><div class="v n">${fmtDay(end)}<small>${B.allDone ? '' : '見込み'}</small></div></div><div><div class="k">${deadline ? `就寝期限 ${fmtDay(deadline)} まで` : '就寝期限'}</div><div class="v n" style="color:${room == null ? 'inherit' : room >= 0 ? 'var(--grn)' : 'var(--red)'}">${room == null ? '—' : `${room < 0 ? '-' : ''}${Math.floor(Math.abs(room) / 60)}:${pad(Math.abs(room) % 60)}`}<small>${room == null ? '' : room >= 0 ? '余裕' : 'オーバー'}</small></div></div><div><div class="k">7日間</div><div class="v n">${(S.week / 60).toFixed(1)}<small>時間</small></div></div></div>
+    ${bars}</div>
+    <div class="vlist">${rows.map(vrow).join('')}<div class="vrow end ${B.allDone ? 'vnx' : ''}"><div class="dt"></div><div class="vt"><div class="no">終点</div><div class="nm">到着</div></div><div class="t n">${fmtDay(end)}<small>${B.allDone ? '' : '見込み'}</small></div></div><div class="vfoot">${open}</div></div></div>`;
+}
+
+// ---- ふだんの鉄道モード:天気の枠・小さな乗車券・次の休み
+function railWxBox() {
+  if (!wx) return `<div class="rv-info" data-open="weather"><div class="h">天気</div><div class="b"><p class="empty">${wxFail ? '天気を取得できませんでした' : '天気を読み込み中…'}</p></div></div>`;
+  const D = wx.daily, di = wxDay0(), [txt, kind] = WCODE(wx.cur.weather_code), d = now(), after = !isSchoolDay(d) || schoolState(d).mode === 'after' ? d.getHours() >= 18 : false;
+  const S = wxSay(after), uc = /いりません/.test(S.say) ? 'g' : /折りたたみ/.test(S.say) ? 'o' : 'r';
+  return `<div class="rv-info" data-open="weather"><div class="h">天気 ・ ${esc(wx.pref || loc().pref)}</div><div class="b2">${wxIcon(kind, !wx.cur.is_day)}<span class="t n">${Math.round(wx.cur.temperature_2m)}°</span><span class="s">${esc(txt)}<br><b class="n"><span style="color:#ff5b3a">${Math.round(D.temperature_2m_max[di + (after ? 1 : 0)] ?? D.temperature_2m_max[di])}°</span> / <span style="color:#6fa8dc">${Math.round(D.temperature_2m_min[di + (after ? 1 : 0)] ?? D.temperature_2m_min[di])}°</span></b>${after ? ' 明日' : ''}</span></div>
+    <div class="f ${uc}"><i></i>${esc(S.say)}</div></div>`;
+}
+function railTicketMini() {
+  const l = cdList(); if (!l.length) return `<div class="mtk"><div class="r1"><b>乗車券</b>カウントダウン</div><div class="r2"><div class="to" style="font-size:16px">設定で日付を入れてください</div></div></div>`;
+  const c = l[0], S = cdStats(c);
+  return `<div class="mtk"><div class="r1"><b>乗車券</b>今日 → ${esc(c.name)}<span class="n">${md(S.dt)}(${WD[S.dt.getDay()]}) まで</span></div><div class="r2"><div class="to"><span data-fit="26">${esc(c.name)}</span><small>授業日 あと${S.sch}日 ・ 残り${Math.floor(c.days / 7)}週</small></div><div class="v n">${c.days ? `${c.days}<small>日</small>` : '今日'}</div></div></div>`;
+}
+function railHolMini() {
+  const o = nextOff(), d = now(), left = dayDiff(d, new Date(d.getFullYear() + 1, 0, 1)) - 1;
+  return `<div class="hol"><div class="k">次の休み ・ 運休日</div><div class="v n">${o.today ? o.len : o.days}<small>${o.today ? '連休中' : '日後'}</small></div><div class="d">${md(o.from)}(${WD[o.from.getDay()]})から ${o.len}連休 ・ 今年の残り ${left}日</div></div>`;
+}
+
+const RFV = {
+  clock: { keep: true, build: railClockBuild, update: (el, d) => railClockTick(el, d, schoolState(d)) },
+  tt: { keep: true, replay: true, key: railTTKey, build: railTTBuild },
+  weather: { html: railWeather, tabs: railWeatherTabs },
+  count: { html: railCount, tabs: railCountTabs },
+  todo: { html: () => railTodoBoard(9, false), tabs: () => '<div class="fvtabs"><button data-fa="todoadd" class="tadd">+ 追加</button></div>' },
+  studyline: { html: railStudy }
+};
 function fvAction(a, v) {
   if (a === 'day') { fs.day = v; if (fullK === 'calendar') { const d = parseYmd(v); fs.month = ymd(new Date(d.getFullYear(), d.getMonth(), 1)); } }
   else if (a === 'mon') { const base = fs.month ? parseYmd(fs.month) : new Date(now().getFullYear(), now().getMonth(), 1); fs.month = ymd(new Date(base.getFullYear(), base.getMonth() + +v, 1)); }
@@ -3335,6 +3704,7 @@ function fvAction(a, v) {
   else if (a === 'ttv') { fs.ttv = v; }
   else if (a === 'rdplay') { rdToggle(); return; }
   else if (a === 'cdadd') { closeFull(); openSettings('s-cd'); return; }
+  else if (a === 'cdi') { fs.cdi = +v; }
   renderFullView();
 }
 // ポップアップの外をタップしたら閉じる
