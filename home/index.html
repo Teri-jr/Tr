@@ -1281,7 +1281,7 @@ body.portrait .rtb .rows .trow{padding:0 8px;grid-template-columns:60px 56px min
 
 <script>
 'use strict';
-const APP_VERSION = '2.28.4'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.28.5'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -2544,7 +2544,7 @@ function showSoon(o) {
   $('soonMute').hidden = o.kind !== 'lead' || o.demo;
   $('soonNote').textContent = o.kind === 'timer' ? 'タップで止めます' : o.kind === 'start' ? '5秒で閉じます' : '10秒で閉じます';
   S.hidden = false; updateSoon();
-  if (cfg.soonBeep || o.kind === 'timer') { unlockAudio(); o.kind === 'timer' ? soundAlarm() : soundBeep(); }
+  if (cfg.soonBeep || o.kind === 'timer') { unlockAudio(); o.kind === 'timer' ? SOUNDS.timer() : SOUNDS.soon(); }
 }
 function closeSoon() { soonCur = null; $('soon').hidden = true; }
 function updateSoon() {
@@ -2556,7 +2556,7 @@ function updateSoon() {
     $('soonN').textContent = fmtLeft(st - t); $('soonU').textContent = '後に開始';
     $('soonPg').style.width = Math.min(100, Math.max(0, 100 * (1 - (st - t) / (o.lead * 60e3)))) + '%';
   } else if (o.kind === 'start') { $('soonN').textContent = 'いま'; $('soonU').textContent = ''; $('soonPg').style.width = '100%'; }
-  else { $('soonN').textContent = '0:00'; $('soonU').textContent = ''; $('soonPg').style.width = '100%'; if (Math.floor(t / 1000) % 3 === 0) soundAlarm(); }
+  else { $('soonN').textContent = '0:00'; $('soonU').textContent = ''; $('soonPg').style.width = '100%'; if (Math.floor(t / 1000) % 3 === 0) SOUNDS.timer(); }
 }
 $('soonOk').addEventListener('click', closeSoon);
 $('soon').addEventListener('click', e => { if (e.target.id === 'soon' || (soonCur && soonCur.kind === 'timer')) closeSoon(); });
@@ -3935,6 +3935,28 @@ function tone(freq, t0, dur, vol = .25, type = 'square') {
 }
 const soundBeep = () => { tone(880, 0, .18, .2, 'sine'); tone(880, .28, .18, .2, 'sine'); };
 const soundAlarm = () => { for (let i = 0; i < 3; i++) { tone(1040, i * .5, .22, .3); tone(780, i * .5 + .24, .22, .3); } };
+// 鐘のように、鳴ってから小さくなっていく音
+function bell(freq, t0, dur, vol = .3, type = 'sine') {
+  if (!actx || actx.state !== 'running') return;
+  const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime + t0;
+  o.type = type; o.frequency.value = freq; o.connect(g); g.connect(actx.destination);
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .008); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+  o.start(t); o.stop(t + dur + .05);
+}
+// 音は用途ごとに別にする
+const SOUNDS = {
+  // 緊急地震速報(警報):上がっていく3つの音を2回 → 速く行き来するサイレン。いちばん強い音
+  eewWarn: () => { for (let r = 0; r < 2; r++) [1046, 1318, 1568].forEach((f, i) => { tone(f, r * .62 + i * .16, .15, .32, 'square'); }); for (let i = 0; i < 6; i++) tone(i % 2 ? 740 : 1180, 1.3 + i * .14, .13, .3, 'sawtooth'); },
+  // 緊急地震速報(予報):下がる2つの音を2回
+  eewFore: () => { for (let r = 0; r < 2; r++) { tone(1320, r * .5, .16, .26, 'triangle'); tone(990, r * .5 + .2, .2, .26, 'triangle'); } },
+  // 地震情報(揺れたあと):やわらかい「ポーン」(全画面のときは3回)
+  quake: big => { for (let r = 0; r < (big ? 3 : 1); r++) { bell(660, r * .9, .9, .32); bell(990, r * .9 + .25, 1.1, .26); } },
+  // タイマーの終わり:キッチンタイマーの「ピピピピ」
+  timer: () => { for (let r = 0; r < 2; r++) for (let i = 0; i < 4; i++) tone(2093, r * .9 + i * .11, .06, .16, 'square'); },
+  // 予定のお知らせ:「ピンポーン」
+  soon: () => { bell(784, 0, 1.1, .3); bell(622, .42, 1.5, .3); }
+};
+const soundEew = () => (eew && eew.warn ? SOUNDS.eewWarn : SOUNDS.eewFore)();
 
 /* ================= スリープ防止 ================= */
 let wakeLock = null, wakeState = 'none';
@@ -4035,7 +4057,7 @@ function handleEEW(d, demo) {
   if (local < 1 && !d.isWarn && !demo && !eewAll()) { eew = prev && !same ? prev : null; updateFull(); renderQBanner(); return; }
   updateFull(); renderQBanner();
   const want = eewLevel() === 2 ? 2 : eew.local >= cfg.qBeep ? 1 : 0;
-  if (want > (eew.alarmed || 0)) { eew.alarmed = want; want === 2 ? soundAlarm() : soundBeep(); }
+  if (want > (eew.alarmed || 0)) { eew.alarmed = want; soundEew(); } // 警報と予報で音を変える
 }
 function eewLevel() { if (!eew) return 0; return eewAll() || eew.local >= cfg.qFull ? 2 : 1; }
 function endEEW() { eew = null; updateFull(); renderQBanner(); }
@@ -4054,7 +4076,7 @@ function eewTick() {
   if (eew && (t > Math.max(eew.origin + 180e3, eew.sAt + 90e3) || (eew.demo && t > eew.sAt + 25e3))) { const wasDemo = eew.demo; endEEW(); if (wasDemo) demoInfo(true); else setTimeout(pollQuake, 30e3); return; }
   if (quake && quake.full && t > quake.until) updateFull();
   if (fullMode) drawFull();
-  if (fullMode === 'eew' && eew.alarmed === 2 && t < eew.sAt + 5e3 && Math.floor(t / 2500) !== Math.floor((t - 250) / 2500)) soundAlarm();
+  if (fullMode === 'eew' && eew.alarmed === 2 && t < eew.sAt + 5e3 && Math.floor(t / 2500) !== Math.floor((t - 250) / 2500)) soundEew();
   if (eew) renderQBanner();
 }
 const tmS = ms => { const d = new Date(ms); return `${d.getHours()}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; };
@@ -4273,7 +4295,7 @@ function showQuakeInfo(q, demo, forceFull) {
   const prev = quake, same = prev && prev.id === q.id;
   const grew = same && (q.types || []).length > (prev.q.types || []).length; // 次の発表(震源・各地の震度)が出た
   quake = { id: q.id, q, demo, mine, maxI, maxPref, byPref, why, full, fullClosed: same ? prev.fullClosed : false, view: same && !grew ? prev.view : null, until: same && !grew ? prev.until : nowMs() + 15 * 60e3 };
-  if (!same || (full && !prev.full) || (mine >= cfg.qBeep && prev.mine < cfg.qBeep)) full ? soundAlarm() : mine >= cfg.qBeep ? soundBeep() : 0;
+  if (!same || (full && !prev.full) || (mine >= cfg.qBeep && prev.mine < cfg.qBeep)) full ? SOUNDS.quake(true) : mine >= cfg.qBeep ? SOUNDS.quake(false) : 0;
   updateFull(); renderQBanner();
 }
 const TSUNAMI = { None: 'この地震による津波の心配はありません', Unknown: '津波の有無は不明', Checking: '津波の有無を調査中', NonEffective: '若干の海面変動の可能性(被害の心配なし)', Watch: '津波注意報 発表中', Warning: '津波警報 発表中' };
@@ -4590,6 +4612,7 @@ function renderSettings() {
     </div><div>
     <h4>デモ</h4>
     <div class="row"><button class="btn red" data-demo="strong">強い揺れ(全画面)</button><button class="btn" data-demo="weak">弱い揺れ(上の帯)</button><button class="btn" data-demo="far">遠くの地震</button><button class="btn" data-demo="infofull">地震情報(全画面)</button><button class="btn sub" data-demo="info">地震情報(上の帯)</button><button class="btn sub" id="soundTest">音のテスト</button></div>
+    <div class="row">音を聞く:<button class="btn sub" data-snd="eewWarn">緊急地震速報(警報)</button><button class="btn sub" data-snd="eewFore">緊急地震速報(予報)</button><button class="btn sub" data-snd="quake">地震情報</button><button class="btn sub" data-snd="timer">タイマー</button><button class="btn sub" data-snd="soon">予定のお知らせ</button></div>
     <p class="note">「遠くの地震」は、現在地ではほぼ揺れない予報です。「すべて」にしていると全画面、そうでなければ何も出ません。</p>
     <p class="note">緊急地震速報は Wolfx、地震情報は P2P地震情報 から受け取ります。どちらも気象庁の発表を中継する無料のサービスで、数秒遅れることがあります。<b>公式の警報の代わりにはなりません。</b>学校の放送や先生の指示を優先してください。<br>音は、ページを開いたあと画面を一度タップすると鳴らせるようになります。</p>
     </div></div>
@@ -4701,7 +4724,8 @@ $('settings').addEventListener('click', e => {
   if (t.id === 'gasTest') { cfg.gasUrl = $('gasUrl').value.trim(); saveCfg(); $('gasMsg').textContent = '読み込み中…'; loadEvents().then(() => { $('gasMsg').innerHTML = eventsErr ? `<span class="ng">読めませんでした:${esc(eventsErr)}</span>` : `<span class="ok">${events ? events.length : 0}件 読み込みました</span>`; }); return; }
   if (t.id === 'gasCopy') { navigator.clipboard?.writeText(GAS_CODE).then(() => { t.textContent = 'コピーしました'; }, () => { const r = document.createRange(); r.selectNodeContents($('gasCode')); getSelection().removeAllRanges(); getSelection().addRange(r); }); return; }
   if (t.dataset.demo) { const k = t.dataset.demo; try { unlockAudio(); } catch (err) {} closeSettings(); toast(`地震のデモを始めます(${t.textContent})`); setTimeout(() => k === 'info' || k === 'infofull' ? demoInfo(k === 'infofull') : demoEEW(k), 300); return; }
-  if (t.id === 'soundTest') { unlockAudio(); setTimeout(soundAlarm, 100); return; }
+  if (t.id === 'soundTest') { unlockAudio(); setTimeout(SOUNDS.eewWarn, 100); return; }
+  if (t.dataset.snd) { unlockAudio(); setTimeout(() => SOUNDS[t.dataset.snd](true), 100); return; }
 });
 $('settings').addEventListener('change', e => {
   const t = e.target;
