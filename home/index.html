@@ -1187,6 +1187,32 @@ body.rail:not(.portrait) #full .ftabs .fvtabs button.tadd{border:2px solid #f5b3
 .rtb .trow .lb{display:none}.rtb .trow{grid-template-columns:68px 64px 1fr 30px;padding-left:58px}.rtb .trow .c{height:34px;font-size:17px;padding:0 6px}.rtb .trow .c.k{font-size:13px;padding:0}.rtb .trow .c.du{font-size:25px;padding:0}.rtb .trow .c.du.late,.rtb .trow .c.du.none{font-size:14px}
 .rtb .trow .ck{width:22px;height:22px}.rtb .empty{padding:12px 16px}
 .xfer{background:#f5b301;color:#141413;padding:1px 8px;margin-right:8px;font-size:12px;letter-spacing:.06em}
+
+/* ===== 2.27.0 発車標のランプ・パタパタするボタン・縦向きの鉄道モード ===== */
+#rvBoard .rv-row .lb{transition:color .15s}#rvBoard.sw .rv-row .lb{color:#2b2a28!important}
+body.rail:not(.portrait) #full .ftabs .fvtabs button.tflap{border:1px solid #8d8a83;color:#ece8df}
+body.portrait.rail:not(.editing) #page{display:none}
+body.portrait.rail:not(.editing) #nowband{display:none}
+body.portrait.rail:not(.editing) #railView{display:flex;flex-direction:column;position:static;padding-bottom:20px}
+body.portrait #railView .rv-l,body.portrait #railView .rv-r,body.portrait #railView #rvTop{display:contents}
+body.portrait #railView #rvTop .c1{order:1;padding:16px 12px 8px;min-width:0;overflow:hidden}
+body.portrait #railView .rv-sign{order:2;margin:8px 12px 0}
+body.portrait #railView .rv-route{order:3;padding:12px 12px 4px}
+body.portrait #railView #rvBoard{order:4;margin-top:12px;border-top:1px solid #2b2a28}
+body.portrait #railView .rv-todo{order:5;max-height:none}
+body.portrait #railView #rvDoor{order:6;padding:12px}
+body.portrait #railView .rv-info{width:auto}
+body.portrait #railView .rv-cd{order:7;margin:0 12px;display:flex!important;flex-direction:column;align-items:stretch;gap:14px;padding:14px 0;border-top:1px solid #2b2a28}
+body.portrait #railView .rv-cd>div,body.portrait #railView .rv-cd>div+div{padding:0;border-left:0}
+body.portrait #railView .rv-sl{order:8;border-top:1px solid #2b2a28;padding:14px 12px}
+body.portrait .rv-sign .a{gap:12px;padding:14px 14px 10px;flex-wrap:wrap}
+body.portrait .rv-sign .no{width:56px;height:56px;border-width:5px}body.portrait .rv-sign .no b:first-child{font-size:12px}body.portrait .rv-sign .no b:last-child{font-size:24px}
+body.portrait .rv-sign .tx .nm{font-size:34px}body.portrait .rv-sign .tx .k{font-size:12px}
+body.portrait .rv-sign .tx{flex:1 1 calc(100% - 80px)}body.portrait .rv-sign .rt{margin-left:auto;display:flex;align-items:baseline;gap:12px}body.portrait .rv-sign .rt .tm{font-size:17px}body.portrait .rv-sign .rt .lf span{font-size:40px}
+body.portrait .rv-sign .k2{height:auto;min-height:34px;font-size:13px;flex-wrap:wrap;padding:4px 10px;gap:2px 10px}body.portrait .rv-sign .k2 .md{font-size:11px;order:3;width:100%;text-align:center}
+body.portrait #rvBoard .rv-bh,body.portrait #rvBoard .rv-row{padding:0 8px;grid-template-columns:34px 46px 64px minmax(0,1fr) 46px}
+body.portrait .rtbh{padding:0 8px}body.portrait .rtb .trow{padding:0 8px;grid-template-columns:60px 56px minmax(0,1fr) 26px}
+body.portrait .mtk .r2 .v{font-size:52px}
 </style>
 </head>
 <body>
@@ -1244,7 +1270,7 @@ body.rail:not(.portrait) #full .ftabs .fvtabs button.tadd{border:2px solid #f5b3
 
 <script>
 'use strict';
-const APP_VERSION = '2.26.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.27.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1545,6 +1571,7 @@ function renderRail(st, d) {
   const flap = effAnim() === 'flap';
   const blank = flapBlankNow(), par = blank !== railBlankPrev; railBlankPrev = blank;
   railClock(d, flap && !fresh, false, false); // 時計は黒にしない
+  { const ck = $('rvClk'), pt = document.body.classList.contains('portrait'), pp = ck.parentNode, cs = pt ? getComputedStyle(pp) : null, w = pt ? pp.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) : 0; if (ck._zw !== w || (pt && ck.scrollWidth > ck.clientWidth + 1)) { ck._zw = w; ck.style.zoom = ''; if (pt && ck.scrollWidth > w && w > 0) ck.style.zoom = (w / ck.scrollWidth).toFixed(3); } } // 縦向きは、時計を幅に合わせて縮める
   // 上:日付・ドア上表示風タイマー
   setHtml($('rvDt'), `<span class="dc">${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][d.getDay()]}</span><span>${WD[d.getDay()]}曜日${HOLIDAYS[ymd(d)] ? ' ・ ' + esc(HOLIDAYS[ymd(d)]) : ''}</span>`);
   setHtml($('rvDoor'), cfg.pomoOn ? `<div class="rv-door" data-pm="toggle"><div class="h">自習タイマー</div><div class="b"><div class="m" id="rvPS"></div><div class="t n" id="rvPT"></div><div class="cells" id="rvPC" style="grid-template-columns:repeat(${P.n},1fr)">${'<i></i>'.repeat(P.n)}</div></div></div>` : '');
@@ -1676,7 +1703,7 @@ const effAnim = () => cfg.anim === 'auto' ? { std: 'push', night: 'blur', rail: 
 
 // 鉄道モードの時計(時十・時一・分十・分一は別ユニット。「:」は固定)と発車標(先発・次発・次々発は固定の文字)
 let railUnits = null, railLast = 0, boardSig = '';
-const BOARD_D = 260, BOARD_GAP = 250, BOARD_SWEEP = 150;
+const BOARD_D = 260, BOARD_LAMP = 500, BOARD_ROW = 320, BOARD_ITEM = 90, CLOCK_ITEM = 70; // ランプの切り替え → 段ごと(上から)→ 項目ごと(左から)に、少しずつずらして回し始める
 function railInit() {
   if (railUnits) return;
   const NUM = '"Barlow Condensed","Helvetica Neue",Arial,sans-serif', JPF = '"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",sans-serif';
@@ -1700,20 +1727,20 @@ function railInit() {
   const base = { hh: 34, rad: 2, D: BOARD_D, ff: JPF, fw: 700, fs: 15 }, dg = { ...base, w: 13, fs: 25, ff: NUM, fw: 500, color: '#f5b301', rad: 1 };
   $('rvBoard').innerHTML = `<div class="rv-bh"><span></span><span>種別</span><span>時刻</span><span>行先</span><span>教室</span></div>` +
     ['先発', '次発', '次々発', '', '', ''].map(lb => `<div class="rv-row"><span class="lb">${lb}</span><div class="k"></div><div class="tm"></div><div class="ds"></div><div class="rm2"></div></div>`).join('') + '<div class="rv-note"><span id="rvNote"></span><button id="rvDemo" type="button">パタパタする</button></div>';
-  const rows = [...$('rvBoard').querySelectorAll('.rv-row')].map(row => {
+  const rows = [...$('rvBoard').querySelectorAll('.rv-row')].map((row, ri) => {
     const t = row.querySelector('.tm'), colon = '<span style="font-family:' + NUM + ';font-size:20px;color:#f5b301;width:8px;text-align:center">:</span>';
     const a = mk(t, BH, dg), b = mk(t, BD, dg); t.insertAdjacentHTML('beforeend', colon); const cc = mk(t, BM, dg), d = mk(t, BD, dg);
-    return { k: mk(row.querySelector('.k'), KD, { ...base, w: 46, fs: 13 }), a, b, c: cc, d, s: mk(row.querySelector('.ds'), SD, { ...base, w: '100%', fs: 17, align: 'left', px: 6 }), r: mk(row.querySelector('.rm2'), RD, { ...base, w: 54, fs: 12, fw: 400, align: 'left', px: 4 }), SD, RD };
+    return { i: ri, k: mk(row.querySelector('.k'), KD, { ...base, w: 46, fs: 13 }), a, b, c: cc, d, s: mk(row.querySelector('.ds'), SD, { ...base, w: '100%', fs: 17, align: 'left', px: 6 }), r: mk(row.querySelector('.rm2'), RD, { ...base, w: 54, fs: 12, fw: 400, align: 'left', px: 4 }), SD, RD };
   });
   railUnits = { c, rows, SD, RD };
 }
 // 時計:分が変わるたびに、値が変わったユニットだけ回る(59→00 のときは分十も回る)
-// ふだんは、変わる桁を左から1個ずつ順番にめくる。blank は使わない(時計は黒にしない)
+// 変わる桁だけ、左から少しずつずらして回し始める(前の桁が止まるのは待たない。めくる枚数が少ない桁から先に止まる)。blank は使わない(時計は黒にしない)
 function railClock(d, anim, blank, par) {
   const h = d.getHours(), m = d.getMinutes(), c = railUnits.c;
   const vals = blank ? ['', '', '', ''] : [h < 10 ? '' : String(Math.floor(h / 10)), String(h % 10), String(Math.floor(m / 10)), String(m % 10)];
   let T = 0;
-  [c.h1, c.h2, c.m1, c.m2].forEach((u, i) => { const n = anim ? u.dist(vals[i]) : 0; u.go(vals[i], par ? 0 : T, anim); if (n && !par) T += n * u.o.D + 50; });
+  [c.h1, c.h2, c.m1, c.m2].forEach((u, i) => { const n = anim ? u.dist(vals[i]) : 0; u.go(vals[i], T, anim); if (n) T += CLOCK_ITEM; });
   $('rvSecs').hidden = !cfg.showSec;
   if (cfg.showSec) { const sc = d.getSeconds(); c.s1.go(blank ? '' : String(Math.floor(sc / 10)), 0, anim); c.s2.go(blank ? '' : String(sc % 10), 0, anim); }
 }
@@ -1726,20 +1753,29 @@ let flapDemo = 0, railBlankPrev = false; // flapDemo: この時刻まで黒に�
 const flapBlankNow = () => { const base = cfg.flapBlank && afterSchool(); return Date.now() < flapDemo ? !base : base; }; // ボタン: 黒なら7秒だけ表示に、ふだんなら7秒だけ黒に
 document.addEventListener('click', e => { if (e.target.closest('#rvDemo')) { flapDemo = Date.now() + 7000; if (typeof renderClock === 'function') renderClock(); } }); // 7秒だけ、いまと逆の表示にして、もどす
 // 発車標:先発 → 次発 → 次々発、各段は 時刻(4桁同時)→ 種別+行先 → 教室 の順。前のグループが止まってから 250ms あけて次が回る
+// 発車標全体の動き(本物の発車案内表示機と同じ順番):
+//  1. 先発のランプを消して切り替える → 少しあけてからフラップを動かす
+//  2. 段は上から順に動き始める(次発が先発へ繰り上がるため)
+//  3. 段の中は 種別 → 時刻(時 → 分)→ 行先 → 教室 の順に、わずかにずらして回し始める
+//  4. 前の板が止まるのは待たない。めくる枚数が少ない板から先にパタッと止まり、多い板は最後まで回る
+// 黒にする・もどす(par)ときも同じ順番
 function railBoard(dep, anim, par) {
   const sig = JSON.stringify(dep); if (sig === boardSig) return; boardSig = sig;
   const ens = (drum, v) => { if (v && !drum.some(x => (typeof x === 'object' ? x.t : x) === v)) drum.push(v); };
-  let T = 0;
-  // 1段目の左から右へ(種別 → 時刻4桁 → 行先 → 教室)、終わったら2段目の左へ。変わらない板は飛ばす
-  // ふだん:1個ずつ、前の板が止まってから次へ(段が変わるときは 250ms あける)
-  // 黒にする・もどす(par):全部を待つと長すぎるので、同じ順番で 150ms ずつずらして回し始める
-  const row = (pairs) => { let any = false; pairs.forEach(([u, v]) => { const n = u.dist(v); u.go(v, T, anim); if (n && anim) { T += par ? BOARD_SWEEP : n * BOARD_D + 50; any = true; } }); if (any && !par) T += BOARD_GAP; };
-  railUnits.rows.forEach((U, r) => {
-    const f = dep[r] || { kind: '', t: null, dest: '', room: '' }; ens(U.SD, f.dest); ens(U.RD, f.room);
+  const plan = railUnits.rows.map(U => {
+    const f = dep[U.i] || { kind: '', t: null, dest: '', room: '' }; ens(U.SD, f.dest); ens(U.RD, f.room);
     const h = f.t == null ? null : Math.floor(f.t / 60), m = f.t == null ? null : Math.round(f.t % 60);
-    row([[U.k, f.kind], [U.a, h == null || h < 10 ? '' : String(Math.floor(h / 10))], [U.b, h == null ? '' : String(h % 10)],
-      [U.c, m == null ? '' : String(Math.floor(m / 10))], [U.d, m == null ? '' : String(m % 10)], [U.s, f.dest], [U.r, f.room]]);
+    return [[[U.k, f.kind]], [[U.a, h == null || h < 10 ? '' : String(Math.floor(h / 10))], [U.b, h == null ? '' : String(h % 10)]],
+      [[U.c, m == null ? '' : String(Math.floor(m / 10))], [U.d, m == null ? '' : String(m % 10)]], [[U.s, f.dest]], [[U.r, f.room]]];
   });
+  const moving = anim && plan.some(g => g.some(x => x.some(([u, v]) => u.dist(v) > 0)));
+  let rowT = moving ? BOARD_LAMP : 0;
+  for (const groups of plan) {
+    let t = rowT, moved = false;
+    for (const g of groups) { const gm = g.some(([u, v]) => u.dist(v) > 0); g.forEach(([u, v]) => u.go(v, t, anim)); if (gm && anim) { t += BOARD_ITEM; moved = true; } }
+    if (moved) rowT += BOARD_ROW;
+  }
+  if (moving) { const B = $('rvBoard'); B.classList.add('sw'); clearTimeout(B._sw); B._sw = setTimeout(() => B.classList.remove('sw'), BOARD_LAMP + 900); } // ランプ:消灯 → フラップが動き出したあとに点く
 }
 
 /* ================= 数字の動き:押し上げ・ぼかし(時計の 時十・時一・分十・分一) =================
@@ -1911,7 +1947,7 @@ function renderClock() {
   renderPomo();
   if (fullK === 'clock') fvClockTick(d);
   if (fullK && isRail()) railFullTick(d, st);
-  if (!editing && !document.body.classList.contains('portrait')) { if (document.body.classList.contains('night')) renderNight(st, d); else if (document.body.classList.contains('rail')) renderRail(st, d); }
+  if (!editing) { const pt = document.body.classList.contains('portrait'); if (document.body.classList.contains('night') && !pt) renderNight(st, d); else if (document.body.classList.contains('rail')) renderRail(st, d); } // 鉄道は縦向きでも(簡易版)
   return st;
 }
 
@@ -2577,7 +2613,7 @@ let stripPage = 0, swipedAt = 0;
 const stripKeys = () => [...cfg.layout.left, ...cfg.layout.center.filter(k => k !== 'clock'), ...cfg.layout.right];
 // 路線図の置き場所:通常は中段、時計を全画面にしている間・3列の表示のときは時計の中
 function placeRoute() {
-  const B = document.body, fullClock = fullTile && fullTile.id === 'clockTile', mv = !editing && !B.classList.contains('portrait');
+  const B = document.body, fullClock = fullTile && fullTile.id === 'clockTile', mv = !editing && (!B.classList.contains('portrait') || B.classList.contains('rail'));
   (fullClock ? $('clockTile') : mv && B.classList.contains('rail') ? $('rvRoute') : B.classList.contains('newl') ? $('midRow') : $('clockTile')).appendChild($('rmap'));
 }
 function renderLayout() {
@@ -3538,14 +3574,13 @@ function railTTBuild(el, anim) {
     for (const w of days) { const x = (cfg.tt[w] || [])[i]; const id = `tc${i}_${w}`; h += `<div class="cell" id="${id}">${x && x.r ? `<span class="trm">${esc(x.r)}</span>` : ''}</div>`; cells.push({ id, w, i, s: x && x.s ? x.s : '' }); }
   }
   el.innerHTML = h + '</div>';
-  let T = 0;
   for (const cl of cells) {
     const isT = cl.w === refW, past = today && isT && ((st.mode === 'class' && cl.i < st.i) || (st.mode === 'break' && st.next >= 0 && cl.i < st.next) || (st.mode === 'break' && st.next < 0) || st.mode === 'shr');
     const cur = today && isT && st.mode === 'class' && cl.i === st.i;
     const o = { w: '100%', hh: 88, fs: cl.s.length > 8 ? 17 : cl.s.length > 6 ? 20 : 23, ff: RJP, fw: 700, align: 'left', px: 12, D: 120, rad: 3, color: cur ? '#141413' : past ? '#5a5853' : isT ? '#f5b301' : '#ece8df' };
     if (cur) Object.assign(o, { bgTop: '#f2eee5', bgBot: '#e4e0d6' });
     const u = new FlapUnit(subs, o), host = el.querySelector('#' + cl.id); host.prepend(u.root); if (cur) host.classList.add('cur'); if (past) host.classList.add('past');
-    if (cl.s) { if (anim) { u.go(cl.s, T, true); T += 55; } else u.show(u.ix(cl.s)); }
+    if (cl.s) { if (anim) u.go(cl.s, cl.i * 260 + days.indexOf(cl.w) * 70, true); else u.show(u.ix(cl.s)); } // 段は上から、段の中は左から、少しずつずらして回し始める
   }
 }
 
@@ -3671,7 +3706,7 @@ function railHolMini() {
 
 const RFV = {
   clock: { keep: true, build: railClockBuild, update: (el, d) => railClockTick(el, d, schoolState(d)) },
-  tt: { keep: true, replay: true, key: railTTKey, build: railTTBuild },
+  tt: { keep: true, replay: true, key: railTTKey, build: railTTBuild, tabs: () => '<div class="fvtabs"><button data-fa="ttflap" class="tflap">パタパタする</button></div>' },
   weather: { html: railWeather, tabs: railWeatherTabs },
   count: { html: railCount, tabs: railCountTabs },
   todo: { html: () => railTodoBoard(9, false), tabs: () => '<div class="fvtabs"><button data-fa="todoadd" class="tadd">+ 追加</button></div>' },
@@ -3705,6 +3740,7 @@ function fvAction(a, v) {
   else if (a === 'rdplay') { rdToggle(); return; }
   else if (a === 'cdadd') { closeFull(); openSettings('s-cd'); return; }
   else if (a === 'cdi') { fs.cdi = +v; }
+  else if (a === 'ttflap') { if (rfCache.tt) { dropFlaps(rfCache.tt); rfCache.tt = null; } } // 作り直して、空白からもう一度めくる
   renderFullView();
 }
 // ポップアップの外をタップしたら閉じる
