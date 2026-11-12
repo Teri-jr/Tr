@@ -1279,7 +1279,7 @@ body.portrait .rtb .rows .trow{padding:0 8px;grid-template-columns:60px 56px min
 
 <script>
 'use strict';
-const APP_VERSION = '2.28.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.28.1'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1626,7 +1626,7 @@ function renderRail(st, d) {
    新しい板の下半分が落ちてきて小さく跳ねる(後半)。3D の回転は使わず、縦の伸び縮みと影で見せる
    (iPad の Safari で 3D の重なり順が崩れたり、板を出し入れするたびに画面がちらついたりしたため)。
    倒れる板(fa・fb)は消さずに置いたまま、見え隠れだけを切り替える */
-const FLAPS = [];
+const FLAPS = [], FLAP_SLOW = 1.3; // パタパタの速さ(1枚めくる時間に掛ける。大きいほどゆっくり)
 let flapQuiet = false, flapClickAt = 0;
 let flapBuf = null;
 function flapClick() { // 1枚倒れるごとの「パタッ」(設定がオフ・授業中は鳴らさない)。電子音ではなく、短い雑音を低めにこもらせた打音
@@ -1650,7 +1650,7 @@ class FlapUnit {
     const face = top => {
       const b = document.createElement('div'), i = document.createElement('div');
       b.className = 'flf'; b.style.cssText = `height:50%;top:${top ? 0 : '50%'};background:${top ? O.bgTop : O.bgBot};border-radius:${top ? `${O.rad}px ${O.rad}px 0 0` : `0 0 ${O.rad}px ${O.rad}px`}`;
-      i.className = 'fli'; i.style.cssText = `height:${O.hh}px;top:${top ? 0 : -O.hh / 2}px;line-height:${O.hh}px;text-align:${O.align};padding:0 ${O.px}px`;
+      i.className = 'fli'; i.style.cssText = `height:${O.hh}px;top:${top ? 0 : -O.hh / 2}px;line-height:${O.hh}px;text-align:${O.align};padding:0 ${O.px}px` + (O.wrap ? `;display:flex;align-items:center;justify-content:${O.align === 'left' ? 'flex-start' : 'center'};white-space:normal;line-height:1.15;word-break:break-all` : '');
       b.appendChild(i); b.fi = i; return b;
     };
     this.top = face(true); this.bot = face(false); this.fa = face(true); this.fb = face(false);
@@ -1676,7 +1676,15 @@ class FlapUnit {
     if (this.idx === m - 1 && this.tgt === m) return m;
     return (this.idx + 1) % m;
   }
-  paint(f, it) { f.fi.textContent = it.t; f.fi.style.color = it.c || this.o.color; }
+  paint(f, it) {
+    const fi = f.fi; fi.textContent = it.t; fi.style.color = it.c || this.o.color;
+    if (!this.o.fit || !it.t) { if (fi.style.fontSize) fi.style.fontSize = ''; return; }
+    // 入りきらない文字は小さくする(同じ文字は覚えておいて、毎回は測らない)
+    const key = it.t + '|' + this.root.clientWidth, c = this.fitc || (this.fitc = {});
+    if (c[key] == null) { fi.style.fontSize = ''; const w = fi.clientWidth - this.o.px * 2, sw = fi.scrollWidth - this.o.px * 2, hh = fi.clientHeight, sh = fi.scrollHeight;
+      c[key] = w > 0 && (sw > w + 1 || sh > hh + 1) ? Math.max(9, Math.floor(this.o.fs * Math.min(sw > w + 1 ? w / sw : 1, sh > hh + 1 ? Math.sqrt(hh / sh) : 1) * .96)) : 0; }
+    fi.style.fontSize = c[key] ? c[key] + 'px' : '';
+  }
   cancel() { this.token++; clearTimeout(this.timer); this.timer = 0; this.anims.forEach(a => a.cancel()); this.anims = []; this.fa.style.visibility = this.fb.style.visibility = 'hidden'; this.state = 'idle'; }
   show(i) { this.cancel(); this.idx = this.tgt = i; const it = this.item(i); this.paint(this.top, it); this.paint(this.bot, it); }
   snap() { this.show(this.tgt); } // アニメーションなしで、いまの表示に合わせる
@@ -1692,7 +1700,7 @@ class FlapUnit {
   next() {
     if (this.idx === this.tgt) { this.state = 'idle'; return; }
     this.state = 'run';
-    const D = this.o.D, h = D * .45, l = D - h, ni = this.nextIdx(), pv = this.item(this.idx), nx = this.item(ni), tk = ++this.token;
+    const D = this.o.D * FLAP_SLOW, h = D * .45, l = D - h, ni = this.nextIdx(), pv = this.item(this.idx), nx = this.item(ni), tk = ++this.token;
     this.paint(this.top, nx); this.paint(this.bot, pv); this.paint(this.fa, pv); this.paint(this.fb, nx);
     const fa = this.fa, fb = this.fb;
     this.anims = [
@@ -1746,7 +1754,7 @@ function railInit() {
   const rows = [...$('rvBoard').querySelectorAll('.rv-row')].map((row, ri) => {
     const t = row.querySelector('.tm'), colon = '<span style="font-family:' + NUM + ';font-size:20px;color:#f5b301;width:8px;text-align:center">:</span>';
     const a = mk(t, BH, dg), b = mk(t, BD, dg); t.insertAdjacentHTML('beforeend', colon); const cc = mk(t, BM, dg), d = mk(t, BD, dg);
-    return { i: ri, k: mk(row.querySelector('.k'), KD, { ...base, w: 46, fs: 13 }), a, b, c: cc, d, s: mk(row.querySelector('.ds'), SD, { ...base, w: '100%', fs: 17, align: 'left', px: 6 }), r: mk(row.querySelector('.rm2'), RD, { ...base, w: 54, fs: 12, fw: 400, align: 'left', px: 4 }), SD, RD };
+    return { i: ri, k: mk(row.querySelector('.k'), KD, { ...base, w: 46, fs: 13 }), a, b, c: cc, d, s: mk(row.querySelector('.ds'), SD, { ...base, w: '100%', fs: 17, align: 'left', px: 6, fit: true }), r: mk(row.querySelector('.rm2'), RD, { ...base, w: 54, fs: 12, fw: 400, align: 'left', px: 4 }), SD, RD };
   });
   railUnits = { c, rows, SD, RD };
 }
@@ -3579,7 +3587,10 @@ function railTTBuild(el, anim) {
   const days = [1, 2, 3, 4, 5].concat((cfg.tt[6] || []).some(x => x && x.s) ? [6] : []);
   const np = Math.max(...days.map(w => (cfg.tt[w] || []).length), (periodsMin(ref) || []).length, 1);
   const rp = periodsMin(ref), lunchAfter = rp.findIndex((x, i) => i + 1 < rp.length && rp[i + 1][0] - x[1] >= 30);
-  const subs = ['']; for (const w of days) for (const x of cfg.tt[w] || []) if (x && x.s && !subs.includes(x.s)) subs.push(x.s);
+  const subs0 = []; for (const w of days) for (const x of cfg.tt[w] || []) if (x && x.s && !subs0.includes(x.s)) subs0.push(x.s);
+  // 板の並びを科目名から決まる順に混ぜる(上の段の科目ほど早く止まって「上から順に揃う」ように見えないように)
+  const hs = t => [...t].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) >>> 0, 7);
+  const subs = ['', ...subs0.sort((a, b) => hs(a) - hs(b))];
   el.style.setProperty('--tc', days.length);
   let h = `<div class="tg2"><div class="wd">時限${today ? '' : `<small>${dayLabel(now(), ref)}の時刻</small>`}</div>${days.map(w => `<div class="wd${w === refW ? ' today' : ''}${w === 6 ? ' sat' : ''}">${WD[w]}${w === refW ? (today ? ' ・ 今日' : ` ・ ${dayLabel(now(), ref)}`) : ''}</div>`).join('')}`;
   const cells = [];
@@ -3592,10 +3603,10 @@ function railTTBuild(el, anim) {
   for (const cl of cells) {
     const isT = cl.w === refW, past = today && isT && ((st.mode === 'class' && cl.i < st.i) || (st.mode === 'break' && st.next >= 0 && cl.i < st.next) || (st.mode === 'break' && st.next < 0) || st.mode === 'shr');
     const cur = today && isT && st.mode === 'class' && cl.i === st.i;
-    const o = { w: '100%', hh: 88, fs: cl.s.length > 8 ? 17 : cl.s.length > 6 ? 20 : 23, ff: RJP, fw: 700, align: 'left', px: 12, D: 120, rad: 3, color: cur ? '#141413' : past ? '#5a5853' : isT ? '#f5b301' : '#ece8df' };
+    const o = { w: '100%', hh: 88, fs: cl.s.length > 8 ? 18 : cl.s.length > 6 ? 20 : 23, wrap: cl.s.length > 7, fit: true, ff: RJP, fw: 700, align: 'left', px: 12, D: 120, rad: 3, color: cur ? '#141413' : past ? '#5a5853' : isT ? '#f5b301' : '#ece8df' };
     if (cur) Object.assign(o, { bgTop: '#f2eee5', bgBot: '#e4e0d6' });
     const u = new FlapUnit(subs, o), host = el.querySelector('#' + cl.id); host.prepend(u.root); if (cur) host.classList.add('cur'); if (past) host.classList.add('past');
-    if (cl.s) { if (anim) u.go(cl.s, cl.i * 260 + days.indexOf(cl.w) * 70, true); else u.show(u.ix(cl.s)); } // 段は上から、段の中は左から、少しずつずらして回し始める
+    if (cl.s) { if (anim) u.go(cl.s, cl.i * 70 + days.indexOf(cl.w) * 40, true); else u.show(u.ix(cl.s)); } // ほぼ同時に回し始める(上から左から、ほんの少しだけずらす)。止まる順はばらばら
   }
 }
 
