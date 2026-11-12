@@ -1213,6 +1213,15 @@ body.portrait .rv-sign .k2{height:auto;min-height:34px;font-size:13px;flex-wrap:
 body.portrait #rvBoard .rv-bh,body.portrait #rvBoard .rv-row{padding:0 8px;grid-template-columns:34px 46px 64px minmax(0,1fr) 46px}
 body.portrait .rtbh{padding:0 8px}body.portrait .rtb .trow{padding:0 8px;grid-template-columns:60px 56px minmax(0,1fr) 26px}
 body.portrait .mtk .r2 .v{font-size:52px}
+
+/* ===== 2.28.0 やることの発車標(パタパタ)・天気は1時間ごと ===== */
+.trow .k,.trow .du,.trow .tx{min-width:0}.trow .fl{width:100%}
+.trow .ck{background:none;padding:0;cursor:pointer;position:relative}.trow .ck:after{content:"";position:absolute;inset:-9px}
+.trow.none .ck{visibility:hidden}.trow.dn .tx .fli{text-decoration:line-through}
+.dep2 .rows{flex:1;min-height:0}.dep2 .trow{cursor:default}
+.rtb .rows .trow{display:grid;grid-template-columns:68px 64px minmax(0,1fr) 30px;align-items:center;column-gap:3px;padding:0 14px 0 58px;height:46px;border-top:1px solid #2b2a28;cursor:pointer}
+body.portrait .rtb .rows .trow{padding:0 8px;grid-template-columns:60px 56px minmax(0,1fr) 26px}
+.led .lrs{flex:1;min-height:0;display:flex;flex-direction:column}.led .lrs .lr{font-size:28px}.led .lrs .nt{font-size:22px}
 </style>
 </head>
 <body>
@@ -1270,7 +1279,7 @@ body.portrait .mtk .r2 .v{font-size:52px}
 
 <script>
 'use strict';
-const APP_VERSION = '2.27.1'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.28.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1599,7 +1608,7 @@ function renderRail(st, d) {
   railBoard(dep, flap && cfg.flapBoard && !fresh);
   $('rvNote').textContent = dep.some(x => x.later) ? '次の登校日の予定(確認用)' : '';
   // やること(今のタイルと同じ内容)
-  setHtml($('rvTodo'), railTodoBoard(5, true));
+  railTodoMini();
   // StudyLine の路線記号
   let sl;
   if (!sc) sl = `<div class="a"><span class="sym"><b>SL</b><b>--</b></span><div><div class="k">StudyLine</div><div class="v">今日のダイヤはまだありません</div></div></div>`;
@@ -3601,13 +3610,8 @@ function railWeather() {
   const goH = isToday && say.goHome != null ? say.goHome : -1;
   const at = (ds, hh) => H.time.findIndex(t => t.startsWith(ds) && +t.slice(11, 13) === hh);
   let idx;
-  if (isToday) { // いま・次の時間・昼休み・下校・夜、そして翌朝(行の数は8つまで)
-    const h0 = d.getHours(), want = [...new Set([h0, h0 + 1, lunchH, goH, 18, 20, 22].filter(h => h >= h0 && h <= 23))].sort((a, b) => a - b);
-    for (let h = h0 + 2; want.length < 7 && h <= 23; h += 2) if (!want.includes(h)) want.push(h);
-    want.sort((a, b) => a - b);
-    const nd = ymd(addDays(d, 1));
-    idx = [...want.slice(0, 7).map(h => at(date, h)), at(nd, 6)].filter(i => i >= 0);
-  } else idx = [6, 8, 10, 12, 14, 16, 18, 21].map(hh => at(date, hh)).filter(i => i >= 0);
+  if (isToday) { const i0 = Math.max(0, at(date, d.getHours())); idx = [...Array(12)].map((_, k) => i0 + k).filter(i => i < H.time.length); } // いまから1時間ごとに12行(日付をまたいだ分は「翌」)
+  else idx = [...Array(12)].map((_, k) => at(date, 7 + k)).filter(i => i >= 0); // ほかの日は 7時〜18時
   const rows = idx.map(i => {
     const hh = +H.time[i].slice(11, 13), day = H.time[i].slice(0, 10), p = H.precipitation_probability[i], t = Math.round(H.temperature_2m[i]), code = H.weather_code[i];
     let note = '', nc = 'g';
@@ -3624,7 +3628,7 @@ function railWeather() {
   const tk = [1, 2].map(k => di + k < D.time.length ? `${names[sel + k] || mdw(parseYmd(D.time[di + k]))} ${mdw(parseYmd(D.time[di + k]))} ${WCODE(D.weather_code[di + k])[0]} ${Math.round(D.temperature_2m_max[di + k])}°/${Math.round(D.temperature_2m_min[di + k])}°` : '').filter(Boolean);
   return `<div class="led"><div class="ltop"><span class="w t">${big}°</span><span class="s"><span class="${kc(isToday ? wx.cur.weather_code : D.weather_code[di])}">${txt}</span> <span class="w">${esc(wx.pref || loc().pref)}${isToday ? '' : ' ・ ' + names[sel]}</span><br><span class="r">${Math.round(D.temperature_2m_max[di])}°</span><span class="w"> / </span><span class="b">${Math.round(D.temperature_2m_min[di])}°</span></span>
     <span class="u"><span class="${uc}">${esc(um)}</span><br><small class="w">降水確率 最大${pct(D.precipitation_probability_max[di])}%${isToday && say.head ? ' ・ ' + esc(say.head) : ''}</small></span></div>
-    <div class="lh"><span>時刻</span><span>天気</span><span class="n2">気温</span><span class="n2">降水確率</span><span>ひとこと</span></div>${rows}
+    <div class="lh"><span>時刻(1時間ごと)</span><span>天気</span><span class="n2">気温</span><span class="n2">降水確率</span><span>ひとこと</span></div><div class="lrs">${rows}</div>
     <div class="ltk">${tk.map(x => `<span class="o">${esc(x)}</span>`).join('')}<span class="${uc}">${esc(um)}</span></div></div>`;
 }
 const railWeatherTabs = () => { const wm = fs.wmode || 'fc', sel = +(fs.wd || 0); return `<div class="fvtabs">${['今日', '明日', 'あさって'].map((n, i) => `<button data-fa="wdd" data-v="${i}" class="${wm === 'fc' && sel === i ? 'on' : ''}">${n}</button>`).join('')}<button data-fa="wmode" data-v="radar" class="${wm === 'radar' ? 'on' : ''}">雨雲レーダー</button></div>`; };
@@ -3657,16 +3661,50 @@ const railCountTabs = () => { const l = cdList(), i = Math.min(+(fs.cdi || 0), M
 
 // ---- やること:発車標
 function railTodoRows() { cleanTodos(); const all = allTodos(); return [...all].sort((a, b) => (a.done - b.done) || (dueInfo(a).ord - dueInfo(b).ord)); }
-function railTodoBoard(max, mini) {
-  const list = railTodoRows(), open = list.filter(t => !t.done).length, lbs = ['先発', '次発', '次々発'];
-  const row = (t, i) => { const di = dueInfo(t), late = !t.done && di.hot; const kind = t.bring ? ['持ち物', 'o'] : t.gt ? ['G ToDo', 'g'] : ['課題', 'b'];
-    return `<li class="trow${t.done ? ' dn' : ''}" ${mini ? '' : 'data-fa="todo"'} data-id="${esc(t.id)}" data-v="${esc(t.id)}"><span class="lb">${t.done ? '到着' : lbs[i] || ''}</span><span class="c k ${t.done ? '' : kind[1]}">${t.done ? '済' : kind[0]}</span><span class="c du${late ? ' late' : ''}${di.label ? (/\d/.test(di.label) || t.done ? '' : ' jp') : ' none'}">${t.done ? '済' : di.label || '期限なし'}</span><span class="c tx">${esc(t.text)}</span><span class="ck"></span></li>`; };
-  const rows = list.slice(0, max).map(row).join('');
-  if (mini) return `<div class="rtb"><div class="rtbh"><b>やること</b><span>期限</span><span>${open}件</span><button class="add" id="todoAdd" aria-label="追加">+</button></div>${rows ? `<ul>${rows}</ul>` : '<p class="empty">発車予定はありません。「+」で追加できます。</p>'}</div>`;
-  const soon = list.filter(t => !t.done && t.due && dayDiff(now(), parseYmd(t.due)) <= 1).length, late = list.filter(t => !t.done && t.due && dayDiff(now(), parseYmd(t.due)) < 0).length;
-  return `<div class="dep2"><div class="h"><span></span><span>種別</span><span>期限</span><span>行先(やること)</span><span>済</span></div>${rows ? `<ul>${rows}</ul>` : '<p class="tkempty">発車予定はありません。右上の「+ 追加」から足せます。</p>'}
-    <div class="scroll"><span>◆ 明日までのもの ${soon}件</span>${late ? `<span class="r">◆ 期限切れ ${late}件</span>` : ''}<span>◆ 持ち物は前の日の夜に確認しましょう</span><span>◆ 行先を押すと済になります</span></div></div>`;
+// やることの発車標(本物のパタパタ)。チェックすると並びが変わり、変わった板だけが 上の段から・種別 → 期限 → 行先 の順にめくれる。
+// 行を押しても済にはならない(済にするのは右の四角だけ)。ふだんの画面では、行を押すと全画面が開く
+class RailTodo {
+  constructor(host, n, mini) {
+    this.n = n; this.mini = mini; this.sig = null;
+    this.kd = [{ t: '' }, { t: '持ち物', c: '#f5b301' }, { t: '課題', c: '#6fa8dc' }, { t: 'G ToDo', c: '#79c28a' }, { t: '済', c: '#8d8a83' }];
+    this.dd = [{ t: '' }]; this.td = [''];
+    const row = '<div class="trow"><span class="lb"></span><div class="k"></div><div class="du"></div><div class="tx"></div><button class="ck" type="button" aria-label="済にする"></button></div>';
+    host.innerHTML = mini
+      ? `<div class="rtb" data-open="todo"><div class="rtbh"><b>やること</b><span>期限</span><span class="cnt"></span><button class="add" id="todoAdd" aria-label="追加">+</button></div><div class="rows">${row.repeat(n)}</div></div>`
+      : `<div class="dep2"><div class="h"><span></span><span>種別</span><span>期限</span><span>行先(やること)</span><span>済にする</span></div><div class="rows">${row.repeat(n)}</div><div class="scroll"></div></div>`;
+    const base = mini ? { hh: 34, rad: 2, D: 150, ff: RJP, fw: 700 } : { hh: 48, rad: 3, D: 150, ff: RJP, fw: 700 };
+    const mk = (el, drum, o) => { const u = new FlapUnit(drum, { ...base, ...o }); el.appendChild(u.root); return u; };
+    this.rows = [...host.querySelectorAll('.trow')].map(el => ({ el, lb: el.querySelector('.lb'), ck: el.querySelector('.ck'),
+      k: mk(el.querySelector('.k'), this.kd, { w: '100%', fs: mini ? 13 : 16 }), d: mk(el.querySelector('.du'), this.dd, { w: '100%', fs: mini ? 15 : 20, color: '#f5b301' }),
+      t: mk(el.querySelector('.tx'), this.td, { w: '100%', fs: mini ? 17 : 22, align: 'left', px: mini ? 6 : 12 }) }));
+    this.cnt = host.querySelector('.cnt'); this.tick = host.querySelector('.scroll');
+  }
+  update() {
+    const list = railTodoRows(), lbs = ['先発', '次発', '次々発'];
+    const vals = list.slice(0, this.n).map(t => { const di = dueInfo(t), late = !t.done && di.hot;
+      return { id: t.id, done: t.done, k: t.done ? '済' : t.bring ? '持ち物' : t.gt ? 'G ToDo' : '課題', d: t.done ? '済' : (di.label || '—') + (late ? '​' : ''), late, tx: t.text }; });
+    const open = list.filter(t => !t.done).length, sig = JSON.stringify([vals, open]);
+    if (sig === this.sig) return;
+    const anim = this.sig !== null && effAnim() === 'flap' && !document.hidden; this.sig = sig; // 最初の表示はそのまま出す。そのあとの変化はめくる
+    for (const v of vals) { if (!this.dd.some(x => x.t === v.d)) this.dd.push({ t: v.d, c: v.done ? '#8d8a83' : v.late ? '#ff5b3a' : '#f5b301' }); if (!this.td.includes(v.tx)) this.td.push(v.tx); }
+    let rowT = 0;
+    this.rows.forEach((R, i) => {
+      const v = vals[i] || { k: '', d: '', tx: '', id: '', done: false };
+      let t = rowT, moved = false;
+      for (const [u, x] of [[R.k, v.k], [R.d, v.d], [R.t, v.tx]]) { const mv = u.dist(x) > 0; u.go(x, t, anim); if (mv && anim) { t += BOARD_ITEM; moved = true; } }
+      if (moved) rowT += BOARD_ROW;
+      R.el.classList.toggle('dn', !!v.done); R.el.classList.toggle('none', !v.id);
+      R.ck.dataset.ck = v.id; R.ck.setAttribute('aria-label', v.done ? '済を取り消す' : '済にする'); if (!this.mini) { R.ck.dataset.fa = 'todo'; R.ck.dataset.v = v.id; }
+      R.lb.textContent = v.id ? (v.done ? '到着' : lbs[i] || '') : '';
+    });
+    if (this.cnt) this.cnt.textContent = `${open}件`;
+    if (this.tick) { const soon = list.filter(t => !t.done && t.due && dayDiff(now(), parseYmd(t.due)) <= 1).length, late = list.filter(t => !t.done && t.due && dayDiff(now(), parseYmd(t.due)) < 0).length;
+      this.tick.innerHTML = (list.length ? `<span>◆ 明日までのもの ${soon}件</span>${late ? `<span class="r">◆ 期限切れ ${late}件</span>` : ''}` : '<span>◆ 発車予定はありません。右上の「+ 追加」から足せます</span>') + '<span>◆ 済にするには右の四角を押します</span><span>◆ 持ち物は前の日の夜に確認しましょう</span>'; }
+  }
 }
+let railTodoMain = null;
+function railTodoMini() { if (!railTodoMain) railTodoMain = new RailTodo($('rvTodo'), 5, true); railTodoMain.update(); }
+document.addEventListener('click', e => { const b = e.target.closest('#railView .ck[data-ck]'); if (b && b.dataset.ck) { toggleTodo(b.dataset.ck); if (railTodoMain) railTodoMain.update(); } });
 
 // ---- StudyLine:車内の路線案内
 function railStudy() {
@@ -3715,7 +3753,7 @@ const RFV = {
   tt: { keep: true, replay: true, key: railTTKey, build: railTTBuild, tabs: () => '<div class="fvtabs"><button data-fa="ttflap" class="tflap">パタパタする</button></div>' },
   weather: { html: railWeather, tabs: railWeatherTabs },
   count: { html: railCount, tabs: railCountTabs },
-  todo: { html: () => railTodoBoard(9, false), tabs: () => '<div class="fvtabs"><button data-fa="todoadd" class="tadd">+ 追加</button></div>' },
+  todo: { keep: true, build: el => { el._tb = new RailTodo(el, 9, false); el._tb.sig = ''; }, update: el => el._tb.update(), tabs: () => '<div class="fvtabs"><button data-fa="todoadd" class="tadd">+ 追加</button></div>' },
   studyline: { html: railStudy }
 };
 function fvAction(a, v) {
