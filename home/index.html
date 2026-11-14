@@ -1247,6 +1247,43 @@ body.portrait .rtb .rows .trow{padding:0 8px;grid-template-columns:60px 56px min
 .led .lrs{flex:1;min-height:0;display:flex;flex-direction:column}.led .lrs .lr{font-size:28px}.led .lrs .nt{font-size:22px}
 /* 新しいアップデートのお知らせ(他のお知らせに消されない) */
 #upd{bottom:70px;z-index:8;border:2px solid var(--bg)}#upd small{font-size:12px;opacity:.7}
+
+/* ===== 2.29.1 重なり・はみ出しの手直し ===== */
+.slv .l{container-type:inline-size;overflow:hidden}
+.slnm{font-size:min(104px,calc(98cqw / var(--n,6)));line-height:1.2;overflow:hidden;text-overflow:ellipsis;margin:2px 0}
+.rv-sl .a .rt{margin-left:auto;text-align:right;flex:none;display:flex;align-items:baseline;gap:6px;font-size:12px;color:var(--sub);white-space:nowrap}
+.rv-sl .a .rt b{font-size:34px;font-weight:500;line-height:1;color:var(--ink)}.rv-sl .a .rt b small{font-size:13px;font-family:var(--jp);margin:0 2px;color:var(--sub)}
+.rv-sl .a>div:nth-child(2){min-width:0}.rv-sl .a .v,.rv-sl .a .k{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rv-sl .ls{margin-top:10px;gap:6px}
+.dl .slb{padding:0 3px;text-overflow:ellipsis}
+.nvcd .big2>div{min-width:0}.nvcd .big2 .k,.nvcd .big2 .d{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---- 縦向き・スマホの全画面:2列の画面を1列にして、文字がつぶれないようにする ---- */
+body.portrait .fbody{display:block}body.portrait .fv{overflow:visible;padding:12px 14px 20px}
+body.portrait .fhead{height:auto;min-height:52px;flex-wrap:wrap;padding:6px 12px;gap:6px 10px}body.portrait .fhead .gear{white-space:nowrap;margin-left:auto}body.portrait .fhead .gear+.gear{margin-left:0}
+body.portrait .v2sl3{display:block}body.portrait .v2sl3 .l{overflow:visible}
+body.portrait .v2sl3 .r{border-left:0;border-top:1px solid var(--rule);padding:18px 14px}body.portrait .v2sl3 .r .v2wkc{height:200px}
+body.portrait .v2sl3 .v2slh{padding:14px 14px 12px}body.portrait .v2sl3 .v2slh .tk{font-size:26px}body.portrait .v2sl3 .v2slh .tk .n{display:block;margin:2px 0 0;font-size:20px}
+body.portrait .v2sl3 .v2slh .kp{gap:14px 22px}body.portrait .v2sl3 .v2slh .kp b{font-size:24px}
+body.portrait .v2sl3 .v2routew{margin:6px 14px 10px}body.portrait .v2sl3 .tb{padding:6px 14px 14px}
+body.portrait .v2sl3 .tb .tr{grid-template-columns:44px minmax(0,1fr) 52px 52px 44px;font-size:14px}
+body.portrait .v7{display:block}body.portrait .v7top,body.portrait .v7top.wide{display:block}
+body.portrait .v7l{padding:18px 14px 14px}body.portrait .v7clock{letter-spacing:-1px}
+body.portrait .v7txt{font-size:16px;margin-top:12px;line-height:1.6}body.portrait .v7txt .n2{font-size:28px}
+body.portrait .v7r{border-left:0;border-top:1px solid var(--rule);padding:18px 14px}
+body.portrait .v7r .pt{font-size:84px}body.portrait .v7r.sl .lf .v{font-size:64px}body.portrait .v7r.sl .nm{font-size:26px}
+body.portrait .dl{margin:0 14px}
+body.portrait .v7n{display:block;padding:8px 14px 20px}body.portrait .v7n .st{padding:16px 16px;margin-bottom:18px}
+body.portrait .v7n .sl .ls{height:auto;gap:14px}body.portrait .v7n .it{gap:12px;grid-template-columns:28px minmax(0,1fr) auto}
+body.portrait .v2ring{width:min(320px,100%)}body.portrait .v2ring .in b{font-size:64px}body.portrait .v2tmc{border-right:0;border-bottom:1px solid var(--rule)}
+body.portrait .v3top{display:block;height:auto}body.portrait .v3now{padding:16px 14px}body.portrait .v3r{border-left:0;border-top:1px solid var(--rule)}
+body.portrait .v3cmw{grid-template-columns:1fr 1fr}body.portrait .v3cm{padding:10px 12px;gap:8px;flex-wrap:wrap}body.portrait .v3cm .v{font-size:40px}
+body.portrait .v2days{grid-template-columns:1fr;padding:10px 14px}body.portrait .v2chart{padding:14px 10px 10px}
+body.portrait .v7b{display:none}body.portrait .v7 .dl{display:none}
+body.portrait .v2sl3 .r .v2wkc{height:220px;min-height:220px;align-items:stretch}body.portrait .v2sl3 .r .v2wkc button{height:100%}
+body.portrait .v3tt{display:block}body.portrait .v3ttm{padding:12px 10px;overflow:visible}body.portrait .v3side{border-left:0;border-top:1px solid var(--rule)}
+body.portrait .v3dh,body.portrait .v3pr{grid-template-columns:38px repeat(5,minmax(0,1fr));gap:2px}
+body.portrait .v3pr .tw-c{font-size:12px;padding:4px 3px;overflow:hidden}body.portrait .v2hol{font-size:.8em;overflow:hidden}
 </style>
 </head>
 <body>
@@ -1305,7 +1342,7 @@ body.portrait .rtb .rows .trow{padding:0 8px;grid-template-columns:60px 56px min
 
 <script>
 'use strict';
-const APP_VERSION = '2.29.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.29.1'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1579,7 +1616,7 @@ function renderNight(st, d) {
   const days = []; for (let i = 6; i >= 0; i--) { const x = addDays(d, -i), g = slDay(ymd(x)); if (g) g._ds = ymd(x); days.push({ w: WD[x.getDay()], m: slStudied(g), td: i === 0 }); }
   const mx = Math.max(60, ...days.map(x => x.m));
   setHtml($('nvWeek'), `<h3>7日間の学習 <span>合計 ${(days.reduce((a, x) => a + x.m, 0) / 60).toFixed(1)}時間</span></h3><div class="wk">${days.map(x => `<div class="${x.td ? 'td' : ''}"><span class="v n">${x.m >= 3 ? (x.m / 60).toFixed(1) : ''}</span><i style="height:${Math.max(2, x.m / mx * 100).toFixed(1)}%"></i><span class="w">${x.w}</span></div>`).join('')}</div>`);
-  setHtml($('nvCal'), renderCalendar()); setHtml($('nvCd'), renderCount());
+  setHtml($('nvCal'), renderCalendar()); setHtml($('nvCd'), (() => { const c = cdList()[0]; if (!c) return `<h3>カウントダウン</h3><p class="empty">${cdEmpty()}</p>`; const dt = parseYmd(c.date); return `<h3>カウントダウン</h3><div class="big2"><div><div class="k">${esc(c.name)}${c.days ? 'まで' : ''}</div><div class="v n">${cdNum(c)}</div><div class="d">${md(dt)}(${WD[dt.getDay()]}) ・ 残り${Math.floor(c.days / 7)}週</div></div></div>`; })()); // 幅がせまいので、いちばん近い1つだけ
 }
 
 // 発車標:今日これから動く予定を、上から6つまで(今日の残り → 足りなければ次の授業日)
@@ -1639,10 +1676,9 @@ function renderRail(st, d) {
   let sl;
   if (!sc) sl = `<div class="a"><span class="sym"><b>SL</b><b>--</b></span><div><div class="k">StudyLine</div><div class="v">今日のダイヤはまだありません</div></div></div>`;
   else {
-    const B = slBrief(sc), { rows, start, planEnd, end, nm } = sc, idx = rows.findIndex(r => r.st !== 'done');
-    sl = `<div class="a"><span class="sym"><b>SL</b><b>${pad(Math.max(0, idx < 0 ? rows.length - 1 : idx) + 1)}</b></span><div><div class="k"><b class="xfer">のりかえ</b>StudyLine ・ ${B.label}</div><div class="v">${fmtDay(start)} 発 ・ ${rows.length}駅 ・ ${hm((planEnd - start) * 60000)}</div></div></div>
-      <div class="ls">${rows.slice(0, 5).map((r, i) => `<div class="${r.st === 'done' ? 'dn' : ''}"><div class="no">SL${pad(i + 1)}</div><div class="nm">${esc(r.t.name)}</div><div class="tm">${fmtDay(r.s)}</div></div>`).join('')}</div>
-      <div class="ft"><span>${B.run ? 'あと' : B.started ? '終点まで' : '発車まで'}</span><span class="big n">${B.allDone ? '完了' : bigMin(Math.max(0, Math.ceil(B.run ? B.run.e - nm : B.started ? end - nm : start - nm)))}</span></div>`;
+    const B = slBrief(sc), { rows, start, planEnd, end, nm } = sc, idx = rows.findIndex(r => r.st !== 'done'), from = Math.max(0, Math.min(idx < 0 ? rows.length - 4 : idx, rows.length - 4)); // いまの駅から4つ(終わった駅は出さない)
+    sl = `<div class="a"><span class="sym"><b>SL</b><b>${pad(Math.max(0, idx < 0 ? rows.length - 1 : idx) + 1)}</b></span><div><div class="k"><b class="xfer">のりかえ</b>StudyLine ・ ${B.label}</div><div class="v">${fmtDay(start)} 発 ・ ${rows.length}駅 ・ ${hm((planEnd - start) * 60000)}</div></div><div class="rt"><span>${B.allDone ? '' : B.run ? 'あと' : B.started ? '終点まで' : '発車まで'}</span><b class="n">${B.allDone ? '完了' : bigMin(Math.max(0, Math.ceil(B.run ? B.run.e - nm : B.started ? end - nm : start - nm)))}</b></div></div>
+      <div class="ls">${rows.slice(from, from + 4).map((r, i) => `<div class="${r.st === 'done' ? 'dn' : ''}"><div class="no">SL${pad(from + i + 1)}</div><div class="nm">${esc(r.t.name)}</div><div class="tm">${fmtDay(r.s)}</div></div>`).join('')}</div>`;
   }
   setHtml($('rvSL'), `<div data-open="studyline">${sl}</div>`);
 }
@@ -3309,8 +3345,11 @@ function fv2Holiday() {
 // 目標までの路線図:今日から いちばん遠い目標(終点)まで、ほかの目標は途中の駅(位置は日数の割合)
 function cdRoute(l) {
   const far = Math.max(1, l[l.length - 1].days);
+  let lastX = -99;
   const st = l.map((c, i) => {
     const x = Math.min(100, c.days / far * 100), end = i === l.length - 1, dt = parseYmd(c.date);
+    if (!end && (x - lastX < 15 || x > 82)) return ''; // 近すぎる駅は名前が重なるので出さない(右の一覧には出る)
+    lastX = x;
     return `<div class="st ${end ? 'end' : ''}" style="left:${x.toFixed(2)}%;transform:translateX(${end ? '-100%' : x < 8 ? '0' : '-50%'});text-align:${end ? 'right' : x < 8 ? 'left' : 'center'}"><div class="dot" style="${end ? 'margin-left:auto' : x < 8 ? '' : 'margin:6px auto 0'}"></div><div class="nm">${esc(c.name)}</div><div class="dd">${md(dt)} ・ ${c.days ? c.days + '日後' : '今日'}</div></div>`;
   }).join('');
   return `<div class="cdroute"><div class="ln"></div>${st}<div class="now">今日</div></div>`;
@@ -3532,7 +3571,7 @@ function fvClock2c(d, st, sc, B) {
       else h += `<div class="dt ${m >= it.a ? 'done' : ''}" style="left:${X((prev.b + it.a) / 2)}%"></div>`;
     }
   });
-  for (const [a, b] of xs) h += `<div class="xf" style="left:${X(a)}%"></div><div class="xf" style="left:${X(b)}%"></div><div class="xt" style="left:${X(a)}%;transform:translateX(-104%)">乗り換え ↓</div><div class="xt" style="left:${X(b)}%;margin-left:6px">↑ 戻る</div>`;
+  for (const [a, b] of xs) h += `<div class="xf" style="left:${X(a)}%"></div><div class="xf" style="left:${X(b)}%"></div><div class="xt" style="left:${X(a)}%;transform:translateX(-104%)">${a === xs[0][0] ? '乗り換え ' : ''}↓</div><div class="xt" style="left:${X(b)}%;margin-left:6px">↑${b === xs[xs.length - 1][1] ? ' 戻る' : ''}</div>`; // 言葉は最初と最後だけ(間は矢印だけ。昼休みの前後で重なるため)
   rows.forEach(r => { const x = X(r.s), w = (X(Math.max(r.e, r.s + 1)) - x).toFixed(2), done = r.st === 'done', cur = r.st === 'run'; h += `<div class="sbar ${done ? 'done' : ''}" style="left:${x}%;width:${w}%;top:135px">${cur ? `<i style="width:${Math.max(0, Math.min(100, (sc.nm - r.s) / Math.max(1, r.e - r.s) * 100)).toFixed(1)}%"></i>` : ''}</div><div class="slb ${done ? 'done' : cur ? 'cur' : ''}" style="left:${x}%;width:${w}%">${esc(r.t.name)}</div>`; });
   const lastEnd = items[items.length - 1].b; if (rows[0].s - lastEnd >= 20) h += `<div class="mv" style="left:${X(lastEnd)}%;width:${(X(rows[0].s) - X(lastEnd)).toFixed(2)}%">放課後・移動</div>`;
   h += `<div class="nw" style="left:${X(Math.max(t0, Math.min(t1, sc.nm)))}%">いま</div>`;
@@ -3757,10 +3796,11 @@ class RailTodo {
       t: mk(el.querySelector('.tx'), this.td, { w: '100%', fs: mini ? 17 : 22, align: 'left', px: mini ? 6 : 12 }) }));
     this.cnt = host.querySelector('.cnt'); this.tick = host.querySelector('.scroll');
   }
+  fit(tx) { const u = this.rows[0].t, w = u.root.clientWidth; if (!w) return tx; const max = Math.floor((w - 2 * (u.o.px || 0)) / u.o.fs / .98); let n = 0, i = 0; const cs = [...tx]; for (; i < cs.length; i++) { n += cs[i].charCodeAt(0) < 0x2000 ? .58 : 1; if (n > max) break; } return i >= cs.length ? tx : cs.slice(0, Math.max(1, i - 1)).join('') + '…'; } // 板に入りきらない行先は「…」で切る
   update() {
     const list = railTodoRows(), lbs = ['先発', '次発', '次々発'];
     const vals = list.slice(0, this.n).map(t => { const di = dueInfo(t), late = !t.done && di.hot;
-      return { id: t.id, done: t.done, k: t.done ? '済' : t.bring ? '持ち物' : t.gt ? 'G ToDo' : '課題', d: t.done ? '済' : (di.label || '—') + (late ? '​' : ''), late, tx: t.text }; });
+      return { id: t.id, done: t.done, k: t.done ? '済' : t.bring ? '持ち物' : t.gt ? 'G ToDo' : '課題', d: t.done ? '済' : (di.label || '—') + (late ? '​' : ''), late, tx: this.fit(t.text) }; });
     const open = list.filter(t => !t.done).length, sig = JSON.stringify([vals, open]);
     if (sig === this.sig) return;
     const anim = this.sig !== null && effAnim() === 'flap' && !document.hidden; this.sig = sig; // 最初の表示はそのまま出す。そのあとの変化はめくる
@@ -3789,6 +3829,7 @@ function railTodoMini() { if (!railTodoMain) railTodoMain = new RailTodo($('rvTo
 document.addEventListener('click', e => { const b = e.target.closest('#railView .ck[data-ck]'); if (b && b.dataset.ck) { toggleTodo(b.dataset.ck); if (railTodoMain) railTodoMain.update(); } });
 
 // ---- StudyLine:車内の路線案内
+const txW = t => Math.max(2, [...String(t)].reduce((a, c) => a + (c.charCodeAt(0) < 0x2000 ? .58 : 1), 0)); // 文字数(半角は 0.58 文字分)。幅に合わせて文字を小さくするのに使う
 function railStudy() {
   const sc = slSchedule(), d = now(), S = slSums(d);
   const days = []; for (let i = 6; i >= 0; i--) { const x = addDays(d, -i), g = slDay(ymd(x)); if (g) g._ds = ymd(x); days.push({ w: WD[x.getDay()], m: slStudied(g), td: i === 0 }); }
@@ -3804,7 +3845,7 @@ function railStudy() {
   return `<div class="slv"><div class="l">
     <div class="rc-lab"><b class="sl">${B.label}</b><span>${fmtDay(start)} 発 ・ ${rows.length}駅 ・ ${hm((planEnd - start) * 60000)}</span></div>
     <div class="slk">${B.allDone ? '終点' : B.run ? 'いまの駅 ・ NOW' : '次は ・ NEXT'}</div>
-    <div class="slnm" data-fit="104">${B.allDone ? '到着' : esc(cur.t.name)}</div>
+    <div class="slnm" style="--n:${B.allDone ? 2 : txW(cur.t.name)}">${B.allDone ? '到着' : esc(cur.t.name)}</div>
     <div class="slen n">${B.allDone ? '' : `SL${pad(idx + 1)} ・ ${fmtDay(cur.s)} – ${fmtDay(cur.e)}`}</div>
     <div class="rc-left sl"><span>${lk}</span><span>${B.allDone ? '' : leftMin >= 60 ? `<b class="n">${Math.floor(leftMin / 60)}</b><small>時間</small><b class="n">${leftMin % 60}</b><small>分</small>` : `<b class="n">${leftMin}</b><small>分</small>`}</span></div>
     <div class="trio"><div><div class="k">終点 着</div><div class="v n">${fmtDay(end)}<small>${B.allDone ? '' : '見込み'}</small></div></div><div><div class="k">${deadline ? `就寝期限 ${fmtDay(deadline)} まで` : '就寝期限'}</div><div class="v n" style="color:${room == null ? 'inherit' : room >= 0 ? 'var(--grn)' : 'var(--red)'}">${room == null ? '—' : `${room < 0 ? '-' : ''}${Math.floor(Math.abs(room) / 60)}:${pad(Math.abs(room) % 60)}`}<small>${room == null ? '' : room >= 0 ? '余裕' : 'オーバー'}</small></div></div><div><div class="k">7日間</div><div class="v n">${(S.week / 60).toFixed(1)}<small>時間</small></div></div></div>
