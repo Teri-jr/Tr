@@ -1342,7 +1342,7 @@ body.portrait .v3pr .tw-c{font-size:12px;padding:4px 3px;overflow:hidden}body.po
 
 <script>
 'use strict';
-const APP_VERSION = '2.29.1'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.30.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1666,10 +1666,18 @@ function renderRail(st, d) {
   else { nm = st.mode === 'after' ? '今日の授業はおわり' : '今日はお休み'; const nd = nextSchoolDay(d); c = `次の登校 ${md(nd)}(${WD[nd.getDay()]})`; r = `1限 ${esc(subjOf(nd, 0) || '')} →`; } // 帯を空にしない
   setHtml($('rvSign'), `<div class="a"><span class="no"><b>TT</b><b>${no}</b></span><div class="tx"><div class="k">${k}</div><div class="nm">${esc(nm)}</div></div><div class="rt"><div class="tm">${tm}</div><div class="lf">${lf}</div></div></div><div class="k1"></div><div class="k2"><span>${l}</span><span class="md">${c}</span><span>${r}</span></div>`);
   // 右:発車標
-  const today = railDepart(d), demo = Date.now() < flapDemo; // ボタン:表示があるときは7秒だけ空白に、空白のときは7秒だけ次の登校日の分を出す
-  const dep = demo ? (today.length ? [] : railDepart(d, true)) : today;
+  // 今日の授業が残っている間は今日の分。全部終わったら(休みの日も)、今夜の StudyLine の駅に切り替える。ダイヤがない・走り終えたときは、次の登校日の時間割
+  const today = railDepart(d), demo = Date.now() < flapDemo;
+  let base = today, src = 'tt';
+  if (!today.length) {
+    const left = sc ? sc.rows.filter(r => r.st !== 'done') : [];
+    if (left.length) { base = left.slice(0, 6).map(r => ({ t: Math.round(r.s) % 1440, kind: '自習', dest: r.t.name, room: '' })); src = 'sl'; }
+    else { base = railDepart(d, true); src = 'next'; }
+  }
+  const dep = demo ? (base.length ? [] : railDepart(d, true)) : base; // 「パタパタする」:7秒だけ空白にして、もどす
   railBoard(dep, flap && cfg.flapBoard && !fresh);
-  $('rvNote').textContent = dep.some(x => x.later) ? '次の登校日の予定(確認用)' : '';
+  $('rvBoard').dataset.open = src === 'sl' ? 'studyline' : 'tt';
+  $('rvNote').textContent = src === 'sl' ? 'StudyLine ・ 今夜のダイヤ' : src === 'next' && base.length ? `次の登校日 ${mdw(nextSchoolDay(d))} の時間割` : '';
   // やること(今のタイルと同じ内容)
   railTodoMini();
   // StudyLine の路線記号
