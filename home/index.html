@@ -1311,6 +1311,12 @@ body.portrait .v3pr .tw-c{font-size:12px;padding:4px 3px;overflow:hidden}body.po
 .bar .mseg{height:31px;align-items:stretch}.bar .mseg button{padding:0 14px;display:flex;align-items:center}
 .bar .chip{height:31px;align-items:center;padding:0 12px}.bar .chip b{line-height:1}
 .rcs{position:relative}
+
+/* 放課後の駅名標(StudyLine は黄、予定は緑) */
+.rv-sign.sl .no{border-color:#f5b301}.rv-sign.sl .k2{background:#f5b301}.rv-sign.sl .rt .lf span{color:#a87a05}
+.rv-sign.ev .no{border-color:#2f9a55}.rv-sign.ev .k2{background:#79c28a}.rv-sign.ev .rt .lf span{color:#2f9a55}
+.rv-sign .rt .lf{white-space:nowrap}.rv-sign .k2>span{overflow:hidden;text-overflow:ellipsis;min-width:0}.rv-sign .k2>span:first-child,.rv-sign .k2>span:last-child{flex:0 1 auto}
+body:not(.portrait) .rv-sign .tx .nm{font-size:var(--nf,72px)}
 </style>
 </head>
 <body>
@@ -1369,7 +1375,7 @@ body.portrait .v3pr .tw-c{font-size:12px;padding:4px 3px;overflow:hidden}body.po
 
 <script>
 'use strict';
-const APP_VERSION = '2.32.1'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.33.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1413,6 +1419,7 @@ const DEFAULT_CFG = {
   qiPref: 5, qiMax: 0, qiMag: 0, qiTsunami: true, // 地震情報を全画面にする条件(0 = 使わない)
   flapBlank: true, // 今日の授業が終わったら、鉄道モードの発車標をパタパタして黒(空白)にする(翌朝5時まで)
   pomoOn: false, // 自習タイマーを出す(2.23.0 から初期値はオフ。StudyLine のポモドーロとタイマーのタイルがあるため)
+  signLead: 60, // 放課後の駅名標:予定がこの分数以内に迫ったら、StudyLine より予定を出す
   stdLayout: 'cols', // 標準モードの配置(cols 3列 / big 大きい時計+下段のページ送り)
   ai: null, // AI のショートカット [{name, url, note}](fixAi で初期値を入れる)
   mode: 'std', modeAuto: true, // 表示モード(std 標準 / night 夜 / rail 鉄道)。modeAuto = 時間帯で自動で切り替える
@@ -1691,7 +1698,30 @@ function renderRail(st, d) {
   } else if (st.mode === 'pre' || st.mode === 'shr') { nm = st.name; lf = `あと <span>${Math.ceil(st.left)}</span> 分`; r = st.mode === 'pre' && ps.length ? `1限 ${esc(sj(0))} →` : ''; }
   else if (st.mode === 'before') { nm = `${st.label}まで`; lf = `あと <span>${Math.ceil(st.left)}</span> 分`; r = `1限 ${esc(sj(0))} →`; }
   else { nm = st.mode === 'after' ? '今日の授業はおわり' : '今日はお休み'; const nd = nextSchoolDay(d); c = `次の登校 ${md(nd)}(${WD[nd.getDay()]})`; r = `1限 ${esc(subjOf(nd, 0) || '')} →`; } // 帯を空にしない
-  setHtml($('rvSign'), `<div class="a"><span class="no"><b>TT</b><b>${no}</b></span><div class="tx"><div class="k">${k}</div><div class="nm">${esc(nm)}</div></div><div class="rt"><div class="tm">${tm}</div><div class="lf">${lf}</div></div></div><div class="k1"></div><div class="k2"><span>${l}</span><span class="md">${c}</span><span>${r}</span></div>`);
+  // 放課後・休みの日は、駅名標を使い回す:予定が近い(設定の分数以内)→ 予定 / StudyLine が残っている → StudyLine / 予定だけある → 予定 / どれもない → 次の登校日の準備
+  let badge = 'TT', sgc = '', slMap = '';
+  if (st.mode === 'after' || st.mode === 'off') {
+    const ev = (events || []).filter(e => !e.allDay && ymd(new Date(e.start)) === ymd(d) && new Date(e.start).getTime() > nowMs()).sort((a, b) => new Date(a.start) - new Date(b.start))[0];
+    const evLeft = ev ? (new Date(ev.start).getTime() - nowMs()) / 60000 : null, B = sc ? slBrief(sc) : null, slOn = !!B && !B.allDone;
+    const big = n => n >= 60 ? `あと <span>${Math.floor(n / 60)}</span> 時間 <span>${n % 60}</span> 分` : `あと <span>${n}</span> 分`;
+    const hmOf = x => { const t = new Date(x); return `${t.getHours()}:${pad(t.getMinutes())}`; };
+    if (ev && (!slOn || evLeft <= (+cfg.signLead || 60))) {
+      badge = 'EV'; sgc = 'ev'; no = '次'; k = '次の予定 ・ Googleカレンダー'; nm = ev.title; tm = `${hmOf(ev.start)} – ${hmOf(ev.end)}`; lf = big(Math.max(0, Math.ceil(evLeft)));
+      l = ''; c = `${hmOf(ev.start)} 発`; r = slOn ? `そのあと StudyLine ${esc((B.run || B.nextR).t.name)} →` : '';
+    } else if (slOn) {
+      const { rows, start, end, nm: nw } = sc, cu = B.run || B.nextR, i = rows.indexOf(cu), left = Math.max(0, Math.ceil(B.run ? B.run.e - nw : start > nw && !B.started ? start - nw : cu.s - nw));
+      badge = 'SL'; sgc = 'sl'; no = pad(i + 1); k = `StudyLine ・ ${B.run ? 'いまの駅' : B.started ? '次の駅' : '発車前'}`; nm = cu.t.name; tm = `${fmtDay(cu.s)} – ${fmtDay(cu.e)}`; lf = (B.run ? '' : '発車まで ') + big(left);
+      l = i > 0 ? `← ${esc(rows[i - 1].t.name)}` : ''; c = `終点 ${fmtDay(end)} 着${ev ? ` ・ 予定 ${hmOf(ev.start)} ${esc(ev.title.slice(0, 8))}` : ''}`; r = i + 1 < rows.length ? `${esc(rows[i + 1].t.name)} →` : '終点 →';
+      slMap = routeMap(slSegs(rows), { t0: rows[0].s, t1: end, now: nw, w: $('rmap').clientWidth || 740, gaps: false, c: 'var(--sl)', ticks: [rows[0].s, end] });
+    } else {
+      const nd = nextSchoolDay(d), p0 = periodsMin(nd)[0], bring = allTodos().filter(t => !t.done && t.bring && t.due && dayDiff(d, parseYmd(t.due)) <= Math.max(1, dayDiff(d, nd))).map(t => t.text);
+      badge = 'TT'; no = '01'; k = `次の登校 ・ ${dayLabel(d, nd)}${dayDiff(d, nd) > 1 ? '' : ` ${mdw(nd)}`}`; nm = subjOf(nd, 0) ? `1限 ${subjOf(nd, 0)}` : '授業'; tm = p0 ? `${fmtMin(p0[0])} 発` : ''; lf = '';
+      l = B && B.allDone ? '今夜のダイヤは完了' : st.mode === 'after' ? '今日の授業はおわり' : '今日はお休み'; c = bring.length ? `持ちもの:${esc(bring.slice(0, 3).join('・'))}` : '持ちものの登録なし'; r = subjOf(nd, 1) ? `2限 ${esc(subjOf(nd, 1))} →` : '';
+    }
+  }
+  $('rvSign').className = 'rv-sign ' + sgc;
+  if (slMap) { $('rmap').hidden = false; $('rmap').innerHTML = slMap; } // 放課後は、路線図の場所に今夜の StudyLine の路線
+  setHtml($('rvSign'), `<div class="a"><span class="no"><b>${badge}</b><b>${no}</b></span><div class="tx"><div class="k">${k}</div><div class="nm" style="--nf:${Math.min(72, Math.floor((lf.length > 30 ? 350 : 430) / txW(nm)))}px">${esc(nm)}</div></div><div class="rt"><div class="tm">${tm}</div><div class="lf">${lf}</div></div></div><div class="k1"></div><div class="k2"><span>${l}</span><span class="md">${c}</span><span>${r}</span></div>`);
   // 右:発車標
   // 今日の授業が残っている間は今日の分。全部終わったら(休みの日も)、今夜の StudyLine の駅に切り替える。ダイヤがない・走り終えたときは、次の登校日の時間割
   const today = railDepart(d), demo = Date.now() < flapDemo;
@@ -4676,6 +4706,9 @@ function renderSettingsInner() {
     <div class="row"><label><input type="checkbox" id="flapTiles" ${cfg.flapTiles ? 'checked' : ''}>やること・予定もパタパタにする</label></div>
     <p class="note">発車標は今日の分だけを出します。発車した段は上へ繰り上がり、今日の授業が終わると下の段から空白になっていきます。</p>
     <div class="row"><label><input type="checkbox" id="flapSound" ${cfg.flapSound ? 'checked' : ''}>めくる音を鳴らす(授業中は鳴らしません)</label></div>
+    <h4 style="margin-top:16px">放課後の駅名標(鉄道モード)</h4>
+    <div class="row">予定が <select id="signLead">${[15, 30, 45, 60, 90, 120, 180].map(v => opt(v, cfg.signLead || 60, v < 60 ? v + '分' : (v / 60) + '時間')).join('')}</select> 以内に迫ったら、StudyLine より予定を出す</div>
+    <p class="note">授業が終わったあとの駅名標は、StudyLine のいまの駅・次の駅を出します。Googleカレンダーの予定が近づくと予定に切り替わり、StudyLine がない日は予定を、どちらもない日は次の登校日の1限と持ちものを出します。</p>
     <h4 style="margin-top:16px">標準モードの配置</h4>
     <div class="row"><select id="stdLayout">${opt('cols', cfg.stdLayout, '3列(タイルを全部いちどに出す)')}${opt('big', cfg.stdLayout, '大きい時計(タイルは下段でページ送り)')}</select></div>
     <h4 style="margin-top:16px">自習タイマー</h4>
@@ -4911,6 +4944,7 @@ $('settings').addEventListener('change', e => {
   else if (t.id === 'shiftOn') { cfg.shift = t.checked; fit(); }
   else if (t.dataset.gtl) { const id = t.dataset.gtl; cfg.gtHide = t.checked ? (cfg.gtHide || []).filter(x => x !== id) : [...(cfg.gtHide || []), id]; saveCfg(); renderTodo(); return; }
   else if (t.id === 'pomoOn') { cfg.pomoOn = t.checked; saveCfg(); applyTheme(); renderLayout(); renderAll(); return; }
+  else if (t.id === 'signLead') { cfg.signLead = +t.value || 60; saveCfg(); renderClock(); return; }
   else if (t.id === 'stdLayout') { cfg.stdLayout = t.value === 'big' ? 'big' : 'cols'; saveCfg(); renderLayout(); renderAll(); return; }
   else if (t.dataset.ain != null) { cfg.ai[+t.dataset.ain].name = t.value.trim().slice(0, 16); saveCfg(); renderSlot(); renderTiles(); return; }
   else if (t.dataset.aiu != null) { const u = t.value.trim().slice(0, 300); if (u && !aiUrlOk(u)) toast('URL は https:// から入れてください'); cfg.ai[+t.dataset.aiu].url = u; saveCfg(); renderSlot(); renderTiles(); return; }
