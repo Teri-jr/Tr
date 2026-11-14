@@ -540,6 +540,13 @@ body:not(.light) .rdb{filter:invert(1) hue-rotate(180deg) brightness(.85) contra
 .sx header .spath{font-size:14px;color:var(--sub);margin-left:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sx header .spath b{color:var(--ink)}
 .swrap.wide{grid-template-columns:200px 1fr}
 .sx input[data-pren]{min-width:6.5em}.sx #postN{min-width:7em}
+@media (min-width:761px){
+  #settings{overflow:hidden}
+  #settings .sx{height:100%;display:flex;flex-direction:column;padding-bottom:0}
+  #settings .swrap{flex:1;min-height:0;align-items:stretch}
+  #settings .snav{position:static;max-height:none;height:100%;overflow-y:auto;overscroll-behavior:contain}
+  #settings .sbody{height:100%;overflow-y:auto;overscroll-behavior:contain;padding-bottom:80px;-webkit-overflow-scrolling:touch}
+}
 .howto{margin-top:10px;border:1px solid var(--rule);padding:8px 12px}.howto summary{cursor:pointer;font-size:14px;font-weight:700}
 @media (max-width:760px){.swrap,.swrap.wide{grid-template-columns:1fr}.snav{position:static;flex-direction:row;overflow-x:auto;max-height:none;gap:4px;padding-bottom:6px}.snav .sgrp{display:none}.snav button{flex:none;border-left:0;border-bottom:3px solid transparent}.snav button small{display:none}.snav button.on{border-bottom-color:var(--red)}}
 .sx .stabs{display:flex;gap:0;margin-left:14px;overflow-x:auto;scrollbar-width:none}.sx .stabs::-webkit-scrollbar{display:none}
@@ -1362,7 +1369,7 @@ body.portrait .v3pr .tw-c{font-size:12px;padding:4px 3px;overflow:hidden}body.po
 
 <script>
 'use strict';
-const APP_VERSION = '2.32.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.32.1'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -4559,7 +4566,7 @@ function openSettings(anchor) {
   sPlus = null;
   renderSettings();
   $('settings').hidden = false;
-  if (anchor) setTimeout(() => { const el = $(anchor); if (el && el.previousElementSibling && el.previousElementSibling.tagName === 'SECTION' && !el.previousElementSibling.hidden) el.scrollIntoView(); else $('settings').scrollTop = 0; }, 0); else $('settings').scrollTop = 0;
+  if (anchor) setTimeout(() => { const el = $(anchor); if (el && el.previousElementSibling && el.previousElementSibling.tagName === 'SECTION' && !el.previousElementSibling.hidden) el.scrollIntoView(); else $('settings').scrollTop = 0; }, 0); else { $('settings').scrollTop = 0; const sb = $('settings').querySelector('.sbody'); if (sb) sb.scrollTop = 0; }
 }
 function tileBoard() {
   const nm = k => k === 'studyline' ? '<span class="slc">StudyLine</span>' : esc(TILE_NAME[k]);
@@ -4631,7 +4638,15 @@ $('openSettings').addEventListener('click', () => openSettings());
   });
   d.addEventListener('fullscreenchange', upd); d.addEventListener('webkitfullscreenchange', upd);
 })();
+// 設定の中を描き直しても、スクロールの位置はそのまま(左の一覧・右の中身・画面全体)
 function renderSettings() {
+  const S0 = $('settings'), keep = { page: S0.scrollTop, nav: S0.querySelector('.snav') ? S0.querySelector('.snav').scrollTop : 0, body: S0.querySelector('.sbody') ? S0.querySelector('.sbody').scrollTop : 0, tab: renderSettings._tab };
+  renderSettingsInner();
+  if (keep.tab === sTab) { S0.scrollTop = keep.page; const b = S0.querySelector('.sbody'); if (b) b.scrollTop = keep.body; }
+  const n = S0.querySelector('.snav'); if (n) n.scrollTop = keep.nav;
+  renderSettings._tab = sTab;
+}
+function renderSettingsInner() {
   const L = cfg.loc;
   const prefs = JAPAN ? JAPAN.map(p => p.name) : [];
   const dc = cfg.days[ttDay] = cfg.days[ttDay] || { pre: [], p: [], post: ['HR', '', ''] };
@@ -4847,7 +4862,7 @@ $('settings').addEventListener('click', e => {
   if (t.dataset.cddel != null) { cfg.countdowns.splice(+t.dataset.cddel, 1); return rs(); }
   if (t.dataset.cdev != null) { cfg.countdowns = cfg.countdowns.filter(c => c.name || c.date); cfg.countdowns.push({ name: t.dataset.cdev, date: t.dataset.cdd2 }); return rs(); }
   if (t.dataset.modeset) { setMode(t.dataset.modeset); return renderSettings(); }
-  const stb = t.closest('[data-stab]'); if (stb) { sTab = stb.dataset.stab; sPlus = null; renderSettings(); $('settings').scrollTop = 0; return; }
+  const stb = t.closest('[data-stab]'); if (stb) { sTab = stb.dataset.stab; sPlus = null; renderSettings(); $('settings').scrollTop = 0; const sb = $('settings').querySelector('.sbody'); if (sb) sb.scrollTop = 0; return; }
   if (t.dataset.boff) { const k = t.dataset.boff; for (const side in cfg.layout) cfg.layout[side] = cfg.layout[side].filter(x => x !== k); saveCfg(); renderLayout(); return renderSettings(); }
   if (t.dataset.bplus) { sPlus = sPlus === t.dataset.bplus ? null : t.dataset.bplus; return renderSettings(); }
   if (t.dataset.bput && sPlus) { const k = sPlus; sPlus = null; cfg.bar = cfg.bar.filter(x => x !== k); cfg.layout[t.dataset.bput].push(k); saveCfg(); renderLayout(); renderChips(); return renderSettings(); }
