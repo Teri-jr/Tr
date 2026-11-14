@@ -271,7 +271,7 @@ main {
 .gear-btn .dot[hidden], .set-nav .dot[hidden] { display: none; }
 @media (max-width: 599px) { .gear-btn .gear-txt { display: none; } .gear-btn { padding: 0 11px; } }
 /* 実行中のボタン(終了・一時停止・中断・全画面)は、スマホでも1段に収める */
-@media (max-width: 599px) {
+@media (max-width: 599px), (min-width: 1000px) and (orientation: landscape) {
   #currentCard .btnrow { flex-wrap: nowrap; gap: 6px; }
   #currentCard .btnrow button.big { padding: 0 8px; font-size: 15px; min-width: 0; white-space: nowrap; }
   #currentCard .btnrow button.big.grow { flex: 1.3 1 0; }
@@ -692,6 +692,59 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
 #toast span { flex: 1; font-size: 14px; }
 #toast button { background: transparent; color: #f5b301; border-color: #3a4452; font-weight: 800; }
 #modal .modal-box.ok { border-color: var(--accent); }
+.modal-box { max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); overflow: auto; }
+/* ---------- 時刻表の行: 普段はすっきり、タップでボタンを出す。≡ をつかんで並べ替え ---------- */
+.row[data-row] { cursor: pointer; }
+.row .row-more { margin-left: auto; min-height: 28px; width: 40px; padding: 0; border: 0; background: transparent; color: var(--sub); font-size: 20px; font-weight: 800; line-height: 1; }
+.row.open .row-more { color: var(--accent); }
+.row .grip { display: block; margin-top: 2px; padding: 6px 0 8px; font-size: 18px; line-height: 1; color: var(--sub); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.row.dragging { position: relative; z-index: 5; background: var(--panel); box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28); border-radius: 8px; opacity: 0.96; }
+.row.dragging .grip { cursor: grabbing; }
+.row.drop-before { box-shadow: inset 0 3px 0 var(--accent); }
+.row.drop-after { box-shadow: inset 0 -3px 0 var(--accent); }
+.tt-tools button { flex: 1 1 auto; }
+@media (max-width: 440px) { .tt-tools { gap: 4px; } .tt-tools button { font-size: 12.5px; padding: 0 3px; min-width: 0; letter-spacing: -0.02em; } }
+/* ---------- 開始時刻を今に合わせる ---------- */
+.align-strip { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 8px 8px 8px 12px; font-size: 14px; margin-bottom: 8px; }
+.align-strip span { flex: 1 1 180px; }
+.align-strip button { min-height: 40px; font-size: 14px; white-space: nowrap; }
+/* ---------- 残り時間のバー ---------- */
+.cur-bar { height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; margin: 8px 0 6px; }
+.cur-bar i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 99px; transition: width 1s linear; }
+#currentCard.in-break .cur-bar i { background: var(--break-line); }
+#currentCard.paused .cur-bar i { background: var(--sub); }
+.cur-bar.over i { background: var(--late); }
+.cur-bar.sw-over i { background: #d97706; }
+/* ---------- 1日の運行報告 ---------- */
+.report { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+.report > div { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+.report small { display: block; font-size: 12px; color: var(--sub); }
+.report b { font-size: 20px; }
+.report-line { font-size: 13px; color: var(--sub); margin-top: 8px; display: flex; gap: 6px 10px; flex-wrap: wrap; align-items: center; }
+/* ---------- 実行中の帯・追加ボタン(スクロールしても届く) ---------- */
+#dock { position: fixed; z-index: 70; left: 12px; right: 12px; bottom: calc(10px + env(safe-area-inset-bottom)); max-width: 520px; margin: 0 auto; display: flex; gap: 8px; align-items: stretch; background: var(--board); border-radius: 14px; padding: 6px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); }
+#dock[hidden], #fab[hidden] { display: none; }
+#dockGo { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; background: transparent; border: 0; color: #e8ecf2; text-align: left; padding: 0 8px; }
+#dockGo span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 700; }
+#dockGo b { color: var(--board-text); font-size: 18px; white-space: nowrap; }
+#dockFinish { min-height: 44px; padding: 0 18px; }
+#fab { position: fixed; z-index: 70; right: calc(16px + env(safe-area-inset-right)); bottom: calc(16px + env(safe-area-inset-bottom) + var(--dock, 0px)); width: 56px; height: 56px; min-height: 0; padding: 0; border-radius: 50%; border: 0; background: var(--accent); color: var(--accent-text); font-size: 30px; font-weight: 700; line-height: 1; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3); }
+#toast { bottom: calc(14px + env(safe-area-inset-bottom) + var(--dock, 0px) + var(--fab, 0px)); }
+@media not all and (min-width: 900px) and (orientation: landscape) { main { padding-bottom: calc(96px + env(safe-area-inset-bottom)); } }
+/* ---------- 受験日・ひな形 ---------- */
+.exam-line { display: flex; align-items: center; gap: 6px; width: 100%; text-align: left; background: var(--running-bg); border: 1px solid var(--running-line); border-radius: 10px; padding: 6px 12px; margin-bottom: 10px; font-size: 14px; min-height: 0; color: var(--text); font-weight: 400; }
+.exam-line[hidden] { display: none; }
+.exam-line b { font-size: 18px; }
+.tpl-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; margin: 0 0 12px; }
+.tpl-item { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+.tpl-item .tpl-h { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.tpl-item .tpl-h small { color: var(--sub); white-space: nowrap; }
+.tpl-days { display: flex; gap: 4px; margin: 6px 0; }
+.tpl-days button { flex: 1; min-width: 0; min-height: 34px; padding: 0; font-size: 13px; }
+.tpl-days button[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); border-color: transparent; font-weight: 700; }
+.tpl-item .btnrow { margin-top: 6px; }
+.tpl-item .btnrow button, .tpl-save button { min-height: 40px; font-size: 14px; }
+.tpl-save { border-top: 1px solid var(--line); padding-top: 10px; display: grid; gap: 8px; }
 #modal .modal-box.ok .modal-title { color: var(--accent); }
 #modal .modal-box.ok #modalOk { background: var(--accent); color: var(--accent-text); }
 
@@ -868,6 +921,7 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
     <div class="tt-tools">
       <button id="copyPrev">📋 前日をコピー</button>
       <button id="carryOver">➡ 未完了を翌日へ</button>
+      <button id="tplOpen">🗂 ひな形</button>
     </div>
     <div class="tt-head"><span>#</span><span>見込み<br>(予定)</span><span>タスク / ズレ</span></div>
     <ol class="tt" id="tt"></ol>
@@ -878,9 +932,10 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
       <div class="side-tabs" role="tablist" aria-label="目標と記録">
         <button type="button" role="tab" data-side="goal">🎯 目標</button>
         <button type="button" role="tab" data-side="stats">📊 記録</button>
-        <button type="button" role="tab" data-side="pomo">🍅</button>
+        <button type="button" role="tab" data-side="pomo">🍅 ポモ</button>
       </div>
       <div class="side-panel" data-panel="goal" id="goalCard">
+      <button type="button" class="exam-line" id="examLine" hidden></button>
       <h2 class="g-head">今週の目標 <small id="goalRange"></small></h2>
       <div id="goalBody"></div>
 
@@ -906,12 +961,13 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
       <button type="button" data-sec="dia">🚃 ダイヤ(開始・就寝期限)</button>
       <button type="button" data-sec="pomo">🍅 ポモドーロ</button>
       <button type="button" data-sec="sound">🔊 音・通知</button>
-      <button type="button" data-sec="data">💾 データの保存 <i class="dot" id="setDataDot" hidden></i></button>
+      <button type="button" data-sec="exam">📅 受験日(カウントダウン)</button>
       <button type="button" data-sec="design">🎨 ロゴ・タイマーのデザイン</button>
-      <button type="button" data-sec="reset">🗑 リセット</button>
       <button type="button" data-sec="gtodo">✅ Google ToDo</button>
+      <button type="button" data-sec="data">💾 データの保存 <i class="dot" id="setDataDot" hidden></i></button>
       <button type="button" data-sec="guide">❓ 使い方</button>
       <button type="button" data-sec="history">📝 変更履歴 <small id="setHistNew" hidden>NEW</small></button>
+      <button type="button" data-sec="reset">🗑 リセット</button>
     </nav>
     <div class="set-body" id="setBody">
       <div class="set-sec" data-sec="dia" hidden>
@@ -929,6 +985,17 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
       </div>
     </section>
 
+      </div>
+      <div class="set-sec" data-sec="exam" hidden>
+    <section class="card" id="examCard">
+      <h2>受験日(カウントダウン)</h2>
+      <div class="form-grid">
+        <div><label for="examName">名前</label><input id="examName" maxlength="20" placeholder="例: 共通テスト" autocomplete="off"></div>
+        <div><label for="examDate">日付</label><input id="examDate" type="date" class="num"></div>
+      </div>
+      <div class="btnrow"><button type="button" id="examClear">消す</button></div>
+      <p class="note">日付を入れると、「🎯 目標」の上と日付の下に「あと◯日」を出します。この端末の中だけに保存されます。</p>
+    </section>
       </div>
       <div class="set-sec" data-sec="pomo" hidden>
     <section class="card" id="pomoCard">
@@ -1064,6 +1131,8 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
     </div>
   </div>
 </div>
+<div id="dock" hidden><button type="button" id="dockGo" aria-label="運行状況へ戻る"><span id="dockName"></span><b class="num" id="dockTimer"></b></button><button type="button" class="primary" id="dockFinish" data-act="finish" data-id="">終了</button></div>
+<button type="button" id="fab" hidden aria-label="タスクを追加">＋</button>
 <div id="toast" hidden role="status"><span id="toastMsg"></span><button id="toastAct" hidden></button></div>
 <div id="clockFull" hidden role="dialog" aria-label="時計"><div class="cf-time num"><span id="cfTime"></span><span class="cf-sec" id="cfSec"></span></div><div class="cf-date" id="cfDate"></div><div class="cf-hint">タップで閉じる</div></div>
 <div id="focus" hidden role="dialog" aria-label="全画面タイマー"></div>
@@ -1077,6 +1146,7 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
     <h4>時刻表の見方</h4>
     <ul>
       <li><b>見込み</b>: 今のペースだと、そのタスクを何時に始められそうか。下の小さい数字が最初の予定です。</li>
+      <li><b>行をタップ</b>: 「▶今やる・↑↓・🍅・編集・削除」が出ます。まだ始めていない行は、番号の下の「≡」をつかんで上下に動かせます。</li>
       <li><b>ズレ</b>: 予定より何分遅れているか(「+5分 遅れ」「3分 早い」「定刻」)。最後まで終わる見込みが就寝期限を超えそうなときは、赤く知らせます。</li>
     </ul>
     <details id="guideIos">
@@ -1773,7 +1843,7 @@ function render() {
   const [y, m, d] = dayStr.split('-').map(Number);
   const wd = '日月火水木金土'[new Date(y, m - 1, d).getDay()];
   setHTML('diaLine', `🚃 <b class="num">${fmt(data.settings.start)}</b> 発 → 就寝期限 <b class="num">${fmt(deadlineMin())}</b><span>変更 ›</span>`);
-  setHTML('dateLabel', `${m}月${d}日(${wd})<small>${isToday() ? '今日' : isLive() && dayStr < logicalToday() ? (dayStr === shiftDay(logicalToday(), -1) && continuesYesterday(dayStr, data) ? '昨日の続き' : '実行中のタスクあり') : dayStr < logicalToday() ? '過去の日' : '先の日'}</small>`);
+  setHTML('dateLabel', `${m}月${d}日(${wd})<small>${isToday() ? '今日' + examShort() : isLive() && dayStr < logicalToday() ? (dayStr === shiftDay(logicalToday(), -1) && continuesYesterday(dayStr, data) ? '昨日の続き' : '実行中のタスクあり') : dayStr < logicalToday() ? '過去の日' : '先の日'}</small>`);
 
   if (!data.tasks.length && $('formCard').classList.contains('collapsed')) setFormCollapsed(false); // 0件なら追加欄を開く
   const sc = computeSchedule();
@@ -1786,6 +1856,8 @@ function render() {
   renderPomo(sc);
   renderReset();
   renderFocus(sc);
+  renderDock(sc);
+  renderExam();
   updatePhaseKey(runSc);
   if (modalValid && !$('modal').hidden && !modalValid()) closeModal(); // 確認の対象がもう無ければ閉じる
   const running = sc.rows.find(r => r.st === 'running');
@@ -1800,14 +1872,27 @@ function render() {
 
 // 就寝期限が開始時刻以前なら、翌日の時刻として扱う(開始 23:00・期限 1:00 → 25:00)
 const deadlineMin = () => data.settings.deadline <= data.settings.start ? data.settings.deadline + 1440 : data.settings.deadline;
+// 予定の開始時刻から30分以上ずれて始めた(まだ始めていなくて30分以上過ぎた)とき、開始時刻を合わせられるようにする
+function alignInfo(sc) {
+  if (!isLive() || sc.now === null || !sc.rows.length || data.alignNo) return null;
+  if (!sc.rows.some(r => r.st !== 'done')) return null;
+  const f = sc.rows[0], st = data.settings;
+  const ref = Math.floor((f.st === 'pending' ? sc.now : f.s) + 1e-6), diff = ref - st.start;
+  if (f.st === 'pending' ? diff < 30 : Math.abs(diff) < 30) return null;
+  if (ref < 0 || ref > 29 * 60 + 55 || (st.deadline > st.start && ref >= st.deadline)) return null;
+  return { ref, diff, started: f.st !== 'pending' };
+}
+function saveDayOnly() { store.set('day:' + dayStr, data); updateBackupUI(); statsAt = 0; } // 「これからの日の開始時刻」は変えずに保存
 function renderBanner(sc) {
   const dl = deadlineMin();
   if (!sc.rows.length) { setHTML('banner', ''); return; }
   const over = Math.floor(sc.end + 1e-6) - dl;
+  const al = alignInfo(sc);
+  const alH = al ? `<div class="align-strip"><span>🚃 予定(${fmt(data.settings.start)} 発)より <b class="num">${lenTxt(Math.abs(al.diff))} ${al.diff < 0 ? '早く' : '遅く'}</b>${al.started ? '始めています' : 'なっています'}</span><button type="button" class="primary" id="alignStart" data-ref="${al.ref}">開始を ${fmt(al.ref)} に合わせる</button><button type="button" id="alignNo" aria-label="このままにする">✕</button></div>` : '';
   if (over > 0) {
-    setHTML('banner', `<div class="warn">⚠ 就寝期限 ${fmt(dl)} を <span class="num">${lenTxt(over)}</span> 超える見込みです(最終見込み <span class="num">${fmt(sc.end)}</span>)</div>`);
+    setHTML('banner', `${alH}<div class="warn">⚠ 就寝期限 ${fmt(dl)} を <span class="num">${lenTxt(over)}</span> 超える見込みです(最終見込み <span class="num">${fmt(sc.end)}</span>)</div>`);
   } else {
-    setHTML('banner', `<div class="okstrip">最終見込み <span class="num">${fmt(sc.end)}${sc.rows.some(x => x.t.sw && x.st !== 'done') ? '頃' : ''}</span> ・ 就寝期限 ${fmt(dl)} まで <b class="num">余裕 ${-over}分</b></div>`);
+    setHTML('banner', `${alH}<div class="okstrip">最終見込み <span class="num">${fmt(sc.end)}${sc.rows.some(x => x.t.sw && x.st !== 'done') ? '頃' : ''}</span> ・ 就寝期限 ${fmt(dl)} まで <b class="num">余裕 ${lenTxt(-over)}</b></div>`);
   }
 }
 
@@ -1820,6 +1905,30 @@ function timerText(r, now) {
   return `あと ${Math.ceil(r.target - now - 1e-6)}分`;
 }
 
+// タスクの進み具合(0〜1)。ストップウォッチは目安に対して、休憩中は休憩の進み
+function progressOf(r, now) {
+  let v;
+  if (r.sw) v = r.curPh.k === 'b' ? (now - r.curPh.s) / (r.curPh.e - r.curPh.s) : r.sw.workMin / effDur(r.t);
+  else if (r.curPh === 'over') v = 1;
+  else v = (now - r.s) / (r.target - r.s);
+  return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0;
+}
+// 1日の運行報告(終えたタスクがある日)
+function reportHTML(sc) {
+  const done = sc.rows.filter(r => r.st === 'done');
+  if (!done.length) return '';
+  const ds = dayStats(dayStr), allDone = done.length === sc.rows.length;
+  const dly = Math.floor(sc.end + 1e-6) - sc.planEnd, intr = done.filter(r => r.t.intr).length;
+  const subj = subjOrder(ds.subj).filter(k => ds.subj[k].act > 0.5).map(k => `<span>${k ? subjTagOf(k) : '教科なし'} ${hm(ds.subj[k].act)}</span>`).join('');
+  const mats = Object.entries(ds.mat).map(([id, m]) => { const mt = matOf(id); return mt && m.amt ? `<span>${esc(mt.name)} <b>${amtTxt(m.amt)}${mt.unit}</b></span>` : ''; }).join('');
+  const streak = streakDays();
+  return `<div class="report num">
+      <div><small>勉強した時間</small><b>${hm(ds.act)}</b><small>予定 ${hm(ds.plan)}</small></div>
+      <div><small>${allDone ? '終着' : '終着の見込み'}</small><b>${fmt(sc.end)}</b><small>${dly > 0 ? `予定より +${lenTxt(dly)}` : dly < 0 ? `予定より ${lenTxt(-dly)} 早い` : '定刻'}</small></div>
+      <div><small>終えたタスク</small><b>${done.length}<span style="font-size:13px"> / ${sc.rows.length}件</span></b>${intr ? `<small>うち中断 ${intr}件</small>` : ''}</div>
+      <div><small>ポモドーロ</small><b>🍅 ${sc.pomoDone}個</b>${streak > 1 ? `<small>🔥 ${streak}日連続</small>` : ''}</div>
+    </div>${subj ? `<div class="report-line">${subj}</div>` : ''}${mats ? `<div class="report-line">${mats}</div>` : ''}`;
+}
 function renderCurrent(sc) {
   const running = sc.rows.find(r => r.st === 'running');
   const next = sc.rows.find(r => r.st === 'pending');
@@ -1830,6 +1939,7 @@ function renderCurrent(sc) {
   if (elsewhere) h += `<div class="warn" style="margin-bottom:10px">▶ ${mdLabel(runDay)} の「${esc(elsewhere.name)}」が実行中です <button type="button" class="linkbtn" id="gotoRun">見る</button></div>`;
   if (!isLive()) {
     h += `<div class="cur-sub">開始・終了の記録は「今日」の画面でのみできます。</div>`;
+    const rp = reportHTML(sc); if (rp) h += `<div class="cur-sub" style="margin-top:10px"><b>この日の運行報告</b></div>${rp}`;
   } else if (running) {
     const t = running.t, ph = running.curPh;
     const adj = t.adj || 0;
@@ -1877,6 +1987,7 @@ function renderCurrent(sc) {
     h += `${pill}
       <div class="cur-name">${esc(t.name)}</div>
       <div class="cur-remain num ${over ? 'over' : ''} ${sw && !swBrk && sw.over ? 'sw-over' : ''}" id="curTimer"></div>
+      <div class="cur-bar ${over ? 'over' : ''} ${sw && !swBrk && sw.over ? 'sw-over' : ''}" aria-hidden="true"><i id="curBar"></i></div>
       ${paused ? '<div class="cur-sub num" id="curPause"></div>' : pm ? `<div class="cur-sub num">一時停止 合計${pm}分(後ろの時刻に反映済み)</div>` : ''}
       ${phaseLine ? `<div class="cur-sub num">${phaseLine}</div>` : ''}
       ${sw ? '' : `<div class="cur-sub num">開始 ${fmt(running.s)} ・ 終了見込み ${fmt(running.target)} ・ ${t.pomo ? '作業' : '所要'} ${effDur(t)}分${adj ? `(${adj > 0 ? '+' : ''}${adj})` : ''}</div>`}
@@ -1907,7 +2018,7 @@ function renderCurrent(sc) {
       </div>`;
   } else if (sc.rows.length) {
     h += `<div class="cur-name">本日の運行は終了しました 🎉</div>
-      <div class="cur-sub num">終着 ${fmt(sc.end)}(予定 ${fmt(sc.planEnd)})</div>
+      ${reportHTML(sc)}
       ${lastDone ? `<div class="btnrow">${armBtn('unfinish', lastDone.t.id, '直前の終了を取消')}</div>` : ''}`;
   } else {
     h += `<div class="cur-sub">タスクを追加すると時刻表ができます。</div>`;
@@ -1916,7 +2027,7 @@ function renderCurrent(sc) {
   $('currentCard').classList.toggle('in-break', inBreak && !(running && isPaused(running.t)));
   $('currentCard').classList.toggle('paused', !!(running && isPaused(running.t)));
   $('currentCard').classList.toggle('sw-ask', !!(running && running.sw && running.sw.ask));
-  if (running && running.curPh && sc.now !== null) setText('curTimer', timerText(running, sc.now));
+  if (running && running.curPh && sc.now !== null) { setText('curTimer', timerText(running, sc.now)); const cb = $('curBar'); if (cb) cb.style.width = (progressOf(running, sc.now) * 100).toFixed(1) + '%'; }
   if (running && isPaused(running.t)) setText('curPause', `停止して ${fmtSec(pauseElapsed(running.t))}(この分だけ後ろがずれます)`);
 }
 
@@ -1932,7 +2043,10 @@ function segRows(r, now) {
   }).join('');
 }
 
+let openRowId = null; // ボタンを出している行
+let drag = null;      // 並べ替えの途中
 function renderTable(sc) {
+  if (drag) return; // つかんでいる間は描き直さない
   const prev = prevDayTasks();
   $('copyPrev').disabled = !prev.length;
   $('carryOver').disabled = !data.tasks.some(t => taskState(t) === 'pending');
@@ -1941,12 +2055,18 @@ function renderTable(sc) {
     const sug = prev.length ? `<div class="suggest"><b>📋 前日(${mdLabel(shiftDay(dayStr, -1))})の予定をコピー</b>
       <ul>${prev.slice(0, 8).map(t => `<li>${esc(t.name)} ${taskDurLabel(t)}</li>`).join('')}${prev.length > 8 ? `<li>ほか${prev.length - 8}件</li>` : ''}</ul>
       <button class="primary" id="copyPrevBig">${prev.length}件をコピーする</button></div>` : '';
-    setHTML('tt', `<li class="empty">まだタスクがありません${sug}</li>`);
+    const tp = tplForDay(dayStr);
+    const tsug = tp ? `<div class="suggest"><b>🗂 ひな形「${esc(tp.name)}」を入れる</b>
+      <ul>${tp.tasks.slice(0, 8).map(t => `<li>${esc(t.name)} ${taskDurLabel(t)}</li>`).join('')}${tp.tasks.length > 8 ? `<li>ほか${tp.tasks.length - 8}件</li>` : ''}</ul>
+      <button class="primary" data-tplin="${esc(tp.id)}">${tp.tasks.length}件を入れる</button></div>` : '';
+    setHTML('tt', `<li class="empty">まだタスクがありません${tsug}${sug}</li>`);
     return;
   }
   const n = sc.rows.length;
   const firstPending = sc.rows.findIndex(x => x.st === 'pending');
   const anyRunning = sc.rows.some(x => x.st === 'running');
+  const nPending = sc.rows.filter(x => x.st === 'pending').length;
+  const al = alignInfo(sc), muteEarly = !!(al && al.diff < 0); // 大きく早く始めた日は、上の1行で知らせて行ごとの「早い」は出さない
   let h = sc.rows.map((r, i) => {
     const t = r.t;
     const prevPending = i > 0 && sc.rows[i - 1].st === 'pending';
@@ -1958,9 +2078,10 @@ function renderTable(sc) {
     // ストップウォッチはおおよそなので「頃」を付ける(終わったものは実績なので付けない)
     const approx = t.sw && r.st !== 'done', ko = approx ? '<small>頃</small>' : '';
     const durTxt = t.sw ? `<span class="sw-txt">⏲ ${r.st === 'done' ? `${Math.round(r.sw ? r.sw.workMin : effDur(t))}分(目安 約${effDur(t)}分)` : `約${effDur(t)}分`}</span>` : `<span>${t.pomo ? '作業' : ''}${effDur(t)}分</span>`;
-    const delayTxt = t.sw && r.st === 'running' ? (r.delay > 0 ? `<span class="delay late">目安より+${r.delay}分</span>` : '<span class="delay ontime">目安どおり</span>') : delayHTML(r.delay);
-    return `<li class="row ${r.st} ${editingId === t.id ? 'editing' : ''}">
-      <div class="no num">${i + 1}</div>
+    const delayTxt = t.sw && r.st === 'running' ? (r.delay > 0 ? `<span class="delay late">目安より+${r.delay}分</span>` : '<span class="delay ontime">目安どおり</span>') : muteEarly && r.delay < 0 ? '' : delayHTML(r.delay);
+    const open = openRowId === t.id || editingId === t.id || isArmed(armKey('del', t.id));
+    return `<li class="row ${r.st} ${editingId === t.id ? 'editing' : ''} ${open ? 'open' : ''}" data-row="${esc(t.id)}">
+      <div class="no num">${i + 1}${canMove && nPending > 1 ? `<span class="grip" data-grip="${esc(t.id)}" role="img" aria-label="つかんで並べ替え">≡</span>` : ''}</div>
       <div>
         <div class="t-exp num">${fmt(r.s)}${t.sw && r.st === 'pending' ? '<small>頃</small>' : ''}<br>${fmt(r.e)}${ko}</div>
         <div class="t-plan num">(${fmt(r.ps)}–${fmt(r.pe)})</div>
@@ -1968,23 +2089,23 @@ function renderTable(sc) {
       <div>
         <div class="name">${subjTag(t)}${esc(t.name)}</div>
         ${t.memo ? `<div class="memo">${esc(t.memo)}</div>` : ''}
-        <div class="meta num">${durTxt}${pomoInfo}${matMeta(t)}${label ? `<span>${label}</span>` : ''}${delayTxt}</div>
+        <div class="meta num">${durTxt}${pomoInfo}${matMeta(t)}${label ? `<span>${label}</span>` : ''}${delayTxt}<button type="button" class="row-more" aria-expanded="${open}" aria-label="${esc(t.name)} の操作">${open ? '×' : '⋯'}</button></div>
       </div>
-      <div class="acts">
+      ${!open ? '' : `<div class="acts">
         ${r.st === 'pending' && i > firstPending ? `<button class="now-btn" data-act="donow" data-id="${esc(t.id)}" ${anyRunning ? 'disabled' : ''}>▶今やる</button>` : ''}
         <button data-act="up" data-id="${esc(t.id)}" aria-label="上へ" ${canMove && prevPending ? '' : 'disabled'}>↑</button>
         <button data-act="down" data-id="${esc(t.id)}" aria-label="下へ" ${canMove && nextPending ? '' : 'disabled'}>↓</button>
-        <button class="pomo-btn ${t.pomo ? 'on' : ''}" data-act="pomo" data-id="${esc(t.id)}" aria-pressed="${!!t.pomo}" aria-label="ポモドーロ ${t.pomo ? 'ON' : 'OFF'}" ${r.st === 'pending' ? '' : 'disabled'}>🍅</button>
+        <button class="pomo-btn ${t.pomo ? 'on' : ''}" data-act="pomo" data-id="${esc(t.id)}" aria-pressed="${!!t.pomo}" aria-label="ポモドーロ ${t.pomo ? 'ON' : 'OFF'}" ${r.st === 'pending' ? '' : 'disabled'}>🍅 ポモ</button>
         ${r.st === 'done' && matOf(t.mat) ? `<button data-act="amt" data-id="${esc(t.id)}">${Number.isFinite(t.amt) ? '量' : '📝量'}</button>` : ''}
         <button data-act="edit" data-id="${esc(t.id)}">${editingId === t.id ? '編集中' : '編集'}</button>
         ${armBtn('del', t.id, '削除', 'danger')}
-      </div>
+      </div>`}
     </li>${segRows(r, sc.now)}`;
   }).join('');
   const over = Math.floor(sc.end + 1e-6) - deadlineMin();
   const endKo = sc.rows.some(x => x.t.sw && x.st !== 'done') ? '<small>頃</small>' : '';
   h += `<li class="row end"><div class="no">終</div><div class="t-exp num">${fmt(sc.end)}${endKo}</div>
-    <div class="name">終着 ・ 期限 ${fmt(deadlineMin())} ${over > 0 ? `<span class="delay late">${lenTxt(over)}超過</span>` : `<span class="delay ontime">余裕 ${-over}分</span>`}</div></li>`;
+    <div class="name">終着 ・ 期限 ${fmt(deadlineMin())} ${over > 0 ? `<span class="delay late">${lenTxt(over)}超過</span>` : `<span class="delay ontime">余裕 ${lenTxt(-over)}</span>`}</div></li>`;
   setHTML('tt', h);
 }
 
@@ -2661,6 +2782,7 @@ function openModal({ title, body, ok, cancel, onOk, valid }) {
   $('modalBody').innerHTML = body;
   $('modalOk').textContent = ok;
   $('modalCancel').textContent = cancel;
+  $('modalOk').hidden = false;
   modalOk = onOk;
   $('modal').hidden = false;
   $('modalCancel').focus();
@@ -2693,7 +2815,7 @@ document.addEventListener('keydown', e => {
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '4.4.0';
+const APP_VERSION = '4.5.0';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
@@ -2846,7 +2968,7 @@ $('resetUndo').addEventListener('click', () => {
 });
 
 /* ================= export / import ================= */
-const VALID_KEY = k => /^day:\d{4}-\d{2}-\d{2}$/.test(k) || ['lastSettings', 'pomo', 'lastPomo', 'sound', 'sounds', 'clockSize', 'lastSw', 'logoAnim', 'timerDesign', 'inMode', 'subjList', 'goals', 'burn'].includes(k);
+const VALID_KEY = k => /^day:\d{4}-\d{2}-\d{2}$/.test(k) || ['lastSettings', 'pomo', 'lastPomo', 'sound', 'sounds', 'clockSize', 'lastSw', 'logoAnim', 'timerDesign', 'inMode', 'subjList', 'goals', 'burn', 'exam', 'templates'].includes(k);
 function buildExport() {
   const out = {};
   for (const k of store.keys()) if (VALID_KEY(k)) out[k] = store.get(k);
@@ -2904,7 +3026,7 @@ $('installHow').addEventListener('click', () => openOkModal({ title: '📱 ホ�
 
 
 /* ================= ⚙ 設定(ダイヤ・ポモドーロ・音・データ・デザイン・リセット・使い方・変更履歴) ================= */
-const SET_TITLES = { gtodo: '✅ Google ToDo', dia: '🚃 ダイヤ', pomo: '🍅 ポモドーロ', sound: '🔊 音・通知', data: '💾 データ', design: '🎨 デザイン', reset: '🗑 リセット', guide: '❓ 使い方', history: '📝 変更履歴' };
+const SET_TITLES = { exam: '📅 受験日', gtodo: '✅ Google ToDo', dia: '🚃 ダイヤ', pomo: '🍅 ポモドーロ', sound: '🔊 音・通知', data: '💾 データ', design: '🎨 デザイン', reset: '🗑 リセット', guide: '❓ 使い方', history: '📝 変更履歴' };
 const wideSettings = () => matchMedia('(min-width: 760px)').matches;
 function openSettings(sec) {
   $('setPanel').hidden = false;
@@ -2920,6 +3042,7 @@ function selectSet(sec) {
   $('setTitle').textContent = sec && !wideSettings() ? SET_TITLES[sec] : '⚙ 設定';
   $('setBody').scrollTop = 0;
   if (sec === 'gtodo') syncGtSettings();
+  if (sec === 'exam') syncExamUI();
   if (sec === 'history') { store.set('seenVersion', APP_VERSION); $('clNew').hidden = true; updateSetDot(); }
   if (sec === 'sound') for (const [kind] of SOUND_KINDS) if (customSounds[kind]) renderSoundRow(kind); // 波形は見えてから描く
 }
@@ -3201,6 +3324,14 @@ function subjOrder(obj) {
   const custom = Object.keys(obj).filter(k => k.startsWith('ot:')).sort((a, b) => (obj[b].act - obj[a].act) || (obj[b].plan - obj[a].plan));
   return ['en', 'ma', 'ph', 'in', ...custom, 'ot', ''].filter(k => obj[k]);
 }
+// 連続日数: タスクを1つでも始めた日が、今日(まだなら昨日)から何日続いているか
+function streakDays() {
+  const did = ds => { const d = store.get('day:' + ds); return isObj(d) && Array.isArray(d.tasks) && d.tasks.some(t => isObj(t) && t.actualStart); };
+  const today = logicalToday();
+  let ds = did(today) ? today : shiftDay(today, -1), n = 0;
+  while (n < 3650 && did(ds)) { n++; ds = shiftDay(ds, -1); }
+  return n;
+}
 function renderStats() {
   const today = logicalToday(), wd = '日月火水木金土';
   const days = [];
@@ -3223,8 +3354,8 @@ function renderStats() {
     const v = tot.subj[k];
     return `<div><span>${k ? subjTagOf(k) : '<span class="st-lbl">教科なし</span>'}</span>${bar(v.plan, [[k, v.act]], smax)}<span class="st-num num">${hmShort(v.act)}<small> / ${hmShort(v.plan)}</small></span></div>`;
   }).join('');
-  const rate = tot.plan ? Math.round(tot.act / tot.plan * 100) : 0;
-  setHTML('statsBody', `<div class="st-sum"><span>実際 <b class="num">${hm(tot.act)}</b></span><span>予定 <b class="num">${hm(tot.plan)}</b></span>${tot.plan ? `<span>予定の <b class="num">${rate}%</b></span>` : ''}</div>
+  const rate = tot.plan ? Math.round(tot.act / tot.plan * 100) : 0, streak = streakDays();
+  setHTML('statsBody', `<div class="st-sum">${streak ? `<span>🔥 <b class="num">${streak}</b>日連続</span>` : ''}<span>実際 <b class="num">${hm(tot.act)}</b></span><span>予定 <b class="num">${hm(tot.plan)}</b></span>${tot.plan ? `<span>予定の <b class="num">${rate}%</b></span>` : ''}</div>
     <h3 class="sub-h" style="margin-top:0">日ごと</h3><div class="st-days">${rows}</div>
     <h3 class="sub-h">教科ごと</h3><div class="st-subj">${subjRows}</div>
     <p class="st-legend">棒 = 実際に勉強した時間(一時停止・休憩を除く)、点線 = 予定。右の数字は「実際 / 予定」(時間:分)。</p>`);
@@ -3589,9 +3720,185 @@ function setInputMode(mode) {
 $('fInTabs').addEventListener('click', e => { const b = e.target.closest('[data-in]'); if (b) { if (editingId) resetForm(); setInputMode(b.dataset.in); } });
 setInputMode(['bulk', 'todo'].includes(store.get('inMode')) ? store.get('inMode') : 'one');
 
+/* ================= 時刻表の行: タップで開く・つかんで並べ替え ================= */
+$('tt').addEventListener('click', e => {
+  const tb = e.target.closest('[data-tplin]');
+  if (tb) { insertTemplate(tb.dataset.tplin); return; }
+  if (e.target.closest('.acts, .grip, .suggest')) return;
+  const li = e.target.closest('li[data-row]');
+  if (!li) return;
+  openRowId = openRowId === li.dataset.row ? null : li.dataset.row;
+  render();
+});
+function dragScroller() { const tc = $('tableCard'); return tc.scrollHeight > tc.clientHeight + 1 && getComputedStyle(tc).overflowY === 'auto' ? tc : null; }
+function dragEnd(apply) {
+  if (!drag) return;
+  const d = drag; drag = null;
+  d.li.classList.remove('dragging'); d.li.style.transform = '';
+  for (const el of $('tt').querySelectorAll('.drop-before, .drop-after')) el.classList.remove('drop-before', 'drop-after');
+  const t = data.tasks.find(x => x.id === d.id), to = d.target && data.tasks.find(x => x.id === d.target);
+  if (apply && t && to && t !== to && taskState(t) === 'pending' && taskState(to) === 'pending') {
+    data.tasks.splice(data.tasks.indexOf(t), 1);
+    data.tasks.splice(data.tasks.indexOf(to) + (d.after ? 1 : 0), 0, t);
+    saveDay();
+  }
+  render();
+}
+$('tt').addEventListener('pointerdown', e => {
+  const g = e.target.closest('.grip');
+  if (!g || drag || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  e.preventDefault();
+  const sc = dragScroller();
+  drag = { id: g.dataset.grip, li: g.closest('li'), pid: e.pointerId, y0: e.clientY, sc, s0: sc ? sc.scrollTop : scrollY, target: null, after: false };
+  try { g.setPointerCapture(e.pointerId); } catch (err) {}
+  drag.li.classList.add('dragging');
+});
+$('tt').addEventListener('pointermove', e => {
+  if (!drag || e.pointerId !== drag.pid) return;
+  const sc = drag.sc, box = sc ? sc.getBoundingClientRect() : { top: 0, bottom: innerHeight };
+  if (e.clientY < box.top + 56) (sc || window).scrollBy(0, -14); else if (e.clientY > box.bottom - 56) (sc || window).scrollBy(0, 14);
+  drag.li.style.transform = `translateY(${e.clientY - drag.y0 + (sc ? sc.scrollTop : scrollY) - drag.s0}px)`;
+  const others = [...$('tt').querySelectorAll('li.row.pending[data-row]')].filter(el => el !== drag.li);
+  for (const el of others) el.classList.remove('drop-before', 'drop-after');
+  const before = others.find(el => { const r = el.getBoundingClientRect(); return e.clientY < r.top + r.height / 2; });
+  const tgt = before || others[others.length - 1];
+  if (!tgt) return;
+  drag.target = tgt.dataset.row; drag.after = !before;
+  tgt.classList.add(before ? 'drop-before' : 'drop-after');
+});
+$('tt').addEventListener('pointerup', e => { if (drag && e.pointerId === drag.pid) dragEnd(true); });
+$('tt').addEventListener('pointercancel', e => { if (drag && e.pointerId === drag.pid) dragEnd(false); });
+
+/* ================= 開始時刻を今に合わせる ================= */
+$('banner').addEventListener('click', e => {
+  if (e.target.id === 'alignNo') { data.alignNo = true; saveDayOnly(); render(); return; }
+  if (e.target.id !== 'alignStart') return;
+  const ref = +e.target.dataset.ref, day = dayStr, before = data.settings.start;
+  if (!Number.isFinite(ref)) return;
+  data.settings.start = ref; saveDayOnly(); syncSettingsUI(); render();
+  showToast(`開始時刻を ${fmt(ref)} にしました(この日だけ)`, '元に戻す', () => { if (dayStr !== day) return; data.settings.start = before; saveDayOnly(); syncSettingsUI(); render(); });
+});
+
+/* ================= 実行中の帯・追加ボタン(運行状況や追加欄が画面の外にあるとき) ================= */
+const seen = { cur: true, form: true };
+if ('IntersectionObserver' in window) {
+  const io = new IntersectionObserver(es => { for (const en of es) seen[en.target.id === 'currentCard' ? 'cur' : 'form'] = en.isIntersecting; if (lastSc) renderDock(lastSc); });
+  io.observe($('currentCard')); io.observe($('formCard'));
+}
+function renderDock(sc) {
+  const r = sc.rows.find(x => x.st === 'running');
+  const showDock = !!(r && r.curPh && sc.now !== null && !seen.cur);
+  $('dock').hidden = !showDock;
+  if (showDock) {
+    setText('dockName', (isPaused(r.t) ? '⏸ ' : r.curPh !== 'over' && r.curPh.k === 'b' ? '☕ ' : '') + r.t.name);
+    setText('dockTimer', timerText(r, sc.now));
+    if ($('dockFinish').dataset.id !== r.t.id) $('dockFinish').dataset.id = r.t.id;
+  }
+  const showFab = isOneCol() && !seen.form;
+  $('fab').hidden = !showFab;
+  document.documentElement.style.setProperty('--dock', showDock ? '66px' : '0px');
+  document.documentElement.style.setProperty('--fab', showFab ? '62px' : '0px');
+}
+$('dockGo').addEventListener('click', () => $('currentCard').scrollIntoView({ behavior: 'smooth', block: 'start' }));
+$('fab').addEventListener('click', () => { setFormCollapsed(false); $('formCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+
+/* ================= 受験日(カウントダウン) ================= */
+function examCfg() {
+  const c = store.get('exam');
+  if (!isObj(c) || typeof c.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(c.date) || !Number.isFinite(baseOf(c.date))) return null;
+  return { name: typeof c.name === 'string' && c.name.trim() ? c.name.trim().slice(0, 20) : '受験日', date: c.date };
+}
+function examLeft() { const c = examCfg(); if (!c) return null; const n = Math.round((baseOf(c.date) - baseOf(logicalToday())) / 86400000); return n < 0 ? null : { ...c, n }; }
+function examShort() { const x = examLeft(); return x ? ` ・ 🎯${x.n ? `あと${x.n}日` : '本番'}` : ''; }
+function renderExam() {
+  const x = examLeft();
+  $('examLine').hidden = !x;
+  if (x) setHTML('examLine', `🎯 ${esc(x.name)}${x.n ? `まで <b class="num">あと${x.n}日</b>` : ' <b>今日が本番</b>'}<span class="num" style="margin-left:auto;color:var(--sub);font-size:12px">${mdLabel(x.date)}</span>`);
+}
+function syncExamUI() { const c = examCfg(); $('examName').value = c ? c.name : ''; $('examDate').value = c ? c.date : ''; }
+function saveExam() {
+  const date = $('examDate').value, name = $('examName').value.trim().slice(0, 20);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) store.set('exam', { name, date }); else if (!date) localStorage.removeItem(PREFIX + 'exam');
+  render();
+}
+$('examName').addEventListener('input', saveExam);
+$('examDate').addEventListener('change', saveExam);
+$('examClear').addEventListener('click', () => { $('examName').value = ''; $('examDate').value = ''; saveExam(); });
+$('examLine').addEventListener('click', () => openSettings('exam'));
+
+/* ================= ひな形(曜日ごとのダイヤ) ================= */
+const TPL_MAX = 12, WD_ORDER = [1, 2, 3, 4, 5, 6, 0], WD_NAMES = '日月火水木金土';
+const planOnly = t => { const { id, ...rest } = planCopy(t); return rest; };
+function templates() {
+  const v = store.get('templates');
+  return (Array.isArray(v) ? v : []).filter(x => isObj(x) && typeof x.id === 'string' && typeof x.name === 'string' && x.name.trim() && Array.isArray(x.tasks)).slice(0, TPL_MAX).map(x => ({
+    id: x.id.slice(0, 40), name: x.name.trim().slice(0, 20),
+    days: [...new Set((Array.isArray(x.days) ? x.days : []).filter(d => Number.isInteger(d) && d >= 0 && d <= 6))],
+    tasks: cleanDay({ tasks: x.tasks }, true).tasks.map(planOnly).slice(0, 60)
+  })).filter(x => x.tasks.length);
+}
+const tplForDay = ds => templates().find(x => x.days.includes(new Date(baseOf(ds)).getDay())) || null;
+const tplDaysTxt = x => { const d = WD_ORDER.filter(w => x.days.includes(w)); const k = d.join(''); return k === '12345' ? '平日' : k === '60' ? '土日' : k === '1234560' ? '毎日' : d.map(w => WD_NAMES[w]).join('・'); };
+function insertTemplate(id) {
+  const x = templates().find(v => v.id === id);
+  if (!x) return;
+  const addedDay = dayStr, before = JSON.stringify(data.tasks);
+  data.tasks.push(...x.tasks.map(planCopy));
+  saveDay(); if (!$('modal').hidden) closeModal(); render();
+  showToast(`ひな形「${x.name}」の${x.tasks.length}件を入れました`, '元に戻す', () => restoreTasks(addedDay, before));
+}
+let tplArm = null;
+function tplBody() {
+  const list = templates(), wd = new Date(baseOf(dayStr)).getDay();
+  const items = list.map(x => `<div class="tpl-item"><div class="tpl-h"><b>${esc(x.name)}</b><small class="num">${x.tasks.length}件 ・ ${hm(x.tasks.reduce((a, t) => a + t.dur, 0))}</small></div>
+      <div class="tpl-days" role="group" aria-label="自動でおすすめする曜日">${WD_ORDER.map(w => `<button type="button" data-tplday="${esc(x.id)}" data-w="${w}" aria-pressed="${x.days.includes(w)}">${WD_NAMES[w]}</button>`).join('')}</div>
+      <div class="btnrow"><button type="button" class="primary grow" data-tplin="${esc(x.id)}">この日に入れる</button><button type="button" class="danger" data-tpldel="${esc(x.id)}">${tplArm === x.id ? 'もう一度押して削除' : '削除'}</button></div></div>`).join('');
+  return `${list.length ? `<div class="tpl-list">${items}</div>` : '<p style="margin:0 0 10px">よく使う1日の予定を「ひな形」として取っておけます。曜日を選んでおくと、その曜日の空の日に「入れる」ボタンが出ます。</p>'}
+    <div class="tpl-save"><label for="tplName" style="margin:0">今の時刻表(${data.tasks.length}件)をひな形として保存</label>
+      <input id="tplName" maxlength="20" placeholder="名前(例: 平日・土日・塾の日)" value="${wd === 0 || wd === 6 ? '土日' : '平日'}" autocomplete="off">
+      <button type="button" id="tplSave" ${data.tasks.length ? '' : 'disabled'}>💾 保存する(同じ名前は上書き)</button>
+      <div class="msg" id="tplMsg" role="status"></div></div>`;
+}
+function openTemplates() {
+  tplArm = null;
+  openOkModal({ title: '🗂 ひな形(曜日ごとのダイヤ)', body: tplBody(), ok: '', cancel: '閉じる' });
+  $('modalOk').hidden = true;
+}
+$('tplOpen').addEventListener('click', openTemplates);
+$('modalBody').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const redraw = msg => { $('modalBody').innerHTML = tplBody(); if (msg) $('tplMsg').textContent = msg; };
+  if (b.dataset.tplin) { insertTemplate(b.dataset.tplin); return; }
+  if (b.dataset.tplday) {
+    const w = +b.dataset.w, list = templates(), on = list.find(x => x.id === b.dataset.tplday && x.days.includes(w));
+    for (const x of list) x.days = x.days.filter(d => d !== w); // 1つの曜日には1つのひな形
+    if (!on) { const x = list.find(v => v.id === b.dataset.tplday); if (x) x.days.push(w); }
+    store.set('templates', list); redraw(); render(); return;
+  }
+  if (b.dataset.tpldel) {
+    if (tplArm !== b.dataset.tpldel) { tplArm = b.dataset.tpldel; redraw(); return; }
+    tplArm = null; store.set('templates', templates().filter(x => x.id !== b.dataset.tpldel)); redraw('削除しました'); render(); return;
+  }
+  if (b.id === 'tplSave') {
+    const name = $('tplName').value.trim().slice(0, 20);
+    if (!name) { $('tplMsg').textContent = '名前を入れてください'; return; }
+    if (!data.tasks.length) return;
+    const list = templates(), tasks = data.tasks.map(planOnly), old = list.find(x => x.name === name);
+    if (old) old.tasks = tasks;
+    else if (list.length >= TPL_MAX) { $('tplMsg').textContent = `ひな形は${TPL_MAX}個までです`; return; }
+    else {
+      const used = new Set(list.flatMap(x => x.days));
+      const want = name === '平日' ? [1, 2, 3, 4, 5] : name === '土日' ? [6, 0] : [];
+      list.push({ id: uid(), name, days: want.filter(d => !used.has(d)), tasks });
+    }
+    store.set('templates', list); redraw(`「${name}」を保存しました`); render();
+  }
+});
+
 /* ================= day navigation ================= */
 function gotoDay(ds) {
   dayStr = ds; data = loadDay(ds);
+  openRowId = null;
   resetForm(); syncSettingsUI(); foldFormByDefault(); render();
   phaseKeySeen = phaseKeyNow;
 }
