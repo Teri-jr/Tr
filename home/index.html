@@ -1348,7 +1348,7 @@ body.portrait .v3pr .tw-c{font-size:12px;padding:4px 3px;overflow:hidden}body.po
 
 <script>
 'use strict';
-const APP_VERSION = '2.31.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.31.1'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1686,7 +1686,7 @@ function renderRail(st, d) {
   }
   const dep = demo ? (base.length ? [] : railDepart(d, true)) : base; // 「パタパタする」:7秒だけ空白にして、もどす
   railBoard(dep, !fresh && cfg.flapBoard && flap);
-  $('rvBoard').dataset.open = src === 'sl' ? 'studyline' : src === 'ev' ? 'sched' : 'tt';
+  $('rvBoard').dataset.open = 'tt'; // 発車標を押したら、いつでも時間割(StudyLine・予定は、それぞれの欄から開く)
   $('rvNote').textContent = src === 'sl' ? `StudyLine ・ 今夜のダイヤ${evs.length ? ' と予定' : ''}` : src === 'ev' ? '今日の予定(Googleカレンダー)' : src === 'next' && base.length ? `次の登校日 ${mdw(nextSchoolDay(d))} の時間割` : '';
   // やること(今のタイルと同じ内容)
   railTodoMini();
