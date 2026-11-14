@@ -1261,6 +1261,7 @@ body.portrait .rtb .rows .trow{padding:0 8px;grid-template-columns:60px 56px min
 .led .lrs{flex:1;min-height:0;display:flex;flex-direction:column}.led .lrs .lr{font-size:28px}.led .lrs .nt{font-size:22px}
 /* 新しいアップデートのお知らせ(他のお知らせに消されない) */
 #upd{bottom:70px;z-index:8;border:2px solid var(--bg)}#upd small{font-size:12px;opacity:.7}
+body.portrait #upd{position:fixed;bottom:14px;z-index:200} /* 縦向きは画面が縦に長いので、見えている画面の下に固定 */
 
 /* ===== 2.29.1 重なり・はみ出しの手直し ===== */
 .slv .l{container-type:inline-size;overflow:hidden}
@@ -1298,6 +1299,11 @@ body.portrait .v2sl3 .r .v2wkc{height:220px;min-height:220px;align-items:stretch
 body.portrait .v3tt{display:block}body.portrait .v3ttm{padding:12px 10px;overflow:visible}body.portrait .v3side{border-left:0;border-top:1px solid var(--rule)}
 body.portrait .v3dh,body.portrait .v3pr{grid-template-columns:38px repeat(5,minmax(0,1fr));gap:2px}
 body.portrait .v3pr .tw-c{font-size:12px;padding:4px 3px;overflow:hidden}body.portrait .v2hol{font-size:.8em;overflow:hidden}
+
+/* ===== 2.30.2 上のバーの高さをそろえる ===== */
+.bar .mseg{height:31px;align-items:stretch}.bar .mseg button{padding:0 14px;display:flex;align-items:center}
+.bar .chip{height:31px;align-items:center;padding:0 12px}.bar .chip b{line-height:1}
+.rcs{position:relative}
 </style>
 </head>
 <body>
@@ -1356,7 +1362,7 @@ body.portrait .v3pr .tw-c{font-size:12px;padding:4px 3px;overflow:hidden}body.po
 
 <script>
 'use strict';
-const APP_VERSION = '2.31.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.32.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1654,8 +1660,8 @@ function renderRail(st, d) {
   const sj = i => subjOf(d, i) || `${i + 1}限`;
   // 時計・発車標のフラップ(見ていなかった間にたまった分は回さず、いまの表示に合わせる)
   const fresh = Date.now() - railLast > 3000; railLast = Date.now(); flapQuiet = st.mode === 'class'; railInit();
-  const flap = effAnim() === 'flap';
-  railClock(d, flap && !fresh, false, false); // 時計は黒にしない
+  const flap = flapKind();
+  railClock(d, !fresh && flap, false, false); // 時計は黒にしない
   { const ck = $('rvClk'), pt = document.body.classList.contains('portrait'), pp = ck.parentNode, cs = pt ? getComputedStyle(pp) : null, w = pt ? pp.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) : 0; if (ck._zw !== w || (pt && ck.scrollWidth > ck.clientWidth + 1)) { ck._zw = w; ck.style.zoom = ''; if (pt && ck.scrollWidth > w && w > 0) ck.style.zoom = (w / ck.scrollWidth).toFixed(3); } } // 縦向きは、時計を幅に合わせて縮める
   // 上:日付・ドア上表示風タイマー
   setHtml($('rvDt'), `<span class="dc">${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][d.getDay()]}</span><span>${WD[d.getDay()]}曜日${HOLIDAYS[ymd(d)] ? ' ・ ' + esc(HOLIDAYS[ymd(d)]) : ''}</span>`);
@@ -1682,16 +1688,20 @@ function renderRail(st, d) {
   // 右:発車標
   // 今日の授業が残っている間は今日の分。全部終わったら(休みの日も)、今夜の StudyLine の駅に切り替える。ダイヤがない・走り終えたときは、次の登校日の時間割
   const today = railDepart(d), demo = Date.now() < flapDemo;
-  let base = today, src = 'tt';
+  // Googleカレンダーの今日これからの予定(時刻のあるもの。塾など)も、時刻の順に同じ発車標へ混ぜる
+  const evs = (events || []).filter(e => !e.allDay && ymd(new Date(e.start)) === ymd(d) && new Date(e.start).getTime() > nowMs()).map(e => { const x = new Date(e.start); return { t: x.getHours() * 60 + x.getMinutes(), kind: '予定', dest: String(e.title).slice(0, 14), room: '' }; });
+  const mix = a => [...a, ...evs].sort((x, y) => x.t - y.t).slice(0, 6);
+  let base = mix(today), src = 'tt';
   if (!today.length) {
     const left = sc ? sc.rows.filter(r => r.st !== 'done') : [];
-    if (left.length) { base = left.slice(0, 6).map(r => ({ t: Math.round(r.s) % 1440, kind: '自習', dest: r.t.name, room: '' })); src = 'sl'; }
+    if (left.length) { base = mix(left.slice(0, 6).map(r => ({ t: Math.round(r.s) % 1440, kind: '自習', dest: r.t.name, room: '' }))); src = 'sl'; }
+    else if (evs.length) { base = mix([]); src = 'ev'; }
     else { base = railDepart(d, true); src = 'next'; }
   }
   const dep = demo ? (base.length ? [] : railDepart(d, true)) : base; // 「パタパタする」:7秒だけ空白にして、もどす
-  railBoard(dep, flap && cfg.flapBoard && !fresh);
-  $('rvBoard').dataset.open = src === 'sl' ? 'studyline' : 'tt';
-  $('rvNote').textContent = src === 'sl' ? 'StudyLine ・ 今夜のダイヤ' : src === 'next' && base.length ? `次の登校日 ${mdw(nextSchoolDay(d))} の時間割` : '';
+  railBoard(dep, !fresh && cfg.flapBoard && flap);
+  $('rvBoard').dataset.open = 'tt'; // 発車標を押したら、いつでも時間割(StudyLine・予定は、それぞれの欄から開く)
+  $('rvNote').textContent = src === 'sl' ? `StudyLine ・ 今夜のダイヤ${evs.length ? ' と予定' : ''}` : src === 'ev' ? '今日の予定(Googleカレンダー)' : src === 'next' && base.length ? `次の登校日 ${mdw(nextSchoolDay(d))} の時間割` : '';
   // やること(今のタイルと同じ内容)
   railTodoMini();
   // StudyLine の路線記号
@@ -1714,7 +1724,7 @@ const FLAPS = [], FLAP_SLOW = 1.3; // パタパタの速さ(1枚めくる時間�
 let flapQuiet = false, flapClickAt = 0;
 let flapBuf = null;
 function flapClick() { // 1枚倒れるごとの「パタッ」(設定がオフ・授業中は鳴らさない)。電子音ではなく、短い雑音を低めにこもらせた打音
-  if (!cfg.flapSound || flapQuiet || !actx || actx.state !== 'running') return;
+  if (!cfg.flapSound || flapQuiet || !actx || actx.state !== 'running' || !document.body.classList.contains('rail')) return; // 鳴らすのは鉄道モードのときだけ(標準・夜でやることをチェックしても鳴らさない)
   const t = performance.now(); if (t - flapClickAt < 45) return; flapClickAt = t;
   try {
     if (!flapBuf) { const n = Math.floor(actx.sampleRate * .045); flapBuf = actx.createBuffer(1, n, actx.sampleRate); const d = flapBuf.getChannelData(0); for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 4); }
@@ -1769,7 +1779,7 @@ class FlapUnit {
       c[key] = w > 0 && (sw > w + 1 || sh > hh + 1) ? Math.max(9, Math.floor(this.o.fs * Math.min(sw > w + 1 ? w / sw : 1, sh > hh + 1 ? Math.sqrt(hh / sh) : 1) * .96)) : 0; }
     fi.style.fontSize = c[key] ? c[key] + 'px' : '';
   }
-  cancel() { this.token++; clearTimeout(this.timer); this.timer = 0; this.anims.forEach(a => a.cancel()); this.anims = []; this.fa.style.visibility = this.fb.style.visibility = 'hidden'; this.state = 'idle'; }
+  cancel() { this.fa.style.background = this.o.bgTop; this.fb.style.background = this.o.bgBot; this.token++; clearTimeout(this.timer); this.timer = 0; this.anims.forEach(a => a.cancel()); this.anims = []; this.fa.style.visibility = this.fb.style.visibility = 'hidden'; this.state = 'idle'; }
   show(i) { this.cancel(); this.idx = this.tgt = i; const it = this.item(i); this.paint(this.top, it); this.paint(this.bot, it); }
   snap() { this.show(this.tgt); } // アニメーションなしで、いまの表示に合わせる
   go(v, wait, anim) {
@@ -1779,9 +1789,29 @@ class FlapUnit {
     this.tgt = ti;
     if (this.state === 'run') return; // 回っている途中は、目標だけ変えてそのまま続ける
     clearTimeout(this.timer); this.state = 'wait';
-    this.timer = setTimeout(() => this.next(), wait || 0);
+    this.timer = setTimeout(() => anim === 'push' || anim === 'blur' ? this.jump(anim) : this.next(), wait || 0);
+  }
+  // 押し上げ・ぼかし(板はめくらず、箱の中で目標の文字へ1回で切り替える)
+  jump(kind) {
+    if (!this.root.isConnected) { this.snap(); return; }
+    if (this.idx === this.tgt) { this.state = 'idle'; return; }
+    this.state = 'run';
+    const ti = this.tgt, pv = this.item(this.idx), nx = this.item(ti), tk = ++this.token, fa = this.fa, fb = this.fb, H = this.o.hh;
+    this.paint(this.top, nx); this.paint(this.bot, nx); this.paint(fa, pv); this.paint(fb, pv);
+    const done = () => { if (tk !== this.token) return; fa.style.visibility = fb.style.visibility = 'hidden'; fa.style.background = this.o.bgTop; fb.style.background = this.o.bgBot; this.anims.forEach(a => a.cancel()); this.anims = []; this.idx = ti; this.state = 'idle'; if (this.tgt !== ti) { this.state = 'wait'; this.jump(kind); } };
+    if (kind === 'push') {
+      fa.style.background = fb.style.background = 'transparent';
+      const o = { duration: 520, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'forwards' }, up = [{ transform: 'translateY(0)' }, { transform: `translateY(${-H}px)` }], inn = [{ transform: `translateY(${H}px)` }, { transform: 'translateY(0)' }];
+      this.anims = [this.top.fi.animate(inn, o), this.bot.fi.animate(inn, o), fa.fi.animate(up, o), fb.fi.animate(up, o)];
+    } else {
+      const o = { duration: 560, easing: 'ease', fill: 'forwards' }, k = [{ opacity: 1, filter: 'blur(0px)' }, { opacity: 0, filter: 'blur(8px)' }];
+      this.anims = [fa.animate(k, o), fb.animate(k, o), this.top.fi.animate([{ opacity: 0, filter: 'blur(8px)' }, { opacity: 1, filter: 'blur(0px)' }], { ...o, fill: 'none' }), this.bot.fi.animate([{ opacity: 0, filter: 'blur(8px)' }, { opacity: 1, filter: 'blur(0px)' }], { ...o, fill: 'none' })];
+    }
+    fa.style.visibility = fb.style.visibility = 'visible';
+    this.anims[0].finished.then(done, () => {});
   }
   next() {
+    if (!this.root.isConnected) { this.snap(); return; } // 画面から外れた板(閉じた全画面など)は回さない。音も鳴らさない
     if (this.idx === this.tgt) { this.state = 'idle'; return; }
     this.state = 'run';
     const D = this.o.D * FLAP_SLOW, h = D * .45, l = D - h, ni = this.nextIdx(), pv = this.item(this.idx), nx = this.item(ni), tk = ++this.token;
@@ -1825,6 +1855,7 @@ function flapRows(owner, rows, anim, gap) {
 }
 // タブが裏に回って戻ったとき、溜まった分を全部回さずに、いまの表示へ合わせる
 document.addEventListener('visibilitychange', () => { if (!document.hidden) FLAPS.forEach(u => u.snap()); });
+const flapKind = () => { const a = effAnim(); return a === 'flap' ? true : a === 'push' || a === 'blur' ? a : false; }; // FlapUnit.go に渡す動き(true = パタパタ)
 const effAnim = () => cfg.anim === 'auto' ? { std: 'push', night: 'blur', rail: 'flap' }[effMode()] : cfg.anim;
 
 // 鉄道モードの時計(時十・時一・分十・分一は別ユニット。「:」は固定)と発車標(先発・次発・次々発は固定の文字)
@@ -1847,7 +1878,7 @@ function railInit() {
   const subs = [], rooms = [];
   for (const arr of Object.values(cfg.tt || {})) for (const x of arr || []) if (x) { if (x.s && !subs.includes(x.s)) subs.push(x.s); if (x.r && !rooms.includes(x.r)) rooms.push(x.r); }
   const extra = ['昼休み']; for (const dc of Object.values(cfg.days || {})) { if (dc && dc.post && dc.post[0]) extra.push(dc.post[0]); for (const q of (dc && dc.pre) || []) if (q[0]) extra.push(q[0]); }
-  const KD = [{ t: '' }, { t: '授業' }, { t: '実験', c: '#79c28a' }, { t: '自習', c: '#6fa8dc' }, { t: '休み', c: '#e8c65a' }, { t: '行事', c: '#ff5b3a' }, { t: '放課後', c: '#6fa8dc' }];
+  const KD = [{ t: '' }, { t: '授業' }, { t: '実験', c: '#79c28a' }, { t: '自習', c: '#6fa8dc' }, { t: '休み', c: '#e8c65a' }, { t: '行事', c: '#ff5b3a' }, { t: '予定', c: '#79c28a' }, { t: '放課後', c: '#6fa8dc' }];
   const SD = ['', ...subs, ...extra.filter((x, i) => extra.indexOf(x) === i && !subs.includes(x))], RD = ['', ...rooms];
   const BH = ['', '1', '2'], BD = ['', ...D10], BM = ['', ...MT];
   const base = { hh: 34, rad: 2, D: BOARD_D, ff: JPF, fw: 700, fs: 15 }, dg = { ...base, w: 13, fs: 25, ff: NUM, fw: 500, color: '#f5b301', rad: 1 };
@@ -1922,7 +1953,7 @@ class RollDigits {
   }
   setChars(v, kind) {
     const t = Date.now();
-    const ani = (kind === 'push' || kind === 'blur') && this.last && t - this.last < 2500 && !document.hidden;
+    const ani = (kind === 'push' || kind === 'blur' || kind === 'flap') && this.last && t - this.last < 2500 && !document.hidden;
     this.last = t;
     v.forEach((c, i) => { if (c === this.ch[i] && this.slots[i].firstChild) return; const old = this.ch[i]; this.ch[i] = c; this.flip(this.slots[i], old, c, ani ? kind : 'none'); });
   }
@@ -1931,7 +1962,18 @@ class RollDigits {
     clearTimeout(sl._tm); sl.className = 'rcs'; sl.textContent = '';
     const mkc = t => { const e = document.createElement('span'); e.className = 'rci'; e.textContent = t; return e; };
     const plain = () => { clearTimeout(sl._tm); if (sl._anim) sl._anim.forEach(x => x.cancel()); sl._anim = null; sl.className = 'rcs'; sl.textContent = ''; sl.appendChild(mkc(b)); };
-    if ((kind !== 'push' && kind !== 'blur') || !sl.animate) { plain(); return; }
+    if ((kind !== 'push' && kind !== 'blur' && kind !== 'flap') || !sl.animate) { plain(); return; }
+    if (kind === 'flap') { // パタパタ(箱のない時計用):上半分は新しい数字がすぐ見え、古い上半分が手前に倒れ、新しい下半分が落ちてくる
+      const half = (t, top) => { const e = mkc(t); e.style.cssText += `;position:absolute;left:0;top:0;clip-path:inset(${top ? '0 0 50% 0' : '50% 0 0 0'});transform-origin:50% 50%`; return e; };
+      const base = mkc(b); base.style.clipPath = 'inset(0 0 50% 0)';
+      const oB = half(a, false), oT = half(a, true), nB = half(b, false); sl.append(base, oB, oT, nB);
+      const D = 380, h = D * .45;
+      const a1 = oT.animate([{ transform: 'scaleY(1)', opacity: 1 }, { transform: 'scaleY(0)', opacity: .55 }], { duration: h, easing: 'cubic-bezier(.55,0,1,.45)', fill: 'forwards' });
+      const a2 = nB.animate([{ transform: 'scaleY(0)', easing: 'cubic-bezier(.45,0,1,1)' }, { transform: 'scaleY(1)', offset: .72, easing: 'ease-out' }, { transform: 'scaleY(.92)', offset: .86, easing: 'ease-in' }, { transform: 'scaleY(1)' }], { duration: D - h, delay: h, fill: 'both' });
+      const a3 = oB.animate([{ opacity: 1 }, { opacity: 1, offset: .75 }, { opacity: 0 }], { duration: h + (D - h) * .7, fill: 'forwards' });
+      sl._anim = [a2, a1, a3]; a2.onfinish = () => { if (sl._anim && sl._anim[0] === a2) plain(); }; sl._tm = setTimeout(() => { if (sl._anim && sl._anim[0] === a2) plain(); }, D + 150);
+      return;
+    }
     if (kind === 'push') {
       sl.classList.add('push'); const col = document.createElement('span'); col.style.display = 'block'; col.append(mkc(a), mkc(b)); sl.appendChild(col);
       const an = col.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-50%)' }], { duration: 550, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'forwards' });
@@ -1953,7 +1995,7 @@ function rollSec(sc, d, kind) {
   if (!sc._rs) sc._rs = new RollDigits(sc, 2, 1.1, '');
   const v = pad(d.getSeconds()); sc._rs.setChars([v[0], v[1]], kind);
 }
-const rollKind = () => { const a = effAnim(); return a === 'push' || a === 'blur' ? a : 'none'; };
+const rollKind = () => { const a = effAnim(); return a === 'push' || a === 'blur' || a === 'flap' ? a : 'none'; };
 // 時計の本体(host)に RollClock を作り、秒(あれば)を付ける
 function drawRoll(el, d, o) {
   if (!el._rc) { el.textContent = ''; const hm = document.createElement('span'); el.appendChild(hm); el._rc = new RollClock(hm, o); }
@@ -2351,12 +2393,16 @@ function slSchedule() {
   let deadline = d.settings && d.settings.deadline;
   if (deadline != null && deadline !== '' && +deadline <= start) deadline = +deadline + 1440; // 期限が開始より前なら翌日(StudyLine 本体と同じ)
   let plan = start, cur = start;
-  const rows = d.tasks.map(t => {
-    const span = slSpan(t, pc), ps = plan; plan += span;
+  // StudyLine 4.6 の「タスクの間隔」と「固定の予定」(重なるタスクは予定のあとへ送る)に合わせる
+  const gap = Math.max(0, +(d.settings && d.settings.gap) || 0);
+  const fx = (Array.isArray(d.fixed) ? d.fixed : []).filter(f => f && isFinite(+f.s) && isFinite(+f.dur)).map(f => ({ s: +f.s, e: +f.s + +f.dur }));
+  const avoid = (s, span) => { for (let g = 0; g < 20; g++) { const h = fx.find(x => s < x.e - 1e-9 && s + span > x.s + 1e-9); if (!h) break; s = h.e; } return s; };
+  const rows = d.tasks.map((t, ti) => {
+    const span = slSpan(t, pc), ps = avoid(plan + (ti ? gap : 0), span); plan = ps + span;
     let s, e, st;
     if (t.actualEnd) { st = 'done'; s = (t.actualStart - base) / 60000; e = (t.actualEnd - base) / 60000; }
     else if (t.actualStart) { st = 'run'; s = (t.actualStart - base) / 60000; e = Math.max(nm, s + span); }
-    else { st = 'wait'; s = Math.max(cur, nm); e = s + span; }
+    else { st = 'wait'; s = avoid(Math.max(cur + (ti ? gap : 0), nm), span); e = s + span; }
     cur = e;
     return { t, st, ps, s, e };
   });
@@ -2884,7 +2930,7 @@ function setFullHead(k) {
   $('full').classList.toggle('slh', k === 'studyline'); $('fullSet').hidden = !FULL_SETTINGS[k];
 }
 function closeFull() {
-  if (fullK) { fullK = null; $('fullBody').innerHTML = ''; $('fullTabs').innerHTML = ''; $('full').hidden = true; return; }
+  if (fullK) { const fb0 = $('fullBody'); FLAPS.forEach(u => { if (fb0.contains(u.root)) u.snap(); }); /* 閉じたら、全画面の中で回っている板はその場で止める */ fullK = null; $('fullBody').innerHTML = ''; $('fullTabs').innerHTML = ''; $('full').hidden = true; return; }
   if (!fullTile) return;
   const t = fullTile; fullTile = null;
   t.className = fullCls;
@@ -3691,7 +3737,7 @@ function railClockBuild(el) {
 }
 function railClockTick(el, d, st) {
   const c = el._c, fresh = Date.now() - el._last > 3000; el._last = Date.now();
-  const anim = !fresh && effAnim() === 'flap', h = d.getHours(), m = d.getMinutes(), sc = d.getSeconds();
+  const anim = !fresh && flapKind(), h = d.getHours(), m = d.getMinutes(), sc = d.getSeconds();
   const seq = [[c.h1, h < 10 ? '' : String(Math.floor(h / 10))], [c.h2, String(h % 10)], [c.m1, String(Math.floor(m / 10))], [c.m2, String(m % 10)]];
   el.querySelector('.rc-sec').hidden = !cfg.showSec;
   if (cfg.showSec) seq.push([c.s1, String(Math.floor(sc / 10))], [c.s2, String(sc % 10)]);
@@ -3825,7 +3871,7 @@ class RailTodo {
       return { id: t.id, done: t.done, k: t.done ? '済' : t.bring ? '持ち物' : t.gt ? 'G ToDo' : '課題', d: t.done ? '済' : (di.label || '—') + (late ? '​' : ''), late, tx: this.fit(t.text) }; });
     const open = list.filter(t => !t.done).length, sig = JSON.stringify([vals, open]);
     if (sig === this.sig) return;
-    const anim = this.sig !== null && effAnim() === 'flap' && !document.hidden; this.sig = sig; // 最初の表示はそのまま出す。そのあとの変化はめくる
+    const anim = this.sig !== null && !document.hidden && flapKind(); this.sig = sig; // 最初の表示はそのまま出す。そのあとの変化はめくる
     for (const v of vals) { if (!this.dd.some(x => x.t === v.d)) this.dd.push({ t: v.d, c: v.done ? '#8d8a83' : v.late ? '#ff5b3a' : '#f5b301' }); if (!this.td.includes(v.tx)) this.td.push(v.tx); }
     const plan = [];
     this.rows.forEach((R, i) => {
@@ -4470,12 +4516,12 @@ async function checkVersion() {
   try {
     const r = await fetch('changelog.json?t=' + Date.now(), { cache: 'no-store' });
     changelog = await r.json();
-    const latest = String(changelog[0].version);
+    const latest = changelog.map(x => String(x.version)).reduce((a, b) => isNewer(b, a) ? b : a); // 先頭ではなく、全体でいちばん新しい番号
     const u = $('upd');
     if (isNewer(latest, APP_VERSION)) { // 新しい版が出たら、「更新」を押すまで出しつづける(10分ごとにも確かめる)
       u.innerHTML = `新しいアップデートがあります <small>v${esc(latest)}</small> <button id="updBtn">更新</button>`; u.hidden = false;
       $('updBtn').onclick = () => location.replace(location.pathname + '?v=' + encodeURIComponent(latest));
-    } else u.hidden = true;
+    } // 一度出したお知らせは、古い情報を受け取っても消さない(読み込み直すまで出しつづける)
   } catch (e) {}
 }
 
