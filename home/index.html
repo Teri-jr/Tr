@@ -1349,7 +1349,7 @@ body.portrait .v3pr .tw-c{font-size:12px;padding:4px 3px;overflow:hidden}body.po
 
 <script>
 'use strict';
-const APP_VERSION = '2.31.2'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.31.3'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1711,7 +1711,7 @@ const FLAPS = [], FLAP_SLOW = 1.3; // パタパタの速さ(1枚めくる時間�
 let flapQuiet = false, flapClickAt = 0;
 let flapBuf = null;
 function flapClick() { // 1枚倒れるごとの「パタッ」(設定がオフ・授業中は鳴らさない)。電子音ではなく、短い雑音を低めにこもらせた打音
-  if (!cfg.flapSound || flapQuiet || !actx || actx.state !== 'running') return;
+  if (!cfg.flapSound || flapQuiet || !actx || actx.state !== 'running' || !document.body.classList.contains('rail')) return; // 鳴らすのは鉄道モードのときだけ(標準・夜でやることをチェックしても鳴らさない)
   const t = performance.now(); if (t - flapClickAt < 45) return; flapClickAt = t;
   try {
     if (!flapBuf) { const n = Math.floor(actx.sampleRate * .045); flapBuf = actx.createBuffer(1, n, actx.sampleRate); const d = flapBuf.getChannelData(0); for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 4); }
