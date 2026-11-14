@@ -1348,7 +1348,7 @@ body.portrait .v3pr .tw-c{font-size:12px;padding:4px 3px;overflow:hidden}body.po
 
 <script>
 'use strict';
-const APP_VERSION = '2.30.2'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.30.3'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -2373,12 +2373,16 @@ function slSchedule() {
   let deadline = d.settings && d.settings.deadline;
   if (deadline != null && deadline !== '' && +deadline <= start) deadline = +deadline + 1440; // 期限が開始より前なら翌日(StudyLine 本体と同じ)
   let plan = start, cur = start;
-  const rows = d.tasks.map(t => {
-    const span = slSpan(t, pc), ps = plan; plan += span;
+  // StudyLine 4.6 の「タスクの間隔」と「固定の予定」(重なるタスクは予定のあとへ送る)に合わせる
+  const gap = Math.max(0, +(d.settings && d.settings.gap) || 0);
+  const fx = (Array.isArray(d.fixed) ? d.fixed : []).filter(f => f && isFinite(+f.s) && isFinite(+f.dur)).map(f => ({ s: +f.s, e: +f.s + +f.dur }));
+  const avoid = (s, span) => { for (let g = 0; g < 20; g++) { const h = fx.find(x => s < x.e - 1e-9 && s + span > x.s + 1e-9); if (!h) break; s = h.e; } return s; };
+  const rows = d.tasks.map((t, ti) => {
+    const span = slSpan(t, pc), ps = avoid(plan + (ti ? gap : 0), span); plan = ps + span;
     let s, e, st;
     if (t.actualEnd) { st = 'done'; s = (t.actualStart - base) / 60000; e = (t.actualEnd - base) / 60000; }
     else if (t.actualStart) { st = 'run'; s = (t.actualStart - base) / 60000; e = Math.max(nm, s + span); }
-    else { st = 'wait'; s = Math.max(cur, nm); e = s + span; }
+    else { st = 'wait'; s = avoid(Math.max(cur + (ti ? gap : 0), nm), span); e = s + span; }
     cur = e;
     return { t, st, ps, s, e };
   });
