@@ -1248,6 +1248,7 @@ body.portrait .rtb .rows .trow{padding:0 8px;grid-template-columns:60px 56px min
 .led .lrs{flex:1;min-height:0;display:flex;flex-direction:column}.led .lrs .lr{font-size:28px}.led .lrs .nt{font-size:22px}
 /* 新しいアップデートのお知らせ(他のお知らせに消されない) */
 #upd{bottom:70px;z-index:8;border:2px solid var(--bg)}#upd small{font-size:12px;opacity:.7}
+body.portrait #upd{position:fixed;bottom:14px;z-index:200} /* 縦向きは画面が縦に長いので、見えている画面の下に固定 */
 
 /* ===== 2.29.1 重なり・はみ出しの手直し ===== */
 .slv .l{container-type:inline-size;overflow:hidden}
@@ -1348,7 +1349,7 @@ body.portrait .v3pr .tw-c{font-size:12px;padding:4px 3px;overflow:hidden}body.po
 
 <script>
 'use strict';
-const APP_VERSION = '2.31.1'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.31.2'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -4496,12 +4497,12 @@ async function checkVersion() {
   try {
     const r = await fetch('changelog.json?t=' + Date.now(), { cache: 'no-store' });
     changelog = await r.json();
-    const latest = String(changelog[0].version);
+    const latest = changelog.map(x => String(x.version)).reduce((a, b) => isNewer(b, a) ? b : a); // 先頭ではなく、全体でいちばん新しい番号
     const u = $('upd');
     if (isNewer(latest, APP_VERSION)) { // 新しい版が出たら、「更新」を押すまで出しつづける(10分ごとにも確かめる)
       u.innerHTML = `新しいアップデートがあります <small>v${esc(latest)}</small> <button id="updBtn">更新</button>`; u.hidden = false;
       $('updBtn').onclick = () => location.replace(location.pathname + '?v=' + encodeURIComponent(latest));
-    } else u.hidden = true;
+    } // 一度出したお知らせは、古い情報を受け取っても消さない(読み込み直すまで出しつづける)
   } catch (e) {}
 }
 
