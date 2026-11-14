@@ -1348,7 +1348,7 @@ body.portrait .v3pr .tw-c{font-size:12px;padding:4px 3px;overflow:hidden}body.po
 
 <script>
 'use strict';
-const APP_VERSION = '2.30.2'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.31.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1674,16 +1674,20 @@ function renderRail(st, d) {
   // 右:発車標
   // 今日の授業が残っている間は今日の分。全部終わったら(休みの日も)、今夜の StudyLine の駅に切り替える。ダイヤがない・走り終えたときは、次の登校日の時間割
   const today = railDepart(d), demo = Date.now() < flapDemo;
-  let base = today, src = 'tt';
+  // Googleカレンダーの今日これからの予定(時刻のあるもの。塾など)も、時刻の順に同じ発車標へ混ぜる
+  const evs = (events || []).filter(e => !e.allDay && ymd(new Date(e.start)) === ymd(d) && new Date(e.start).getTime() > nowMs()).map(e => { const x = new Date(e.start); return { t: x.getHours() * 60 + x.getMinutes(), kind: '予定', dest: String(e.title).slice(0, 14), room: '' }; });
+  const mix = a => [...a, ...evs].sort((x, y) => x.t - y.t).slice(0, 6);
+  let base = mix(today), src = 'tt';
   if (!today.length) {
     const left = sc ? sc.rows.filter(r => r.st !== 'done') : [];
-    if (left.length) { base = left.slice(0, 6).map(r => ({ t: Math.round(r.s) % 1440, kind: '自習', dest: r.t.name, room: '' })); src = 'sl'; }
+    if (left.length) { base = mix(left.slice(0, 6).map(r => ({ t: Math.round(r.s) % 1440, kind: '自習', dest: r.t.name, room: '' }))); src = 'sl'; }
+    else if (evs.length) { base = mix([]); src = 'ev'; }
     else { base = railDepart(d, true); src = 'next'; }
   }
   const dep = demo ? (base.length ? [] : railDepart(d, true)) : base; // 「パタパタする」:7秒だけ空白にして、もどす
   railBoard(dep, !fresh && cfg.flapBoard && flap);
-  $('rvBoard').dataset.open = src === 'sl' ? 'studyline' : 'tt';
-  $('rvNote').textContent = src === 'sl' ? 'StudyLine ・ 今夜のダイヤ' : src === 'next' && base.length ? `次の登校日 ${mdw(nextSchoolDay(d))} の時間割` : '';
+  $('rvBoard').dataset.open = src === 'sl' ? 'studyline' : src === 'ev' ? 'sched' : 'tt';
+  $('rvNote').textContent = src === 'sl' ? `StudyLine ・ 今夜のダイヤ${evs.length ? ' と予定' : ''}` : src === 'ev' ? '今日の予定(Googleカレンダー)' : src === 'next' && base.length ? `次の登校日 ${mdw(nextSchoolDay(d))} の時間割` : '';
   // やること(今のタイルと同じ内容)
   railTodoMini();
   // StudyLine の路線記号
@@ -1858,7 +1862,7 @@ function railInit() {
   const subs = [], rooms = [];
   for (const arr of Object.values(cfg.tt || {})) for (const x of arr || []) if (x) { if (x.s && !subs.includes(x.s)) subs.push(x.s); if (x.r && !rooms.includes(x.r)) rooms.push(x.r); }
   const extra = ['昼休み']; for (const dc of Object.values(cfg.days || {})) { if (dc && dc.post && dc.post[0]) extra.push(dc.post[0]); for (const q of (dc && dc.pre) || []) if (q[0]) extra.push(q[0]); }
-  const KD = [{ t: '' }, { t: '授業' }, { t: '実験', c: '#79c28a' }, { t: '自習', c: '#6fa8dc' }, { t: '休み', c: '#e8c65a' }, { t: '行事', c: '#ff5b3a' }, { t: '放課後', c: '#6fa8dc' }];
+  const KD = [{ t: '' }, { t: '授業' }, { t: '実験', c: '#79c28a' }, { t: '自習', c: '#6fa8dc' }, { t: '休み', c: '#e8c65a' }, { t: '行事', c: '#ff5b3a' }, { t: '予定', c: '#79c28a' }, { t: '放課後', c: '#6fa8dc' }];
   const SD = ['', ...subs, ...extra.filter((x, i) => extra.indexOf(x) === i && !subs.includes(x))], RD = ['', ...rooms];
   const BH = ['', '1', '2'], BD = ['', ...D10], BM = ['', ...MT];
   const base = { hh: 34, rad: 2, D: BOARD_D, ff: JPF, fw: 700, fs: 15 }, dg = { ...base, w: 13, fs: 25, ff: NUM, fw: 500, color: '#f5b301', rad: 1 };
