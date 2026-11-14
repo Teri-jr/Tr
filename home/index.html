@@ -1285,6 +1285,11 @@ body.portrait .v2sl3 .r .v2wkc{height:220px;min-height:220px;align-items:stretch
 body.portrait .v3tt{display:block}body.portrait .v3ttm{padding:12px 10px;overflow:visible}body.portrait .v3side{border-left:0;border-top:1px solid var(--rule)}
 body.portrait .v3dh,body.portrait .v3pr{grid-template-columns:38px repeat(5,minmax(0,1fr));gap:2px}
 body.portrait .v3pr .tw-c{font-size:12px;padding:4px 3px;overflow:hidden}body.portrait .v2hol{font-size:.8em;overflow:hidden}
+
+/* ===== 2.30.2 上のバーの高さをそろえる ===== */
+.bar .mseg{height:31px;align-items:stretch}.bar .mseg button{padding:0 14px;display:flex;align-items:center}
+.bar .chip{height:31px;align-items:center;padding:0 12px}.bar .chip b{line-height:1}
+.rcs{position:relative}
 </style>
 </head>
 <body>
@@ -1343,7 +1348,7 @@ body.portrait .v3pr .tw-c{font-size:12px;padding:4px 3px;overflow:hidden}body.po
 
 <script>
 'use strict';
-const APP_VERSION = '2.30.1'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.30.2'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1641,8 +1646,8 @@ function renderRail(st, d) {
   const sj = i => subjOf(d, i) || `${i + 1}限`;
   // 時計・発車標のフラップ(見ていなかった間にたまった分は回さず、いまの表示に合わせる)
   const fresh = Date.now() - railLast > 3000; railLast = Date.now(); flapQuiet = st.mode === 'class'; railInit();
-  const flap = effAnim() === 'flap';
-  railClock(d, flap && !fresh, false, false); // 時計は黒にしない
+  const flap = flapKind();
+  railClock(d, !fresh && flap, false, false); // 時計は黒にしない
   { const ck = $('rvClk'), pt = document.body.classList.contains('portrait'), pp = ck.parentNode, cs = pt ? getComputedStyle(pp) : null, w = pt ? pp.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) : 0; if (ck._zw !== w || (pt && ck.scrollWidth > ck.clientWidth + 1)) { ck._zw = w; ck.style.zoom = ''; if (pt && ck.scrollWidth > w && w > 0) ck.style.zoom = (w / ck.scrollWidth).toFixed(3); } } // 縦向きは、時計を幅に合わせて縮める
   // 上:日付・ドア上表示風タイマー
   setHtml($('rvDt'), `<span class="dc">${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][d.getDay()]}</span><span>${WD[d.getDay()]}曜日${HOLIDAYS[ymd(d)] ? ' ・ ' + esc(HOLIDAYS[ymd(d)]) : ''}</span>`);
@@ -1676,7 +1681,7 @@ function renderRail(st, d) {
     else { base = railDepart(d, true); src = 'next'; }
   }
   const dep = demo ? (base.length ? [] : railDepart(d, true)) : base; // 「パタパタする」:7秒だけ空白にして、もどす
-  railBoard(dep, flap && cfg.flapBoard && !fresh);
+  railBoard(dep, !fresh && cfg.flapBoard && flap);
   $('rvBoard').dataset.open = src === 'sl' ? 'studyline' : 'tt';
   $('rvNote').textContent = src === 'sl' ? 'StudyLine ・ 今夜のダイヤ' : src === 'next' && base.length ? `次の登校日 ${mdw(nextSchoolDay(d))} の時間割` : '';
   // やること(今のタイルと同じ内容)
@@ -1756,7 +1761,7 @@ class FlapUnit {
       c[key] = w > 0 && (sw > w + 1 || sh > hh + 1) ? Math.max(9, Math.floor(this.o.fs * Math.min(sw > w + 1 ? w / sw : 1, sh > hh + 1 ? Math.sqrt(hh / sh) : 1) * .96)) : 0; }
     fi.style.fontSize = c[key] ? c[key] + 'px' : '';
   }
-  cancel() { this.token++; clearTimeout(this.timer); this.timer = 0; this.anims.forEach(a => a.cancel()); this.anims = []; this.fa.style.visibility = this.fb.style.visibility = 'hidden'; this.state = 'idle'; }
+  cancel() { this.fa.style.background = this.o.bgTop; this.fb.style.background = this.o.bgBot; this.token++; clearTimeout(this.timer); this.timer = 0; this.anims.forEach(a => a.cancel()); this.anims = []; this.fa.style.visibility = this.fb.style.visibility = 'hidden'; this.state = 'idle'; }
   show(i) { this.cancel(); this.idx = this.tgt = i; const it = this.item(i); this.paint(this.top, it); this.paint(this.bot, it); }
   snap() { this.show(this.tgt); } // アニメーションなしで、いまの表示に合わせる
   go(v, wait, anim) {
@@ -1766,7 +1771,25 @@ class FlapUnit {
     this.tgt = ti;
     if (this.state === 'run') return; // 回っている途中は、目標だけ変えてそのまま続ける
     clearTimeout(this.timer); this.state = 'wait';
-    this.timer = setTimeout(() => this.next(), wait || 0);
+    this.timer = setTimeout(() => anim === 'push' || anim === 'blur' ? this.jump(anim) : this.next(), wait || 0);
+  }
+  // 押し上げ・ぼかし(板はめくらず、箱の中で目標の文字へ1回で切り替える)
+  jump(kind) {
+    if (this.idx === this.tgt) { this.state = 'idle'; return; }
+    this.state = 'run';
+    const ti = this.tgt, pv = this.item(this.idx), nx = this.item(ti), tk = ++this.token, fa = this.fa, fb = this.fb, H = this.o.hh;
+    this.paint(this.top, nx); this.paint(this.bot, nx); this.paint(fa, pv); this.paint(fb, pv);
+    const done = () => { if (tk !== this.token) return; fa.style.visibility = fb.style.visibility = 'hidden'; fa.style.background = this.o.bgTop; fb.style.background = this.o.bgBot; this.anims.forEach(a => a.cancel()); this.anims = []; this.idx = ti; this.state = 'idle'; if (this.tgt !== ti) { this.state = 'wait'; this.jump(kind); } };
+    if (kind === 'push') {
+      fa.style.background = fb.style.background = 'transparent';
+      const o = { duration: 520, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'forwards' }, up = [{ transform: 'translateY(0)' }, { transform: `translateY(${-H}px)` }], inn = [{ transform: `translateY(${H}px)` }, { transform: 'translateY(0)' }];
+      this.anims = [this.top.fi.animate(inn, o), this.bot.fi.animate(inn, o), fa.fi.animate(up, o), fb.fi.animate(up, o)];
+    } else {
+      const o = { duration: 560, easing: 'ease', fill: 'forwards' }, k = [{ opacity: 1, filter: 'blur(0px)' }, { opacity: 0, filter: 'blur(8px)' }];
+      this.anims = [fa.animate(k, o), fb.animate(k, o), this.top.fi.animate([{ opacity: 0, filter: 'blur(8px)' }, { opacity: 1, filter: 'blur(0px)' }], { ...o, fill: 'none' }), this.bot.fi.animate([{ opacity: 0, filter: 'blur(8px)' }, { opacity: 1, filter: 'blur(0px)' }], { ...o, fill: 'none' })];
+    }
+    fa.style.visibility = fb.style.visibility = 'visible';
+    this.anims[0].finished.then(done, () => {});
   }
   next() {
     if (this.idx === this.tgt) { this.state = 'idle'; return; }
@@ -1812,6 +1835,7 @@ function flapRows(owner, rows, anim, gap) {
 }
 // タブが裏に回って戻ったとき、溜まった分を全部回さずに、いまの表示へ合わせる
 document.addEventListener('visibilitychange', () => { if (!document.hidden) FLAPS.forEach(u => u.snap()); });
+const flapKind = () => { const a = effAnim(); return a === 'flap' ? true : a === 'push' || a === 'blur' ? a : false; }; // FlapUnit.go に渡す動き(true = パタパタ)
 const effAnim = () => cfg.anim === 'auto' ? { std: 'push', night: 'blur', rail: 'flap' }[effMode()] : cfg.anim;
 
 // 鉄道モードの時計(時十・時一・分十・分一は別ユニット。「:」は固定)と発車標(先発・次発・次々発は固定の文字)
@@ -1909,7 +1933,7 @@ class RollDigits {
   }
   setChars(v, kind) {
     const t = Date.now();
-    const ani = (kind === 'push' || kind === 'blur') && this.last && t - this.last < 2500 && !document.hidden;
+    const ani = (kind === 'push' || kind === 'blur' || kind === 'flap') && this.last && t - this.last < 2500 && !document.hidden;
     this.last = t;
     v.forEach((c, i) => { if (c === this.ch[i] && this.slots[i].firstChild) return; const old = this.ch[i]; this.ch[i] = c; this.flip(this.slots[i], old, c, ani ? kind : 'none'); });
   }
@@ -1918,7 +1942,18 @@ class RollDigits {
     clearTimeout(sl._tm); sl.className = 'rcs'; sl.textContent = '';
     const mkc = t => { const e = document.createElement('span'); e.className = 'rci'; e.textContent = t; return e; };
     const plain = () => { clearTimeout(sl._tm); if (sl._anim) sl._anim.forEach(x => x.cancel()); sl._anim = null; sl.className = 'rcs'; sl.textContent = ''; sl.appendChild(mkc(b)); };
-    if ((kind !== 'push' && kind !== 'blur') || !sl.animate) { plain(); return; }
+    if ((kind !== 'push' && kind !== 'blur' && kind !== 'flap') || !sl.animate) { plain(); return; }
+    if (kind === 'flap') { // パタパタ(箱のない時計用):上半分は新しい数字がすぐ見え、古い上半分が手前に倒れ、新しい下半分が落ちてくる
+      const half = (t, top) => { const e = mkc(t); e.style.cssText += `;position:absolute;left:0;top:0;clip-path:inset(${top ? '0 0 50% 0' : '50% 0 0 0'});transform-origin:50% 50%`; return e; };
+      const base = mkc(b); base.style.clipPath = 'inset(0 0 50% 0)';
+      const oB = half(a, false), oT = half(a, true), nB = half(b, false); sl.append(base, oB, oT, nB);
+      const D = 380, h = D * .45;
+      const a1 = oT.animate([{ transform: 'scaleY(1)', opacity: 1 }, { transform: 'scaleY(0)', opacity: .55 }], { duration: h, easing: 'cubic-bezier(.55,0,1,.45)', fill: 'forwards' });
+      const a2 = nB.animate([{ transform: 'scaleY(0)', easing: 'cubic-bezier(.45,0,1,1)' }, { transform: 'scaleY(1)', offset: .72, easing: 'ease-out' }, { transform: 'scaleY(.92)', offset: .86, easing: 'ease-in' }, { transform: 'scaleY(1)' }], { duration: D - h, delay: h, fill: 'both' });
+      const a3 = oB.animate([{ opacity: 1 }, { opacity: 1, offset: .75 }, { opacity: 0 }], { duration: h + (D - h) * .7, fill: 'forwards' });
+      sl._anim = [a2, a1, a3]; a2.onfinish = () => { if (sl._anim && sl._anim[0] === a2) plain(); }; sl._tm = setTimeout(() => { if (sl._anim && sl._anim[0] === a2) plain(); }, D + 150);
+      return;
+    }
     if (kind === 'push') {
       sl.classList.add('push'); const col = document.createElement('span'); col.style.display = 'block'; col.append(mkc(a), mkc(b)); sl.appendChild(col);
       const an = col.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-50%)' }], { duration: 550, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'forwards' });
@@ -1940,7 +1975,7 @@ function rollSec(sc, d, kind) {
   if (!sc._rs) sc._rs = new RollDigits(sc, 2, 1.1, '');
   const v = pad(d.getSeconds()); sc._rs.setChars([v[0], v[1]], kind);
 }
-const rollKind = () => { const a = effAnim(); return a === 'push' || a === 'blur' ? a : 'none'; };
+const rollKind = () => { const a = effAnim(); return a === 'push' || a === 'blur' || a === 'flap' ? a : 'none'; };
 // 時計の本体(host)に RollClock を作り、秒(あれば)を付ける
 function drawRoll(el, d, o) {
   if (!el._rc) { el.textContent = ''; const hm = document.createElement('span'); el.appendChild(hm); el._rc = new RollClock(hm, o); }
@@ -3678,7 +3713,7 @@ function railClockBuild(el) {
 }
 function railClockTick(el, d, st) {
   const c = el._c, fresh = Date.now() - el._last > 3000; el._last = Date.now();
-  const anim = !fresh && effAnim() === 'flap', h = d.getHours(), m = d.getMinutes(), sc = d.getSeconds();
+  const anim = !fresh && flapKind(), h = d.getHours(), m = d.getMinutes(), sc = d.getSeconds();
   const seq = [[c.h1, h < 10 ? '' : String(Math.floor(h / 10))], [c.h2, String(h % 10)], [c.m1, String(Math.floor(m / 10))], [c.m2, String(m % 10)]];
   el.querySelector('.rc-sec').hidden = !cfg.showSec;
   if (cfg.showSec) seq.push([c.s1, String(Math.floor(sc / 10))], [c.s2, String(sc % 10)]);
@@ -3812,7 +3847,7 @@ class RailTodo {
       return { id: t.id, done: t.done, k: t.done ? '済' : t.bring ? '持ち物' : t.gt ? 'G ToDo' : '課題', d: t.done ? '済' : (di.label || '—') + (late ? '​' : ''), late, tx: this.fit(t.text) }; });
     const open = list.filter(t => !t.done).length, sig = JSON.stringify([vals, open]);
     if (sig === this.sig) return;
-    const anim = this.sig !== null && effAnim() === 'flap' && !document.hidden; this.sig = sig; // 最初の表示はそのまま出す。そのあとの変化はめくる
+    const anim = this.sig !== null && !document.hidden && flapKind(); this.sig = sig; // 最初の表示はそのまま出す。そのあとの変化はめくる
     for (const v of vals) { if (!this.dd.some(x => x.t === v.d)) this.dd.push({ t: v.d, c: v.done ? '#8d8a83' : v.late ? '#ff5b3a' : '#f5b301' }); if (!this.td.includes(v.tx)) this.td.push(v.tx); }
     const plan = [];
     this.rows.forEach((R, i) => {
