@@ -485,7 +485,7 @@ body.editing .page .tile .tdel{pointer-events:auto}
 .tmr .row3 button{padding:7px 12px}
 .tmr .run{display:flex;gap:6px;margin-top:10px}.tmr .run button{flex:1}
 .tmr .lab{font-size:13px;color:var(--sub)}
-#s-soon{order:-1}.gcadd summary{cursor:pointer;padding:6px 0;list-style:revert}.leadc{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--ink);padding:3px 4px 3px 10px;font-size:14px}.leadc button{width:22px;height:22px;font-size:15px;color:var(--sub)}
+.gcadd summary{cursor:pointer;padding:6px 0;list-style:revert}.leadc{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--ink);padding:3px 4px 3px 10px;font-size:14px}.leadc button{width:22px;height:22px;font-size:15px;color:var(--sub)}
 #eewMap,#v2qmap{touch-action:none;cursor:grab}
 .mzoom{position:absolute;right:10px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:6px;z-index:2}
 .mzoom button{width:44px;height:44px;background:rgba(16,20,24,.85);color:#fff;border:1px solid #556;font-size:22px;font-weight:700}
@@ -529,6 +529,19 @@ body:not(.light) .rdb{filter:invert(1) hue-rotate(180deg) brightness(.85) contra
 .sx .mono{font-family:ui-monospace,Menlo,monospace;font-size:12px}
 .sx ol,.sx ul.l{padding-left:1.4em;list-style:revert}
 .chip .si{padding:0 6px;font-weight:700;margin-left:2px}
+.swrap{display:grid;grid-template-columns:250px 1fr;gap:0 28px;align-items:start;margin-top:14px}
+.sx .snav{margin:0;flex-wrap:nowrap}.snav{position:sticky;top:64px;display:flex;flex-direction:column;gap:2px;max-height:calc(100vh - 90px);overflow:auto;padding-bottom:20px}
+.snav .sgrp{font-size:11.5px;letter-spacing:.14em;color:var(--sub);font-weight:700;margin:14px 0 4px 10px}.snav .sgrp:first-child{margin-top:0}
+.snav button{text-align:left;padding:8px 12px;border-left:3px solid transparent;display:flex;flex-direction:column;gap:1px;color:var(--ink)}
+.snav button b{font-size:15px;font-weight:500}.snav button small{font-size:11.5px;color:var(--sub)}
+.snav button.on{background:var(--card);border-left-color:var(--red)}.snav button.on b{font-weight:700}
+.shead{padding:4px 0 12px;border-bottom:1px solid var(--rule)}.shead h2{font-size:22px;margin:0}.shead .note{margin-top:2px}
+.sbody>section>h2:first-child{display:none}/* 上の見出しと同じなので出さない */
+.sx header .spath{font-size:14px;color:var(--sub);margin-left:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sx header .spath b{color:var(--ink)}
+.swrap.wide{grid-template-columns:200px 1fr}
+.sx input[data-pren]{min-width:6.5em}.sx #postN{min-width:7em}
+.howto{margin-top:10px;border:1px solid var(--rule);padding:8px 12px}.howto summary{cursor:pointer;font-size:14px;font-weight:700}
+@media (max-width:760px){.swrap,.swrap.wide{grid-template-columns:1fr}.snav{position:static;flex-direction:row;overflow-x:auto;max-height:none;gap:4px;padding-bottom:6px}.snav .sgrp{display:none}.snav button{flex:none;border-left:0;border-bottom:3px solid transparent}.snav button small{display:none}.snav button.on{border-bottom-color:var(--red)}}
 .sx .stabs{display:flex;gap:0;margin-left:14px;overflow-x:auto;scrollbar-width:none}.sx .stabs::-webkit-scrollbar{display:none}
 .sx .stabs button{padding:8px 14px;color:var(--sub);font-size:15px;white-space:nowrap}
 .sx .stabs button.on{color:var(--ink);font-weight:700;box-shadow:inset 0 -2px 0 var(--ink)}
@@ -1343,7 +1356,7 @@ body.portrait .v3pr .tw-c{font-size:12px;padding:4px 3px;overflow:hidden}body.po
 
 <script>
 'use strict';
-const APP_VERSION = '2.30.1'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.31.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -4482,11 +4495,21 @@ const GAS_CODE = `function doGet() {
   return ContentService.createTextOutput(JSON.stringify(out.slice(0, 60)))
     .setMimeType(ContentService.MimeType.JSON);
 }`;
-let ttDay = 1, sTab = 'tiles', sPlus = null;
-const STABS = [['tiles', 'タイル', ['s-chips']], ['tt', '時間割', ['s-tt']], ['todo', 'やること', ['s-todo']], ['cd', 'カウントダウン・通知', ['s-cd', 's-soon'], 1], ['quake', '地震', ['s-quake']], ['link', '連携', ['s-gcal', 's-gtodo', 's-apps']], ['ai', 'AI', ['s-ai']], ['mode', '表示モード', ['s-mode']], ['view', '表示', ['s-view', 's-loc', 's-terms', 's-about']]];
+let ttDay = 1, sTab = 'mode', sPlus = null;
+// 設定の目次(左の一覧)。グループ → 項目(id, 名前, ひとこと, 出すセクション, 'wide' なら広く使う)
+const SNAV = [
+  ['見た目', [['mode', '画面のモード', '標準・夜・鉄道と、時間での切りかえ', ['s-mode']], ['view', '色・明るさ', 'ダーク/ライト・秒・焼き付き防止', ['s-view']], ['tiles', 'タイルの並び', 'どこに何を出すか・上のバー', ['s-chips'], 'wide']]],
+  ['学校', [['tt', '時間割', '曜日ごとの科目と時刻', ['s-tt']], ['loc', '場所', '天気と地震の予想に使う', ['s-loc']]]],
+  ['予定・やること', [['todo', 'やること', '課題と持ちものを足す・消す', ['s-todo']], ['cd', 'カウントダウン', '共通テストなどまでの日数', ['s-cd']], ['soon', '予定のお知らせ', '予定の前に全画面で知らせる', ['s-soon']]]],
+  ['地震', [['quake', '地震', '全画面にする条件・音・デモ', ['s-quake']]]],
+  ['ほかのアプリとつなぐ', [['gcal', 'Googleカレンダー', '予定を読む', ['s-gcal']], ['gtodo', 'Google ToDo', 'やることに出す', ['s-gtodo']], ['apps', 'StudyLine・記憶回路', 'データが見えているか', ['s-apps']], ['ai', 'AI のショートカット', '上のバーの「AI」の中身', ['s-ai']]]],
+  ['その他', [['terms', '受験の語句', '出す科目', ['s-terms']], ['about', 'このアプリ', 'バージョンと更新の記録', ['s-about']]]]
+];
+const SFLAT = SNAV.flatMap(g => g[1]);
+const STABS = SFLAT.map(x => [x[0], x[1], x[3]]); // 古い呼び方との互換
 function openSettings(anchor) {
   closeFull();
-  if (anchor) { const t = STABS.find(x => x[2].includes(anchor)); if (t) sTab = t[0]; } else sTab = 'tiles';
+  if (anchor) { const t = SFLAT.find(x => x[3].includes(anchor)); if (t) sTab = t[0]; } else if (!SFLAT.some(x => x[0] === sTab)) sTab = 'mode';
   sPlus = null;
   renderSettings();
   $('settings').hidden = false;
@@ -4569,8 +4592,9 @@ function renderSettings() {
   const tt = cfg.tt[ttDay] || [];
   const opt = (v, cur, lab) => `<option value="${v}" ${String(v) === String(cur) ? 'selected' : ''}>${esc(lab)}</option>`;
   $('settings').innerHTML = `<div class="sx">
-  <header><h1>設定</h1><div class="stabs">${STABS.map(t => `<button data-stab="${t[0]}" class="${t[0] === sTab ? 'on' : ''}">${t[1]}</button>`).join('')}</div><button class="done" id="sDone">完了</button></header>
-  <div class="sbody">
+  <header><h1>設定</h1><span class="spath">${(() => { const g = SNAV.find(g => g[1].some(x => x[0] === sTab)), it = SFLAT.find(x => x[0] === sTab) || SFLAT[0]; return `${esc(g ? g[0] : '')} ›&nbsp;<b>${esc(it[1])}</b>`; })()}</span><button class="done" id="sDone">完了</button></header>
+  <div class="swrap"><nav class="snav">${SNAV.map(([gn, items]) => `<div class="sgrp">${esc(gn)}</div>${items.map(x => `<button data-stab="${x[0]}" class="${x[0] === sTab ? 'on' : ''}"><b>${esc(x[1])}</b><small>${esc(x[2])}</small></button>`).join('')}`).join('')}</nav>
+  <div class="sbody"><div class="shead">${(() => { const it = SFLAT.find(x => x[0] === sTab) || SFLAT[0]; return `<h2>${esc(it[1])}</h2><p class="note">${esc(it[2])}</p>`; })()}</div>
 
   <section id="s-mode"><h2>表示モード</h2>
     <div class="mthumbs">
@@ -4673,14 +4697,14 @@ function renderSettings() {
     <div class="row"><input type="url" id="gasUrl" value="${esc(cfg.gasUrl)}" placeholder="https://script.google.com/macros/s/…/exec" style="flex:1;min-width:260px"><button class="btn" id="gasTest">保存して読み込む</button></div>
     ${cfg.gasUrl ? `<p class="note">うまくいかないときは <a href="${esc(cfg.gasUrl)}" target="_blank" rel="noopener" style="color:var(--blue)">このURLを直接開いて</a>、[{"title": … のような文字が出るか見てください。ログイン画面や「権限が必要」が出たら、デプロイの設定が原因です。</p>` : ''}
     <p id="gasMsg" class="note">${cfg.gasUrl ? (eventsErr ? `<span class="ng">読めませんでした:${esc(eventsErr)}</span>` : events ? `<span class="ok">${events.length}件 読み込み済み</span>` : '') : ''}</p>
-    <ol class="note" style="margin-top:8px">
+    <details class="howto" ${cfg.gasUrl ? '' : 'open'}><summary>つなぎ方(はじめてのとき・手順とコード)</summary><ol class="note" style="margin-top:8px">
       <li>パソコンかiPadで <span class="mono">script.google.com</span> を開き、「新しいプロジェクト」を作る</li>
       <li>中身を全部消して、下のコードを貼り付けて保存</li>
       <li>「デプロイ」→「新しいデプロイ」→ 左の歯車で種類「<b>ウェブアプリ</b>」を選ぶ(「ライブラリ」ではありません)。実行するユーザー「自分」、アクセスできるユーザー「<b>全員</b>」にしてデプロイ</li>
       <li>カレンダーへのアクセスを許可する(「安全ではないページ」と出たら「詳細」→「移動」)</li>
       <li>表示された「ウェブアプリのURL」を上に貼り付けて「保存して読み込む」</li>
     </ol>
-    <pre id="gasCode">${esc(GAS_CODE)}</pre><button class="btn sub" id="gasCopy">コードをコピー</button>
+    <pre id="gasCode">${esc(GAS_CODE)}</pre><button class="btn sub" id="gasCopy">コードをコピー</button></details>
     <p class="note">このURLを知っている人は予定を読めるので、人に教えないでください。URLはこの iPad の中にだけ保存します。</p>
   </section>
 
@@ -4716,14 +4740,14 @@ function renderSettings() {
     <div class="row">合言葉 <input type="text" id="gtKeyIn" value="${esc(gtKey())}" class="mono" style="width:16em" autocomplete="off" spellcheck="false"><span class="note" style="margin:0">別の端末・開き方で同じ Apps Script を使うときは、URL とこの合言葉を同じにする</span></div>
     <p id="gtMsg" class="note">${cfg.gtUrl ? (gtErr ? `<span class="ng">読めませんでした:${esc(gtErr)}</span>` : `<span class="ok">${gtasks.filter(t => !t.done).length}件 読み込み済み</span>`) : ''}</p>
     ${cfg.gtUrl && (cfg.gtListNames || []).length > 1 ? `<div class="row">出すリスト:${cfg.gtListNames.map(([id, n]) => `<label><input type="checkbox" data-gtl="${esc(id)}" ${(cfg.gtHide || []).includes(id) ? '' : 'checked'}>${esc(n)}</label>`).join('')}</div>` : ''}
-    <ol class="note" style="margin-top:8px">
+    <details class="howto" ${cfg.gtUrl ? '' : 'open'}><summary>つなぎ方(はじめてのとき・手順とコード)</summary><ol class="note" style="margin-top:8px">
       <li><span class="mono">script.google.com</span> で「新しいプロジェクト」を作る</li>
       <li>左の「サービス」の「＋」から <b>Tasks API</b> を選んで「追加」</li>
       <li>中身を全部消して、下のコードを貼り付けて保存</li>
       <li>「デプロイ」→「新しいデプロイ」→ 種類「<b>ウェブアプリ</b>」、実行するユーザー「自分」、アクセスできるユーザー「<b>全員</b>」でデプロイ(許可の画面が出たら許可)</li>
       <li>出てきた「ウェブアプリの URL」(…/exec)を上に貼って「保存して読み込む」</li>
     </ol>
-    <pre id="gtCode">${esc(GT_CODE())}</pre><button class="btn sub" id="gtCopy">コードをコピー</button>
+    <pre id="gtCode">${esc(GT_CODE())}</pre><button class="btn sub" id="gtCopy">コードをコピー</button></details>
     <p class="note">コードの中の「合言葉」を知らないと読めないようにしてあります。URL とコードは人に教えないでください。URL はこの iPad の中にだけ保存します。</p>
   </section>
 
@@ -4747,10 +4771,12 @@ function renderSettings() {
     ${changelog.length > 3 ? `<details><summary class="note" style="cursor:pointer">前のバージョン(${changelog.length - 3}件)を見る</summary>${changelog.slice(3).map(e => `<p class="note"><b>v${esc(e.version)}</b> ${esc(e.date)}</p><ul class="l note">${(e.items || []).map(i => `<li>${esc(i)}</li>`).join('')}</ul>`).join('')}</details>` : ''}
     <p class="note" style="margin-top:10px">天気:Open-Meteo / 緊急地震速報:Wolfx / 地震情報:P2P地震情報(どちらも気象庁の発表をもとにしたもの)/ 地図:dataofjapan/land(地球地図日本 ©国土地理院)を簡略化 / 震度の色:気象庁の配色</p>
   </section>
-  </div></div>`;
-  const tab = STABS.find(t => t[0] === sTab) || STABS[0];
-  $('settings').querySelectorAll('.sbody>section').forEach(sec => { sec.hidden = !tab[2].includes(sec.id); });
-  $('settings').querySelector('.sbody').style.setProperty('--n', tab[3] || tab[2].length);
+  </div></div></div>`;
+  const it = SFLAT.find(x => x[0] === sTab) || SFLAT[0];
+  $('settings').querySelectorAll('.sbody>section').forEach(sec => { sec.hidden = !it[3].includes(sec.id); });
+  $('settings').querySelector('.sbody').style.setProperty('--n', 1);
+  $('settings').querySelector('.swrap').classList.toggle('wide', it[4] === 'wide');
+  const onb = $('settings').querySelector('.snav button.on'); if (onb && innerWidth <= 760) onb.scrollIntoView({ block: 'nearest', inline: 'center' }); // スマホでは横の一覧の選んだところを見えるように
 }
 function slDaysCount() { let n = 0; try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith('ttable:day:')) n++; } } catch (e) {} return n; }
 function vocabRecCount() { let n = 0; for (const v of VOCAB) { try { n += Object.keys(JSON.parse(localStorage.getItem('vocabTest.srs.' + v.id)) || {}).length; } catch (e) {} } return n; }
@@ -4775,7 +4801,7 @@ $('settings').addEventListener('click', e => {
   if (t.dataset.cddel != null) { cfg.countdowns.splice(+t.dataset.cddel, 1); return rs(); }
   if (t.dataset.cdev != null) { cfg.countdowns = cfg.countdowns.filter(c => c.name || c.date); cfg.countdowns.push({ name: t.dataset.cdev, date: t.dataset.cdd2 }); return rs(); }
   if (t.dataset.modeset) { setMode(t.dataset.modeset); return renderSettings(); }
-  if (t.dataset.stab) { sTab = t.dataset.stab; sPlus = null; renderSettings(); $('settings').scrollTop = 0; return; }
+  const stb = t.closest('[data-stab]'); if (stb) { sTab = stb.dataset.stab; sPlus = null; renderSettings(); $('settings').scrollTop = 0; return; }
   if (t.dataset.boff) { const k = t.dataset.boff; for (const side in cfg.layout) cfg.layout[side] = cfg.layout[side].filter(x => x !== k); saveCfg(); renderLayout(); return renderSettings(); }
   if (t.dataset.bplus) { sPlus = sPlus === t.dataset.bplus ? null : t.dataset.bplus; return renderSettings(); }
   if (t.dataset.bput && sPlus) { const k = sPlus; sPlus = null; cfg.bar = cfg.bar.filter(x => x !== k); cfg.layout[t.dataset.bput].push(k); saveCfg(); renderLayout(); renderChips(); return renderSettings(); }
