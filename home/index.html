@@ -1241,6 +1241,8 @@ body.portrait .mtk .r2 .v{font-size:52px}
 .rtb .rows .trow{display:grid;grid-template-columns:68px 64px minmax(0,1fr) 30px;align-items:center;column-gap:3px;padding:0 14px 0 58px;height:46px;border-top:1px solid #2b2a28;cursor:pointer}
 body.portrait .rtb .rows .trow{padding:0 8px;grid-template-columns:60px 56px minmax(0,1fr) 26px}
 .led .lrs{flex:1;min-height:0;display:flex;flex-direction:column}.led .lrs .lr{font-size:28px}.led .lrs .nt{font-size:22px}
+/* 新しいアップデートのお知らせ(他のお知らせに消されない) */
+#upd{bottom:70px;z-index:8;border:2px solid var(--bg)}#upd small{font-size:12px;opacity:.7}
 </style>
 </head>
 <body>
@@ -1288,6 +1290,7 @@ body.portrait .rtb .rows .trow{padding:0 8px;grid-template-columns:60px 56px min
     <div class="p" id="eewPanel"></div>
   </div>
   <div class="toast" id="toast" hidden></div>
+  <div class="toast" id="upd" hidden></div>
 </div>
 
 <div id="settings" hidden></div>
@@ -1298,7 +1301,7 @@ body.portrait .rtb .rows .trow{padding:0 8px;grid-template-columns:60px 56px min
 
 <script>
 'use strict';
-const APP_VERSION = '2.28.7'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.29.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -4396,7 +4399,11 @@ async function checkVersion() {
     const r = await fetch('changelog.json?t=' + Date.now(), { cache: 'no-store' });
     changelog = await r.json();
     const latest = String(changelog[0].version);
-    if (isNewer(latest, APP_VERSION)) toast(`新しいバージョン v${latest} があります`, '更新', () => location.replace(location.pathname + '?v=' + encodeURIComponent(latest)));
+    const u = $('upd');
+    if (isNewer(latest, APP_VERSION)) { // 新しい版が出たら、「更新」を押すまで出しつづける(10分ごとにも確かめる)
+      u.innerHTML = `新しいアップデートがあります <small>v${esc(latest)}</small> <button id="updBtn">更新</button>`; u.hidden = false;
+      $('updBtn').onclick = () => location.replace(location.pathname + '?v=' + encodeURIComponent(latest));
+    } else u.hidden = true;
   } catch (e) {}
 }
 
@@ -4820,6 +4827,7 @@ function tick(force) {
     else if (fullK && !['terms', 'kioku', 'timer'].includes(fullK) && !(fullK === 'weather' && fs.wmode === 'radar') && !$('fullBody').contains(document.activeElement)) renderFullView();
     if (!kioku.shown && !editing) { renderSlot(); renderTiles(); requestAnimationFrame(fitClock); }
     if (d.getMinutes() % 30 === 0) loadWeather();
+    if (d.getMinutes() % 10 === 7) checkVersion(); // 開きっぱなしでも、新しい版に気づけるように
     if (d.getMinutes() % 10 === 5) loadEvents();
     if (d.getMinutes() % 5 === 2) loadGt();
     if (d.getMinutes() % 2 === 0) renderWeather();
