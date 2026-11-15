@@ -323,6 +323,38 @@ html.set-open, html.set-open body { overflow: hidden; overscroll-behavior: none;
 .gt-item .gt-dur { display: flex; align-items: center; gap: 2px; font-size: 13px; color: var(--sub); }
 .gt-item .gt-dur input { width: 56px; min-height: 38px; padding: 0 6px; text-align: right; }
 .gt-item.added { opacity: 0.5; }
+/* ---------- 地震の知らせ ---------- */
+#quakeFull { position: fixed; inset: 0; z-index: 200; display: flex; flex-direction: column; padding: calc(22px + env(safe-area-inset-top)) 22px calc(22px + env(safe-area-inset-bottom)); color: #fff; overflow-y: auto; }
+#quakeFull[hidden] { display: none; }
+#quakeFull.eew { background: #b3141b; }
+#quakeFull.info { background: #1b2430; }
+#quakeFull .qk-wrap { width: 100%; max-width: 560px; margin: 0 auto; flex: 1; display: flex; flex-direction: column; }
+.qk-tag { align-self: flex-start; font-size: 15px; font-weight: 900; letter-spacing: 0.08em; padding: 4px 10px; border-radius: 6px; background: #fff; color: #b3141b; }
+#quakeFull.info .qk-tag { background: #e8890c; color: #fff; }
+.qk-loc { margin-top: 16px; font-size: 15px; opacity: 0.92; }
+.qk-loc b { font-size: 19px; }
+.qk-int { display: flex; align-items: baseline; gap: 6px; margin-top: 4px; font-weight: 900; }
+.qk-int b { font-size: min(150px, 34vw); line-height: 0.9; }
+.qk-int i { font-style: normal; font-size: min(60px, 14vw); }
+.qk-int small { font-size: 16px; font-weight: 700; opacity: 0.85; margin-left: 8px; }
+.qk-cd { margin-top: 14px; background: rgba(0, 0, 0, 0.25); border-radius: 14px; padding: 12px 16px; }
+.qk-cd b { font-size: 56px; line-height: 1; font-weight: 900; }
+.qk-info { margin-top: 14px; font-size: 14px; line-height: 1.8; }
+.qk-act { margin-top: 12px; background: rgba(255, 255, 255, 0.15); border-radius: 10px; padding: 10px 12px; font-size: 14px; font-weight: 700; }
+.qk-say { margin-top: auto; padding-top: 16px; font-size: 22px; font-weight: 900; text-align: center; line-height: 1.5; }
+.qk-btns { display: flex; gap: 8px; margin-top: 14px; }
+.qk-btns button { flex: 1; min-height: 54px; font-size: 17px; font-weight: 900; border: 0; background: #fff; color: #b3141b; }
+#quakeFull.info .qk-btns button { color: #1b2430; }
+#quakeFull .qk-btns button.qk-resume { background: var(--accent); color: #fff; }
+#quakeBand { position: fixed; z-index: 150; left: 8px; right: 8px; top: calc(8px + env(safe-area-inset-top)); max-width: 640px; margin: 0 auto; background: #fff4e5; color: #4a2c00; border: 2px solid #e8890c; border-radius: 12px; padding: 10px 44px 10px 12px; font-size: 14px; line-height: 1.5; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25); }
+#quakeBand[hidden] { display: none; }
+#quakeBand b { color: #b25f00; }
+#quakeBand button { position: absolute; right: 6px; top: 6px; min-height: 34px; min-width: 34px; padding: 0; }
+.qk-chips { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+.qk-chips button { min-width: 0; min-height: 36px; padding: 0 9px; font-size: 14px; font-weight: 700; }
+.qk-chips button[aria-pressed="true"] { background: #b3141b; color: #fff; border-color: transparent; }
+.qk-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14.5px; flex-wrap: wrap; }
+.qk-row select { min-height: 40px; }
 /* ---------- 中断 ---------- */
 button.intr { background: var(--intr-bg, #fff1e0); color: var(--intr-text, #a85a12); border-color: transparent; }
 .intr-opts { display: grid; gap: 8px; margin-top: 10px; }
@@ -1008,6 +1040,7 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
       <button type="button" data-sec="sound">🔊 音・通知</button>
       <button type="button" data-sec="exam">📅 受験日(カウントダウン)</button>
       <button type="button" data-sec="design">🎨 ロゴ・タイマーのデザイン</button>
+      <button type="button" data-sec="quake">🌏 地震</button>
       <button type="button" data-sec="gtodo">✅ Google ToDo</button>
       <button type="button" data-sec="data">💾 データの保存 <i class="dot" id="setDataDot" hidden></i></button>
       <button type="button" data-sec="guide">❓ 使い方</button>
@@ -1154,6 +1187,23 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
     </section>
 
       </div>
+      <div class="set-sec" data-sec="quake" hidden>
+    <section class="card" id="quakeCard">
+      <h2>地震の知らせ</h2>
+      <p class="note" style="margin-top:0">緊急地震速報と、揺れたあとの震度を、現在地に合わせて知らせます。StudyLine を開いて画面がついているときだけ知らせます(閉じているとき・画面が消えているときは出ません)。公式の緊急速報より数秒遅れることがあるので、あくまでおまけの知らせです。</p>
+      <label class="toggle"><input type="checkbox" id="qkOn"> 地震の知らせを使う</label>
+      <div class="qk-row" style="display:block"><b>現在地</b><div class="note" id="qkLocTxt" style="margin:4px 0 0"></div>
+        <div class="btnrow" style="margin-top:6px"><button type="button" id="qkGps" class="grow">📍 現在地を取得する</button><select id="qkPref" aria-label="都道府県を手で選ぶ"><option value="">都道府県を手で選ぶ</option></select></div>
+        <div class="msg" id="qkMsg" role="status"></div></div>
+      <div class="qk-row" style="display:block"><b>全画面で出す震度</b><div class="qk-chips" id="qkFullChips"></div><div class="note" style="margin:4px 0 0">現在地の震度がこれ以上のとき、画面いっぱいに出します(はじめは5弱)。</div></div>
+      <div class="qk-row"><label for="qkBeep" style="margin:0">警告音を鳴らす震度</label><select id="qkBeep"></select></div>
+      <div class="qk-row"><label for="qkSmall" style="margin:0">全画面にしない小さい揺れ</label><select id="qkSmall"><option value="band">上に帯を出す</option><option value="none">何も出さない</option></select></div>
+      <label class="toggle" style="margin-top:8px"><input type="checkbox" id="qkPause"> 全画面で出たとき、実行中のタスクを自動で一時停止する</label>
+      <label class="toggle"><input type="checkbox" id="qkAfter"> 揺れたあとの震度(地震情報)も出す</label>
+      <div class="btnrow"><button type="button" id="qkTest" class="grow">▶ テスト(見本の速報を出す)</button></div>
+      <p class="note">現在地はこの端末の中にだけ保存し、どこにも送りません(「書き出す」のファイルにも入れません)。揺れたあとの震度は、現在地の都道府県で観測されたいちばん大きい震度を出します。速報は Wolfx、地震情報は P2P地震情報 のデータを使います。</p>
+    </section>
+      </div>
       <div class="set-sec" data-sec="gtodo" hidden>
     <section class="card" id="gtodoCard">
       <h2>Google ToDo とつなぐ</h2>
@@ -1195,6 +1245,8 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
 </div>
 <div id="dock" hidden><button type="button" id="dockGo" aria-label="運行状況へ戻る"><span id="dockName"></span><b class="num" id="dockTimer"></b></button><button type="button" class="primary" id="dockFinish" data-act="finish" data-id="">終了</button></div>
 <button type="button" id="fab" hidden aria-label="タスクを追加">＋</button>
+<div id="quakeFull" hidden role="alertdialog" aria-live="assertive"></div>
+<div id="quakeBand" hidden role="status"></div>
 <div id="toast" hidden role="status"><span id="toastMsg"></span><button id="toastAct" hidden></button></div>
 <div id="clockFull" hidden role="dialog" aria-label="時計"><div class="cf-time num"><span id="cfTime"></span><span class="cf-sec" id="cfSec"></span></div><div class="cf-date" id="cfDate"></div><div class="cf-hint">タップで閉じる</div></div>
 <div id="focus" hidden role="dialog" aria-label="全画面タイマー"></div>
@@ -2943,7 +2995,7 @@ document.addEventListener('keydown', e => {
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '4.6.0';
+const APP_VERSION = '4.7.0';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
@@ -3096,7 +3148,7 @@ $('resetUndo').addEventListener('click', () => {
 });
 
 /* ================= export / import ================= */
-const VALID_KEY = k => /^day:\d{4}-\d{2}-\d{2}$/.test(k) || ['lastSettings', 'pomo', 'lastPomo', 'sound', 'sounds', 'clockSize', 'lastSw', 'logoAnim', 'timerDesign', 'inMode', 'subjList', 'goals', 'burn', 'exam', 'templates', 'fixed', 'scores'].includes(k);
+const VALID_KEY = k => /^day:\d{4}-\d{2}-\d{2}$/.test(k) || ['lastSettings', 'pomo', 'lastPomo', 'sound', 'sounds', 'clockSize', 'lastSw', 'logoAnim', 'timerDesign', 'inMode', 'subjList', 'goals', 'burn', 'exam', 'templates', 'fixed', 'scores', 'quake'].includes(k);
 function buildExport() {
   const out = {};
   for (const k of store.keys()) if (VALID_KEY(k)) out[k] = store.get(k);
@@ -3154,7 +3206,7 @@ $('installHow').addEventListener('click', () => openOkModal({ title: '📱 ホ�
 
 
 /* ================= ⚙ 設定(ダイヤ・ポモドーロ・音・データ・デザイン・リセット・使い方・変更履歴) ================= */
-const SET_TITLES = { exam: '📅 受験日', gtodo: '✅ Google ToDo', dia: '🚃 ダイヤ', pomo: '🍅 ポモドーロ', sound: '🔊 音・通知', data: '💾 データ', design: '🎨 デザイン', reset: '🗑 リセット', guide: '❓ 使い方', history: '📝 変更履歴' };
+const SET_TITLES = { quake: '🌏 地震', exam: '📅 受験日', gtodo: '✅ Google ToDo', dia: '🚃 ダイヤ', pomo: '🍅 ポモドーロ', sound: '🔊 音・通知', data: '💾 データ', design: '🎨 デザイン', reset: '🗑 リセット', guide: '❓ 使い方', history: '📝 変更履歴' };
 const wideSettings = () => matchMedia('(min-width: 760px)').matches;
 function openSettings(sec) {
   $('setPanel').hidden = false;
@@ -3170,6 +3222,7 @@ function selectSet(sec) {
   $('setTitle').textContent = sec && !wideSettings() ? SET_TITLES[sec] : '⚙ 設定';
   $('setBody').scrollTop = 0;
   if (sec === 'gtodo') syncGtSettings();
+  if (sec === 'quake') syncQkSettings();
   if (sec === 'exam') syncExamUI();
   if (sec === 'dia') renderFixedList();
   if (sec === 'history') { store.set('seenVersion', APP_VERSION); $('clNew').hidden = true; updateSetDot(); }
@@ -3395,6 +3448,232 @@ $('gtShare').addEventListener('click', async () => {
   catch (e) { $('gtUrl').value = info; $('gtUrl').select(); setText('gtMsg', 'コピーできなかったので、URL の欄に入れました。長押しでコピーしてください。'); }
 });
 $('gtSync').addEventListener('change', () => { gtSet({ sync: $('gtSync').checked }); renderTodoBox(); });
+
+/* ================= 地震の知らせ(緊急地震速報: Wolfx / 地震情報: P2P地震情報) ================= */
+// 設定 { on, full: 全画面にする震度, beep: 音を鳴らす震度(0 = 鳴らさない), small: 'band' | 'none', pause, after }。震度は 0〜9 の番号(5 = 5弱, 6 = 5強, 7 = 6弱, 8 = 6強, 9 = 7)
+// 現在地 'quakeLoc' = { lat, lon, pref, how: 'gps' | 'pref', at } はこの端末だけ(書き出しに入れない)
+const SHINDO = ['0', '1', '2', '3', '4', '5弱', '5強', '6弱', '6強', '7'];
+const shindoIdx = x => SHINDO.indexOf(String(x ?? '').replace('-', '弱').replace('+', '強').normalize('NFKC'));
+const P2P_SCALE = { 10: 1, 20: 2, 30: 3, 40: 4, 45: 5, 46: 5, 50: 6, 55: 7, 60: 8, 70: 9 };
+const qkCfg = () => { const c = store.get('quake'), o = isObj(c) ? c : {}; const lv = (v, d) => Number.isInteger(v) && v >= 0 && v <= 9 ? v : d; return { on: o.on !== false, full: Math.max(1, lv(o.full, 5)), beep: lv(o.beep, 5), small: o.small === 'none' ? 'none' : 'band', pause: o.pause !== false, after: o.after !== false }; };
+const qkLoc = () => { const l = store.get('quakeLoc'); return isObj(l) && Number.isFinite(l.lat) && Number.isFinite(l.lon) ? l : null; };
+const kmBetween = (a, b, c, d) => { const R = 6371, r = Math.PI / 180, x = Math.sin((c - a) * r / 2) ** 2 + Math.cos(a * r) * Math.cos(c * r) * Math.sin((d - b) * r / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(x)); };
+// 現在地の震度の目安: 司・翠川(1999)の最大速度の距離減衰式 + 地盤の増幅 + 計測震度への換算(待機画面と同じ)
+function estIntensity(M, depth, eLat, eLon, lat, lon) {
+  const D = Math.max(0, Math.min(depth, 100)), epi = kmBetween(eLat, eLon, lat, lon), X = Math.max(3, Math.sqrt(epi * epi + D * D));
+  const lg = 0.58 * M + 0.0038 * D - 1.29 - Math.log10(X + 0.0028 * Math.pow(10, 0.5 * M)) - 0.002 * X;
+  const I = 2.68 + 1.72 * Math.log10(Math.pow(10, lg) * 1.4);
+  return I < .5 ? 0 : I < 1.5 ? 1 : I < 2.5 ? 2 : I < 3.5 ? 3 : I < 4.5 ? 4 : I < 5 ? 5 : I < 5.5 ? 6 : I < 6 ? 7 : I < 6.5 ? 8 : 9;
+}
+const VS = 3.6; // S波の速さ(km/s、目安)
+const jstMs = x => new Date(String(x).replace(/\//g, '-').replace(' ', 'T') + '+09:00').getTime();
+const prefShort = p => String(p || '').replace(/[都府県]$/, '');
+// 都道府県の形(待機画面の home/japan.json)。現在地がどの都道府県かを調べるときだけ読む
+let JAPAN = null;
+async function loadJapan() {
+  if (JAPAN) return JAPAN;
+  const j = await (await fetch('home/japan.json')).json();
+  JAPAN = j.map(p => {
+    const rings = p.r.map(a => { const pts = []; for (let i = 0; i < a.length; i += 2) pts.push([a[i] / 1000, a[i + 1] / 1000]); return pts; });
+    let big = rings[0], ba = 0;
+    for (const r of rings) { const a = Math.abs(r.reduce((s2, q, i) => { const n = r[(i + 1) % r.length]; return s2 + q[0] * n[1] - n[0] * q[1]; }, 0)); if (a > ba) { ba = a; big = r; } }
+    return { name: p.n, rings, c: big.reduce((s2, q) => [s2[0] + q[0] / big.length, s2[1] + q[1] / big.length], [0, 0]) };
+  });
+  return JAPAN;
+}
+function prefAt(lat, lon) {
+  if (!JAPAN) return '';
+  for (const p of JAPAN) for (const r of p.rings) { let inside = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, yi] = r[i], [xj, yj] = r[j]; if ((yi > lat) !== (yj > lat) && lon < (xj - xi) * (lat - yi) / (yj - yi) + xi) inside = !inside; } if (inside) return p.name; }
+  // 海の上など: いちばん近い都道府県
+  let best = '', bd = 1e9; for (const p of JAPAN) { const d = kmBetween(lat, lon, p.c[1], p.c[0]); if (d < bd) { bd = d; best = p.name; } } return bd < 60 ? best : '';
+}
+const qk = { eew: null, info: null, ws: null, wsFails: 0, wsLast: 0, timer: null, band: null };
+// 速報(Wolfx)
+function qkConnect() {
+  if (qk.ws || !qkCfg().on || !qkLoc()) return;
+  try { qk.ws = new WebSocket('wss://ws-api.wolfx.jp/jma_eew'); } catch (e) { qkRetry(); return; }
+  qk.ws.onopen = () => { qk.wsFails = 0; qk.wsLast = Date.now(); };
+  qk.ws.onmessage = ev => { qk.wsLast = Date.now(); let d; try { d = JSON.parse(ev.data); } catch (e) { return; } if (d && d.Title && /緊急地震速報/.test(d.Title)) qkEEW(d, false); };
+  qk.ws.onclose = () => { qk.ws = null; qkRetry(); };
+  qk.ws.onerror = () => { try { qk.ws.close(); } catch (e) {} };
+}
+function qkRetry() { qk.wsFails++; setTimeout(qkConnect, Math.min(60e3, 2000 * 2 ** Math.min(qk.wsFails, 5))); }
+function qkDisconnect() { if (qk.ws) { const w = qk.ws; qk.ws = null; w.onclose = null; try { w.close(); } catch (e) {} } }
+setInterval(() => { if (qk.ws && qk.ws.readyState === 1 && Date.now() - qk.wsLast > 120e3) { try { qk.ws.close(); } catch (e) {} } }, 30e3); // 2分なにも来なければつなぎ直す
+function qkEEW(d, demo) {
+  const L = qkLoc(), c = qkCfg(); if (!L || (!c.on && !demo)) return;
+  if (d.isTraining && !demo) return;
+  if (d.isCancel) { if (qk.eew && qk.eew.id === d.EventID) { qk.eew = null; qkRender(); showToast('緊急地震速報は取り消されました'); } return; }
+  if (!demo && Date.now() - jstMs(d.OriginTime) > 180e3) return; // つなぎ直したときに送られてくる古い速報では鳴らさない
+  if (qk.eew && !demo && qk.eew.id === d.EventID && +d.Serial < qk.eew.serial) return;
+  const M = +(d.Magnitude ?? d.Magunitude) || 0, depth = +d.Depth || 10, lat = +d.Latitude, lon = +d.Longitude;
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+  const maxI = Math.max(0, shindoIdx(d.MaxIntensity));
+  let local = Math.min(estIntensity(M, depth, lat, lon, L.lat, L.lon), maxI || 9);
+  for (const a of d.WarnArea || []) if (L.pref && String(a.Chiiki || '').startsWith(prefShort(L.pref))) local = Math.max(local, shindoIdx(a.Shindo2));
+  if (demo) local = d._local;
+  const origin = demo ? Date.now() - 3000 : jstMs(d.OriginTime), dist = kmBetween(lat, lon, L.lat, L.lon), hypo = Math.sqrt(dist ** 2 + depth ** 2);
+  const prev = qk.eew, same = prev && prev.id === d.EventID;
+  qk.eew = { id: d.EventID, serial: +d.Serial || 0, demo, M, depth, dist, hypo, maxI, local, name: d.Hypocenter || '不明', warn: !!d.isWarn, sAt: origin + hypo / VS * 1000, end: demo ? Date.now() + 30e3 : Math.max(origin + 180e3, origin + hypo / VS * 1000 + 90e3), closed: same && prev.closed, alarmed: same ? prev.alarmed : false, paused: same ? prev.paused : null };
+  if (local < 1) { qk.eew = null; qkRender(); return; }
+  const full = local >= c.full;
+  if (full && c.pause && !qk.eew.paused && !demo) qk.eew.paused = qkPauseTask();
+  if (!qk.eew.alarmed && c.beep && local >= c.beep) { qk.eew.alarmed = true; qkAlarm(full); }
+  lastTouch = Date.now(); // 画面焼け防止で暗くなっていたら明るく戻す
+  qkStartTimer(); qkRender();
+}
+// 実行中のタスクを一時停止(止めたタスク名を返す)
+function qkPauseTask() {
+  const t = data.tasks.find(x => taskState(x) === 'running');
+  if (!t || isPaused(t)) return null;
+  (t.pauses = t.pauses || []).push({ s: nowMs(), e: null }); saveDay(); render(); phaseKeySeen = phaseKeyNow;
+  return { id: t.id, name: t.name, day: dayStr };
+}
+function qkResume(p) {
+  if (!p || p.day !== dayStr) return;
+  const t = data.tasks.find(x => x.id === p.id), z = t && (t.pauses || []).find(x => x.e == null);
+  if (z) { z.e = nowMs(); saveDay(); render(); phaseKeySeen = phaseKeyNow; }
+}
+// 警告音(全画面はくり返し、帯は1回)
+function qkAlarm(strong) {
+  if (!audio.ctx) return;
+  try { if (audio.ctx.state !== 'running') audio.ctx.resume(); } catch (e) {}
+  const n = strong ? 4 : 2;
+  for (let r = 0; r < n; r++) { tone({ f: 960, t: r * 0.9, d: 0.38, type: 'square', v: 0.16, attack: 0.01 }); tone({ f: 770, t: r * 0.9 + 0.42, d: 0.38, type: 'square', v: 0.16, attack: 0.01 }); }
+  vibrate(strong ? [600, 200, 600, 200, 600] : [300, 150, 300]);
+}
+function qkStartTimer() { if (!qk.timer) qk.timer = setInterval(qkTick, 250); }
+function qkTick() {
+  const t = Date.now();
+  if (qk.eew && t > qk.eew.end) { const was = qk.eew; qk.eew = null; if (was.demo) qkDemoInfo(); else setTimeout(qkPoll, 20e3); }
+  if (qk.info && t > qk.info.until) qk.info = null;
+  if (qk.band && t > qk.band) qk.band = null;
+  if (!qk.eew && !qk.info) { clearInterval(qk.timer); qk.timer = null; }
+  qkRender();
+}
+const shindoHTML = i => { const s = SHINDO[i] || '0'; return `<b>${s[0]}</b>${s[1] ? `<i>${s[1]}</i>` : ''}`; };
+const locName = L => L.how === 'gps' ? `現在地(${L.pref || '位置'})` : L.pref;
+function qkRender() {
+  const c = qkCfg(), F = $('quakeFull'), B = $('quakeBand'), L = qkLoc() || {};
+  const e = qk.eew && !qk.eew.closed ? qk.eew : null, inf = qk.info; // 閉じた速報は表示から外す(続けて来る地震情報を出せるように)
+  let full = '', band = '';
+  if (e) {
+    const left = Math.ceil((e.sAt - Date.now()) / 1000);
+    if (e.local >= c.full) {
+      full = `<div class="qk-wrap"><span class="qk-tag">⚠ 緊急地震速報${e.warn ? '(警報)' : ''}${e.demo ? ' ・ テスト' : ''}</span>
+        <div class="qk-loc"><b>${esc(locName(L))}</b> の予想震度</div><div class="qk-int">${shindoHTML(e.local)}<small>推定</small></div>
+        <div class="qk-cd">${left > 0 ? `大きな揺れまで あと<br><b>${left}</b> 秒(目安)` : '<b style="font-size:34px">揺れが到達しているおそれ</b>'}</div>
+        <div class="qk-info">震源 ${esc(e.name)} ・ M${e.M.toFixed(1)} ・ 深さ ${e.depth}km<br>現在地から 約${Math.round(e.dist)}km ・ 最大予想震度 ${SHINDO[e.maxI] || '不明'}</div>
+        ${e.paused ? `<div class="qk-act">⏸ 実行中の「${esc(e.paused.name)}」を一時停止しました</div>` : e.demo ? '<div class="qk-act">テストなので、タスクは止めていません</div>' : ''}
+        <div class="qk-say">頭を守って、<br>じょうぶな机の下へ</div>
+        <div class="qk-btns"><button type="button" data-qk="close">閉じる</button></div></div>`;
+    } else if (c.small === 'band') band = `⚠ <b>緊急地震速報</b> ${esc(locName(L))}の予想震度 <b>${SHINDO[e.local]}</b>${left > 0 ? `(あと${left}秒)` : ''} ・ 震源 ${esc(e.name)} M${e.M.toFixed(1)}${e.demo ? ' ・ テスト' : ''}`;
+  } else if (inf) {
+    if (inf.mine >= c.full && !inf.closed) {
+      full = `<div class="qk-wrap"><span class="qk-tag">地震情報${inf.demo ? ' ・ テスト' : ''}</span>
+        <div class="qk-loc"><b>${esc(L.pref || '')}</b> で観測した震度${inf.pt ? `(${esc(inf.pt)} など)` : ''}</div><div class="qk-int">${shindoHTML(inf.mine)}</div>
+        <ul class="qk-info" style="padding-left:1.2em;margin:14px 0 0">${inf.lines.map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+        ${inf.paused ? '<div class="qk-act">⏸ タスクは一時停止中です。落ち着いたら再開してください</div>' : ''}
+        <div class="qk-btns">${inf.paused ? '<button type="button" class="qk-resume" data-qk="resume">▶ 再開する</button>' : ''}<button type="button" data-qk="close">閉じる</button></div></div>`;
+    } else if (c.small === 'band' && !inf.closed) band = `ℹ <b>地震情報</b> ${esc(L.pref || '')} 震度${SHINDO[inf.mine]} ・ ${esc(inf.lines[0] || '')}${inf.demo ? ' ・ テスト' : ''}`;
+  }
+  F.className = e ? 'eew' : 'info';
+  setHTML('quakeFull', full); F.hidden = !full;
+  setHTML('quakeBand', band ? `${band}<button type="button" data-qk="band" aria-label="閉じる">✕</button>` : ''); B.hidden = !band;
+}
+$('quakeFull').addEventListener('click', e => {
+  const b = e.target.closest('[data-qk]'); if (!b) return;
+  if (b.dataset.qk === 'resume' && qk.info) { qkResume(qk.info.paused); qk.info.paused = null; }
+  const cur = qk.eew || qk.info; if (cur && b.dataset.qk === 'close') cur.closed = true;
+  qkRender();
+});
+$('quakeBand').addEventListener('click', e => { if (e.target.closest('[data-qk]')) { const cur = qk.eew || qk.info; if (cur) cur.closed = true; qkRender(); } });
+// 揺れたあと(P2P地震情報の「各地の震度」)
+async function qkPoll() {
+  const c = qkCfg(), L = qkLoc();
+  if (!c.on || !c.after || !L || !L.pref || document.hidden) return;
+  try {
+    const list = await (await fetch('https://api.p2pquake.net/v2/history?codes=551&limit=10', { cache: 'no-store' })).json();
+    const items = (Array.isArray(list) ? list : []).filter(x => x && x.earthquake && x.earthquake.time);
+    if (!items.length) return;
+    const t0 = items[0].earthquake.time.slice(0, 16), same = items.filter(x => x.earthquake.time.slice(0, 16) === t0);
+    if (Date.now() - jstMs(items[0].earthquake.time) > 30 * 60e3) return; // 30分より前の地震は出さない
+    qkShowInfo(same, false);
+  } catch (e) {}
+}
+function qkShowInfo(same, demo) {
+  const c = qkCfg(), L = qkLoc(); if (!L) return;
+  const E = same[0].earthquake, H = E.hypocenter || {}, id = E.time + (H.name || '');
+  const pts = same.flatMap(x => x.points || []);
+  let mine = 0, pt = '';
+  for (const p of pts) if (p.pref === L.pref) { const i = P2P_SCALE[p.scale] || 0; if (i > mine) { mine = i; pt = p.addr || ''; } }
+  if (mine < 1) return; // 現在地の都道府県で揺れていない地震は出さない
+  const prev = qk.info;
+  if (!demo && store.get('quakeSeen') === id && !(prev && prev.id === id)) return; // 一度出して閉じた地震は、開き直しても出さない
+  const maxI = P2P_SCALE[E.maxScale] || 0, d = new Date(jstMs(E.time));
+  const TS = { None: '津波の心配はありません', Unknown: '津波の有無は不明', Checking: '津波の有無を調査中', NonEffective: '若干の海面変動のおそれ(被害の心配なし)', Watch: '津波注意報が出ています', Warning: '津波警報が出ています' };
+  const lines = [`${d.getHours()}:${pad(d.getMinutes())} ごろ ${H.name || '震源不明'}${+H.magnitude > 0 ? ` M${(+H.magnitude).toFixed(1)}` : ''}${+H.depth > 0 ? ` 深さ${H.depth}km` : ''}`, `最大震度 ${SHINDO[maxI] || '不明'}`, TS[E.domesticTsunami] || ''].filter(Boolean);
+  const same2 = prev && prev.id === id;
+  const paused = same2 ? prev.paused : (qk.lastPaused && Date.now() - qk.lastPaused.at < 15 * 60e3 ? qk.lastPaused.p : null);
+  qk.info = { id, demo, mine, pt, lines, until: Date.now() + 15 * 60e3, closed: same2 && prev.closed, paused };
+  if (!same2) { store.set('quakeSeen', id); if (c.beep && mine >= c.beep && !(qk.lastPaused)) qkAlarm(mine >= c.full); lastTouch = Date.now(); }
+  qkStartTimer(); qkRender();
+}
+setInterval(qkPoll, 60e3);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { qkPoll(); qkConnect(); } });
+// 速報で止めたタスクは、続けて出る地震情報の「▶ 再開する」で再開できるように覚えておく
+const qkKeepPaused = () => { if (qk.eew && qk.eew.paused) qk.lastPaused = { p: qk.eew.paused, at: Date.now() }; };
+setInterval(qkKeepPaused, 1000);
+// テスト: 現在地の近くで、全画面に出す震度ぴったりの見本を出す(タスクは止めない)
+function qkDemo() {
+  const L = qkLoc(); if (!L) return;
+  audio.unlock();
+  const lv = qkCfg().full;
+  qkEEW({ EventID: 'demo' + Date.now(), Serial: 1, Hypocenter: 'テスト(見本)', Magnitude: 6.5, Depth: 20, Latitude: L.lat + 0.35, Longitude: L.lon + 0.25, MaxIntensity: SHINDO[Math.min(9, lv + 1)], isWarn: lv >= 5, OriginTime: '', _local: lv }, true);
+}
+function qkDemoInfo() {
+  const L = qkLoc(); if (!L) return;
+  const lv = qkCfg().full, scale = +Object.keys(P2P_SCALE).find(k => P2P_SCALE[k] === lv);
+  const now = new Date(Date.now() - 60e3), tm = `${now.getFullYear()}/${pad(now.getMonth() + 1)}/${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:00`;
+  qkShowInfo([{ earthquake: { time: tm, maxScale: scale, domesticTsunami: 'None', hypocenter: { name: 'テスト(見本)', magnitude: 6.5, depth: 20 } }, points: [{ pref: L.pref, addr: 'テスト地点', scale }] }], true);
+}
+// 設定画面
+function syncQkSettings() {
+  const c = qkCfg(), L = qkLoc();
+  $('qkOn').checked = c.on; $('qkPause').checked = c.pause; $('qkAfter').checked = c.after; $('qkSmall').value = c.small;
+  $('qkFullChips').innerHTML = SHINDO.slice(1).map((s2, i) => `<button type="button" data-qkfull="${i + 1}" aria-pressed="${c.full === i + 1}">${s2}</button>`).join('');
+  $('qkBeep').innerHTML = '<option value="0">鳴らさない</option>' + SHINDO.slice(1).map((s2, i) => `<option value="${i + 1}" ${c.beep === i + 1 ? 'selected' : ''}>${s2}以上</option>`).join('');
+  if (!c.beep) $('qkBeep').value = '0';
+  $('qkLocTxt').textContent = L ? `${L.how === 'gps' ? '現在地' : '手で選んだ都道府県'}: ${L.pref || '(都道府県が分かりません)'}${L.at ? `(${new Date(L.at).getMonth() + 1}/${new Date(L.at).getDate()} に設定)` : ''}` : 'まだ設定していません。現在地を取得するか、都道府県を選んでください(設定するまで知らせは出ません)。';
+  $('qkTest').disabled = !L;
+  $('qkGps').textContent = L && L.how === 'gps' ? '📍 現在地を取り直す' : '📍 現在地を取得する';
+  loadJapan().then(J => { if ($('qkPref').options.length < 2) $('qkPref').innerHTML += J.map(p => `<option value="${esc(p.name)}">${esc(p.name)}</option>`).join(''); }).catch(() => {});
+}
+const qkSave = patch => { store.set('quake', { ...qkCfg(), ...patch }); syncQkSettings(); if (qkCfg().on) { qkConnect(); } else { qkDisconnect(); qk.eew = null; qk.info = null; qkRender(); } };
+$('qkOn').addEventListener('change', () => qkSave({ on: $('qkOn').checked }));
+$('qkPause').addEventListener('change', () => qkSave({ pause: $('qkPause').checked }));
+$('qkAfter').addEventListener('change', () => qkSave({ after: $('qkAfter').checked }));
+$('qkSmall').addEventListener('change', () => qkSave({ small: $('qkSmall').value }));
+$('qkBeep').addEventListener('change', () => qkSave({ beep: +$('qkBeep').value }));
+$('qkFullChips').addEventListener('click', e => { const b = e.target.closest('[data-qkfull]'); if (b) qkSave({ full: +b.dataset.qkfull }); });
+$('qkGps').addEventListener('click', () => {
+  if (!navigator.geolocation) { setText('qkMsg', 'この端末では位置情報を使えません。都道府県を選んでください。'); return; }
+  setText('qkMsg', '位置を取得中…');
+  navigator.geolocation.getCurrentPosition(async p => {
+    const lat = +p.coords.latitude.toFixed(3), lon = +p.coords.longitude.toFixed(3);
+    try { await loadJapan(); } catch (e) {}
+    store.set('quakeLoc', { lat, lon, pref: prefAt(lat, lon), how: 'gps', at: Date.now() });
+    setText('qkMsg', '現在地を設定しました。'); syncQkSettings(); qkConnect(); qkPoll();
+  }, err => setText('qkMsg', (err.code === 1 ? '位置情報が許可されていません。端末の「設定」→「プライバシーとセキュリティ」→「位置情報サービス」で、ブラウザ(Safari など)を「使用中のみ」にしてください。' : '位置を取得できませんでした。') + ' うまくいかないときは、都道府県を手で選んでください。'), { enableHighAccuracy: false, timeout: 20000, maximumAge: 600000 });
+});
+$('qkPref').addEventListener('change', async () => {
+  const n = $('qkPref').value; if (!n) return;
+  const J = await loadJapan(), p = J.find(x => x.name === n); if (!p) return;
+  store.set('quakeLoc', { lat: +p.c[1].toFixed(3), lon: +p.c[0].toFixed(3), pref: n, how: 'pref', at: Date.now() });
+  $('qkPref').value = ''; setText('qkMsg', `${n} にしました(都道府県の真ん中あたりで計算します)。`); syncQkSettings(); qkConnect(); qkPoll();
+});
+$('qkTest').addEventListener('click', () => { closeSettings(); setTimeout(qkDemo, 200); });
+qkConnect(); setTimeout(qkPoll, 3000);
 
 /* ================= 使い方ガイド ================= */
 $('guideIosSteps').innerHTML = IOS_INSTALL_STEPS;
