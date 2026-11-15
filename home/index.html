@@ -1090,7 +1090,7 @@ body:not(.nopomo) .nv-time{font-size:160px}
 .wk>div{flex:1;height:100%;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:5px}
 .wk i{display:block;width:100%;max-width:44px;max-height:calc(100% - 44px);background:var(--segdone);border-radius:4px 4px 0 0;flex:none}
 .wk .v{font-size:13px;color:var(--sub)}.wk .w{font-size:12px;color:var(--sub)}
-.wk .td i{background:var(--red);box-shadow:0 0 12px rgba(145,132,217,.5)}.wk .td .w,.wk .td .v{color:var(--ink)}
+.wk .td i{background:var(--red)}.sllow{margin-top:6px;font-size:.82em;font-weight:700;color:var(--red)}.wk .td .w,.wk .td .v{color:var(--ink)}
 #nvCal .cal{flex:1;align-content:space-evenly}#nvCal .cal span{font-size:15px}
 .nvcd .big2 .v{font-size:64px}.nvcd .big2 .k{font-size:12.5px}.nvcd .big2 .d{font-size:11.5px;margin-top:2px}
 /* 数字の動き(押し上げ・ぼかし) */
@@ -1375,7 +1375,7 @@ body:not(.portrait) .rv-sign .tx .nm{font-size:var(--nf,72px)}
 
 <script>
 'use strict';
-const APP_VERSION = '2.33.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.34.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1414,6 +1414,9 @@ const DEFAULT_CFG = {
   tt: { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] }, // 曜日ごと [{s:教科, r:教室}]
   layout: null, bar: null, // タイルの置き場所(fixLayout で初期の配置を入れる)
   countdowns: [{ name: '共通テスト', date: '2027-01-16' }, { name: '', date: '' }],
+  cdAuto: true, // Googleカレンダーの「試験・模試・考査…」という予定を、カウントダウンに自動で足す
+  breaks: [], // 休みの期間 [{name, from, to}](夏休み・冬休みなど。この間は登校日にしない)
+  slMin: 60, // StudyLine: 21時を過ぎて今日の勉強がこの分数より少ないと知らせる(0 = 知らせない)
   termCats: ['日本史', '古文単語', '化学', '物理', '現代文', '四字熟語'],
   qFull: 5, qBeep: 3, // 震度の段階(0〜9)。5 = 5弱。qFull 0 = 緊急地震速報はすべて全画面
   qiPref: 5, qiMax: 0, qiMag: 0, qiTsunami: true, // 地震情報を全画面にする条件(0 = 使わない)
@@ -1428,6 +1431,7 @@ const DEFAULT_CFG = {
 };
 let cfg = Object.assign({}, DEFAULT_CFG, store.get('cfg') || {});
 const saveCfg = () => store.set('cfg', cfg);
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); // 保存したデータを、ブラウザに勝手に消されないよう頼む
 // 表示モードの設定:古い形式の保存でもエラーにならないよう、足りない・壊れた項目は初期値で埋める
 function fixMode() {
   const ok = m => m === 'std' || m === 'night' || m === 'rail';
@@ -1490,6 +1494,7 @@ const isSchoolDay = d => {
   const w = d.getDay(), dc = cfg.days[w];
   if (!dc || !dc.p || !dc.p.length || HOLIDAYS[ymd(d)]) return false;
   const mmdd = (d.getMonth() + 1) * 100 + d.getDate(); if (mmdd >= 1229 || mmdd <= 103) return false; // 年末年始(12/29〜1/3)は学校もお休み
+  const k = ymd(d); if ((cfg.breaks || []).some(b => b && b.from && b.to && b.from <= k && k <= b.to)) return false; // 設定の「休みの期間」(夏休み・冬休みなど)
   return w === 6 ? (cfg.satWeeks || []).includes(nthWeek(d)) : w >= 1 && w <= 5;
 };
 const nextSchoolDay = d => { let x = addDays(d, 1); for (let i = 0; i < 30 && !isSchoolDay(x); i++) x = addDays(x, 1); return x; };
@@ -1606,6 +1611,7 @@ function pmInfo() {
 }
 const pmState = P => `${P.focus ? '集中' : '休憩'}${P.idle ? ' ・ 停止中' : P.run ? '' : ' ・ 一時停止中'}`;
 function slSums(d) { // 今日・昨日・7日の勉強時間(分)
+  d = slRef();
   const g = k => { const x = slDay(ymd(addDays(d, -k))); if (x) x._ds = ymd(addDays(d, -k)); return x; };
   let week = 0; for (let i = 0; i < 7; i++) week += slStudied(g(i));
   return { today: slStudied(g(0)), yd: slStudied(g(1)), week };
@@ -1623,7 +1629,7 @@ const slSegs = rows => rows.map((r, i) => ({ k: 'cls', a: r.s, b: Math.max(r.e, 
 function renderNight(st, d) {
   const P = pmInfo(), sc = slSchedule(), C = 2 * Math.PI * 96;
   // 上:時計 + 円形のタイマー
-  const ring = cfg.pomoOn ? `<div class="nv-ring" data-pm="toggle"><svg width="216" height="216" viewBox="0 0 216 216"><circle cx="108" cy="108" r="96" fill="none" stroke="var(--rule)" stroke-width="6"/><circle id="nvRing" cx="108" cy="108" r="96" fill="none" stroke="var(--red)" stroke-width="6" stroke-linecap="round" stroke-dasharray="${C.toFixed(2)}" style="filter:drop-shadow(0 0 6px rgba(145,132,217,.7))"/></svg><div class="in"><span class="l">自習タイマー</span><span class="t n" id="nvPT"></span><span class="s" id="nvPS"></span></div></div>` : '';
+  const ring = cfg.pomoOn ? `<div class="nv-ring" data-pm="toggle"><svg width="216" height="216" viewBox="0 0 216 216"><circle cx="108" cy="108" r="96" fill="none" stroke="var(--rule)" stroke-width="6"/><circle id="nvRing" cx="108" cy="108" r="96" fill="none" stroke="var(--red)" stroke-width="6" stroke-linecap="round" stroke-dasharray="${C.toFixed(2)}"/></svg><div class="in"><span class="l">自習タイマー</span><span class="t n" id="nvPT"></span><span class="s" id="nvPS"></span></div></div>` : '';
   setHtml($('nvTop'), `<div class="c1" data-open="clock"><div class="nv-date">${d.getMonth() + 1}月${d.getDate()}日 ${WD[d.getDay()]}曜日${HOLIDAYS[ymd(d)] ? ' ・ ' + esc(HOLIDAYS[ymd(d)]) : ''}</div><div class="nv-time n" id="nvTime"></div></div>${ring}`);
   drawRoll($('nvTime'), d, { colon: '<span class="c">:</span>', lh: .9, secId: 'nvSec' });
   if (cfg.pomoOn) { $('nvPT').textContent = P.txt; $('nvPS').textContent = pmState(P); $('nvRing').style.strokeDashoffset = (C * (1 - P.frac)).toFixed(2); }
@@ -1640,14 +1646,14 @@ function renderNight(st, d) {
     if (B.run) big = `<div class="k">${B.nextR ? `次の ${esc(B.nextR.t.name)} まで` : '終点まで'}</div><div class="big n">${bigMin(Math.max(0, Math.ceil(B.run.e - nm)))}</div>`;
     else if (!B.started && start - nm > 0) big = `<div class="k">発車まで</div><div class="big n">${bigMin(Math.ceil(start - nm))}</div>`;
     sl = `${head(B.label)}<div class="nv-st"><div style="min-width:0"><div class="k">${B.allDone ? '' : B.run ? 'いまの駅' : '次の駅'}</div><div class="nm">${B.allDone ? '今日のダイヤは完了' : esc(cur.t.name)}${!B.allDone && cur.t.memo ? `<small>${esc(cur.t.memo)}</small>` : ''}</div></div><div class="r">${big}</div></div>
-      <div class="nv-sub">${B.run ? `${fmtMin(B.run.s)} 発 ・ ` : ''}${delayTxt} ・ 終点 ${fmtDay(end)} 着${B.allDone ? '' : 'の見込み'}${roomTxt}</div>
+      <div class="nv-sub">${B.run ? `${fmtDay(B.run.s)} 発 ・ ` : ''}${delayTxt} ・ 終点 ${fmtDay(end)} 着${B.allDone ? '' : 'の見込み'}${roomTxt}</div>
       <div class="rmw">${routeMap(slSegs(rows), { t0: rows[0].s, t1: end, now: nm, w: 740, gaps: false, c: 'var(--sl)', ticks: [rows[0].s, end] })}</div>${foot}`;
   }
   setHtml($('nvSL'), sl);
   // 右:時間割・やること・天気(今のタイルと同じ内容)
   setHtml($('nvSide'), `<div class="nvc tt" data-open="tt">${$('ttTile').innerHTML}</div><div class="nvc todo" data-open="todo">${$('todoTile').innerHTML}</div><div class="nvc" data-open="weather">${$('wxTile').innerHTML}</div>`);
   // 下段:7日間の学習・カレンダー・カウントダウン
-  const days = []; for (let i = 6; i >= 0; i--) { const x = addDays(d, -i), g = slDay(ymd(x)); if (g) g._ds = ymd(x); days.push({ w: WD[x.getDay()], m: slStudied(g), td: i === 0 }); }
+  const days = []; for (let i = 6; i >= 0; i--) { const x = addDays(slRef(), -i), g = slDay(ymd(x)); if (g) g._ds = ymd(x); days.push({ w: WD[x.getDay()], m: slStudied(g), td: i === 0 }); }
   const mx = Math.max(60, ...days.map(x => x.m));
   setHtml($('nvWeek'), `<h3>7日間の学習 <span>合計 ${(days.reduce((a, x) => a + x.m, 0) / 60).toFixed(1)}時間</span></h3><div class="wk">${days.map(x => `<div class="${x.td ? 'td' : ''}"><span class="v n">${x.m >= 3 ? (x.m / 60).toFixed(1) : ''}</span><i style="height:${Math.max(2, x.m / mx * 100).toFixed(1)}%"></i><span class="w">${x.w}</span></div>`).join('')}</div>`);
   setHtml($('nvCal'), renderCalendar()); setHtml($('nvCd'), (() => { const c = cdList()[0]; if (!c) return `<h3>カウントダウン</h3><p class="empty">${cdEmpty()}</p>`; const dt = parseYmd(c.date); return `<h3>カウントダウン</h3><div class="big2"><div><div class="k">${esc(c.name)}${c.days ? 'まで' : ''}</div><div class="v n">${cdNum(c)}</div><div class="d">${md(dt)}(${WD[dt.getDay()]}) ・ 残り${Math.floor(c.days / 7)}週</div></div></div>`; })()); // 幅がせまいので、いちばん近い1つだけ
@@ -1716,7 +1722,7 @@ function renderRail(st, d) {
     } else {
       const nd = nextSchoolDay(d), p0 = periodsMin(nd)[0], bring = allTodos().filter(t => !t.done && t.bring && t.due && dayDiff(d, parseYmd(t.due)) <= Math.max(1, dayDiff(d, nd))).map(t => t.text);
       badge = 'TT'; no = '01'; k = `次の登校 ・ ${dayLabel(d, nd)}${dayDiff(d, nd) > 1 ? '' : ` ${mdw(nd)}`}`; nm = subjOf(nd, 0) ? `1限 ${subjOf(nd, 0)}` : '授業'; tm = p0 ? `${fmtMin(p0[0])} 発` : ''; lf = '';
-      l = B && B.allDone ? '今夜のダイヤは完了' : st.mode === 'after' ? '今日の授業はおわり' : '今日はお休み'; c = bring.length ? `持ちもの:${esc(bring.slice(0, 3).join('・'))}` : '持ちものの登録なし'; r = subjOf(nd, 1) ? `2限 ${esc(subjOf(nd, 1))} →` : '';
+      l = B && B.allDone ? '今夜のダイヤは完了' : st.mode === 'after' ? '今日の授業はおわり' : '今日はお休み'; c = bring.length ? `持ちもの:${esc(bring.slice(0, 3).join('・'))}${bring.length > 3 ? ` ほか${bring.length - 3}件` : ''}` : '持ちものの登録なし'; r = subjOf(nd, 1) ? `2限 ${esc(subjOf(nd, 1))} →` : '';
     }
   }
   $('rvSign').className = 'rv-sign ' + sgc;
@@ -1730,8 +1736,8 @@ function renderRail(st, d) {
   const mix = a => [...a, ...evs].sort((x, y) => x.t - y.t).slice(0, 6);
   let base = mix(today), src = 'tt';
   if (!today.length) {
-    const left = sc ? sc.rows.filter(r => r.st !== 'done') : [];
-    if (left.length) { base = mix(left.slice(0, 6).map(r => ({ t: Math.round(r.s) % 1440, kind: '自習', dest: r.t.name, room: '' }))); src = 'sl'; }
+    const left = sc ? sc.rows.filter(r => r.st === 'wait') : []; // 先発 = 次に始めるタスク(走っている最中のものは出さない)
+    if (left.length) { const off = slOff(); base = mix(left.slice(0, 6).map(r => ({ t: Math.round(r.s) - off, kind: '自習', dest: r.t.name, room: '' }))); src = 'sl'; } // 0時をまたぐ分は 1440 以上のまま並べ、表示だけ 0:05 にする
     else if (evs.length) { base = mix([]); src = 'ev'; }
     else { base = railDepart(d, true); src = 'next'; }
   }
@@ -1746,7 +1752,7 @@ function renderRail(st, d) {
   if (!sc) sl = `<div class="a"><span class="sym"><b>SL</b><b>--</b></span><div><div class="k">StudyLine</div><div class="v">今日のダイヤはまだありません</div></div></div>`;
   else {
     const B = slBrief(sc), { rows, start, planEnd, end, nm } = sc, idx = rows.findIndex(r => r.st !== 'done'), from = Math.max(0, Math.min(idx < 0 ? rows.length - 4 : idx, rows.length - 4)); // いまの駅から4つ(終わった駅は出さない)
-    sl = `<div class="a"><span class="sym"><b>SL</b><b>${pad(Math.max(0, idx < 0 ? rows.length - 1 : idx) + 1)}</b></span><div><div class="k"><b class="xfer">のりかえ</b>StudyLine ・ ${B.label}</div><div class="v">${fmtDay(start)} 発 ・ ${rows.length}駅 ・ ${hm((planEnd - start) * 60000)}</div></div><div class="rt"><span>${B.allDone ? '' : B.run ? 'あと' : B.started ? '終点まで' : '発車まで'}</span><b class="n">${B.allDone ? '完了' : bigMin(Math.max(0, Math.ceil(B.run ? B.run.e - nm : B.started ? end - nm : start - nm)))}</b></div></div>
+    sl = `<div class="a"><span class="sym"><b>SL</b><b>${pad(Math.max(0, idx < 0 ? rows.length - 1 : idx) + 1)}</b></span><div><div class="k"><b class="xfer">のりかえ</b>StudyLine ・ ${B.label}</div><div class="v">${fmtDay(sc.dep)} 発 ・ ${rows.length}駅 ・ ${hm((planEnd - start) * 60000)}</div></div><div class="rt"><span>${B.allDone ? '' : B.run ? 'あと' : B.started ? '終点まで' : '発車まで'}</span><b class="n">${B.allDone ? '完了' : bigMin(Math.max(0, Math.ceil(B.run ? B.run.e - nm : B.started ? end - nm : start - nm)))}</b></div></div>
       <div class="ls">${rows.slice(from, from + 4).map((r, i) => `<div class="${r.st === 'done' ? 'dn' : ''}"><div class="no">SL${pad(from + i + 1)}</div><div class="nm">${esc(r.t.name)}</div><div class="tm">${fmtDay(r.s)}</div></div>`).join('')}</div>`;
   }
   setHtml($('rvSL'), `<div data-open="studyline">${sl}</div>`);
@@ -1781,7 +1787,7 @@ class FlapUnit {
     const face = top => {
       const b = document.createElement('div'), i = document.createElement('div');
       b.className = 'flf'; b.style.cssText = `height:50%;top:${top ? 0 : '50%'};background:${top ? O.bgTop : O.bgBot};border-radius:${top ? `${O.rad}px ${O.rad}px 0 0` : `0 0 ${O.rad}px ${O.rad}px`}`;
-      i.className = 'fli'; i.style.cssText = `height:${O.hh}px;top:${top ? 0 : -O.hh / 2}px;line-height:${O.hh}px;text-align:${O.align};padding:0 ${O.px}px` + (O.wrap ? `;display:flex;align-items:center;justify-content:${O.align === 'left' ? 'flex-start' : 'center'};white-space:normal;line-height:1.15;word-break:break-all` : '');
+      i.className = 'fli'; i.style.cssText = `height:${O.hh}px;top:${top ? 0 : -O.hh / 2}px;line-height:${O.hh}px;text-align:${O.align};padding:0 ${O.px}px` + (O.wrap ? `;display:flex;align-items:center;justify-content:${O.align === 'left' ? 'flex-start' : 'center'};white-space:normal;line-height:1.15;word-break:normal;overflow-wrap:anywhere;line-break:strict` : ''); // 「ー」「ョ」などが行の頭に来ないように折り返す
       b.appendChild(i); b.fi = i; return b;
     };
     this.top = face(true); this.bot = face(false); this.fa = face(true); this.fb = face(false);
@@ -1813,7 +1819,8 @@ class FlapUnit {
     // 入りきらない文字は小さくする(同じ文字は覚えておいて、毎回は測らない)
     const key = it.t + '|' + this.root.clientWidth, c = this.fitc || (this.fitc = {});
     if (c[key] == null) { fi.style.fontSize = ''; const w = fi.clientWidth - this.o.px * 2, sw = fi.scrollWidth - this.o.px * 2, hh = fi.clientHeight, sh = fi.scrollHeight;
-      c[key] = w > 0 && (sw > w + 1 || sh > hh + 1) ? Math.max(9, Math.floor(this.o.fs * Math.min(sw > w + 1 ? w / sw : 1, sh > hh + 1 ? Math.sqrt(hh / sh) : 1) * .96)) : 0; }
+      c[key] = w > 0 && (sw > w + 1 || sh > hh + 1) ? Math.max(9, Math.floor(this.o.fs * Math.min(sw > w + 1 ? w / sw : 1, sh > hh + 1 ? Math.sqrt(hh / sh) : 1) * .96)) : 0;
+      if (c[key]) { let n = c[key]; fi.style.fontSize = n + 'px'; while (n > 9 && (fi.scrollWidth > fi.clientWidth + 1 || fi.scrollHeight > fi.clientHeight + 1)) fi.style.fontSize = --n + 'px'; c[key] = n; } } // まだはみ出るなら、入るまで1pxずつ小さくする
     fi.style.fontSize = c[key] ? c[key] + 'px' : '';
   }
   cancel() { this.fa.style.background = this.o.bgTop; this.fb.style.background = this.o.bgBot; this.token++; clearTimeout(this.timer); this.timer = 0; this.anims.forEach(a => a.cancel()); this.anims = []; this.fa.style.visibility = this.fb.style.visibility = 'hidden'; this.state = 'idle'; }
@@ -1966,7 +1973,7 @@ function railBoard(dep, anim) {
   const ens = (drum, v) => { if (v && !drum.some(x => (typeof x === 'object' ? x.t : x) === v)) drum.push(v); };
   const plan = railUnits.rows.map(U => {
     const f = dep[U.i] || { kind: '', t: null, dest: '', room: '' }; ens(U.SD, f.dest); ens(U.RD, f.room);
-    const h = f.t == null ? null : Math.floor(f.t / 60), m = f.t == null ? null : Math.round(f.t % 60);
+    const tt = f.t == null ? null : ((Math.round(f.t) % 1440) + 1440) % 1440, h = tt == null ? null : Math.floor(tt / 60), m = tt == null ? null : tt % 60;
     return [[[U.k, f.kind]], [[U.a, h == null || h < 10 ? '' : String(Math.floor(h / 10))], [U.b, h == null ? '' : String(h % 10)]],
       [[U.c, m == null ? '' : String(Math.floor(m / 10))], [U.d, m == null ? '' : String(m % 10)]], [[U.s, f.dest]], [[U.r, f.room]]];
   });
@@ -2112,7 +2119,7 @@ function routeMap(items, o) {
     }
   });
   if (now0 != null && now0 >= t0 && now0 <= o.t1) h += `<div class="rmn" style="left:${X(now0).toFixed(2)}%">いま</div>`;
-  const tk = [...new Set(o.ticks || [])].sort((a, b) => a - b).filter((m, i, a) => i === 0 || X(m) - X(a[i - 1]) > 8);
+  const tk = []; for (const m of [...new Set(o.ticks || [])].sort((a, b) => a - b)) if (!tk.length || X(m) - X(tk[tk.length - 1]) > 8) tk.push(m); // 最後に残したラベルと比べて間引く
   tk.forEach((m, i) => { h += `<div class="rt n" style="left:${X(m).toFixed(2)}%;transform:translateX(${i === 0 ? '0' : i === tk.length - 1 ? '-100%' : '-50%'})">${fmtDay(m)}</div>`; });
   return h + '</div>';
 }
@@ -2347,7 +2354,7 @@ function renderWeather() {
   if (hourIdx >= 0) for (let i = 0; i < 6; i++) { const k = hourIdx + 1 + i * 3; if (k >= H.time.length) break; hrs += `<div>${+H.time[k].slice(11, 13)}時<b>${Math.round(H.temperature_2m[k])}°</b><span>${H.precipitation_probability[k] ?? '-'}%</span></div>`; }
   T.innerHTML = `<h3>天気 <span>${esc(wx.pref || loc().pref)}${cfg.loc ? '' : '(場所 未設定)'}${wx.err ? ' ・ 更新できません' : ''}</span></h3>
     <div class="wx">${wxIcon(kind, night)}<span class="t n">${Math.round(wx.cur.temperature_2m)}°</span>
-    <div class="d">${esc(txt)}<br><b class="n" style="color:var(--red);font-size:17px">${Math.round(D.temperature_2m_max[di])}°</b> / <b class="n" style="color:var(--blue);font-size:17px">${Math.round(D.temperature_2m_min[di])}°</b>${after ? ' 明日' : ''}</div>
+    <div class="d">${esc(txt)}<br><b class="n" style="color:var(--red);font-size:17px">${Math.round(D.temperature_2m_max[di])}°</b> / <b class="n" style="color:var(--blue);font-size:17px">${Math.round(D.temperature_2m_min[di])}°</b>${after ? ' <span style="white-space:nowrap">明日</span>' : ''}</div>
     <div class="say">${esc(say)}</div></div><div class="hrs">${hrs}</div>`;
 }
 const umbrella = (p, code) => p == null ? '降水確率はまだ出ていません' : p >= 50 ? '傘を持っていく' : p >= 30 || (code != null && /rain|snow|thunder/.test(WCODE(code)[1])) ? '折りたたみ傘があると安心' : '傘はいりません';
@@ -2414,17 +2421,32 @@ function slSpan(t, pc) { // 休憩も含めたおおよその長さ(分)
   let br = 0; for (let i = 1; i < blocks; i++) br += i % Math.max(1, pc.every) === 0 ? pc.long : pc.brk;
   return w + br;
 }
+// StudyLine の「今日」。本体と同じ決まり: 前の日に実行中のタスクがあれば終わるまで前の日。
+// 朝4時までは、前の日にまだ始めていないタスクが残っていて勉強が続いていそうなら(直前3時間以内に開始・終了がある、または就寝期限が0時より後)前の日の続き
+function slToday() {
+  const y = ymd(addDays(now(), -1)), yd = slDay(y);
+  if (yd) {
+    if (yd.tasks.some(t => t && t.actualStart && !t.actualEnd)) return y;
+    if (nowMs() - sod(now()).getTime() < 4 * 3600e3 && yd.tasks.some(t => t && !t.actualStart)) {
+      const last = Math.max(0, ...yd.tasks.flatMap(t => [+t.actualStart || 0, +t.actualEnd || 0])), st = yd.settings || {};
+      if (nowMs() - last < 3 * 3600e3 || (st.deadline != null && +st.deadline <= (+st.start || 19 * 60))) return y;
+    }
+  }
+  return ymd(now());
+}
+const slRef = () => parseYmd(slToday()); // StudyLine の「今日」の0時
+const slOff = () => Math.round((sod(now()).getTime() - slRef().getTime()) / 60000); // 暦の今日の0時が、StudyLine の今日の何分目か(ふつうは 0、0時すぎの続きは 1440)
 function slStudied(d) { // その日に終えた・やっている分(分)
   if (!d) return 0;
   let s = 0;
-  for (const t of d.tasks) if (t.actualStart) s += ((t.actualEnd || (ymd(now()) === d._ds ? nowMs() : t.actualStart)) - t.actualStart) / 60000;
+  for (const t of d.tasks) if (t.actualStart) s += ((t.actualEnd || (slToday() === d._ds ? nowMs() : t.actualStart)) - t.actualStart) / 60000;
   return Math.max(0, s);
 }
 function slSchedule() {
-  const ds = ymd(now()), d = slDay(ds);
+  const ds = slToday(), d = slDay(ds);
   if (!d || !d.tasks.length) return null;
   d._ds = ds;
-  const base = new Date(now().getFullYear(), now().getMonth(), now().getDate()).getTime();
+  const base = parseYmd(ds).getTime();
   const nm = (nowMs() - base) / 60000, pc = slPomo();
   const start = +(d.settings && d.settings.start) || 19 * 60;
   let deadline = d.settings && d.settings.deadline;
@@ -2443,14 +2465,13 @@ function slSchedule() {
     cur = e;
     return { t, st, ps, s, e };
   });
-  return { d, rows, start, planEnd: plan, end: cur, deadline, nm };
+  const began = rows.filter(r => r.t.actualStart).map(r => r.s);
+  return { d, rows, start, dep: began.length ? Math.min(...began) : start, planEnd: plan, end: cur, deadline, nm }; // dep = 実際に発車した時刻(まだなら予定の開始)
 }
 function renderStudyLine(mini) {
   const sc = slSchedule();
-  const today = slDay(ymd(now())), yd = slDay(ymd(addDays(now(), -1)));
-  if (yd) yd._ds = ymd(addDays(now(), -1));
-  let week = 0; for (let i = 0; i < 7; i++) { const x = slDay(ymd(addDays(now(), -i))); if (x) { x._ds = ymd(addDays(now(), -i)); week += slStudied(x); } }
-  const foot = `<div class="slfoot"><span>今日 <b>${hm(slStudied(today && Object.assign(today, { _ds: ymd(now()) })) * 60000)}</b></span><span>昨日 <b>${hm(slStudied(yd) * 60000)}</b></span><span style="margin-left:auto">7日で <b>${(week / 60).toFixed(1)}時間</b></span></div>`;
+  const S = slSums();
+  const foot = `<div class="slfoot"><span>今日 <b>${hm(S.today * 60000)}</b></span><span>昨日 <b>${hm(S.yd * 60000)}</b></span><span style="margin-left:auto">7日で <b>${(S.week / 60).toFixed(1)}時間</b></span></div>${slLowWarn()}`;
   if (!sc) return `<h3><b style="color:var(--sl);letter-spacing:.06em">StudyLine</b> <span>今日のダイヤ <button class="openapp" data-app="studyline">開く</button></span></h3><p class="empty" style="flex:1">今日のダイヤはまだありません。右上の「開く」から StudyLine を開いて作ると、ここに出ます。</p>${foot}`;
   const { rows, start, planEnd, end, deadline, nm } = sc;
   const run = rows.find(r => r.st === 'run'), nextR = rows.find(r => r.st === 'wait'), allDone = rows.every(r => r.st === 'done');
@@ -2461,7 +2482,7 @@ function renderStudyLine(mini) {
   let head, sub;
   if (run) {
     head = `<span class="pill">運行中</span><span class="slname">${esc(run.t.name)}</span><span class="slremain">あと <span class="n">${Math.max(0, Math.ceil(run.e - nm))}</span>分</span>`;
-    sub = `${fmtMin(run.s)} 発 ・ ${delayTxt} ・ 終点 ${fmtDay(end)} 着見込み${roomTxt}`;
+    sub = `${fmtDay(run.s)} 発 ・ ${delayTxt} ・ 終点 ${fmtDay(end)} 着見込み${roomTxt}`;
   } else if (allDone) {
     head = `<span class="pill g">終点着</span><span class="slname">今日のダイヤは完了</span>`;
     sub = `${fmtDay(end)} 着 ・ ${delayTxt}`;
@@ -2629,7 +2650,20 @@ function termClick(e) {
 }
 
 /* ================= カウントダウン・次の休み・カレンダー ================= */
-function cdList() { return cfg.countdowns.filter(c => c.name && c.date).map(c => ({ ...c, days: dayDiff(now(), parseYmd(c.date)) })).filter(c => c.days >= 0).sort((a, b) => a.days - b.days); }
+const CD_EXAM = /試験|模試|考査|検査|テスト|入試|受験|共テ/;
+function cdList() {
+  const own = cfg.countdowns.filter(c => c.name && c.date);
+  // Googleカレンダーの予定のうち、名前に「試験・模試・考査・検査・テスト・入試…」があるものも足す(同じ日のものが設定にあれば足さない)
+  const auto = cfg.cdAuto === false || typeof events === 'undefined' ? [] : (events || []).filter(e => e && e.start && CD_EXAM.test(String(e.title || ''))).map(e => ({ name: String(e.title).slice(0, 12), date: ymd(new Date(e.start)), auto: true })).filter((c, i, a) => !own.some(o => o.date === c.date) && a.findIndex(x => x.date === c.date) === i);
+  return [...own, ...auto].map(c => ({ ...c, days: dayDiff(now(), parseYmd(c.date)) })).filter(c => c.days >= 0).sort((a, b) => a.days - b.days);
+}
+// StudyLine: 21時を過ぎても今日の勉強が少ないとき(朝4時までの続きも含む)に出す1行
+function slLowWarn() {
+  const min = +cfg.slMin || 0, h = now().getHours();
+  if (!min || !(h >= 21 || slOff() > 0)) return '';
+  const t = slSums().today;
+  return t < min ? `<div class="sllow">⚠ 今日の勉強はまだ ${hm(t * 60000)}(目安 ${hm(min * 60000)})</div>` : '';
+}
 const cdEmpty = () => cfg.countdowns.some(c => c.name && c.date) ? 'この先のカウントダウンはありません。設定で新しい日付を足せます。' : '設定で日付を入れてください。';
 const cdNum = c => c.days ? `${c.days}<small>日</small>` : '<span style="font-size:.7em">今日</span>';
 function renderCount() {
@@ -3132,7 +3166,7 @@ function fvTerms() {
 }
 // StudyLine: 日を選んで、その日のダイヤと実績。7日間の勉強時間
 function fvStudy() {
-  const today = sod(now()), sel = fs.day ? parseYmd(fs.day) : today, ds = ymd(sel), d = slDay(ds);
+  const today = slRef(), sel = fs.day ? parseYmd(fs.day) : today, ds = ymd(sel), d = slDay(ds);
   const isT = ds === ymd(today);
   let body;
   if (!d || !d.tasks.length) body = `<p class="empty">${isT ? '今日のダイヤはまだありません。StudyLine で作るとここに出ます。' : 'この日の記録はありません。'}</p>`;
@@ -3472,7 +3506,7 @@ function fv2Count() {
 }
 // StudyLine: 路線図と7日の棒
 function fv2Study() {
-  const today = sod(now()), sel = fs.day ? parseYmd(fs.day) : today, ds = ymd(sel), isT = ds === ymd(today), d = slDay(ds);
+  const today = slRef(), sel = fs.day ? parseYmd(fs.day) : today, ds = ymd(sel), isT = ds === ymd(today), d = slDay(ds);
   const sc = isT ? slSchedule() : null, base = sel.getTime();
   let head = '', route = '', table = '';
   if (!d || !d.tasks.length) head = `<p class="empty">${isT ? '今日のダイヤはまだありません。「StudyLine を開く」から作るとここに出ます。' : 'この日の記録はありません。'}</p>`;
@@ -3937,7 +3971,7 @@ document.addEventListener('click', e => { const b = e.target.closest('#railView 
 const txW = t => Math.max(2, [...String(t)].reduce((a, c) => a + (c.charCodeAt(0) < 0x2000 ? .58 : 1), 0)); // 文字数(半角は 0.58 文字分)。幅に合わせて文字を小さくするのに使う
 function railStudy() {
   const sc = slSchedule(), d = now(), S = slSums(d);
-  const days = []; for (let i = 6; i >= 0; i--) { const x = addDays(d, -i), g = slDay(ymd(x)); if (g) g._ds = ymd(x); days.push({ w: WD[x.getDay()], m: slStudied(g), td: i === 0 }); }
+  const days = []; for (let i = 6; i >= 0; i--) { const x = addDays(slRef(), -i), g = slDay(ymd(x)); if (g) g._ds = ymd(x); days.push({ w: WD[x.getDay()], m: slStudied(g), td: i === 0 }); }
   const mx = Math.max(60, ...days.map(x => x.m));
   const bars = `<div class="slbars"><div class="k">7日間の運行実績 ・ 合計 ${(S.week / 60).toFixed(1)}時間</div><div class="bs">${days.map(x => `<div class="${x.td ? 'td' : ''}"><span class="n">${x.m >= 3 ? (x.m / 60).toFixed(1) : ''}</span><i style="height:${Math.max(2, x.m / mx * 100).toFixed(1)}%"></i><b>${x.w}</b></div>`).join('')}</div></div>`;
   const open = '<button class="gate plain openapp sl" data-app="studyline">StudyLine を開く</button>';
@@ -3948,7 +3982,7 @@ function railStudy() {
   const idx = rows.indexOf(cur), room = deadline ? Math.round(deadline - end) : null;
   const vrow = (r, i) => `<div class="vrow ${r.st === 'done' ? 'done' : ''} ${r === cur ? 'vnx' : ''}"><div class="dt"></div><div class="vt"><div class="no n">SL${pad(i + 1)}</div><div class="nm">${esc(r.t.name)}${r.t.memo ? `<small>${esc(r.t.memo)}</small>` : ''}</div></div><div class="t n">${fmtDay(r.s)}<small>${Math.round(r.e - r.s)}分</small></div></div>`;
   return `<div class="slv"><div class="l">
-    <div class="rc-lab"><b class="sl">${B.label}</b><span>${fmtDay(start)} 発 ・ ${rows.length}駅 ・ ${hm((planEnd - start) * 60000)}</span></div>
+    <div class="rc-lab"><b class="sl">${B.label}</b><span>${fmtDay(sc.dep)} 発 ・ ${rows.length}駅 ・ ${hm((planEnd - start) * 60000)}</span></div>
     <div class="slk">${B.allDone ? '終点' : B.run ? 'いまの駅 ・ NOW' : '次は ・ NEXT'}</div>
     <div class="slnm" style="--n:${B.allDone ? 2 : txW(cur.t.name)}">${B.allDone ? '到着' : esc(cur.t.name)}</div>
     <div class="slen n">${B.allDone ? '' : `SL${pad(idx + 1)} ・ ${fmtDay(cur.s)} – ${fmtDay(cur.e)}`}</div>
@@ -3973,7 +4007,7 @@ function railTicketMini() {
 }
 function railHolMini() {
   const o = nextOff(), d = now(), left = dayDiff(d, new Date(d.getFullYear() + 1, 0, 1)) - 1;
-  return `<div class="hol"><div class="k">次の休み ・ 運休日</div><div class="v n">${o.today ? o.len : o.days}<small>${o.today ? '連休中' : '日後'}</small></div><div class="d">${md(o.from)}(${WD[o.from.getDay()]})から ${o.len}連休 ・ 今年の残り ${left}日</div></div>`;
+  return `<div class="hol"><div class="k">次の休み ・ 運休日</div><div class="v n">${o.today ? (o.len >= 2 ? o.len : '') : o.days}<small>${o.today ? (o.len >= 2 ? '連休中' : '今日はお休み') : '日後'}</small></div><div class="d">${md(o.from)}(${WD[o.from.getDay()]})から ${o.len}連休 ・ 今年の残り ${left}日</div></div>`;
 }
 
 const RFV = {
@@ -4583,7 +4617,7 @@ let ttDay = 1, sTab = 'mode', sPlus = null;
 const SNAV = [
   ['見た目', [['mode', '画面のモード', '標準・夜・鉄道と、時間での切りかえ', ['s-mode']], ['view', '色・明るさ', 'ダーク/ライト・秒・焼き付き防止', ['s-view']], ['tiles', 'タイルの並び', 'どこに何を出すか・上のバー', ['s-chips'], 'wide']]],
   ['学校', [['tt', '時間割', '曜日ごとの科目と時刻', ['s-tt']], ['loc', '場所', '天気と地震の予想に使う', ['s-loc']]]],
-  ['予定・やること', [['todo', 'やること', '課題と持ちものを足す・消す', ['s-todo']], ['cd', 'カウントダウン', '共通テストなどまでの日数', ['s-cd']], ['soon', '予定のお知らせ', '予定の前に全画面で知らせる', ['s-soon']]]],
+  ['予定・やること', [['todo', 'やること', '課題と持ちものを足す・消す', ['s-todo']], ['cd', 'カウントダウン・休み', '試験までの日数・長期休みの期間', ['s-cd']], ['soon', '予定のお知らせ', '予定の前に全画面で知らせる', ['s-soon']]]],
   ['地震', [['quake', '地震', '全画面にする条件・音・デモ', ['s-quake']]]],
   ['ほかのアプリとつなぐ', [['gcal', 'Googleカレンダー', '予定を読む', ['s-gcal']], ['gtodo', 'Google ToDo', 'やることに出す', ['s-gtodo']], ['apps', 'StudyLine・記憶回路', 'データが見えているか', ['s-apps']], ['ai', 'AI のショートカット', '上のバーの「AI」の中身', ['s-ai']]]],
   ['その他', [['terms', '受験の語句', '出す科目', ['s-terms']], ['about', 'このアプリ', 'バージョンと更新の記録', ['s-about']]]]
@@ -4761,6 +4795,13 @@ function renderSettingsInner() {
     <div class="cdl">${cfg.countdowns.map((c, i) => `<div class="row"><input type="text" data-cdn="${i}" value="${esc(c.name)}" placeholder="名前(例:期末考査)" style="flex:1"><input type="date" data-cdd="${i}" value="${esc(c.date)}"><button class="btn sub" data-cddel="${i}">×</button></div>`).join('')}</div>
     <button class="btn sub" id="cdAdd" style="margin-top:8px">手で追加</button>
     <p class="note">近い順に、タイルには2つまで出ます。過ぎた日は出ません。</p>
+    <div class="row"><label><input type="checkbox" id="cdAuto" ${cfg.cdAuto !== false ? 'checked' : ''}>Googleカレンダーの「試験・模試・考査・検査・テスト・入試」という予定を、自動で足す</label></div>
+    <h4 style="margin-top:18px">休みの期間(夏休み・冬休みなど)</h4>
+    <div class="cdl">${(cfg.breaks || []).map((b, i) => `<div class="row"><input type="text" data-brn="${i}" value="${esc(b.name || '')}" placeholder="名前(例:冬休み)" style="flex:1"><input type="date" data-brf="${i}" value="${esc(b.from || '')}"><span>〜</span><input type="date" data-brt="${i}" value="${esc(b.to || '')}"><button class="btn sub" data-brdel="${i}">×</button></div>`).join('')}</div>
+    <button class="btn sub" id="brAdd" style="margin-top:8px">休みの期間を追加</button>
+    <p class="note">この間は登校日として数えません(「次の登校」「授業日 あと◯日」「次の休み」に効きます)。祝日と年末年始(12/29〜1/3)は、入れなくても休みです。</p>
+    <h4 style="margin-top:18px">StudyLine の勉強が少ない日</h4>
+    <div class="row">21時を過ぎて、今日の勉強が <input type="number" id="slMin" min="0" max="600" inputmode="numeric" style="width:5em" value="${+cfg.slMin || 0}"> 分より少ないと知らせる(0 = 知らせない)</div>
     </div><div><details class="gcadd"><summary><b>Googleカレンダーから追加</b> <span class="note">(押して開く)</span></summary>
     ${!cfg.gasUrl ? '<p class="note">「連携」タブで Googleカレンダーをつなぐと、ここに予定が出て、押すだけで追加できます。</p>'
       : !events || !events.length ? '<p class="note">この先の予定がありません(読み込み中のこともあります)。</p>'
@@ -4887,6 +4928,8 @@ $('settings').addEventListener('click', e => {
   if (t.dataset.leadadd) { cfg.soonLeads = [...new Set([...(cfg.soonLeads || []), +t.dataset.leadadd])].sort((a, b) => a - b); return rs(); }
   if (t.id === 'leadAdd') { const n = +$('leadN').value, m = Math.round(n * +$('leadU').value); if (!(n > 0) || m > 7 * 1440) { toast('1分〜7日前の間で入れてください'); return; } cfg.soonLeads = [...new Set([...(cfg.soonLeads || []), m])].sort((a, b) => a - b); return rs(); }
   if (t.id === 'soonUnmute') { soonMuted = {}; store.set('soonMute', soonMuted); return rs(); }
+  if (t.id === 'brAdd') { cfg.breaks = [...(cfg.breaks || []), { name: '', from: '', to: '' }]; return rs(); }
+  if (t.dataset.brdel != null) { cfg.breaks.splice(+t.dataset.brdel, 1); return rs(); }
   if (t.id === 'cdAdd') { cfg.countdowns.push({ name: '', date: '' }); return rs(); }
   if (t.id === 'aiAdd') { if (cfg.ai.length < 12) cfg.ai.push({ name: '', url: '', note: '' }); return rs(); }
   if (t.id === 'aiReset') { if (!confirm('AI のショートカットを最初の並びに戻しますか?')) return; cfg.ai = null; fixAi(); renderSlot(); renderTiles(); return rs(); }
@@ -4976,6 +5019,11 @@ $('settings').addEventListener('change', e => {
   else if (t.dataset.pree != null) cfg.days[ttDay].pre[+t.dataset.pree][2] = unpad(t.value);
   else if (t.id === 'postN' || t.id === 'postS' || t.id === 'postE') { const P = cfg.days[ttDay].post = cfg.days[ttDay].post || ['', '', '']; if (t.id === 'postN') P[0] = t.value.trim().slice(0, 12); else P[t.id === 'postS' ? 1 : 2] = unpad(t.value); }
   else if (t.dataset.satw) { const n = +t.dataset.satw; cfg.satWeeks = t.checked ? [...new Set([...(cfg.satWeeks || []), n])].sort() : (cfg.satWeeks || []).filter(x => x !== n); }
+  else if (t.id === 'cdAuto') cfg.cdAuto = t.checked;
+  else if (t.id === 'slMin') cfg.slMin = Math.max(0, Math.min(600, Math.round(+t.value) || 0));
+  else if (t.dataset.brn != null) cfg.breaks[+t.dataset.brn].name = t.value.trim().slice(0, 12);
+  else if (t.dataset.brf != null) cfg.breaks[+t.dataset.brf].from = t.value;
+  else if (t.dataset.brt != null) cfg.breaks[+t.dataset.brt].to = t.value;
   else if (t.dataset.cdn != null) cfg.countdowns[+t.dataset.cdn].name = t.value.trim().slice(0, 12);
   else if (t.dataset.cdd != null) cfg.countdowns[+t.dataset.cdd].date = t.value;
   else if (t.id === 'prefSel' && t.value) { const p = JAPAN.find(x => x.name === t.value); cfg.loc = { lat: +p.c[1].toFixed(3), lon: +p.c[0].toFixed(3), pref: p.name, how: 'pref' }; saveCfg(); loadWeather(); renderSettings(); return; }
