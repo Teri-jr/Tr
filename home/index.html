@@ -1392,7 +1392,7 @@ body.night.noglow #stage{background-image:none}
 
 <script>
 'use strict';
-const APP_VERSION = '2.36.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.36.1'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -2830,11 +2830,13 @@ function checkSoon() {
   const rc = $('v2ringC'); if (rc && tmr && tmr.paused == null) rc.style.strokeDashoffset = (2 * Math.PI * 210 * (1 - Math.max(0, Math.min(1, (tmr.end - t) / tmr.total)))).toFixed(1);
   const sb = $('v2snbar'); if (sb) sb.style.width = Math.max(0, Math.min(100, 100 * (1 - (+sb.dataset.st - t) / 3600e3))).toFixed(1) + '%';
 }
+if (document.fonts) document.fonts.ready.then(() => document.querySelectorAll('[data-fit]').forEach(e => { e._fl = null; fitText(e, +e.dataset.fit); }));
 function fitText(el, max) {
-  const n = el.textContent.length; if (el._fl === n) return;
+  // 文字の長さ・枠の幅・字体の読み込みが変わったときだけ測り直す(前は長さだけを見ていたので、字体が読み込まれる前に測ると切れたままになった)
+  const key = el.textContent.length + '|' + (el.parentElement ? el.parentElement.clientWidth : 0) + '|' + (document.fonts ? document.fonts.status : ''); if (el._fl === key) return;
   el.style.fontSize = max + 'px'; const w = el.clientWidth;
   if (w <= 0) return; // まだ表示されていない(幅が計れない)ときは、あとでもう一度
-  el._fl = n;
+  el._fl = key;
   if (el.scrollWidth > w) el.style.fontSize = Math.floor(max * w / el.scrollWidth) + 'px';
 }
 // 古い記録を消す
@@ -3066,7 +3068,7 @@ function fvTabsUp() {
   if (tb && tb.parentNode === bar) { ft.appendChild(tb); if (!bar.textContent.trim() && !bar.querySelector('button,input,select')) bar.remove(); }
 }
 $('fullTabs').addEventListener('click', e => { const b = e.target.closest('[data-fa]'); if (b && fullK) fvAction(b.dataset.fa, b.dataset.v); });
-function renderFullView() { if (fullK && isRail() && RFV[fullK] && !(fullK === 'weather' && fs.wmode === 'radar')) { railFullView(); return; } if (fullK && FV[fullK]) { const keep = fullK === 'clock' ? $('fcHM') : null; $('fullBody').innerHTML = `<div class="fv v2 fv-${fullK}">${FV[fullK]()}</div>`; if (keep && keep._rc && $('fcHM')) $('fcHM').replaceWith(keep); /* 動いている最中の数字は、描き直しても引き継ぐ */ fvTabsUp(); if (fullK === 'clock') fvClockTick(now()); $('fullBody').querySelectorAll('[data-fit]').forEach(e => fitText(e, +e.dataset.fit)); if (fullK === 'quakes') requestAnimationFrame(drawQuakeMini); if (fullK === 'weather' && fs.wmode === 'radar') requestAnimationFrame(rdInit); else rdStop(); } }
+function renderFullView() { if (fullK && isRail() && RFV[fullK] && !(fullK === 'weather' && fs.wmode === 'radar')) { railFullView(); return; } if (fullK && FV[fullK]) { const keep = fullK === 'clock' ? $('fcHM') : null; $('fullBody').innerHTML = `<div class="fv v2 fv-${fullK}">${FV[fullK]()}</div>`; if (keep && keep._rc && $('fcHM')) $('fcHM').replaceWith(keep); /* 動いている最中の数字は、描き直しても引き継ぐ */ fvTabsUp(); if (fullK === 'clock') fvClockTick(now()); $('fullBody').querySelectorAll('[data-fit]').forEach(e => fitText(e, +e.dataset.fit)); requestAnimationFrame(() => $('fullBody').querySelectorAll('[data-fit]').forEach(e => { e._fl = null; fitText(e, +e.dataset.fit); })); if (fullK === 'quakes') requestAnimationFrame(drawQuakeMini); if (fullK === 'weather' && fs.wmode === 'radar') requestAnimationFrame(rdInit); else rdStop(); } }
 const tabs = (fa, items, cur) => `<div class="fvtabs">${items.map(([v, l]) => `<button data-fa="${fa}" data-v="${esc(v)}" class="${String(v) === String(cur) ? 'on' : ''}">${l}</button>`).join('')}</div>`;
 // その日にかかる予定(終日の予定は終わりの日を含まない)
 function eventsOn(d) {
