@@ -1391,7 +1391,7 @@ body.night.noglow #stage{background-image:none}
 
 <script>
 'use strict';
-const APP_VERSION = '2.35.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.35.1'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -2264,6 +2264,7 @@ async function loadGt() {
 }
 let todoJ = null; // 直前に押したやること(描き直したあとにアニメーションを付ける)
 // 並び順:押したばかりのものは、アニメーションが終わるまで元の場所に置いておく
+const todayKey = () => ymd(now()); // 日付が変わったら期限の表示も変わる
 const todoFresh = () => todoJ && Date.now() - todoJ.at < 900;
 const todoOrd = t => (todoFresh() && t.id === todoJ.id ? !t.done : t.done) ? 1 : 0;
 const todoJust = t => todoJ && todoJ.id === t.id && Date.now() - todoJ.at < 900 ? (t.done ? ' jdone' : ' jundo') : '';
@@ -3975,7 +3976,9 @@ class RailTodo {
       return { id: t.id, done: t.done, k: t.done ? '済' : t.bring ? '持ち物' : t.gt ? 'G ToDo' : '課題', d: t.done ? '済' : (di.label || '—') + (late ? '​' : ''), late, tx: this.fit(t.text) }; });
     const open = list.filter(t => !t.done).length, sig = JSON.stringify([vals, open]);
     if (sig === this.sig) return;
-    const anim = this.sig !== null && !document.hidden && flapKind(); this.sig = sig; // 最初の表示はそのまま出す。そのあとの変化はめくる
+    // 中身が変わったときだけめくる。画面の幅が変わって「…」で切る位置が変わっただけ(全画面の切りかえなど)は、めくらずにそのまま出す
+    const dsig = JSON.stringify([list.slice(0, this.n).map(t => [t.id, t.done, t.text, t.due, t.bring, t.gt]), open, todayKey()]);
+    const anim = this.sig !== null && this.dsig !== dsig && !document.hidden && flapKind(); this.sig = sig; this.dsig = dsig; // 最初の表示はそのまま出す
     for (const v of vals) { if (!this.dd.some(x => x.t === v.d)) this.dd.push({ t: v.d, c: v.done ? '#8d8a83' : v.late ? '#ff5b3a' : '#f5b301' }); if (!this.td.includes(v.tx)) this.td.push(v.tx); }
     const plan = [];
     this.rows.forEach((R, i) => {
