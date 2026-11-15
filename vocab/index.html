@@ -1172,6 +1172,12 @@
   .sheet-list .q.def { font-weight: 500; font-size: .9rem; }
   .sheet-list .a { color: var(--sheet-ink); font-weight: 700; overflow-wrap: anywhere; transition: color .12s; }
   .sheet-list .a.covered { color: transparent; }
+  .sheet-list .ex { grid-column: 1 / -1; font-size: .82rem; opacity: .75; line-height: 1.6; }
+  .prompt-example { margin: -6px 0 16px; font-size: 1rem; line-height: 1.7; }
+  .face-example { font-size: .95rem; line-height: 1.7; opacity: .9; }
+  .prompt-example mark, .face-example mark, .sheet-list .ex mark, .detail .ex mark {
+    background: none; color: inherit; font-weight: 700; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px;
+  }
   .sheet-list li.peek .a.covered { color: var(--sheet-ink); }
   .red-sheet {
     position: fixed; left: 0; right: 0; bottom: 0; top: 60vh; z-index: 40; pointer-events: none;
@@ -1378,6 +1384,7 @@
       <div class="prompt-label" id="promptLabel"></div>
       <div class="prompt" id="prompt"></div>
       <div class="prompt-hint hidden" id="promptHint"></div>
+      <div class="prompt-example hidden" id="promptExample"></div>
       <div id="answerArea"></div>
       <div id="feedback"></div>
     </div>
@@ -1396,6 +1403,7 @@
             <div class="face-label" id="frontLabel"></div>
             <div class="face-main" id="frontText"></div>
             <div class="face-hint" id="frontHint"></div>
+            <div class="face-example" id="frontExample"></div>
           </div>
           <div class="face back">
             <div class="face-label">答え</div>
@@ -1521,6 +1529,7 @@ function loadWords(text) {
     japanese: (r[idx('japanese')] || '').trim(),
     paragraph: (r[idx('paragraph')] || '').trim(),
     definition: (r[idx('definition')] || '').trim(),
+    example: idx('example') < 0 ? '' : (r[idx('example')] || '').trim(),
   })).filter(w => w.english && w.japanese);
   if (!list.length) throw new Error('有効な単語がありません');
   return list;
@@ -2090,6 +2099,9 @@ function renderQuestion() {
   const hint = isKanji() && w.definition;
   $('promptHint').textContent = hint || '';
   $('promptHint').classList.toggle('hidden', !hint);
+  // 例文（漢字）。問題の語に印を付けて出す
+  $('promptExample').innerHTML = w.example ? exampleHTML(w) : '';
+  $('promptExample').classList.toggle('hidden', !w.example);
   $('feedback').innerHTML = '';
   const area = $('answerArea');
   area.innerHTML = '';
@@ -2352,6 +2364,16 @@ function renderWordTiles(area, w) {
   area.append(box, grid, ctrl);
 }
 
+// 例文。問題の語（「ケンビ（鏡）」なら「ケンビ」）に印を付ける。filled なら答えを入れた形にする
+function exampleHTML(w, filled = false) {
+  const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const core = w.english.replace(/（[^）]*）/g, '');
+  const i = core ? w.example.indexOf(core) : -1;
+  if (i < 0) return esc(w.example);
+  const key = !filled ? core : kanjiType(w) === 'write' ? w.japanese : `${core}（${w.japanese}）`;
+  return esc(w.example.slice(0, i)) + `<mark>${esc(key)}</mark>` + esc(w.example.slice(i + core.length));
+}
+
 function detailHTML(w) {
   const L = fieldLabels();
   const range = subject.rangeType === 'block' ? `${words.indexOf(w) + 1}（${blockLabel(w.block)}）` : w.paragraph;
@@ -2360,6 +2382,7 @@ function detailHTML(w) {
     <div><b>${L.q}</b>${esc(w.english)}</div>
     <div><b>${L.a}</b>${esc(w.japanese)}</div>
     ${w.definition ? `<div><b>${L.def}</b>${esc(w.definition)}</div>` : ''}
+    ${w.example ? `<div class="ex"><b>例文</b><span>${exampleHTML(w, true)}</span></div>` : ''}
     ${range ? `<div><b>${subject.rangeLabel}</b>${esc(range)}</div>` : ''}
   </div>`;
 }
@@ -2510,6 +2533,7 @@ function renderCard() {
   $('frontText').textContent = promptOf(w, mode);
   $('frontText').classList.toggle('def', mode === 'd2e');
   $('frontHint').textContent = isKanji() && w.definition ? w.definition : '';
+  $('frontExample').innerHTML = w.example ? exampleHTML(w) : '';
   $('backText').textContent = answerOf(w, mode);
   $('backDetail').innerHTML = detailHTML(w);
   const grades = gradeButtons(w, true, g => answerCard(g));
@@ -2625,6 +2649,11 @@ function renderSheet() {
     at.textContent = answerOf(w, sheet.mode);
     a.appendChild(at);
     li.append(no, q, a);
+    if (w.example) {
+      const ex = document.createElement('span'); ex.className = 'ex';
+      ex.innerHTML = exampleHTML(w);
+      li.appendChild(ex);
+    }
     const k = wordKey(w), qf = qField(sheet.mode), af = aField(sheet.mode);
     qt.classList.toggle('marked', marks[qf].has(k));
     at.classList.toggle('marked', marks[af].has(k));
@@ -3026,7 +3055,7 @@ $('sfxChk').addEventListener('change', e => {
 
 // ---------- バージョン・変更履歴 ----------
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
-const APP_VERSION = '3.13';
+const APP_VERSION = '3.14';
 const versionNum = v => String(v).split('.').map(Number);
 const isNewer = (a, b) => {
   const x = versionNum(a), y = versionNum(b);
