@@ -758,6 +758,7 @@ em.r{color:var(--red);font-style:normal}em.b{color:var(--blue);font-style:normal
 .v2qi .tm{font-size:20px;color:var(--sub);text-align:right}.v2qi .tm small{display:block;font-family:var(--jp);font-size:12px}
 .v2qd{padding:16px 22px;display:flex;flex-direction:column;gap:8px;min-height:0}
 .v2qmw{position:relative;flex:1;min-height:0;display:flex}.v2qd canvas{width:100%;flex:1;min-height:0;background:#101418;border:1px solid var(--rule)}
+.ipts{max-height:200px;overflow:auto;margin:6px 0 4px;border-top:1px solid #333;padding-top:6px}.ipts .lab{color:#9aa;font-size:12px}.ipts .pg2{display:flex;gap:8px;align-items:flex-start;padding:3px 0;font-size:14px;line-height:1.5;color:#e8e8e8}.ipts .si{flex:none;font-size:12px;font-weight:700;padding:1px 6px}
 .v2pts{max-height:30%;overflow:auto;border-top:1px solid var(--rule);padding-top:6px}.v2pts .pg2{display:flex;gap:8px;align-items:flex-start;padding:4px 0;font-size:13px;line-height:1.5}.v2pts .si{flex:none;font-size:12px;font-weight:700;padding:1px 6px}.v2pts b{font-weight:700}
 .v2qd .rw{display:flex;justify-content:space-between;gap:10px;font-size:15px;border-bottom:1px solid var(--rule);padding:6px 0}.v2qd .rw span{color:var(--sub)}.v2qd .rw b{font-weight:500;text-align:right}
 /* タイマー */
@@ -1391,7 +1392,7 @@ body.night.noglow #stage{background-image:none}
 
 <script>
 'use strict';
-const APP_VERSION = '2.35.1'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.36.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -4337,6 +4338,7 @@ function bigShindo(i, note, plain) {
 }
 function eewClass(e) { return e.local >= 5 || (e.warn && e.local >= 4) ? 'strong' : e.local >= 3 ? 'mid' : e.local >= 1 ? 'weak' : 'far'; }
 function drawEEWPanel() {
+  $('eewPanel')._h = null; // 地震情報の画面のしるしを消す
   const e = eew, t = nowMs(), left = Math.ceil((e.sAt - t) / 1000), lv = eewClass(e);
   const dist = Math.round(kmBetween(e.lat, e.lon, loc().lat, loc().lon));
   const head = { strong: '強い揺れに警戒', mid: '揺れに注意', weak: '弱い揺れ', far: '遠くの地震' }[lv];
@@ -4362,8 +4364,9 @@ function drawEEWPanel() {
 function drawInfoPanel() {
   const q = quake, E = q.q.earthquake, H = E.hypocenter || {}, t0 = jst(E.time) + (q.demo ? timeOffset : 0);
   const ts = E.domesticTsunami, tsBad = ts === 'Watch' || ts === 'Warning';
-  $('eewPanel').className = 'p info';
-  $('eewPanel').innerHTML = `<div class="hd"><b>地震情報</b><span>${esc(q.why || '')}</span><button class="x" data-set="1">設定</button><button class="x" data-close="info">閉じる</button></div>
+  const ty = q.q.types || [], stage = ty.some(x => /DetailScale|ScaleAndDestination/.test(x)) ? '各地の震度' : ty.includes('Destination') ? '震源・規模' : ty.includes('ScalePrompt') ? '震度速報' : '';
+  const pts = (q.q.points || []).filter(p => P2P_SCALE[p.scale]).map(p => [p.pref || '', p.addr || p.pref || '', P2P_SCALE[p.scale]]).sort((a, b) => b[2] - a[2]);
+  const html = `<div class="hd"><b>地震情報${stage ? ` ・ ${stage}` : ''}</b><span>${esc(q.why || '')}</span><button class="x" data-set="1">設定</button><button class="x" data-close="info">閉じる</button></div>
   <div class="bd">
     <div class="lab">${esc(loc().pref || '')}の震度</div>
     <div class="row1">${bigShindo(q.mine, 'この県の観測なし')}
@@ -4371,9 +4374,12 @@ function drawInfoPanel() {
     ${quakeSteps(q.q)}
     <div class="src">${esc(H.name || '震源は調査中')} ${H.magnitude > 0 ? `<span class="n" style="font-size:22px;color:#fff">M${(+H.magnitude).toFixed(1)}</span>` : ''}<span>${H.depth > 0 ? `深さ ${H.depth}km` : H.depth === 0 ? 'ごく浅い' : ''}</span></div>
     <div class="st2"><div><span>発生</span><b class="n">${tmS(t0)} ごろ</b></div><div><span>津波</span><b style="${tsBad ? 'color:#ff6b6b' : 'font-size:16px'}">${esc(TSUNAMI[ts] || '情報なし')}</b></div></div>
-    <div class="act">${tsBad ? '<div style="background:#ff3b3b;color:#fff">海や川から離れ、高いところへ</div>' : ''}<div>落ち着いて、先生の指示を待つ</div><div>割れたガラス・落下物に注意</div></div>
-    <div class="ft">${q.demo ? 'デモ' : '気象庁(P2P地震情報 経由)'} ・ 地図は都道府県ごとの最大震度(色と数字)</div>
+    ${pts.length ? `<div class="ipts">${quakePts({ pts, byPref: q.byPref })}</div>` : ''}
+    <div class="act">${tsBad ? '<div style="background:#ff3b3b;color:#fff">海や川から離れ、高いところへ</div>' : ''}<div>落ち着いて、先生の指示を待つ</div>${pts.length > 6 ? '' : '<div>割れたガラス・落下物に注意</div>'}</div>
+    <div class="ft">${q.demo ? 'デモ' : '気象庁(P2P地震情報 経由)'} ・ 地図は都道府県ごとの最大震度(色と数字)・＋−で拡大</div>
   </div>${q.demo ? '<div class="demo">デモ</div>' : ''}`;
+  const P = $('eewPanel'); P.className = 'p info';
+  if (P._h !== html) { const sc = P.querySelector('.ipts'), y = sc ? sc.scrollTop : 0; P.innerHTML = html; P._h = html; const n = P.querySelector('.ipts'); if (n) n.scrollTop = y; } // 0.25秒ごとに同じ中身で描き直さない
 }
 $('eewPanel').addEventListener('pointerup', e => {
   if (e.target.closest('[data-set]')) { openSettings('s-quake'); return; }
@@ -4544,8 +4550,8 @@ function showQuakeInfo(q, demo, forceFull) {
   const full = forceFull || (!!why && !demo); // 帯のデモは帯だけ
   const prev = quake, same = prev && prev.id === q.id;
   const grew = same && (q.types || []).length > (prev.q.types || []).length; // 次の発表(震源・各地の震度)が出た
-  quake = { id: q.id, q, demo, mine, maxI, maxPref, byPref, why, full, fullClosed: same ? prev.fullClosed : false, view: same && !grew ? prev.view : null, until: same && !grew ? prev.until : nowMs() + 15 * 60e3 };
-  if (!same || (full && !prev.full) || (mine >= cfg.qBeep && prev.mine < cfg.qBeep)) full ? SOUNDS.quake(true) : mine >= cfg.qBeep ? SOUNDS.quake(false) : 0;
+  quake = { id: q.id, q, demo, mine, maxI, maxPref, byPref, why, full, fullClosed: same && !grew ? prev.fullClosed : false, view: same && !grew ? prev.view : null, until: same && !grew ? prev.until : nowMs() + 15 * 60e3 };
+  if (!same || (full && !prev.full) || (grew && full) || (mine >= cfg.qBeep && prev.mine < cfg.qBeep)) full ? SOUNDS.quake(true) : mine >= cfg.qBeep ? SOUNDS.quake(false) : 0;
   updateFull(); renderQBanner();
 }
 const TSUNAMI = { None: 'この地震による津波の心配はありません', Unknown: '津波の有無は不明', Checking: '津波の有無を調査中', NonEffective: '若干の海面変動の可能性(被害の心配なし)', Watch: '津波注意報 発表中', Warning: '津波警報 発表中' };
@@ -4600,12 +4606,18 @@ function demoEEW(kind) { // 'strong' / 'weak' / 'far'(遠くの地震。「す�
   }, true), at)));
 }
 function demoInfo(full) {
-  const L = loc(), t = new Date(nowMs() - timeOffset - 60e3 + 9 * 3600e3).toISOString().slice(0, 19).replace('T', ' ').replace(/-/g, '/');
-  // 現在地の県とその周りの県に震度を入れる
+  // 本物と同じ順番で出す:震度速報(地域の震度だけ)→ 震源に関する情報(M・深さ)→ 各地の震度(市区町村)
+  demoTimers.forEach(clearTimeout); demoTimers = [];
+  const L = loc(), t = new Date(nowMs() - timeOffset - 60e3 + 9 * 3600e3).toISOString().slice(0, 16).replace('T', ' ').replace(/-/g, '/') + ':00', id = 'demo' + Date.now();
   const near = (JAPAN || []).map(p => ({ p, d: (p.c[0] - L.lon) ** 2 + (p.c[1] - L.lat) ** 2 })).sort((a, b) => a.d - b.d).slice(0, 9);
-  const sc = [50, 45, 45, 40, 40, 40, 30, 30, 20];
-  const points = near.length ? near.map((x, i) => ({ pref: x.p.name, scale: sc[i] })) : [{ pref: L.pref, scale: 45 }];
-  showQuakeInfo({ id: 'demo' + Date.now(), earthquake: { time: t, hypocenter: { name: 'デモ震源', magnitude: 6.6, depth: 40, latitude: +(L.lat + .38).toFixed(1), longitude: +(L.lon + .32).toFixed(1) }, maxScale: 50, domesticTsunami: 'None' }, points, types: ['DetailScale', 'Destination', 'ScalePrompt'] }, true, !!full);
+  const sc = [50, 45, 45, 40, 40, 40, 30, 30, 20], nm = n => n.replace(/[都府県]$/, '');
+  const prefs = near.length ? near.map((x, i) => ({ pref: x.p.name, scale: sc[i] })) : [{ pref: L.pref, scale: 45 }];
+  const area = prefs.filter(x => x.scale >= 30).map(x => ({ pref: x.pref, addr: nm(x.pref) + (x.scale >= 45 ? '南部' : '北部'), scale: x.scale, isArea: true }));
+  const city = prefs.flatMap(x => [{ pref: x.pref, addr: nm(x.pref) + '市', scale: x.scale }, { pref: x.pref, addr: nm(x.pref) + '町', scale: Math.max(10, x.scale - 10) }]);
+  const hypo = { name: 'デモ震源', magnitude: 6.6, depth: 40, latitude: +(L.lat + .38).toFixed(1), longitude: +(L.lon + .32).toFixed(1) }, none = { name: '', magnitude: -1, depth: -1, latitude: -200, longitude: -200 };
+  const stages = [[['ScalePrompt'], none, area, 'Checking'], [['Destination', 'ScalePrompt'], hypo, area, 'None'], [['DetailScale', 'Destination', 'ScalePrompt'], hypo, city, 'None']];
+  stages.forEach(([types, H, points, ts], k) => demoTimers.push(setTimeout(() => showQuakeInfo({ id, earthquake: { time: t, hypocenter: H, maxScale: 50, domesticTsunami: ts }, points, types }, true, !!full), k * 6000)));
+  toast('地震情報のデモ:震度速報 → 震源・マグニチュード → 各地の震度 の順に、6秒ずつ出します');
 }
 
 /* ================= お知らせ・更新 ================= */
