@@ -255,7 +255,7 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outli
 
     <section class="setup" id="setup">
       <div>
-        <h1 id="appTitle">京急線 運転士タブレット（GPS連動）</h1>
+        <h1 id="appTitle">運転士タブレット（GPS連動）</h1>
         <div class="upd" id="updSetup" hidden><span id="updSetupTxt"></span><button type="button" class="updGo">更新する</button></div>
         <div class="hint">バージョン <span id="appVer"></span></div>
         <p>時刻表は使わず、スマホのGPSと駅・線路のデータだけで動く。次の停車駅までの距離を線路に沿って測り、停車・通過・駅間停車・待避を自動で判定して読み上げる。トンネルでGPSが切れたら最後の位置と速度から走行を推定し、次にGPSが入ったところで直す。家で試すときは「テスト走行」にすると、GPSの代わりに模擬の位置が流れる。</p>
@@ -529,7 +529,7 @@ function planTimes(route,k){
   return {ev:s.events,traj:s.traj};
 }
 // ---- バージョン（変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする） ----
-const APP_VERSION='1.7.0';
+const APP_VERSION='1.7.1';
 const isNewer=(a,b)=>{ const x=String(a).split(".").map(Number), y=String(b).split(".").map(Number); for(let i=0;i<3;i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0); } return false; };
 let upd=null; // {version, items}：新しい版が出ていたら入る。announced=放送済み
 async function checkUpdate(){
@@ -680,7 +680,7 @@ function netSync(){
   document.querySelector('[data-k="kind"]').innerHTML=Object.entries(KINDS).map(([k,v])=>`<button aria-pressed="${k===cfg.kind}" data-v="${k}">${v.label}</button>`).join("");
   if(!n.cars.includes(cfg.cars)) cfg.cars=n.defCars;
   document.querySelector('[data-k="cars"]').innerHTML=n.cars.map(c=>`<button aria-pressed="${c===cfg.cars}" data-v="${c}">${c}</button>`).join("");
-  $("appTitle").textContent=`${n.title} 運転士タブレット（GPS連動）`;
+  $("appTitle").textContent="運転士タブレット（GPS連動）";
   secSync();
 }
 (function initSec(){
