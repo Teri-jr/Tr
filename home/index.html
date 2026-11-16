@@ -1092,7 +1092,7 @@ body:not(.nopomo) .nv-time{font-size:160px}
 .wk i{display:block;width:100%;max-width:44px;max-height:calc(100% - 44px);background:var(--segdone);border-radius:4px 4px 0 0;flex:none}
 .wk .v{font-size:13px;color:var(--sub)}.wk .w{font-size:12px;color:var(--sub)}
 .wk .td i{background:var(--red);box-shadow:0 0 12px rgba(var(--acr,145,132,217),.5)}.sllow{margin-top:6px;font-size:.82em;font-weight:700;color:var(--red)}.wk .td .w,.wk .td .v{color:var(--ink)}
-#nvCal .cal{flex:1;align-content:space-evenly}#nvCal .cal span{font-size:15px}
+.nvb.calendar .cal{flex:1;align-content:space-evenly}.nvb.calendar .cal span{font-size:15px}
 .nvcd .big2 .v{font-size:64px}.nvcd .big2 .k{font-size:12.5px}.nvcd .big2 .d{font-size:11.5px;margin-top:2px}
 /* 数字の動き(押し上げ・ぼかし) */
 .rch{display:flex;align-items:flex-start}
@@ -1334,6 +1334,17 @@ body.rail.sgn-navy .rv-sign .k1{background:#f3efe6}body.rail.sgn-navy .rv-sign .
 body.rail.sgn-navy .rv-sign.sl .rt .lf span{color:#f5b301}body.rail.sgn-navy .rv-sign.ev .rt .lf span{color:#8fe0a8}
 body.night{--red:var(--ac,#9184d9);--sl:var(--ac,#9184d9);--segdone:var(--acd,#423a6a)}
 body.night.noglow #stage{background-image:none}
+
+/* ===== 夜・鉄道の枠の中身(設定で選ぶ) ===== */
+.mopt .slots{display:flex;flex-direction:column;gap:4px;font-size:13px}.mopt .slots span{color:var(--sub);font-size:12px;margin-top:4px}.mopt .slots select{width:100%}
+.nv-side .wk{height:110px;flex:none}.nv-side .nvc .cal span{font-size:13px}
+.nv-row2>.nvb{overflow:hidden}.nv-row2>.nvb.tt,.nv-row2>.nvb.todo,.nv-row2>.nvb.sched{display:block}
+.nv-row2>.nvb .big2 .v{font-size:56px}
+.rv-info.cdx .h{background:var(--rl,#ff5b3a)!important;color:#141413}.rv-info.cdx .b2 .t{font-size:60px}.rv-info.cdx .f{color:#8d8a83}.rv-info.cdx .f i{background:var(--rl,#ff5b3a)}
+.rv-cd .hol .wk{height:84px;margin-top:6px}.rv-cd .hol .v small{font-size:15px}
+body:not(.portrait) #railView.rr-swap #rvSL{order:2}body:not(.portrait) #railView.rr-swap #rvTodo{order:3}body:not(.portrait) #railView.rr-swap .rv-r>*{order:0}body:not(.portrait) #railView.rr-swap #rvBoard{order:1}
+#railView.rr-notodo #rvTodo{display:none}#railView.rr-nosl #rvSL{display:none}#railView.rr-nosl .rv-todo{max-height:none}
+.rv-cd.one{grid-template-columns:minmax(0,1fr)!important}.rv-cd.one>div{padding:0!important;border-left:0!important}
 </style>
 </head>
 <body>
@@ -1355,7 +1366,7 @@ body.night.noglow #stage{background-image:none}
     <div class="col" id="colC"></div>
     <div class="col" id="colR"></div>
   </div>
-  <div id="nightView"><div class="nv-main"><div id="nvTop"></div><div class="nv-sl" id="nvSL"></div><div class="nv-row2"><div class="nvc" id="nvWeek" data-open="studyline"></div><div class="nvc" id="nvCal" data-open="calendar"></div><div class="nvc nvcd" id="nvCd" data-open="count"></div></div></div><div class="nv-side" id="nvSide"></div></div>
+  <div id="nightView"><div class="nv-main"><div id="nvTop"></div><div class="nv-sl" id="nvSL"></div><div class="nv-row2" id="nvRow2"></div></div><div class="nv-side" id="nvSide"></div></div>
   <div id="railView"><div class="rv-l"><div id="rvTop"><div class="c1" data-open="clock"><div class="rv-dt" id="rvDt"></div><div class="rv-clock" id="rvClk"></div></div><div id="rvDoor"></div></div><div class="rv-sign" id="rvSign"></div><div class="rv-route" id="rvRoute"></div><div class="rv-cd" id="rvCd"></div></div><div class="rv-r"><div id="rvBoard"></div><div class="rv-todo todo" id="rvTodo"></div><div class="rv-sl" id="rvSL"></div></div></div>
   <div id="pool" hidden>
     <section class="tile tt" id="ttTile"></section>
@@ -1392,7 +1403,7 @@ body.night.noglow #stage{background-image:none}
 
 <script>
 'use strict';
-const APP_VERSION = '2.36.1'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.37.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -1466,10 +1477,18 @@ fixMode();
 // モードごとの設定。古い保存(全モード共通の anim・showSec)からは、その値を引き継ぐ
 const RAIL_LINES = { orange: ['#ff5b3a', '橙'], blue: ['#4a9af0', '青'], green: ['#3fb56f', '緑'], purple: ['#9a86ea', '紫'], red: ['#e8463c', '赤'], pink: ['#f078a8', '桃'] };
 const NIGHT_ACC = { purple: ['#9184d9', '145,132,217', '#b5abfc', '#d2cefd', '#423a6a', '紫'], blue: ['#6fa0f0', '111,160,240', '#a8c6fa', '#cfe0fd', '#2f4470', '青'], green: ['#62c79a', '98,199,154', '#9be0c0', '#c8f0de', '#2a5445', '緑'], amber: ['#e0b060', '224,176,96', '#f0cf96', '#f8e6c4', '#5a4526', '琥珀'], pink: ['#e088b8', '224,136,184', '#f0b4d2', '#f8d6e6', '#5a3348', '桃'] };
+// 夜・鉄道の決まった枠に、何を出すか(枠ごとに選べる中身)
+const NIGHT_SLOTS = { tt: '時間割', todo: 'やること', weather: '天気', week: '7日間の学習', calendar: 'カレンダー', count: 'カウントダウン', holiday: '次の休み', sched: '予定', none: 'なし' };
+const RAIL_DOOR = { weather: '天気', pomo: '自習タイマー', count: 'カウントダウン', holiday: '次の休み', none: 'なし' };
+const RAIL_CD = { count: 'きっぷ(カウントダウン)', holiday: '次の休み', week: '7日間の学習', weather: '天気', none: 'なし' };
+const RAIL_RIGHT = { 'todo-sl': 'やること → StudyLine', 'sl-todo': 'StudyLine → やること', todo: 'やることだけ', sl: 'StudyLine だけ' };
 function fixModeOpt() {
   const A = ['flap', 'push', 'blur', 'none'], old = A.includes(cfg.anim) ? cfg.anim : null, sec = cfg.showSec !== false, m = cfg.modeOpt && typeof cfg.modeOpt === 'object' ? cfg.modeOpt : {};
   const def = { std: { anim: old || 'push', sec }, night: { anim: old || 'blur', sec, accent: 'purple', glow: 'on' }, rail: { anim: old || 'flap', sec, line: 'orange', sign: 'white' } };
   for (const k of ['std', 'night', 'rail']) { m[k] = Object.assign({}, def[k], m[k] && typeof m[k] === 'object' ? m[k] : {}); if (!A.includes(m[k].anim)) m[k].anim = def[k].anim; m[k].sec = m[k].sec !== false; }
+  const arr = (a, def, cat) => def.map((d, i) => Array.isArray(a) && cat[a[i]] ? a[i] : d);
+  m.night.side = arr(m.night.side, ['tt', 'todo', 'weather'], NIGHT_SLOTS); m.night.bottom = arr(m.night.bottom, ['week', 'calendar', 'count'], NIGHT_SLOTS);
+  if (!RAIL_DOOR[m.rail.door]) m.rail.door = cfg.pomoOn ? 'pomo' : 'weather'; m.rail.cd = arr(m.rail.cd, ['count', 'holiday'], RAIL_CD); if (!RAIL_RIGHT[m.rail.right]) m.rail.right = 'todo-sl';
   if (!RAIL_LINES[m.rail.line]) m.rail.line = 'orange'; if (m.rail.sign !== 'navy') m.rail.sign = 'white';
   if (!NIGHT_ACC[m.night.accent]) m.night.accent = 'purple'; if (m.night.glow !== 'off') m.night.glow = 'on';
   cfg.modeOpt = m;
@@ -1659,6 +1678,21 @@ function slBrief(sc) {
 }
 const slSegs = rows => rows.map((r, i) => ({ k: 'cls', a: r.s, b: Math.max(r.e, r.s + 1), n: i + 1, name: r.t.name, st: r.st === 'run' ? 'cur' : r.st }));
 
+// 夜・鉄道の枠に入れる中身(どの枠でも同じ中身を作る)
+const SLOT_OPEN = { tt: 'tt', todo: 'todo', weather: 'weather', week: 'studyline', calendar: 'calendar', count: 'count', holiday: 'holiday', sched: 'sched' };
+function weekBars() {
+  const days = []; for (let i = 6; i >= 0; i--) { const x = addDays(slRef(), -i), g = slDay(ymd(x)); if (g) g._ds = ymd(x); days.push({ w: WD[x.getDay()], m: slStudied(g), td: i === 0 }); }
+  const mx = Math.max(60, ...days.map(x => x.m));
+  return { tot: (days.reduce((a, x) => a + x.m, 0) / 60).toFixed(1), html: `<div class="wk">${days.map(x => `<div class="${x.td ? 'td' : ''}"><span class="v n">${x.m >= 3 ? (x.m / 60).toFixed(1) : ''}</span><i style="height:${Math.max(2, x.m / mx * 100).toFixed(1)}%"></i><span class="w">${x.w}</span></div>`).join('')}</div>` };
+}
+function cdOne() { const c = cdList()[0]; if (!c) return `<h3>カウントダウン</h3><p class="empty">${cdEmpty()}</p>`; const dt = parseYmd(c.date); return `<h3>カウントダウン</h3><div class="big2"><div><div class="k">${esc(c.name)}${c.days ? 'まで' : ''}</div><div class="v n">${cdNum(c)}</div><div class="d">${md(dt)}(${WD[dt.getDay()]}) ・ 残り${Math.floor(c.days / 7)}週</div></div></div>`; } // 幅がせまいので、いちばん近い1つだけ
+function slotBody(k) {
+  if (k === 'tt') return $('ttTile').innerHTML; if (k === 'todo') return $('todoTile').innerHTML; if (k === 'weather') return $('wxTile').innerHTML; if (k === 'sched') return $('schedTile').innerHTML;
+  if (k === 'week') { const W = weekBars(); return `<h3>7日間の学習 <span>合計 ${W.tot}時間</span></h3>${W.html}`; }
+  if (k === 'calendar') return renderCalendar(); if (k === 'count') return cdOne(); if (k === 'holiday') return renderHoliday();
+  return '';
+}
+const nightCard = (k, where) => `<div class="nvc ${k} ${where === 'bottom' ? 'nvb' : ''} ${k === 'count' ? 'nvcd' : ''}" data-open="${SLOT_OPEN[k]}">${slotBody(k)}</div>`;
 function renderNight(st, d) {
   const P = pmInfo(), sc = slSchedule(), C = 2 * Math.PI * 96;
   // 上:時計 + 円形のタイマー
@@ -1683,13 +1717,10 @@ function renderNight(st, d) {
       <div class="rmw">${routeMap(slSegs(rows), { t0: rows[0].s, t1: end, now: nm, w: 740, gaps: false, c: 'var(--sl)', ticks: [rows[0].s, end] })}</div>${foot}`;
   }
   setHtml($('nvSL'), sl);
-  // 右:時間割・やること・天気(今のタイルと同じ内容)
-  setHtml($('nvSide'), `<div class="nvc tt" data-open="tt">${$('ttTile').innerHTML}</div><div class="nvc todo" data-open="todo">${$('todoTile').innerHTML}</div><div class="nvc" data-open="weather">${$('wxTile').innerHTML}</div>`);
-  // 下段:7日間の学習・カレンダー・カウントダウン
-  const days = []; for (let i = 6; i >= 0; i--) { const x = addDays(slRef(), -i), g = slDay(ymd(x)); if (g) g._ds = ymd(x); days.push({ w: WD[x.getDay()], m: slStudied(g), td: i === 0 }); }
-  const mx = Math.max(60, ...days.map(x => x.m));
-  setHtml($('nvWeek'), `<h3>7日間の学習 <span>合計 ${(days.reduce((a, x) => a + x.m, 0) / 60).toFixed(1)}時間</span></h3><div class="wk">${days.map(x => `<div class="${x.td ? 'td' : ''}"><span class="v n">${x.m >= 3 ? (x.m / 60).toFixed(1) : ''}</span><i style="height:${Math.max(2, x.m / mx * 100).toFixed(1)}%"></i><span class="w">${x.w}</span></div>`).join('')}</div>`);
-  setHtml($('nvCal'), renderCalendar()); setHtml($('nvCd'), (() => { const c = cdList()[0]; if (!c) return `<h3>カウントダウン</h3><p class="empty">${cdEmpty()}</p>`; const dt = parseYmd(c.date); return `<h3>カウントダウン</h3><div class="big2"><div><div class="k">${esc(c.name)}${c.days ? 'まで' : ''}</div><div class="v n">${cdNum(c)}</div><div class="d">${md(dt)}(${WD[dt.getDay()]}) ・ 残り${Math.floor(c.days / 7)}週</div></div></div>`; })()); // 幅がせまいので、いちばん近い1つだけ
+  // 右の3枚・下の3枚:設定の「モードごとの設定」で選んだ中身
+  const N = cfg.modeOpt.night;
+  setHtml($('nvSide'), N.side.filter(k => k !== 'none').map(k => nightCard(k, 'side')).join(''));
+  setHtml($('nvRow2'), N.bottom.filter(k => k !== 'none').map(k => nightCard(k, 'bottom')).join(''));
 }
 
 // 発車標:今日これから動く予定を、上から6つまで(今日の残り → 足りなければ次の授業日)
@@ -1718,10 +1749,13 @@ function renderRail(st, d) {
   { const ck = $('rvClk'), pt = document.body.classList.contains('portrait'), pp = ck.parentNode, cs = pt ? getComputedStyle(pp) : null, w = pt ? pp.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) : 0; if (ck._zw !== w || (pt && ck.scrollWidth > ck.clientWidth + 1)) { ck._zw = w; ck.style.zoom = ''; if (pt && ck.scrollWidth > w && w > 0) ck.style.zoom = (w / ck.scrollWidth).toFixed(3); } } // 縦向きは、時計を幅に合わせて縮める
   // 上:日付・ドア上表示風タイマー
   setHtml($('rvDt'), `<span class="dc">${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][d.getDay()]}</span><span>${WD[d.getDay()]}曜日${HOLIDAYS[ymd(d)] ? ' ・ ' + esc(HOLIDAYS[ymd(d)]) : ''}</span>`);
-  setHtml($('rvDoor'), cfg.pomoOn ? `<div class="rv-door" data-pm="toggle"><div class="h">自習タイマー</div><div class="b"><div class="m" id="rvPS"></div><div class="t n" id="rvPT"></div><div class="cells" id="rvPC" style="grid-template-columns:repeat(${P.n},1fr)">${'<i></i>'.repeat(P.n)}</div></div></div>` : '');
-  if (cfg.pomoOn) { $('rvPT').textContent = P.txt; $('rvPS').textContent = pmState(P); [...$('rvPC').children].forEach((c, i) => c.classList.toggle('f', i < P.done)); }
-  if (!cfg.pomoOn) setHtml($('rvDoor'), railWxBox()); // タイマーを出さないときは、同じ場所に天気
-  setHtml($('rvCd'), `<div data-open="count">${railTicketMini()}</div><div data-open="holiday">${railHolMini()}</div>`);
+  const R = cfg.modeOpt.rail, doorPm = R.door === 'pomo';
+  setHtml($('rvDoor'), doorPm ? `<div class="rv-door" data-pm="toggle"><div class="h">自習タイマー</div><div class="b"><div class="m" id="rvPS"></div><div class="t n" id="rvPT"></div><div class="cells" id="rvPC" style="grid-template-columns:repeat(${P.n},1fr)">${'<i></i>'.repeat(P.n)}</div></div></div>` : '');
+  if (doorPm) { $('rvPT').textContent = P.txt; $('rvPS').textContent = pmState(P); [...$('rvPC').children].forEach((c, i) => c.classList.toggle('f', i < P.done)); }
+  if (!doorPm) setHtml($('rvDoor'), railDoor(R.door)); // 時計の横の枠:設定で選んだ中身
+  { const ks = R.cd.filter(k => k !== 'none'); $('rvCd').classList.toggle('one', ks.length === 1); $('rvCd').hidden = !ks.length;
+    setHtml($('rvCd'), ks.map(k => `<div data-open="${SLOT_OPEN[k]}">${railSmall(k)}</div>`).join('')); }
+  { const V = $('railView'); V.classList.toggle('rr-swap', R.right === 'sl-todo'); V.classList.toggle('rr-notodo', R.right === 'sl'); V.classList.toggle('rr-nosl', R.right === 'todo'); }
   // 駅名標:いまの授業
   let no = '--', k = '', nm = '', tm = '', lf = '', l = '', c = '', r = '';
   const ps = st.ps || [], gapName = (a, b) => b - a >= 30 ? '昼休み' : `${Math.round(b - a)}分休み`;
@@ -4032,6 +4066,22 @@ function railStudy() {
 }
 
 // ---- ふだんの鉄道モード:天気の枠・小さな乗車券・次の休み
+// 鉄道:時計の横の枠
+function railDoor(k) {
+  if (k === 'weather') return railWxBox(); if (k === 'none') return '';
+  if (k === 'count') { const c = cdList()[0]; if (!c) return `<div class="rv-info cdx" data-open="count"><div class="h">カウントダウン</div><div class="b"><p class="empty">${cdEmpty()}</p></div></div>`; const dt = parseYmd(c.date);
+    return `<div class="rv-info cdx" data-open="count"><div class="h">きっぷ ・ ${esc(c.name)}</div><div class="b2"><span class="t n">${c.days || '今日'}</span><span class="s">${c.days ? '日' : ''}<br>${md(dt)}(${WD[dt.getDay()]})まで</span></div><div class="f"><i></i>残り${Math.floor(c.days / 7)}週と${c.days % 7}日</div></div>`; }
+  if (k === 'holiday') { const o = nextOff(); return `<div class="rv-info cdx" data-open="holiday"><div class="h">次の休み ・ 運休日</div><div class="b2"><span class="t n">${o.today ? o.len : o.days}</span><span class="s">${o.today ? '連休中' : '日後'}<br>${md(o.from)}(${WD[o.from.getDay()]})から</span></div><div class="f"><i></i>${o.len}連休</div></div>`; }
+  return '';
+}
+// 鉄道:左下の2つの枠
+function railSmall(k) {
+  if (k === 'count') return railTicketMini(); if (k === 'holiday') return railHolMini();
+  if (k === 'week') { const W = weekBars(); return `<div class="hol"><div class="k">7日間の学習 ・ 合計 ${W.tot}時間</div>${W.html}</div>`; }
+  if (k === 'weather') { if (!wx) return `<div class="hol"><div class="k">天気</div><div class="d">${wxFail ? '天気を取得できませんでした' : '読み込み中…'}</div></div>`;
+    const D = wx.daily, di = wxDay0(), S = wxSay(false); return `<div class="hol"><div class="k">天気 ・ ${esc(wx.pref || loc().pref)}</div><div class="v n">${Math.round(wx.cur.temperature_2m)}<small>° ${esc(WCODE(wx.cur.weather_code)[0])}</small></div><div class="d">${Math.round(D.temperature_2m_max[di])}° / ${Math.round(D.temperature_2m_min[di])}° ・ ${esc(S.say)}</div></div>`; }
+  return '';
+}
 function railWxBox() {
   if (!wx) return `<div class="rv-info" data-open="weather"><div class="h">天気</div><div class="b"><p class="empty">${wxFail ? '天気を取得できませんでした' : '天気を読み込み中…'}</p></div></div>`;
   const D = wx.daily, di = wxDay0(), [txt, kind] = WCODE(wx.cur.weather_code), d = now(), after = !isSchoolDay(d) || schoolState(d).mode === 'after' ? d.getHours() >= 18 : false;
@@ -4753,6 +4803,7 @@ $('openSettings').addEventListener('click', () => openSettings());
   d.addEventListener('fullscreenchange', upd); d.addEventListener('webkitfullscreenchange', upd);
 })();
 // 設定の中を描き直しても、スクロールの位置はそのまま(左の一覧・右の中身・画面全体)
+const slotSel = (key, v, cat) => `<select data-slot="${key}">${Object.entries(cat).map(([k, l]) => `<option value="${k}" ${k === v ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
 function renderSettings() {
   const S0 = $('settings'), keep = { page: S0.scrollTop, nav: S0.querySelector('.snav') ? S0.querySelector('.snav').scrollTop : 0, body: S0.querySelector('.sbody') ? S0.querySelector('.sbody').scrollTop : 0, tab: renderSettings._tab };
   renderSettingsInner();
@@ -4788,9 +4839,14 @@ function renderSettingsInner() {
       <label>数字の動き <select data-mo="${k}.anim">${[['flap', 'パタパタ'], ['push', '押し上げ'], ['blur', 'ぼかし'], ['none', 'なし']].map(([v, l]) => opt(v, o.anim, l)).join('')}</select></label>
       <label><input type="checkbox" data-mo="${k}.sec" ${o.sec ? 'checked' : ''}>秒を表示</label>
       ${k === 'rail' ? `<div class="sw2"><span>路線の色</span>${Object.entries(RAIL_LINES).map(([v, [c, l]]) => `<button data-mo="rail.line" data-v="${v}" class="${o.line === v ? 'on' : ''}" style="background:${c}" aria-label="${l}" title="${l}"></button>`).join('')}</div>
-        <div class="sw2"><span>駅名標</span><button data-mo="rail.sign" data-v="white" class="tx ${o.sign === 'white' ? 'on' : ''}" style="background:#ece8df;color:#141413">白</button><button data-mo="rail.sign" data-v="navy" class="tx ${o.sign === 'navy' ? 'on' : ''}" style="background:#1b2a4a;color:#f3efe6">紺</button></div>` : ''}
+        <div class="sw2"><span>駅名標</span><button data-mo="rail.sign" data-v="white" class="tx ${o.sign === 'white' ? 'on' : ''}" style="background:#ece8df;color:#141413">白</button><button data-mo="rail.sign" data-v="navy" class="tx ${o.sign === 'navy' ? 'on' : ''}" style="background:#1b2a4a;color:#f3efe6">紺</button></div>
+        <div class="slots"><span>時計の横</span>${slotSel('rail.door', o.door, RAIL_DOOR)}</div>
+        <div class="slots"><span>左下の2つ(左から)</span>${o.cd.map((v, i) => slotSel('rail.cd.' + i, v, RAIL_CD)).join('')}</div>
+        <div class="slots"><span>右の列(発車標の下)</span>${slotSel('rail.right', o.right, RAIL_RIGHT)}</div>` : ''}
       ${k === 'night' ? `<div class="sw2"><span>アクセント色</span>${Object.entries(NIGHT_ACC).map(([v, a]) => `<button data-mo="night.accent" data-v="${v}" class="${o.accent === v ? 'on' : ''}" style="background:${a[0]}" aria-label="${a[5]}" title="${a[5]}"></button>`).join('')}</div>
-        <label><input type="checkbox" data-mo="night.glow" ${o.glow === 'on' ? 'checked' : ''}>背景の光を出す</label>` : ''}
+        <label><input type="checkbox" data-mo="night.glow" ${o.glow === 'on' ? 'checked' : ''}>背景の光を出す</label>
+        <div class="slots"><span>右の列(上から)</span>${o.side.map((v, i) => slotSel('night.side.' + i, v, NIGHT_SLOTS)).join('')}</div>
+        <div class="slots"><span>下の段(左から)</span>${o.bottom.map((v, i) => slotSel('night.bottom.' + i, v, NIGHT_SLOTS)).join('')}</div>` : ''}
       ${k === 'std' ? '<p class="note">色は「表示」タブのライト・ダーク、配置は下の「標準モードの配置」と「タイル」タブで変えられます。</p>' : ''}</div>`; }).join('')}</div>
     <div class="row"><label><input type="checkbox" id="flapBoard" ${cfg.flapBoard ? 'checked' : ''}>発車標もパタパタにする</label></div>
     <div class="row"><label><input type="checkbox" id="flapTiles" ${cfg.flapTiles ? 'checked' : ''}>やること・予定もパタパタにする</label></div>
@@ -5042,7 +5098,8 @@ $('settings').addEventListener('change', e => {
   else if (t.id === 'darkFrom') cfg.darkFrom = t.value;
   else if (t.id === 'shiftOn') { cfg.shift = t.checked; fit(); }
   else if (t.dataset.gtl) { const id = t.dataset.gtl; cfg.gtHide = t.checked ? (cfg.gtHide || []).filter(x => x !== id) : [...(cfg.gtHide || []), id]; saveCfg(); renderTodo(); return; }
-  else if (t.id === 'pomoOn') { cfg.pomoOn = t.checked; saveCfg(); applyTheme(); renderLayout(); renderAll(); return; }
+  else if (t.id === 'pomoOn') { cfg.pomoOn = t.checked; { const R = cfg.modeOpt.rail; if (t.checked && R.door === 'weather') R.door = 'pomo'; if (!t.checked && R.door === 'pomo') R.door = 'weather'; } saveCfg(); applyTheme(); renderLayout(); renderAll(); return; }
+  else if (t.dataset.slot) { const [k, f, i] = t.dataset.slot.split('.'); if (i != null) cfg.modeOpt[k][f][+i] = t.value; else cfg.modeOpt[k][f] = t.value; if (k === 'rail' && f === 'door') cfg.pomoOn = t.value === 'pomo' || cfg.pomoOn; fixModeOpt(); saveCfg(); applyTheme(); renderAll(); renderClock(); return; }
   else if (t.dataset.mo && t.tagName !== 'BUTTON') { const [k, f] = t.dataset.mo.split('.'); cfg.modeOpt[k][f] = f === 'sec' ? t.checked : f === 'glow' ? (t.checked ? 'on' : 'off') : t.value; fixModeOpt(); saveCfg(); applyTheme(); renderAll(); requestAnimationFrame(fitClock); return; }
   else if (t.id === 'signLead') { cfg.signLead = +t.value || 60; saveCfg(); renderClock(); return; }
   else if (t.id === 'stdLayout') { cfg.stdLayout = t.value === 'big' ? 'big' : 'cols'; saveCfg(); renderLayout(); renderAll(); return; }
