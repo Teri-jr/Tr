@@ -529,7 +529,7 @@ function planTimes(route,k){
   return {ev:s.events,traj:s.traj};
 }
 // ---- バージョン（変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする） ----
-const APP_VERSION='1.7.1';
+const APP_VERSION='1.7.2';
 const isNewer=(a,b)=>{ const x=String(a).split(".").map(Number), y=String(b).split(".").map(Number); for(let i=0;i<3;i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0); } return false; };
 let upd=null; // {version, items}：新しい版が出ていたら入る。announced=放送済み
 async function checkUpdate(){
@@ -596,8 +596,8 @@ const LAYOUT_TOKAIDO={"品川":"=,U6,D12,=","大井町":PASS_ONLY,"大森":PASS_
   "横浜":"u8,=,U7,D6,=,d5","保土ケ谷":PASS_ONLY,"東戸塚":PASS_ONLY,"戸塚":"o1,=,U2,D3,=,o4","大船":"u1,=,U2,D3,=,d4","藤沢":"U3,=,D4","辻堂":"U2,=,D1","茅ケ崎":"U5,=,D6"};
 // ---- JR南武線（川崎〜立川）：普通と快速（快速の停車駅はおおよそ）。下りは立川方面 ----
 const KINDS_NAMBU={
-  futsu:{label:"普通",color:"#ffd400",fg:"#111",sub:"#fff3b0",subFg:"#111",taihi:true,stops:null,vmax:80,acc:0.6,dwell:35,long:{"武蔵小杉":45,"登戸":45}},
-  kaisoku:{label:"快速",color:"#e05a00",sub:"#ffd400",subFg:"#111",stops:["川崎","鹿島田","武蔵小杉","武蔵中原","武蔵新城","武蔵溝ノ口","登戸","稲田堤","稲城長沼","府中本町","分倍河原","立川"],vmax:85,acc:0.6,dwell:50,long:{"武蔵小杉":60,"登戸":60}}};
+  futsu:{label:"普通",color:"#111",sub:"#ffd400",subFg:"#111",taihi:true,stops:null,vmax:80,acc:0.6,dwell:35,long:{"武蔵小杉":45,"登戸":45}},
+  kaisoku:{label:"快速",color:"#ff00ff",sub:"#ffd400",subFg:"#111",stops:["川崎","鹿島田","武蔵小杉","武蔵中原","武蔵新城","武蔵溝ノ口","登戸","稲田堤","稲城長沼","府中本町","分倍河原","立川"],vmax:85,acc:0.6,dwell:50,long:{"武蔵小杉":60,"登戸":60}}};
 const S1="=,U1,D2,=", S2="=,U2,D1,=";
 const LAYOUT_NAMBU={"川崎":"U6,=,D5","尻手":"=,U1,D2,=,o3","矢向":"u3,=,U2,D1,=","鹿島田":S1,"平間":S1,"向河原":S1,"武蔵小杉":"U1,=,D2","武蔵中原":"U1,=,u2,d3,=,D4",
   "武蔵新城":"U1,=,D2","武蔵溝ノ口":"=,U1,D2,=,d3","津田山":"U1,=,D2","久地":S1,"宿河原":S2,"登戸":"u3,=,U2,D1,=","中野島":S2,"稲田堤":S1,"矢野口":"U2,=,D1",
@@ -608,14 +608,14 @@ const TAIHI_NAMBU={"矢向":"up","武蔵中原":"both","武蔵溝ノ口":"down",
 const KH_ALL="大宮,さいたま新都心,与野,北浦和,浦和,南浦和,蕨,西川口,川口,赤羽,東十条,王子,上中里,田端,西日暮里,日暮里,鶯谷,上野,御徒町,秋葉原,神田,東京,有楽町,新橋,浜松町,田町,高輪ゲートウェイ,品川,大井町,大森,蒲田,川崎,鶴見,新子安,東神奈川,横浜,桜木町,関内,石川町,山手,根岸,磯子,新杉田,洋光台,港南台,本郷台,大船".split(",");
 const KH_RAPID_PASS=new Set(["西日暮里","日暮里","鶯谷","御徒町","有楽町","新橋"]);
 const KINDS_KEIHIN={
-  kakueki:{label:"各駅停車",color:"#00a7db",sub:"#005a8c",stops:null,vmax:85,acc:0.55,dwell:40,long:{"東京":55,"横浜":55,"上野":50,"品川":50,"大宮":45}},
-  kaisoku:{label:"快速",color:"#e05a00",sub:"#00a7db",stops:KH_ALL.filter(n=>!KH_RAPID_PASS.has(n)),vmax:85,acc:0.55,dwell:40,long:{"東京":55,"横浜":55,"上野":50,"品川":50,"大宮":45}}};
+  kakueki:{label:"各駅停車",color:"#111",sub:"#00a7db",stops:null,vmax:85,acc:0.55,dwell:40,long:{"東京":55,"横浜":55,"上野":50,"品川":50,"大宮":45}},
+  kaisoku:{label:"快速",color:"#ff00ff",sub:"#00a7db",stops:KH_ALL.filter(n=>!KH_RAPID_PASS.has(n)),vmax:85,acc:0.55,dwell:40,long:{"東京":55,"横浜":55,"上野":50,"品川":50,"大宮":45}}};
 const SH21="U2,=,D1", SH12="U1,=,D2", YM14="U1,=,o2,o3,=,D4", YM41="U4,=,o3,o2,=,D1";
-// 山手線と並ぶ駅は間の2・3番線が山手線（o）。上野・新橋・田町は記事が取れず、隣の駅にならった推定
+// 山手線と並ぶ駅は間の2・3番線が山手線（o）。桜木町は配線略図.net の図で確かめた。上野・新橋・田町は記事が取れず、隣の駅にならった推定
 const LAYOUT_KEIHIN={"大宮":SH21,"さいたま新都心":SH21,"与野":SH12,"北浦和":SH21,"浦和":SH21,"南浦和":"U4,=,u3,d2,=,D1","蕨":SH21,"西川口":SH21,"川口":SH21,"赤羽":SH21,
   "東十条":"U3,=,c2,=,D1","王子":SH12,"上中里":SH12,"田端":YM14,"西日暮里":YM41,"日暮里":"U12,=,o11,o10,=,D9","鶯谷":YM14,"上野":YM14,"御徒町":YM41,"秋葉原":YM14,"神田":YM41,
   "東京":"U3,=,o4,o5,=,D6","有楽町":YM14,"新橋":YM14,"浜松町":YM14,"田町":YM14,"高輪ゲートウェイ":"o1,=,o2,U3,=,D4","品川":"o3,=,U4,D5,=,o6","大井町":SH12,"大森":SH21,"蒲田":SH21,
-  "川崎":"U4,=,D3","鶴見":SH21,"新子安":SH21,"東神奈川":YM41,"横浜":"U4,=,D3","桜木町":"u4,=,U3,D1,=","関内":"=,U2,D1,=","石川町":"=,U2,D1,=","山手":"=,U2,D1,=","根岸":SH21,
+  "川崎":"U4,=,D3","鶴見":SH21,"新子安":SH21,"東神奈川":YM41,"横浜":"U4,=,D3","桜木町":"u4,=,U3,=,D1","関内":"=,U2,D1,=","石川町":"=,U2,D1,=","山手":"=,U2,D1,=","根岸":SH21,
   "磯子":SH12,"新杉田":"=,U2,D1,=","洋光台":SH21,"港南台":SH21,"本郷台":SH21,"大船":"U10,=,D9"};
 // ---- 路線ごとの設定 ----
 const NETS={
