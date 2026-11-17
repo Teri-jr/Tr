@@ -136,19 +136,22 @@ function create(D) {
     const opt = hops.map((hp) => G[hp.s].hops[hp.h].filter((e) => !(banned && banned[e[0]]) && !(o.noRare && e[1] <= 1)));
     const INF = 1e12, cost = [], back = [];
     for (let h = 0; h < H; h++) { if (!opt[h].length) return null; cost.push(new Array(opt[h].length).fill(INF)); back.push(new Array(opt[h].length).fill(-1));
-      const stn = seq[h].n, free = turnAt[h] && turnAt[h].req;
+      const stn = seq[h].n, free = !!turnAt[h]; // 折り返しの特例がある駅は、通過する列車でも先の駅で乗り換えられる
       opt[h].forEach((e, x) => { const tm = hops[h].km / SV[svcIds[e[0]]].v * 60;
         if (h === 0) { if (free || !skip[e[0]].has(stn)) cost[0][x] = tm; return; }
         opt[h - 1].forEach((p, y) => { const c0 = cost[h - 1][y]; if (c0 >= INF) return; let c;
           if (p[0] === e[0]) c = c0 + tm; else if (free || (!skip[p[0]].has(stn) && !skip[e[0]].has(stn))) c = c0 + 10000 + tm; else return;
           if (c < cost[h][x]) { cost[h][x] = c; back[h][x] = y; } }); }); }
-    let bx = -1, bc = INF; const endFree = turnAt[H] && turnAt[H].req;
+    let bx = -1, bc = INF; const endFree = !!turnAt[H];
     opt[H - 1].forEach((e, x) => { if ((endFree || !skip[e[0]].has(to)) && cost[H - 1][x] < bc) { bc = cost[H - 1][x]; bx = x; } });
     if (bx < 0) return null; // 乗り継げる列車がない
     const pick = new Array(H); for (let h = H - 1; h >= 0; h--) { pick[h] = opt[h][bx]; bx = back[h][bx]; }
     // 列車ごとにまとめる
     const legs = [], stops = [[from, 0]], legSvc = []; let h0 = 0;
     const noteOf = (j) => { const u = turnAt[j]; if (!u) return ''; const t = u.t;
+      const X = seq[j].n, skips = (j > 0 && skip[pick[j - 1][0]].has(X)) || (j < H && skip[pick[j][0]].has(X)); // 乗る列車がこの駅を通過する
+      if (!u.req && skips && j > 0 && j < H) return '列車が' + t.at + 'に停まらないので、' + t.to + 'で乗り換えて折り返す（折り返し可・' + t.law + '）';
+      if (!u.req && skips) return t.at + 'には停まらない列車。' + (j === 0 ? '先に' + t.to + 'へ出て乗る' : t.to + 'まで行って戻る') + '（折り返し可・' + t.law + '）';
       if (!u.req) return t.at + 'で乗り換え。' + t.to + 'まで乗って折り返してもよい（折り返し可・' + t.law + '）';
       if (+j === 0) return t.at + 'には停まらない列車。先に' + t.to + 'へ出て乗る（折り返し可・' + t.law + '）';
       if (+j === H) return t.at + 'には停まらない列車。' + t.to + 'まで行って戻る（折り返し可・' + t.law + '）';
@@ -305,7 +308,7 @@ function create(D) {
      cands は ok=false のとき why に理由。ルールの判定は buildRoute(同じ駅・69条・折り返し・乗れる列車)にまかせる */
   const svcNamesOf = (s) => { const out = []; G[s].hops.forEach((h) => h.forEach((e) => { const n = SV[svcIds[e[0]]].n; if (!out.includes(n)) out.push(n); })); return out; };
   const pcPath = (pc) => { const g = G[pc[0]], lo = Math.min(pc[1], pc[2]), hi = Math.max(pc[1], pc[2]); return pathD(g.names.slice(lo, hi + 1)); }; // 区間の線
-  function steps(from, pcs) {
+  function steps(from, pcs, ic) {
     if (!ST[from]) return null;
     pcs = pcs || [];
     const last = pcs[pcs.length - 1], at = last ? G[last[0]].names[last[2]] : from;
@@ -316,7 +319,7 @@ function create(D) {
     if (!pcs.length && !isNode(from)) { const sj = stSeg[from][0]; opts = [[sj[0], sj[1], 0], [sj[0], sj[1], G[sj[0]].n]].filter((o) => o[1] !== o[2]); }
     else opts = adj[nodeNo[at]].map((e) => [e[0], e[1] > 0 ? 0 : G[e[0]].n, e[1] > 0 ? G[e[0]].n : 0]).filter((o) => !last || o[0] !== last[0]);
     const cands = [], ends = [];
-    const tk = (n) => { const t = ticket(from, n, false); return t && t.fare != null ? t : null; };
+    const tk = (n) => { const t = ticket(from, n, !!ic); return t && t.fare != null ? t : null; };
     const push = (e, t) => { if (e.km > t.km + 0.05) ends.push(e); }; // いちばん短い道のりと同じなら大回りではないので出さない
     if (cur && at !== from) { const t = tk(at); if (t) push({ pcs: pcs.slice(), n: at, fare: t.fare, km: cur.km, here: true }, t); }
     for (const o of opts) {
