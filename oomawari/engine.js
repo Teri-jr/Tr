@@ -256,6 +256,43 @@ function create(D) {
     return buildRoute(from, to, pcs);
   }
 
+  /* ===== 自分でルートを作る =====
+     from から pcs(これまでにつないだ区間)の続きとして、次に行ける分岐駅(cands)と、降りられる駅(ends)を返す。
+     cands は ok=false のとき why に理由。ルールの判定は buildRoute(同じ駅・69条・折り返し・乗れる列車)にまかせる */
+  const svcNamesOf = (s) => { const out = []; G[s].hops.forEach((h) => h.forEach((e) => { const n = SV[svcIds[e[0]]].n; if (!out.includes(n)) out.push(n); })); return out; };
+  const pcPath = (pc) => { const g = G[pc[0]], lo = Math.min(pc[1], pc[2]), hi = Math.max(pc[1], pc[2]); return pathD(g.names.slice(lo, hi + 1)); }; // 区間の線
+  function steps(from, pcs) {
+    if (!ST[from]) return null;
+    pcs = pcs || [];
+    const last = pcs[pcs.length - 1], at = last ? G[last[0]].names[last[2]] : from;
+    const cur = pcs.length ? buildRoute(from, at, pcs) : null;
+    if (pcs.length && !cur) return null;
+    const seen = new Set(cur ? cur.passed : [from]);
+    let opts;
+    if (!pcs.length && !isNode(from)) { const sj = stSeg[from][0]; opts = [[sj[0], sj[1], 0], [sj[0], sj[1], G[sj[0]].n]].filter((o) => o[1] !== o[2]); }
+    else opts = adj[nodeNo[at]].map((e) => [e[0], e[1] > 0 ? 0 : G[e[0]].n, e[1] > 0 ? G[e[0]].n : 0]).filter((o) => !last || o[0] !== last[0]);
+    const cands = [], ends = [];
+    const tk = (n) => { const t = ticket(from, n, false); return t && t.fare != null ? t : null; };
+    const push = (e, t) => { if (e.km > t.km + 0.05) ends.push(e); }; // いちばん短い道のりと同じなら大回りではないので出さない
+    if (cur && at !== from) { const t = tk(at); if (t) push({ pcs: pcs.slice(), n: at, fare: t.fare, km: cur.km, here: true }, t); }
+    for (const o of opts) {
+      const g = G[o[0]], d = o[2] > o[1] ? 1 : -1, to = g.names[o[2]];
+      let dup = null;
+      for (let i = o[1] + d; ; i += d) { const nm = g.names[i];
+        if (seen.has(nm)) { dup = nm; break; }
+        if (nm !== to) { const t = tk(nm); if (t) { const p2 = pcs.concat([[o[0], o[1], i]]), r2 = buildRoute(from, nm, p2); if (r2) push({ pcs: p2, n: nm, fare: t.fare, km: r2.km }, t); } }
+        if (i === o[2]) break; }
+      const pc = [o[0], o[1], o[2]], km = f1(Math.abs(g.kms[o[2]] - g.kms[o[1]])), lines = svcNamesOf(o[0]);
+      if (dup) { cands.push({ pc, to, km, lines, line: g.line, ok: false, why: dup + 'をもう通っている' }); continue; }
+      const r2 = buildRoute(from, to, pcs.concat([pc]));
+      if (!r2) { cands.push({ pc, to, km, lines, line: g.line, ok: false, why: '乗り継げる列車がないか、決まりに合わない(69条・折り返しなど)' }); continue; }
+      cands.push({ pc, to, km, lines, line: g.line, ok: true });
+      const t = tk(to); if (t) push({ pcs: pcs.concat([pc]), n: to, fare: t.fare, km: r2.km }, t);
+    }
+    cands.sort((a, b) => b.ok - a.ok || b.km - a.km);
+    return { at, route: cur, cands, ends };
+  }
+
   /* ===== 画面からの入り口 =====
      アプリ(index.html)も券売機モード(kiosk.html)も、条件をこの形で渡してここからさがす。表示のしかたが違うだけで、探しかたは同じ。
      c: { from, to, ic, start:'HH:MM', end:'HH:MM', len, xfer, xmin, meal, rare, want, avoid, mustLine, noLine, mustSt, noSt, prev } */
@@ -276,7 +313,7 @@ function create(D) {
   const seenLine = new Set(), lineOpts = []; svcIds.forEach((k) => { if (!seenLine.has(SV[k].n)) { seenLine.add(SV[k].n); lineOpts.push({ n: SV[k].n, c: SV[k].c }); } });
   const stations = Object.keys(ST).map((n) => ({ n, y: ST[n][0] }));
   return { data: D, stations, nodes: nodeNames.slice(), lineOpts, netPath, xy, ll: (n) => (ST[n] ? [ST[n][1], ST[n][2]] : null), has: (n) => !!ST[n], isNode, isLoopStation,
-    ticket, dests, search, find, plain, rideMins, spanMins, routeById, buildRoute, overlap, nearest };
+    ticket, dests, search, find, plain, steps, pcPath, rideMins, spanMins, routeById, buildRoute, overlap, nearest };
 }
 if (typeof module !== 'undefined' && module.exports) module.exports = { create };
 else root.OOMAWARI = create(root.OOMAWARI_DATA);
