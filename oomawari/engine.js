@@ -39,6 +39,8 @@ function create(D) {
   // 旅規69条: この辺をぜんぶ通ったら、もう一方の経路の駅も通ったとみなす
   const sames = (D.same || []).map((x) => ({ segs: x.segs.map((id) => segNo[id]), as: x.as, law: x.law }));
   const turns = D.turns.map((t) => ({ at: t.at, to: t.to, via: t.via, law: t.law, toward: segNo[t.toward[0]], need: t.need.map((x) => segNo[x]), except: (t.except || []).map((x) => segNo[x]), only: t.only ? t.only.map((x) => segNo[x]) : null }));
+  // 分岐駅を通過する列車の特例(160条の4)の駅。停まらずに通りすぎただけなら、あとでその駅に着いてもよい(例: 横浜から東海道線で東神奈川を通過 → 最後に横浜線で東神奈川)
+  const PASSOK = new Set(turns.filter((t) => t.need.length === 0 && /160条の4/.test(t.law)).map((t) => t.at));
 
   /* ===== 略図(342×300)への写しかた ===== */
   const B = { w: 138.93, e: 140.88, s: 34.87, n: 36.46 }, KX = 111.3 * Math.cos(35.7 * Math.PI / 180), KY = 111.3;
@@ -119,7 +121,7 @@ function create(D) {
   function buildRoute(from, to, pcs, o) {
     o = o || {}; const banned = o.banned, loop = from === to;
     const mk = pcs.length > 0 && pcs.every((p) => p.length > 3), used = new Set(); // 末期モード: 駅は数えず、同じ線路を2回通らないことだけを見る
-    const seq = [{ n: from, km: 0 }], hops = [], seen = new Set([from]), joint = {}; let km = 0, regM = 0; const regKm = {};
+    const seq = [{ n: from, km: 0 }], hops = [], seen = new Set([from]), joint = {}; let km = 0, regM = 0, revisit = null; const regKm = {};
     for (let k = 0; k < pcs.length; k++) { const s = pcs[k][0], i0 = pcs[k][1], i1 = pcs[k][2], g = G[s], d = i1 > i0 ? 1 : -1;
       if (!g || g.names[i0] !== seq[seq.length - 1].n) return null;
       if (k) joint[seq.length - 1] = [pcs[k - 1][0], s];
@@ -127,7 +129,7 @@ function create(D) {
       for (let i = i0; i !== i1; i += d) { const nm = g.names[i + d], dk = Math.abs(g.kms[i + d] - g.kms[i]); km += dk;
         const last = k === pcs.length - 1 && i + d === i1;
         if (mk) { const tk = (s * 16 + pcs[k][3]) * 1000 + Math.min(i, i + d); if (used.has(tk)) return null; used.add(tk); } // 同じ線路を2回通る
-        else if (seen.has(nm) && !(loop && last)) return null; // 同じ駅を2回通る
+        else if (seen.has(nm) && !(loop && last)) { if (last && PASSOK.has(nm)) revisit = nm; else return null; } // 同じ駅を2回通る(通過しただけの特例駅に最後に着くのは、列車を決めたあとで確かめる)
         seen.add(nm); hops.push({ s, h: Math.min(i, i + d), km: dk, g: mk ? pcs[k][3] : -1 }); seq.push({ n: nm, km });
         g.regNames.forEach((r) => { regKm[r] = (regKm[r] || 0) + dk; }); }
       if (!mk) for (const dn of g.deemed) { if (seen.has(dn)) return null; seen.add(dn); } } // みなし通過駅
@@ -145,6 +147,9 @@ function create(D) {
         if (req) { if (clash) return null; turnAt[j] = { t, req: true }; } else if (!clash) turnAt[j] = { t, req: false }; } }
     // 列車の割りあて: 乗換がいちばん少なく、同じなら早い組みあわせ
     const opt = hops.map((hp) => G[hp.s].hops[hp.h].filter((e) => !(banned && banned[e[0]]) && !(o.noRare && e[1] <= 1) && (hp.g < 0 || inTr(hp.s, hp.g, e[0]))));
+    if (revisit) { let first = -1; for (let j = 0; j < H; j++) if (seq[j].n === revisit) { first = j; break; }
+      if (first < 1) return null; // 最初の1回は、停まらずに通りすぎていなければならない
+      for (const h of [first - 1, first]) opt[h] = opt[h].filter((e) => skip[e[0]].has(revisit)); }
     const INF = 1e12, cost = [], back = [], XP = o.fast ? 5 : 10000; // 乗換1回の重み。速い列車を優先するときは5分ぶん
     for (let h = 0; h < H; h++) { if (!opt[h].length) return null; cost.push(new Array(opt[h].length).fill(INF)); back.push(new Array(opt[h].length).fill(-1));
       const stn = seq[h].n, free = !!turnAt[h]; // 折り返しの特例がある駅は、通過する列車でも先の駅で乗り換えられる
@@ -196,6 +201,11 @@ function create(D) {
      分岐駅を1回ずつしか通らない道をしらみつぶしにたどる。数百万通りあるので、条件に合わなくなった枝(長すぎる・乗換が多すぎる・時間に収まらない)は
      その場で切り、長い辺(8km以上)の組みあわせが同じものは点数のいちばん高い1本だけ残す。 */
   const STEP_LIMIT = 8000000, KEEP = 8;
+  // 2つの辺を同じ列車で通りぬけ、その列車が駅Xに停まらないか(160条の4の特例駅を「通過しただけ」にできるか)
+  const thruCache = new Map();
+  function thruSkip(s1, s2, X) { const key = s1 * 100000 + s2 * 100 + (nodeNo[X] || 0); let v = thruCache.get(key); if (v !== undefined) return v;
+    const all = (s) => { let set = null; for (const hs of G[s].hops) { const ids = new Set(hs.map((e) => e[0])); set = set ? new Set([...set].filter((x) => ids.has(x))) : ids; } return set || new Set(); };
+    const a = all(s1), b = all(s2); v = false; for (const id of a) if (b.has(id) && skip[id].has(X)) { v = true; break; } thruCache.set(key, v); return v; }
   function search(from, to, c, riddenIds) {
     const tk = ticket(from, to, c.ic); if (!tk || !(c.win > 0)) return { routes: [], partial: false };
     const loop = from === to; if (loop && c.ic) return { routes: [], partial: false }; // 一周は紙のきっぷだけ
@@ -217,6 +227,8 @@ function create(D) {
     const maxLegs = c.xfer + 1, base = c.meal ? 30 : 0, wantM = (c.want || []).reduce((m, r) => m | regBit[r], 0);
     const T = isNode(to) ? nodeNo[to] : -1, tSeg = T < 0 ? stSeg[to][0] : null, sSeg = isNode(from) ? null : stSeg[from][0];
     const vis = new Uint8Array(NN), stack = [], best = new Map(), limit = c.budget || STEP_LIMIT; let steps = 0, partial = false;
+    let tPass = false; // 到着駅を、すでに停まらずに通りぬけた(最後にもう一度着いてもよい)
+    const passMode = isNode(to) && PASSOK.has(to) && !loop;
     const endAt = nodeNames.map(() => null); // その分岐駅から到着駅へ入る最後のひと区間
     if (tSeg) { const g = G[tSeg[0]]; [[g.a, 0], [g.b, g.n]].forEach((x) => { const p = part(tSeg[0], x[1], tSeg[1]); if (p) endAt[x[0]] = { pc: [tSeg[0], x[1], tSeg[1]], p }; }); }
     // かならず通る駅があるときは、その駅を通る道だけを残す(あとでしぼると、同じ仲間の別の道に負けて消えてしまうため)
@@ -234,13 +246,15 @@ function create(D) {
       if (en && !(sSeg && sSeg[0] === tSeg[0] && stack.length === 1)) { const p = en.p; let l = legs; if (!(m0 & p.m0) && !(m1 & p.m1)) l++; if (l <= maxLegs) record(km + p.km, mins + p.mins, l, sc + p.sc, reg | p.reg, k0, k1, en.pc); }
       for (const e of adj[x]) { steps++; const s = e[0], y = e[2], p = full[s];
         if (!p || (sSeg && s === sSeg[0]) || (tSeg && s === tSeg[0])) continue;
-        const fin = y === T; if (vis[y] && !(fin && loop && stack.length >= 2)) continue;
+        const fin = y === T; if (vis[y] && !(fin && loop && stack.length >= 2) && !(fin && tPass)) continue;
+        if (x === T && passMode && !thruSkip(stack[stack.length - 1][0], s, to)) continue; // 到着駅を通りぬけるときは、停まらない列車で
         const nk = km + p.km; if (nk > maxKm) continue;
         let l = legs, a0 = m0 & p.m0, a1 = m1 & p.m1; if (!a0 && !a1) { l++; a0 = p.m0; a1 = p.m1; } if (l > maxLegs) continue;
         const nm = mins + p.mins; if (nm + (l - 1) * c.xmin + base > c.win) continue;
         const ci = cls[s], c0 = ci >= 0 && ci < 26 ? k0 | (1 << ci) : k0, c1 = ci >= 26 ? k1 | (1 << (ci - 26)) : k1;
         stack.push([s, e[1] > 0 ? 0 : G[s].n, e[1] > 0 ? G[s].n : 0]);
-        if (fin) record(nk, nm, l, sc + p.sc, reg | p.reg, c0, c1, null);
+        if (fin) { record(nk, nm, l, sc + p.sc, reg | p.reg, c0, c1, null);
+          if (passMode && !vis[y] && !tPass) { vis[y] = 1; tPass = true; dfs(y, nk, nm, l, a0, a1, sc + p.sc, reg | p.reg, c0, c1); tPass = false; vis[y] = 0; } } // 到着駅を停まらずに通りぬけて、先へ進む道
         else { vis[y] = 1; dfs(y, nk, nm, l, a0, a1, sc + p.sc, reg | p.reg, c0, c1); vis[y] = 0; }
         stack.pop(); }
     }
@@ -399,7 +413,7 @@ function create(D) {
       const g = G[o[0]], d = o[2] > o[1] ? 1 : -1, to = g.names[o[2]];
       let dup = null;
       for (let i = o[1] + d; ; i += d) { const nm = g.names[i];
-        if (seen.has(nm)) { dup = nm; break; }
+        if (seen.has(nm) && !(nm === to && PASSOK.has(nm))) { dup = nm; break; }
         if (nm !== to) { const t = tk(nm); if (t) { const p2 = pcs.concat([[o[0], o[1], i]]), r2 = buildRoute(from, nm, p2); if (r2) push({ pcs: p2, n: nm, fare: t.fare, km: r2.km }, t); } }
         if (i === o[2]) break; }
       const pc = [o[0], o[1], o[2]], km = f1(Math.abs(g.kms[o[2]] - g.kms[o[1]])), lines = svcNamesOf(o[0]);
