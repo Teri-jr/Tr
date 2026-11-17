@@ -336,11 +336,11 @@ ol,ul{list-style:none}
 <div id="app"></div>
 <div id="sheet"></div>
 <div id="toast" role="status" hidden></div>
-<script src="data.js?v=1.8.0"></script>
-<script src="engine.js?v=1.8.0"></script>
+<script src="data.js?v=1.8.1"></script>
+<script src="engine.js?v=1.8.1"></script>
 <script>
 'use strict';
-const APP_VERSION = '1.8.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.8.1'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ===== データ =====
    路線データは data.js、ルートの探索は engine.js。画面はここから E.search() などを呼ぶだけ。 */
@@ -428,8 +428,12 @@ function suggestions(c) {
   if (c.mustLine.length || c.noLine.length || c.mustSt.length || c.noSt.length) tryIt('路線・駅の指定を外す', { mustLine: [], noLine: [], mustSt: [], noSt: [] });
   if (!c.rare) tryIt('本数の少ない路線も使う', { rare: true });
   if (c.from !== c.to && E.ticket(c.to, c.from, c.ic)) { const n = searchRoutes(Object.assign({}, c, { from: c.to, to: c.from })).length; if (n) out.push({ label: '出発と到着を入れかえる（' + c.to + '→' + c.from + '）', o: { from: c.to, to: c.from }, g: n, swap: true }); }
+  // 同じ運賃で行ける別の到着駅(着駅を途中で通れないせいで遠回りしかできないときに効く)
+  if (c.from !== c.to) { const tk0 = E.ticket(c.from, c.to, c.ic); let bestD = null;
+    if (tk0) E.dests(c.from, c.ic).filter((d) => d.fare === tk0.fare && d.n !== c.to).slice(0, 3).forEach((d) => { const n = searchRoutes(Object.assign({}, c, { to: d.n })).length; if (n > 0 && (!bestD || n > bestD.g)) bestD = { label: '到着駅を' + d.n + 'にする（同じ' + d.fare + '円）', o: { to: d.n }, g: n, swap: true }; });
+    if (bestD) out.push(bestD); }
   const sw = out.find((x) => x.swap), rest = out.filter((x) => !x.swap).sort((a, b) => b.g - a.g).slice(0, 2);
-  return sw ? rest.concat(sw) : rest;
+  return rest.concat(out.filter((x) => x.swap));
 }
 const detailTxt = (c) => [LENS[c.len], '乗換' + c.xfer + '回まで'].concat(c.mustLine.map((n) => n + 'に乗る'), [c.exp ? '特急あり' : '特急なし']).join('・') + ' ほか';
 const sumTxt = (c) => [c.start + '〜' + c.end].concat(c.want.map((g) => g + '方面'), [LENS[c.len], c.exp ? '特急あり' : '特急なし'], c.ic ? ['ICで乗る'] : []).join('・');
