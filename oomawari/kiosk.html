@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#000000">
+<title>大回りジェネレータ 券売機モード</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@500&display=swap">
+<style>
+/* 券売機モード(あそび): 1280×1024 の画面を作り、端末の大きさに合わせて拡大縮小する */
+html,body{height:100%;margin:0;background:#000;overflow:hidden}
+body{-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+button{font-family:inherit;cursor:pointer}
+#stage{position:absolute;left:0;top:0;width:1280px;height:1024px;transform-origin:0 0}
+@keyframes prt{from{transform:translateY(-100%)}to{transform:translateY(0)}}
+.prt{animation:prt 2.2s steps(22) both}
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<!-- 画面のひな形。{{名前}} に下の renderVals() の値が入り、sc-if は出す/出さない、sc-for はくり返し。 -->
+<template id="tpl">
+<div style="position: relative; isolation: isolate; width: 1280px; height: 1024px; overflow: hidden; background: #DCDCDC; color: #111111; font-family: 'BIZ UDPGothic', sans-serif; line-height: 1.35; display: flex; flex-direction: column; filter: {{root}}">
+
+<sc-if value="{{grayTop}}">
+<div style="height: 140px; flex-shrink: 0; padding: 0 40px; background: #ABABAB; display: flex; align-items: center; justify-content: space-between"><span style="font-size: 20px; font-weight: 700; color: #333333">大回りジェネレータ　券売機モード（あそび）</span><a href="index.html" style="height: 64px; padding: 0 20px; box-sizing: border-box; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 22px; text-decoration: none; display: flex; align-items: center">アプリに戻る</a></div>
+</sc-if>
+<sc-if value="{{blackTop}}">
+<div style="height: 140px; flex-shrink: 0; padding: 0 20px 0 12px; background: repeating-linear-gradient(#000000 0 2px, #1C1C1C 2px 4px); color: #FFFFFF; display: flex; align-items: center; gap: 20px; box-shadow: 0 2px 0 #9A9A9A">
+<h1 style="flex-grow: 1; margin: 0; font-size: 44px; font-weight: 400; line-height: 1.2">{{h1}}<span style="color: #FFF27A; font-weight: 700">{{h2}}</span>{{h3}}<br>{{h4}}</h1>
+<sc-if value="{{showSumBtn}}"><button type="button" sc-camel-on-click="{{openSum}}" style="width: 118px; height: 68px; border: 3px solid #FFFFFF; border-radius: 12px; background: #3C3C3C; color: #FFFFFF; font-size: 16px; line-height: 1.2">ここまでの<br>入力内容</button></sc-if>
+</div>
+<p style="height: 34px; flex-shrink: 0; margin: 0; padding: 4px 6px 0; box-sizing: border-box; color: #E00000; font-size: 20px">{{note}}</p>
+</sc-if>
+
+<div style="flex-grow: 1; min-height: 0; position: relative; display: flex; flex-direction: column">
+
+<sc-if value="{{s0}}">
+<div style="flex-grow: 1; background: #FFFFFF; padding: 50px 74px 0; display: flex; flex-direction: column; gap: 56px">
+<button type="button" sc-camel-on-click="{{buy0}}" style="height: 204px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; box-shadow: 0 0 0 5px #FFFFFF, 0 0 0 11px #FF1010; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px"><span style="font-size: 60px; font-weight: 700">きっぷを買う</span><span style="width: 88%; height: 1px; background: #CCCCCC"></span><span style="font-size: 34px">大回り用の乗車券・特急券</span></button>
+<a href="index.html#/saved" style="width: 550px; height: 118px; box-sizing: border-box; background: linear-gradient(#FFFFFF 0%, #F4F4F4 55%, #DADADA 90%, #B4B4B4 100%); border: 3px solid #111111; border-radius: 12px; color: #111111; text-decoration: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px"><span style="font-size: 32px; font-weight: 700">保存したルートを見る</span><span style="font-size: 22px">アプリで作ったルート</span></a>
+</div>
+</sc-if>
+
+<sc-if value="{{s1}}">
+<div style="flex-grow: 1; background: #FFFFFF; padding: 50px 74px 0; display: flex; flex-direction: column">
+<button type="button" sc-camel-on-click="{{search0}}" style="height: 204px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; box-shadow: 0 0 0 5px #FFFFFF, 0 0 0 11px #FF1010; padding: 0 46px; display: flex; flex-direction: column; justify-content: center; gap: 10px; text-align: left">
+<span style="display: flex; align-items: center; gap: 30px"><svg aria-hidden="true" width="64" height="72" sc-camel-view-box="0 0 24 27" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round"><circle cx="10" cy="10" r="7.5"></circle><path d="M15.5 16l6 8"></path></svg><span style="font-size: 54px; font-weight: 700">大回り検索<span style="font-size: 40px">　から購入</span></span></span>
+<span style="width: 100%; height: 1px; background: #CCCCCC"></span>
+<span style="padding-left: 94px; font-size: 34px">出発駅・到着駅と条件を指定して検索</span></button>
+<p style="margin: 52px 0 10px; width: 840px; padding: 8px 20px; box-sizing: border-box; border-radius: 999px; background: #BEDDE0; font-size: 26px; font-weight: 700">そのほかの買い方</p>
+<div style="display: flex; gap: 30px">
+<button type="button" sc-camel-on-click="{{saved0}}" style="width: 540px; height: 118px; background: linear-gradient(#FFFFFF 0%, #F4F4F4 55%, #DADADA 90%, #B4B4B4 100%); border: 3px solid #111111; border-radius: 12px; color: #111111; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px"><span style="font-size: 32px; font-weight: 700">保存したルートから購入</span><span style="font-size: 20px">アプリで作った大回りルート</span></button>
+<button type="button" sc-camel-on-click="{{normal0}}" style="width: 540px; height: 118px; background: linear-gradient(#FFFFFF 0%, #F4F4F4 55%, #DADADA 90%, #B4B4B4 100%); border: 3px solid #111111; border-radius: 12px; color: #111111; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px"><span style="font-size: 32px; font-weight: 700">ふつうの経路で購入</span><span style="font-size: 20px">いちばん早い経路で検索（JR線のみ）</span></button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{s2}}">
+<div style="flex-grow: 1; padding: 30px 64px 0; display: flex; flex-direction: column; gap: 10px">
+<div style="height: 80px; border: 2px solid #9A9A9A; background: #FFFFFF; display: flex"><span style="width: 196px; flex-shrink: 0; padding: 0 0 6px 8px; box-sizing: border-box; background: #EDEDED; font-size: 32px; display: flex; align-items: flex-end">出発駅</span><span style="flex-grow: 1; padding-left: 40px; display: flex; flex-direction: column; justify-content: center"><span style="font-size: 22px; color: #0A6A0A; padding-left: 30px">（当駅）</span><span style="font-size: 32px; font-weight: 700; color: #0A6A0A">新宿</span></span><span style="width: 166px; flex-shrink: 0; border-left: 2px solid #9A9A9A; background: #DCDCDC; display: flex; align-items: center; justify-content: center"></span></div>
+<sc-if value="{{toUnset}}"><div style="height: 80px; border: 2px solid #9A9A9A; background: #FFFFFF; display: flex"><span style="width: 196px; flex-shrink: 0; padding: 0 0 6px 8px; box-sizing: border-box; background: #EDEDED; font-size: 32px; display: flex; align-items: flex-end">到着駅</span><span style="flex-grow: 1; padding-left: 40px; display: flex; flex-direction: column; justify-content: center"><span style="font-size: 46px; color: #1450E0; display: flex; align-items: center; gap: 20px">到着駅を指定してください<span aria-hidden="true" style="font-size: 36px; letter-spacing: -0.3em">▶▶▶</span></span></span><span style="width: 166px; flex-shrink: 0; border-left: 2px solid #9A9A9A; background: #DCDCDC; display: flex; align-items: center; justify-content: center"><button type="button" sc-camel-on-click="{{openKana}}" style="width: 128px; height: 62px; background: linear-gradient(#55A8FF 0%, #1170F0 50%, #0058E0 52%, #0044B8 100%); border: 2px solid #001E60; border-radius: 10px; color: #FFFFFF; box-shadow: 0 0 0 4px #FFFFFF, 0 0 0 9px #FF1010; font-size: 32px">入 力</button></span></div></sc-if>
+<sc-if value="{{toSet}}"><div style="height: 80px; border: 2px solid #9A9A9A; background: #FFFFFF; display: flex"><span style="width: 196px; flex-shrink: 0; padding: 0 0 6px 8px; box-sizing: border-box; background: #EDEDED; font-size: 32px; display: flex; align-items: flex-end">到着駅</span><span style="flex-grow: 1; padding-left: 40px; display: flex; flex-direction: column; justify-content: center"><span style="font-size: 36px; font-weight: 700; color: #0A6A0A">{{toName}}</span></span><span style="width: 166px; flex-shrink: 0; border-left: 2px solid #9A9A9A; background: #DCDCDC; display: flex; align-items: center; justify-content: center"><button type="button" sc-camel-on-click="{{openKana}}" style="width: 128px; height: 62px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 32px">変 更</button></span></div></sc-if>
+<div style="height: 80px; border: 2px solid #9A9A9A; background: #FFFFFF; display: flex"><span style="width: 196px; flex-shrink: 0; padding: 0 0 6px 8px; box-sizing: border-box; background: #EDEDED; font-size: 32px; display: flex; align-items: flex-end">利用日時</span><span style="flex-grow: 1; padding-left: 40px; display: flex; flex-direction: column; justify-content: center"><span style="display: flex; align-items: baseline; gap: 40px"><span style="font-size: 32px; font-weight: 700; color: #0A6A0A">{{dateW}}</span><span style="font-size: 32px; font-weight: 700; color: #0A6A0A">{{timeLabel}}</span><span style="display: flex; gap: 6px"><span style="padding: 2px 10px; border: 2px solid; border-radius: 12px; font-size: 26px; font-weight: 700; {{depStyle}}">出発</span><span style="padding: 2px 10px; border: 2px solid; border-radius: 12px; font-size: 26px; font-weight: 700; {{arrStyle}}">到着</span></span></span></span><span style="width: 166px; flex-shrink: 0; border-left: 2px solid #9A9A9A; background: #DCDCDC; display: flex; align-items: center; justify-content: center"><button type="button" sc-camel-on-click="{{openTime}}" style="width: 128px; height: 62px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 32px">変 更</button></span></div>
+<div style="height: 80px; border: 2px solid #9A9A9A; background: #FFFFFF; display: flex"><span style="width: 196px; flex-shrink: 0; padding: 0 0 6px 8px; box-sizing: border-box; background: #EDEDED; font-size: 32px; display: flex; align-items: flex-end">人数</span><span style="flex-grow: 1; padding-left: 40px; display: flex; flex-direction: column; justify-content: center"><span style="font-size: 32px; font-weight: 700; color: #0A6A0A">{{ppl}}</span></span><span style="width: 166px; flex-shrink: 0; border-left: 2px solid #9A9A9A; background: #DCDCDC; display: flex; align-items: center; justify-content: center"><button type="button" sc-camel-on-click="{{openPpl}}" style="width: 128px; height: 62px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 32px">変 更</button></span></div>
+<sc-if value="{{showCond}}"><p style="margin: 30px 0 0; font-size: 22px">▼追加条件を指定する場合は入力してください。</p>
+<div style="height: 80px; border: 2px solid #9A9A9A; background: #FFFFFF; display: flex"><span style="width: 196px; flex-shrink: 0; padding: 0 0 6px 8px; box-sizing: border-box; background: #EDEDED; font-size: 32px; display: flex; align-items: flex-end">条件</span><span style="flex-grow: 1; padding-left: 40px; display: flex; flex-direction: column; justify-content: center"><span style="display: flex; gap: 46px"><span style="display: flex; flex-direction: column"><span style="font-size: 20px">方面を</span><span style="font-size: 30px; color: #0A6A0A">{{condDir}}</span></span><span style="display: flex; flex-direction: column"><span style="font-size: 20px">長さを</span><span style="font-size: 30px; color: #0A6A0A">{{condLen}}</span></span><span style="display: flex; flex-direction: column"><span style="font-size: 20px">グレーなルートを</span><span style="font-size: 30px; color: #0A6A0A">{{condGray}}</span></span></span></span><span style="width: 166px; flex-shrink: 0; border-left: 2px solid #9A9A9A; background: #DCDCDC; display: flex; align-items: center; justify-content: center"><button type="button" sc-camel-on-click="{{openCond}}" style="width: 128px; height: 62px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 32px">変 更</button></span></div></sc-if>
+<div style="margin-top: auto; padding-bottom: 14px; display: flex; align-items: center; justify-content: flex-end; gap: 14px"><span style="font-size: 28px">よろしければ</span><span aria-hidden="true" style="color: #0A7A0A; font-size: 30px">▶</span><button type="button" sc-camel-on-click="{{search}}" style="width: 196px; height: 78px; background: linear-gradient(#2FA82F 0%, #0E800E 50%, #006A00 52%, #005200 100%); border: 3px solid #B6F06A; border-radius: 10px; color: #FFFFFF; opacity: {{searchOpacity}}; {{searchRing}}; font-size: 38px; font-weight: 700">検 索</button></div>
+</div>
+</sc-if>
+
+<sc-if value="{{s3}}">
+<div style="flex-grow: 1; padding: 10px 80px 0; display: flex; gap: 42px">
+<sc-for list="{{cards}}" as="c">
+<div style="width: 540px; height: 720px; box-sizing: border-box; border: 3px solid #555555; border-radius: 14px; background: #FFFFFF; overflow: hidden; display: flex; flex-direction: column">
+<div style="height: 60px; flex-shrink: 0; padding: 0 20px; background: #EDEDED; border-bottom: 2px solid #8A8A8A; display: flex; align-items: center; gap: 12px"><span style="font-size: 18px">{{c.headL}}：</span><span style="font-size: 28px; font-weight: 700">{{c.headV}}</span><span style="margin-left: auto; font-size: 18px; font-weight: 700">{{c.headR}}</span></div>
+<div style="flex-grow: 1; min-height: 0; padding: 10px 0 0"><p style="margin: 0 0 6px 20px; font-size: 17px; font-weight: 700; color: #C00000">{{c.tag}}</p><sc-for list="{{c.rows}}" as="t">
+<sc-if value="{{t.isSt}}"><div style="height: 28px; display: flex; align-items: center"><span style="width: 78px; flex-shrink: 0; text-align: right; padding-right: 8px; font-size: 15px">{{t.km}}</span><span style="width: 16px; height: 16px; flex-shrink: 0; margin-left: -9px; box-sizing: border-box; border: 2px solid #000000; border-radius: {{t.node}}; background: #FFFFFF; position: relative; z-index: 1"></span><span style="padding-left: 12px; font-size: 22px; font-weight: 700">{{t.name}}</span></div></sc-if>
+<sc-if value="{{t.isLn}}"><div style="height: 26px; display: flex; align-items: center; background: {{t.band}}"><span style="width: 78px; flex-shrink: 0; align-self: stretch; display: flex; align-items: center; justify-content: flex-start"><span style="width: 28px; height: 100%; background: {{t.tabBg}}; color: #FFFFFF; font-size: 11px; display: flex; align-items: center; justify-content: center">{{t.tab}}</span></span><span style="width: 4px; align-self: stretch; margin-left: -3px; background: #000000"></span><span style="padding-left: 21px; font-size: 16px; font-weight: 700">{{t.name}}</span></div></sc-if>
+</sc-for></div>
+<div style="height: 96px; flex-shrink: 0; padding: 0 16px; border-top: 2px solid #CCCCCC; background: #F4F4F4; display: flex; align-items: center; gap: 14px"><span style="font-size: 16px; line-height: 1.5">運賃　{{c.fareTxt}}<br>料金目安：<strong style="font-size: 24px">{{c.fareTxt}}</strong>（大人1人）</span><span style="flex-grow: 1"></span><sc-if value="{{c.hasMap}}"><button type="button" sc-camel-on-click="{{c.detail}}" style="height: 58px; padding: 0 14px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 20px">路線図で見る</button></sc-if><button type="button" sc-camel-on-click="{{c.pick}}" style="width: 140px; height: 62px; background: linear-gradient(#2FA82F 0%, #0E800E 50%, #006A00 52%, #005200 100%); border: 3px solid #B6F06A; border-radius: 10px; color: #FFFFFF; {{c.ring}}; font-size: 30px">選 択</button></div>
+</div>
+</sc-for>
+<sc-if value="{{noRoute}}"><p style="margin: 80px auto 0; font-size: 30px; line-height: 1.6; text-align: center">この区間のルートは、まだ用意していません。<br><span style="font-size: 22px; color: #E00000">お試しは「新宿 → 代々木」でどうぞ。</span></p></sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{s4}}">
+<div style="flex-grow: 1; display: flex">
+<div style="width: 556px; flex-shrink: 0; padding-top: 20px; background: #FFFFFF"><sc-for list="{{cRows}}" as="t">
+<sc-if value="{{t.isSt}}"><div style="height: 28px; display: flex; align-items: center"><span style="width: 76px; flex-shrink: 0; text-align: right; padding-right: 8px; font-size: 15px">{{t.km}}</span><span style="width: 16px; height: 16px; flex-shrink: 0; margin-left: -9px; box-sizing: border-box; border: 2px solid #000000; border-radius: {{t.node}}; background: #FFFFFF; position: relative; z-index: 1"></span><span style="padding-left: 12px; font-size: 22px; font-weight: 700">{{t.name}}</span></div></sc-if>
+<sc-if value="{{t.isLn}}"><div style="height: 26px; display: flex; align-items: center; background: {{t.band}}"><span style="width: 76px; flex-shrink: 0; align-self: stretch; display: flex; align-items: center; justify-content: flex-start"><span style="width: 28px; height: 100%; background: {{t.tabBg}}; color: #FFFFFF; font-size: 11px; display: flex; align-items: center; justify-content: center">{{t.tab}}</span></span><span style="width: 4px; align-self: stretch; margin-left: -3px; background: #000000"></span><span style="padding-left: 21px; font-size: 16px; font-weight: 700">{{t.name}}</span></div></sc-if>
+</sc-for></div>
+<div style="flex-grow: 1; padding: 30px 26px 0">
+<div style="background: #FFFFFF; border: 2px solid #5A5A5A">
+<div style="height: 120px; background: #5A5A5A; color: #FFF27A; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px"><span style="font-size: 34px; font-weight: 700">新宿　⇒　{{toLabel}}</span><span style="font-size: 24px">出発日：{{dateW}}</span></div>
+<div style="padding: 40px 26px 30px; display: flex; flex-direction: column; gap: 14px">
+<button type="button" sc-camel-on-click="{{buyOnly}}" style="height: 136px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; box-shadow: 0 0 0 5px #FFFFFF, 0 0 0 11px #FF1010; font-size: 40px"><span style="font-weight: 700">乗車券</span>のみ購入する</button>
+<span style="text-align: center; font-size: 19px">ふつう列車だけで回ります。大回りはこちら。</span>
+<div style="margin-top: 26px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px">
+<div style="display: flex; flex-direction: column; gap: 8px"><button type="button" sc-camel-on-click="{{buyExp}}" style="height: 136px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 30px; line-height: 1.3"><span style="color: #FFF27A; font-weight: 700">特急券</span>＋乗車券</button><span style="text-align: center; font-size: 19px">一部の区間で特急に乗る方</span></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><button type="button" sc-camel-on-click="{{buyGr}}" style="height: 136px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 30px; line-height: 1.3"><span style="color: #8FE88F; font-weight: 700">グリーン券</span>＋乗車券</button><span style="text-align: center; font-size: 19px">普通列車のグリーン車に乗る方</span></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{s6}}">
+<div style="flex-grow: 1; padding: 30px 156px 0">
+<div style="background: #FFFFFF; border: 2px solid #5A5A5A">
+<div style="height: 76px; background: #5A5A5A; color: #FFF27A; font-size: 32px; font-weight: 700; display: flex; align-items: center; justify-content: center">新宿　⇒　{{toLabel}}</div>
+<div style="padding: 40px 54px; display: flex; flex-direction: column; gap: 40px">
+<div style="height: 136px; padding: 0 30px 0 50px; border: 2px solid #000000; display: flex; align-items: center; justify-content: space-between"><span style="font-size: 38px">行きのきっぷのみ購入する</span><button type="button" sc-camel-on-click="{{retOne}}" style="width: 138px; height: 66px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; {{retRingOne}}; font-size: 30px">選 択</button></div>
+<div style="padding: 20px 30px 20px 50px; border: 2px solid #000000; display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; align-items: center; justify-content: space-between"><span style="display: flex; flex-direction: column"><span style="font-size: 38px">帰りのきっぷも購入する</span><span style="font-size: 20px">行きと帰りの、どちらで大回りするか選べます。</span></span><button type="button" sc-camel-on-click="{{retRound}}" style="width: 138px; height: 66px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 30px">選 択</button></div>
+<sc-if value="{{retOpen}}">
+<div style="padding-top: 16px; border-top: 1px dashed #8A8A8A; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px">
+<button type="button" sc-camel-on-click="{{rGo}}" style="height: 120px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; box-shadow: 0 0 0 4px #FFFFFF, 0 0 0 9px #FF1010; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px"><span style="font-size: 28px; color: #FFF27A">行きで大回り</span><span style="font-size: 18px">帰りはまっすぐ</span></button>
+<button type="button" sc-camel-on-click="{{rBack}}" style="height: 120px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px"><span style="font-size: 28px; color: #FFF27A">帰りで大回り</span><span style="font-size: 18px">行きはまっすぐ</span></button>
+<button type="button" sc-camel-on-click="{{rBoth}}" style="height: 120px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px"><span style="font-size: 28px; color: #FFF27A">行きも帰りも</span><span style="font-size: 18px">帰りは逆回り</span></button>
+</div>
+</sc-if>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{s5}}">
+<div style="flex-grow: 1; padding: 20px 100px 0; display: flex; flex-direction: column; gap: 18px">
+<sc-for list="{{exps}}" as="e">
+<div style="height: 118px; padding: 0 30px 0 40px; border: 2px solid #000000; background: #FFFFFF; display: flex; align-items: center; justify-content: space-between"><span style="display: flex; flex-direction: column"><span style="font-size: 36px">{{e.label}}</span><span style="font-size: 20px">{{e.sub}}</span></span><button type="button" sc-camel-on-click="{{e.pick}}" aria-pressed="{{e.on}}" style="width: 150px; height: 66px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; {{e.btnStyle}}; font-size: 28px">{{e.btnLabel}}</button></div>
+</sc-for>
+<sc-if value="{{showSeat}}"><div style="margin-top: 10px; height: 118px; padding: 0 30px 0 40px; border: 2px solid #000000; background: #FFFFFF; display: flex; align-items: center; gap: 26px"><span style="flex-grow: 1; font-size: 36px">席</span><sc-for list="{{seatOpts}}" as="o"><button type="button" sc-camel-on-click="{{o.pick}}" style="width: 200px; height: 72px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; {{o.style}}; font-size: 30px">{{o.label}}</button></sc-for></div></sc-if>
+<sc-if value="{{showGrNote}}"><p style="margin: 10px 0 0; font-size: 22px">普通列車のグリーン車は、すべて自由席です。席が空いていないときは立って乗ります。</p></sc-if>
+<div style="margin-top: auto; padding-bottom: 14px; display: flex; align-items: center; justify-content: flex-end; gap: 14px"><span style="font-size: 28px">よろしければ</span><span aria-hidden="true" style="color: #0A7A0A; font-size: 30px">▶</span><button type="button" sc-camel-on-click="{{expNext}}" style="width: 196px; height: 78px; background: linear-gradient(#2FA82F 0%, #0E800E 50%, #006A00 52%, #005200 100%); border: 3px solid #B6F06A; border-radius: 10px; color: #FFFFFF; {{expNextRing}}; font-size: 38px; font-weight: 700">次 へ</button></div>
+</div>
+</sc-if>
+
+<sc-if value="{{s7}}">
+<div style="flex-grow: 1; display: flex">
+<div style="width: 728px; flex-shrink: 0; padding: 0 10px; box-sizing: border-box; background: #FFFFFF; display: flex; flex-direction: column">
+<div style="height: 90px; margin-top: 4px; background: #5A5A5A; color: #FFF27A; font-size: 38px; font-weight: 700; display: flex; align-items: center; justify-content: center">経路／乗車券</div>
+<div style="position: relative; flex-grow: 1; padding-top: 16px">
+<sc-for list="{{cRows}}" as="t">
+<sc-if value="{{t.isSt}}"><div style="height: 28px; display: flex; align-items: center"><span style="width: 100px; flex-shrink: 0; text-align: right; padding-right: 8px; font-size: 15px">{{t.km}}</span><span style="width: 16px; height: 16px; flex-shrink: 0; margin-left: -9px; box-sizing: border-box; border: 2px solid #000000; border-radius: {{t.node}}; background: #FFFFFF; position: relative; z-index: 1"></span><span style="padding-left: 12px; font-size: 22px; font-weight: 700">{{t.name}}</span></div></sc-if>
+<sc-if value="{{t.isLn}}"><div style="height: 26px; display: flex; align-items: center; background: {{t.band}}"><span style="width: 100px; flex-shrink: 0; align-self: stretch; display: flex; align-items: center; justify-content: flex-start"><span style="width: 28px; height: 100%; background: {{t.tabBg}}; color: #FFFFFF; font-size: 11px; display: flex; align-items: center; justify-content: center">{{t.tab}}</span></span><span style="width: 4px; align-self: stretch; margin-left: -3px; background: #000000"></span><span style="padding-left: 21px; font-size: 16px; font-weight: 700">{{t.name}}</span></div></sc-if>
+</sc-for>
+<sc-if value="{{showRideBracket}}"><div style="position: absolute; right: 0; top: 30px; bottom: 30px; width: 110px; border-top: 4px dotted #0A6A0A; border-bottom: 4px dotted #0A6A0A; display: flex; flex-direction: column; align-items: center"><span style="flex-grow: 1; width: 4px; background: #0A6A0A"></span><span style="padding: 10px 0; background: #FFFFFF; font-size: 22px; font-weight: 700; text-align: center">{{rideKind}}</span><span style="flex-grow: 1; width: 4px; background: #0A6A0A"></span><span aria-hidden="true" style="color: #0A6A0A; font-size: 26px; line-height: 0.6">▼</span></div></sc-if>
+</div>
+</div>
+<div style="flex-grow: 1; padding: 20px 10px 0 12px; display: flex; flex-direction: column">
+<dl style="margin: 0; background: #FFFFFF; border: 3px solid #8A8A8A">
+<sc-for list="{{conf}}" as="x"><div style="min-height: 82px; border-bottom: 2px solid #8A8A8A; display: flex"><dt style="width: 150px; flex-shrink: 0; padding-left: 10px; background: #5A5A5A; color: #FFFFFF; font-size: 26px; display: flex; align-items: center">{{x.k}}</dt><dd style="margin: 0; padding: 6px 12px; font-size: 22px; display: flex; align-items: center">{{x.v}}</dd></div></sc-for>
+<div style="height: 96px; padding: 0 16px; display: flex; align-items: center; justify-content: flex-end; gap: 10px"><span style="font-size: 24px">合計</span><span style="font-size: 52px; font-weight: 700">{{totalFmt}}</span><span style="font-size: 26px">円</span></div>
+</dl>
+<div style="margin-top: auto; padding-bottom: 14px; display: flex; align-items: center; justify-content: flex-end; gap: 14px"><span style="font-size: 28px">よろしければ</span><span aria-hidden="true" style="color: #0A7A0A; font-size: 30px">▶</span><button type="button" sc-camel-on-click="{{confirm}}" style="width: 196px; height: 78px; background: linear-gradient(#2FA82F 0%, #0E800E 50%, #006A00 52%, #005200 100%); border: 3px solid #B6F06A; border-radius: 10px; color: #FFFFFF; box-shadow: 0 0 0 5px #FFFFFF, 0 0 0 11px #FF1010; font-size: 38px; font-weight: 700">確 認</button></div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{s8}}">
+<div style="flex-grow: 1; padding-top: 26px; display: flex; flex-direction: column; align-items: center">
+<div style="display: flex; border: 3px solid #8A8A8A"><span style="width: 300px; height: 64px; background: #5A5A5A; color: #FFFFFF; font-size: 34px; display: flex; align-items: center; justify-content: center">購入金額</span><span style="width: 400px; height: 64px; padding-right: 20px; box-sizing: border-box; background: #FFFFFF; font-size: 40px; display: flex; align-items: center; justify-content: flex-end">{{totalFmt}}円</span></div>
+<div style="margin-top: 8px; font-size: 22px">入れたお金 <strong style="font-size: 28px">{{paidFmt}}円</strong>　あと <strong style="font-size: 28px">{{remainFmt}}円</strong></div>
+<div style="position: relative; margin-top: 20px; width: 700px; height: 500px; border-radius: 16px 16px 0 0; background: linear-gradient(#E6E6E6, #C9C9C9); box-shadow: inset 0 0 0 2px #B0B0B0">
+<div aria-hidden="true" style="position: absolute; left: 116px; top: 0; width: 460px; height: 40px; background: #9AA7B3; border: 3px solid #8A8A8A; border-top: none"></div>
+<div style="position: absolute; left: 30px; top: 110px; width: 190px; height: 180px; border: 4px solid #F08A20; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px"><span aria-hidden="true" style="width: 120px; height: 10px; border-radius: 4px; background: #555555"></span><button type="button" sc-camel-on-click="{{payCard}}" style="width: 150px; height: 110px; border: 2px solid #333333; border-radius: 8px; background: linear-gradient(#FFFFFF, #E6E6E6); font-size: 24px; font-weight: 700">CARD<br><span style="font-size: 15px; font-weight: 400">カードで払う</span></button></div>
+<div style="position: absolute; left: 250px; top: 110px; width: 190px; height: 180px; border: 4px solid #F08A20; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px"><span aria-hidden="true" style="width: 120px; height: 10px; border-radius: 4px; background: #555555"></span><button type="button" sc-camel-on-click="{{p1000}}" aria-label="1000円札を入れる" style="width: 150px; height: 110px; border: 2px solid #333333; border-radius: 4px; background: repeating-linear-gradient(45deg, #F5F2E6 0 6px, #E9E3CC 6px 12px); font-size: 30px; font-weight: 700">1000<br><span style="font-size: 15px; font-weight: 400">紙幣</span></button></div>
+<div style="position: absolute; left: 470px; top: 80px; width: 200px; height: 170px; border: 4px solid #F08A20; border-radius: 0 0 90px 90px; background: #3A3A3A; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; padding: 12px; box-sizing: border-box">
+<button type="button" sc-camel-on-click="{{p500}}" aria-label="500円玉を入れる" style="width: 64px; height: 64px; border: 2px solid #8A7020; border-radius: 999px; background: radial-gradient(#F6E7A0, #D8B850); font-size: 18px; font-weight: 700">500</button>
+<button type="button" sc-camel-on-click="{{p100}}" aria-label="100円玉を入れる" style="width: 58px; height: 58px; border: 2px solid #777777; border-radius: 999px; background: radial-gradient(#F2F2F2, #B8B8B8); font-size: 17px; font-weight: 700">100</button>
+<button type="button" sc-camel-on-click="{{p50}}" aria-label="50円玉を入れる" style="width: 54px; height: 54px; border: 2px solid #777777; border-radius: 999px; background: radial-gradient(circle, #3A3A3A 0 6px, #EDEDED 6px, #BDBDBD); font-size: 15px; font-weight: 700">50</button>
+<button type="button" sc-camel-on-click="{{p10}}" aria-label="10円玉を入れる" style="width: 58px; height: 58px; border: 2px solid #6A3A1A; border-radius: 999px; background: radial-gradient(#D89A6A, #9A5A2A); color: #FFFFFF; font-size: 17px; font-weight: 700">10</button>
+</div>
+<div aria-hidden="true" style="position: absolute; left: 30px; top: 330px; width: 190px; height: 70px; border: 3px solid #E0C400; border-radius: 8px 8px 0 0; background: #2A2A2A"></div>
+<div aria-hidden="true" style="position: absolute; left: 250px; top: 330px; width: 190px; height: 70px; border: 3px solid #E0C400; border-radius: 8px 8px 0 0; background: #2A2A2A"></div>
+<div aria-hidden="true" style="position: absolute; left: 0; right: 0; bottom: 0; height: 60px; background: #2E2E2E"></div>
+</div>
+<button type="button" sc-camel-on-click="{{toggleRcpt}}" style="position: absolute; right: 40px; top: 140px; width: 210px; height: 100px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; {{rcptStyle}}; font-size: 26px">{{rcptBtn}}</button>
+<span style="position: absolute; right: 40px; top: 260px; width: 210px; font-size: 17px; text-align: center">領収書が必要な方は<br>先に押してください</span>
+</div>
+</sc-if>
+
+<sc-if value="{{s9}}">
+<div style="flex-grow: 1; padding: 20px 60px 0; display: flex; gap: 50px">
+<div style="display: flex; flex-direction: column; align-items: center">
+<span style="font-size: 18px; color: #555555">きっぷ取出口</span>
+<div aria-hidden="true" style="width: 360px; height: 18px; border-radius: 4px; background: #1F1F1F; box-shadow: inset 0 4px 6px rgba(0,0,0,0.6)"></div>
+<div style="position: relative; width: 360px; height: 450px; overflow: hidden">
+<sc-for list="{{tickets}}" as="t">
+<div class="prt" style="position: absolute; left: {{t.x}}; top: {{t.y}}; width: 240px; height: 360px; animation-delay: {{t.delay}}">
+<div role="img" aria-label="{{t.aria}}" style="position: absolute; left: -60px; top: 60px; width: 360px; height: 240px; transform: rotate(90deg); box-sizing: border-box; padding: 14px 22px 12px; border-radius: 4px; background-color: #CDEDE2; background-image: radial-gradient(circle, rgba(255,255,255,0) 4px, rgba(255,255,255,0.6) 4px, rgba(255,255,255,0.6) 5px, rgba(255,255,255,0) 5px), radial-gradient(circle, rgba(255,255,255,0) 8px, rgba(255,255,255,0.45) 8px, rgba(255,255,255,0.45) 9px, rgba(255,255,255,0) 9px); background-size: 22px 22px; color: #3A2230; display: flex; flex-direction: column; font-family: 'Zen Kaku Gothic New', sans-serif; font-weight: 500; box-shadow: 0 2px 6px rgba(0,0,0,0.25)">
+<span aria-hidden="true" style="position: absolute; left: 0; right: 0; top: 60%; height: 15%; background: rgba(70,200,170,0.3)"></span>
+<span style="position: relative; align-self: center; padding: 0 2px 2px 0.4em; border-bottom: 2px solid #3A2230; font-size: 15px; letter-spacing: 0.4em">{{t.title}}</span>
+<span style="position: relative; margin-top: 12px; display: flex; align-items: center; justify-content: space-between; font-size: 28px; line-height: 1.3"><span style="letter-spacing: 0.4em">{{t.from}}</span><svg aria-hidden="true" width="26" height="14" sc-camel-view-box="0 0 26 14" fill="currentColor"><path d="M0 5h16V0l10 7-10 7V9H0z"></path></svg><span style="letter-spacing: 0.3em">{{t.to}}</span></span>
+<span style="position: relative; font-size: 12px; letter-spacing: 0.06em">{{t.l3}}</span>
+<span style="position: relative; display: flex; align-items: baseline; justify-content: space-between; font-size: 13px; line-height: 1.3"><span>{{t.day}}</span><span style="font-size: 22px; letter-spacing: 0.04em">{{t.price}}</span></span>
+<span style="position: relative; padding-left: 22px; font-size: 13px; letter-spacing: 0.08em">{{t.note}}</span>
+<span style="position: relative; margin-top: auto; display: flex; justify-content: space-between; align-items: flex-end; font-size: 11px; line-height: 1.35; letter-spacing: 0.04em"><span>{{dateDot}}<br><span style="font-size: 14px">00000-00</span></span><span>{{t.ppl}}<br>（きっぷのイメージ）</span><span style="font-size: 14px">見本</span></span>
+</div>
+</div>
+</sc-for>
+</div>
+</div>
+<sc-if value="{{rcptOn}}">
+<div style="display: flex; flex-direction: column; align-items: center">
+<span style="font-size: 18px; color: #555555">領収書</span>
+<div aria-hidden="true" style="width: 210px; height: 14px; border-radius: 3px; background: #1F1F1F; box-shadow: inset 0 3px 5px rgba(0,0,0,0.6)"></div>
+<div style="width: 190px; height: 450px; overflow: hidden">
+<div class="prt" style="width: 190px; box-sizing: border-box; padding: 14px 12px 18px; background: #FFFFFF; box-shadow: 0 2px 6px rgba(0,0,0,0.2); font-size: 12px; line-height: 1.6; animation-delay: {{rcptDelay}}; display: flex; flex-direction: column">
+<strong style="align-self: center; font-size: 17px; letter-spacing: 0.4em">領収書</strong>
+<span style="margin-top: 6px; border-bottom: 1px solid #111111; font-size: 13px">お客さま　　　　　様</span>
+<span style="margin-top: 8px">2026年11月15日</span>
+<sc-for list="{{rcptLines}}" as="x"><span style="display: flex; justify-content: space-between"><span>{{x.name}}</span><span>{{x.price}}</span></span></sc-for>
+<span style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #111111; display: flex; justify-content: space-between; font-size: 15px; font-weight: 700"><span>合計</span><span>￥{{totalFmt}}</span></span>
+<span style="display: flex; justify-content: space-between"><span>お預り</span><span>{{paidLabel}}</span></span>
+<span style="display: flex; justify-content: space-between"><span>おつり</span><span>￥{{changeFmt}}</span></span>
+<span style="margin-top: 8px">上記正に領収いたしました</span>
+<span style="margin-top: 4px">大回りジェネレータ（イメージ）</span>
+<span style="margin-top: 8px; align-self: center; padding: 2px 10px; border: 1px solid #111111; font-size: 14px">見本</span>
+</div>
+</div>
+</div>
+</sc-if>
+<div style="flex-grow: 1; padding-top: 60px; display: flex; flex-direction: column; gap: 20px">
+<p style="margin: 0; font-size: 40px; font-weight: 700; line-height: 1.4">ありがとうございました</p>
+<sc-if value="{{hasChange}}"><p style="margin: 0; font-size: 30px; color: #0A6A0A; font-weight: 700">{{changeLine}}</p></sc-if>
+<p style="margin: 0; font-size: 20px">途中の駅で改札を出ると、そこで旅は終わりです。</p>
+<a href="{{goHref}}" style="margin-top: 20px; height: 90px; box-sizing: border-box; background: linear-gradient(#2FA82F 0%, #0E800E 50%, #006A00 52%, #005200 100%); border: 3px solid #B6F06A; border-radius: 10px; color: #FFFFFF; font-size: 34px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center">このルートで出発する</a>
+<button type="button" sc-camel-on-click="{{home}}" style="height: 72px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 26px">最初の画面へ</button>
+</div>
+</div>
+</sc-if>
+
+</div>
+
+<div style="height: 94px; flex-shrink: 0; position: relative; background: #ABABAB; display: flex; align-items: center; padding-left: 160px; gap: 30px">
+<sc-if value="{{showCancel}}"><button type="button" sc-camel-on-click="{{cancel}}" style="position: absolute; left: 10px; bottom: 10px; width: 114px; height: 114px; border: 3px solid #000000; border-radius: 999px; background: radial-gradient(circle at 50% 35%, #FF6A5A 0%, #E8281A 45%, #B01008 100%); box-shadow: inset 0 0 0 4px #FFC0B8; color: #FFFFFF; font-size: 34px; font-weight: 700">取消</button></sc-if>
+<sc-if value="{{showBack}}"><button type="button" sc-camel-on-click="{{back}}" style="width: 168px; height: 74px; background: linear-gradient(#FFA448 0%, #E8780E 50%, #D46400 52%, #B85200 100%); border: 2px solid #222222; border-radius: 10px; color: #FFFFFF; font-size: 22px">前画面に戻る</button></sc-if>
+<button type="button" sc-camel-on-click="{{toggleMono}}" style="position: absolute; left: 568px; top: 10px; width: 146px; height: 72px; border: 4px solid #FFFFFF; border-radius: 12px; background: #000000; color: #FFFFFF; font-size: 28px; box-shadow: 0 0 0 2px #000000">白黒表示</button>
+</div>
+
+<sc-if value="{{mKana}}">
+<div style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; z-index: 50; background: rgba(16,16,16,0.72); display: flex; align-items: center; justify-content: center">
+<div role="dialog" aria-label="到着駅名（目的地）&lt;span style=" font-weight:="" 400;="" font-size:="" 34px"="">　を入力してください" style="position: relative; z-index: 1; width: 1170px; height: 910px; box-sizing: border-box; border: 6px solid #33FF00; border-radius: 10px; background-color: #FFFFFF; opacity: 1; display: flex; flex-direction: column; overflow: hidden"&gt;
+<div style="height: 100px; flex-shrink: 0; padding: 0 16px; background: #DCDCDC; display: flex; align-items: center; font-size: 40px; font-weight: 700">到着駅名（目的地）<span style="font-weight: 400; font-size: 34px">　を入力してください</span></div>
+<div style="flex-grow: 1; min-height: 0; background: #FFFFFF; display: flex; flex-direction: column">
+<div style="margin: 40px 10px 0; height: 100px; padding: 0 16px; background: #4A6A6A; display: flex; align-items: center; gap: 24px">
+<span style="font-size: 18px; line-height: 1.5; color: #FFFFFF">入力例：東京　→とうきよう<br>　　　　原宿　→はらしゆく</span>
+<span style="flex-grow: 1; height: 68px; padding: 0 12px; box-sizing: border-box; border: 2px solid #333333; background: #FFF799; display: flex; align-items: center; font-size: 36px; font-weight: 700">{{kana}}■</span>
+<button type="button" sc-camel-on-click="{{fix}}" style="width: 112px; height: 72px; background: linear-gradient(#FFA448 0%, #E8780E 50%, #D46400 52%, #B85200 100%); border: 2px solid #222222; border-radius: 10px; color: #FFFFFF; font-size: 30px; font-weight: 700">訂 正</button>
+</div>
+<div style="margin: 24px 10px 0; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 14px 15px">
+<sc-for list="{{keys}}" as="k">
+<button type="button" sc-camel-on-click="{{k.pick}}" aria-label="{{k.aria}}" style="visibility: {{k.vis}}; height: 76px; background: {{k.bg}}; border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 44px; font-weight: 700; line-height: 1">{{k.ch}}</button>
+</sc-for>
+</div></div>
+<div style="height: 104px; flex-shrink: 0; padding: 0 40px; background: #DCDCDC; display: flex; align-items: center; gap: 20px"><button type="button" sc-camel-on-click="{{closeModal}}" style="height: 72px; padding: 0 14px; background: linear-gradient(#FFA448 0%, #E8780E 50%, #D46400 52%, #B85200 100%); border: 2px solid #222222; border-radius: 10px; color: #FFFFFF; font-size: 22px">前画面に戻る</button>
+<span style="flex-grow: 1; text-align: right; font-size: 22px; line-height: 1.4">入力した文字で始まる駅は{{hitCount}}駅該当します。<br>次の文字を入力するか「表示」を押してください。</span>
+<span aria-hidden="true" style="color: #0A7A0A; font-size: 26px">▶</span>
+<button type="button" sc-camel-on-click="{{show}}" style="width: 196px; height: 78px; background: linear-gradient(#2FA82F 0%, #0E800E 50%, #006A00 52%, #005200 100%); border: 3px solid #B6F06A; border-radius: 10px; color: #FFFFFF; font-size: 36px; font-weight: 700">表 示</button></div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{mTime}}">
+<div style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; z-index: 50; background: rgba(16,16,16,0.72); display: flex; align-items: center; justify-content: center">
+<div role="dialog" aria-label="利用時刻&lt;span style=" font-weight:="" 400;="" font-size:="" 34px"="">をお選びください" style="position: relative; z-index: 1; width: 1170px; height: 910px; box-sizing: border-box; border: 6px solid #33FF00; border-radius: 10px; background-color: #FFFFFF; opacity: 1; display: flex; flex-direction: column; overflow: hidden"&gt;
+<div style="height: 100px; flex-shrink: 0; padding: 0 16px; background: #DCDCDC; display: flex; align-items: center; font-size: 40px; font-weight: 700">利用時刻<span style="font-weight: 400; font-size: 34px">をお選びください</span></div>
+<div style="flex-grow: 1; min-height: 0; background: #FFFFFF; display: flex; flex-direction: column"><div style="padding: 20px 40px; border-bottom: 2px solid #DCDCDC; display: flex; align-items: flex-start; gap: 30px"><span style="width: 120px; flex-shrink: 0; padding-top: 18px; font-size: 30px; font-weight: 700">出発／到着</span><div style="display: grid; grid-template-columns: repeat(2, 180px); gap: 18px 12px"><sc-for list="{{modeOpts}}" as="o"><button type="button" sc-camel-on-click="{{o.pick}}" style="height: 74px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; {{o.style}}; font-size: 32px">{{o.label}}</button></sc-for></div></div><div style="padding: 20px 40px; border-bottom: 2px solid #DCDCDC; display: flex; align-items: flex-start; gap: 30px"><span style="width: 120px; flex-shrink: 0; padding-top: 18px; font-size: 30px; font-weight: 700">時</span><div style="display: grid; grid-template-columns: repeat(10, 76px); gap: 18px 12px"><sc-for list="{{hourOpts}}" as="o"><button type="button" sc-camel-on-click="{{o.pick}}" style="height: 74px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; {{o.style}}; font-size: 32px">{{o.label}}</button></sc-for></div></div><div style="padding: 20px 40px; border-bottom: 2px solid #DCDCDC; display: flex; align-items: flex-start; gap: 30px"><span style="width: 120px; flex-shrink: 0; padding-top: 18px; font-size: 30px; font-weight: 700">分</span><div style="display: grid; grid-template-columns: repeat(6, 110px); gap: 18px 12px"><sc-for list="{{minOpts}}" as="o"><button type="button" sc-camel-on-click="{{o.pick}}" style="height: 74px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; {{o.style}}; font-size: 32px">{{o.label}}</button></sc-for></div></div><p style="margin: 18px 40px 0; font-size: 22px">「到着」をえらぶと、その時刻までに着くルートを案内します。</p></div>
+<div style="height: 104px; flex-shrink: 0; padding: 0 40px; background: #DCDCDC; display: flex; align-items: center; gap: 20px"><button type="button" sc-camel-on-click="{{closeModal}}" style="height: 72px; padding: 0 14px; background: linear-gradient(#FFA448 0%, #E8780E 50%, #D46400 52%, #B85200 100%); border: 2px solid #222222; border-radius: 10px; color: #FFFFFF; font-size: 22px">前画面に戻る</button><span style="flex-grow: 1"></span><span style="font-size: 24px">よろしければ</span><span aria-hidden="true" style="color: #0A7A0A; font-size: 26px">▶</span><button type="button" sc-camel-on-click="{{closeModal}}" style="width: 196px; height: 78px; background: linear-gradient(#2FA82F 0%, #0E800E 50%, #006A00 52%, #005200 100%); border: 3px solid #B6F06A; border-radius: 10px; color: #FFFFFF; font-size: 36px; font-weight: 700">決 定</button></div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{mCand}}">
+<div style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; z-index: 50; background: rgba(16,16,16,0.72); display: flex; align-items: center; justify-content: center">
+<div role="dialog" aria-label="到着駅（目的地）&lt;span style=" font-weight:="" 400;="" font-size:="" 34px"="">をお選びください" style="position: relative; z-index: 1; width: 1170px; height: 910px; box-sizing: border-box; border: 6px solid #33FF00; border-radius: 10px; background-color: #FFFFFF; opacity: 1; display: flex; flex-direction: column; overflow: hidden"&gt;
+<div style="height: 100px; flex-shrink: 0; padding: 0 16px; background: #DCDCDC; display: flex; align-items: center; font-size: 40px; font-weight: 700">到着駅（目的地）<span style="font-weight: 400; font-size: 34px">をお選びください</span></div>
+<div style="flex-grow: 1; min-height: 0; background: #FFFFFF; display: flex; flex-direction: column">
+<p style="margin: 6px 36px 0; font-size: 19px; line-height: 1.5; color: #E00000">・駅名の入力を間違えた場合には「入力しなおす」を押してください。<br>・ご希望の駅がない場合には、アプリの「到着駅をえらぶ」でおさがしください。</p>
+<div style="margin: 36px 90px 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 36px">
+<sc-for list="{{cands}}" as="c">
+<button type="button" sc-camel-on-click="{{c.pick}}" style="height: 178px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 48px">{{c.name}}</button>
+</sc-for>
+</div>
+<p style="margin: auto 0 30px; text-align: center; font-size: 22px; font-weight: 700">1/1<br><span style="font-size: 15px; font-weight: 400">ページ</span></p></div>
+<div style="height: 104px; flex-shrink: 0; padding: 0 40px; background: #DCDCDC; display: flex; align-items: center; gap: 20px"><button type="button" sc-camel-on-click="{{redo}}" style="height: 72px; padding: 0 14px; background: linear-gradient(#FFA448 0%, #E8780E 50%, #D46400 52%, #B85200 100%); border: 2px solid #222222; border-radius: 10px; color: #FFFFFF; font-size: 22px">入力しなおす</button></div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{mPpl}}">
+<div style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; z-index: 50; background: rgba(16,16,16,0.72); display: flex; align-items: center; justify-content: center">
+<div role="dialog" aria-label="人数&lt;span style=" font-weight:="" 400;="" font-size:="" 34px"="">をお選びください" style="position: relative; z-index: 1; width: 1170px; height: 910px; box-sizing: border-box; border: 6px solid #33FF00; border-radius: 10px; background-color: #FFFFFF; opacity: 1; display: flex; flex-direction: column; overflow: hidden"&gt;
+<div style="height: 100px; flex-shrink: 0; padding: 0 16px; background: #DCDCDC; display: flex; align-items: center; font-size: 40px; font-weight: 700">人数<span style="font-weight: 400; font-size: 34px">をお選びください</span></div>
+<div style="flex-grow: 1; min-height: 0; background: #FFFFFF; display: flex; flex-direction: column"><div style="margin-top: 40px"><div style="height: 140px; border-bottom: 2px solid #DCDCDC; display: flex; align-items: center; gap: 30px; padding: 0 60px"><span style="width: 160px; font-size: 40px; font-weight: 700">大人</span><button type="button" sc-camel-on-click="{{aMinus}}" aria-label="大人を減らす" style="width: 110px; height: 96px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 48px">－</button><span style="width: 120px; text-align: center; font-size: 64px; font-weight: 700; color: #0A6A0A">{{adult}}<span style="font-size: 30px">人</span></span><button type="button" sc-camel-on-click="{{aPlus}}" aria-label="大人を増やす" style="width: 110px; height: 96px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 48px">＋</button></div><div style="height: 140px; border-bottom: 2px solid #DCDCDC; display: flex; align-items: center; gap: 30px; padding: 0 60px"><span style="width: 160px; font-size: 40px; font-weight: 700">こども</span><button type="button" sc-camel-on-click="{{cMinus}}" aria-label="こどもを減らす" style="width: 110px; height: 96px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 48px">－</button><span style="width: 120px; text-align: center; font-size: 64px; font-weight: 700; color: #0A6A0A">{{child}}<span style="font-size: 30px">人</span></span><button type="button" sc-camel-on-click="{{cPlus}}" aria-label="こどもを増やす" style="width: 110px; height: 96px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 48px">＋</button></div></div></div>
+<div style="height: 104px; flex-shrink: 0; padding: 0 40px; background: #DCDCDC; display: flex; align-items: center; gap: 20px"><span style="flex-grow: 1"></span><span style="font-size: 24px">よろしければ</span><span aria-hidden="true" style="color: #0A7A0A; font-size: 26px">▶</span><button type="button" sc-camel-on-click="{{closeModal}}" style="width: 196px; height: 78px; background: linear-gradient(#2FA82F 0%, #0E800E 50%, #006A00 52%, #005200 100%); border: 3px solid #B6F06A; border-radius: 10px; color: #FFFFFF; font-size: 36px; font-weight: 700">決 定</button></div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{mCond}}">
+<div style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; z-index: 50; background: rgba(16,16,16,0.72); display: flex; align-items: center; justify-content: center">
+<div role="dialog" aria-label="追加条件&lt;span style=" font-weight:="" 400;="" font-size:="" 34px"="">をお選びください" style="position: relative; z-index: 1; width: 1170px; height: 910px; box-sizing: border-box; border: 6px solid #33FF00; border-radius: 10px; background-color: #FFFFFF; opacity: 1; display: flex; flex-direction: column; overflow: hidden"&gt;
+<div style="height: 100px; flex-shrink: 0; padding: 0 16px; background: #DCDCDC; display: flex; align-items: center; font-size: 40px; font-weight: 700">追加条件<span style="font-weight: 400; font-size: 34px">をお選びください</span></div>
+<div style="flex-grow: 1; min-height: 0; background: #FFFFFF; display: flex; flex-direction: column"><div style="padding: 24px 50px; border-bottom: 2px solid #DCDCDC; display: flex; flex-direction: column; gap: 18px"><span style="font-size: 30px; font-weight: 700">方面</span><div style="display: flex; flex-wrap: wrap; gap: 26px"><sc-for list="{{dirOpts}}" as="o"><button type="button" sc-camel-on-click="{{o.pick}}" style="min-width: 200px; height: 88px; padding: 0 24px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; {{o.style}}; font-size: 32px">{{o.label}}</button></sc-for></div></div><div style="padding: 24px 50px; border-bottom: 2px solid #DCDCDC; display: flex; flex-direction: column; gap: 18px"><span style="font-size: 30px; font-weight: 700">長さ</span><div style="display: flex; flex-wrap: wrap; gap: 26px"><sc-for list="{{lenOpts}}" as="o"><button type="button" sc-camel-on-click="{{o.pick}}" style="min-width: 200px; height: 88px; padding: 0 24px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; {{o.style}}; font-size: 32px">{{o.label}}</button></sc-for></div></div><div style="padding: 24px 50px; border-bottom: 2px solid #DCDCDC; display: flex; flex-direction: column; gap: 18px"><span style="font-size: 30px; font-weight: 700">グレーなルート（「6の字」など）</span><div style="display: flex; flex-wrap: wrap; gap: 26px"><sc-for list="{{grayOpts}}" as="o"><button type="button" sc-camel-on-click="{{o.pick}}" style="min-width: 200px; height: 88px; padding: 0 24px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; {{o.style}}; font-size: 32px">{{o.label}}</button></sc-for></div></div><p style="margin: 16px 50px 0; font-size: 20px; color: #E00000">グレーなルートは係員の判断が分かれる経路です。不正乗車とみなされるおそれがあります。</p></div>
+<div style="height: 104px; flex-shrink: 0; padding: 0 40px; background: #DCDCDC; display: flex; align-items: center; gap: 20px"><span style="flex-grow: 1"></span><span style="font-size: 24px">よろしければ</span><span aria-hidden="true" style="color: #0A7A0A; font-size: 26px">▶</span><button type="button" sc-camel-on-click="{{closeModal}}" style="width: 196px; height: 78px; background: linear-gradient(#2FA82F 0%, #0E800E 50%, #006A00 52%, #005200 100%); border: 3px solid #B6F06A; border-radius: 10px; color: #FFFFFF; font-size: 36px; font-weight: 700">決 定</button></div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{mSum}}">
+<div style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; z-index: 50; background: rgba(16,16,16,0.72); display: flex; align-items: center; justify-content: center">
+<div role="dialog" aria-label="ここまでの入力内容" style="position: relative; z-index: 1; width: 1170px; height: 910px; box-sizing: border-box; border: 6px solid #33FF00; border-radius: 10px; background-color: #FFFFFF; opacity: 1; display: flex; flex-direction: column; overflow: hidden">
+<div style="height: 100px; flex-shrink: 0; padding: 0 16px; background: #DCDCDC; display: flex; align-items: center; font-size: 40px; font-weight: 700">ここまでの入力内容</div>
+<div style="flex-grow: 1; min-height: 0; background: #FFFFFF; display: flex; flex-direction: column"><dl style="margin: 40px 60px 0; border: 2px solid #8A8A8A"><sc-for list="{{sumRows}}" as="x"><div style="height: 96px; border-bottom: 2px solid #8A8A8A; display: flex"><dt style="width: 240px; padding-left: 20px; background: #5A5A5A; color: #FFFFFF; font-size: 30px; display: flex; align-items: center">{{x.k}}</dt><dd style="margin: 0; padding-left: 24px; font-size: 32px; display: flex; align-items: center">{{x.v}}</dd></div></sc-for></dl></div>
+<div style="height: 104px; flex-shrink: 0; padding: 0 40px; background: #DCDCDC; display: flex; align-items: center; gap: 20px"><span style="flex-grow: 1"></span><button type="button" sc-camel-on-click="{{closeModal}}" style="height: 72px; padding: 0 24px; background: linear-gradient(#FFA448 0%, #E8780E 50%, #D46400 52%, #B85200 100%); border: 2px solid #222222; border-radius: 10px; color: #FFFFFF; font-size: 24px">とじる</button></div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{mDetail}}">
+<div style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; z-index: 50; background: rgba(16,16,16,0.72); display: flex; align-items: center; justify-content: center">
+<div role="dialog" aria-label="経路の詳細" style="position: relative; z-index: 1; width: 1170px; height: 910px; box-sizing: border-box; border: 6px solid #33FF00; border-radius: 10px; background-color: #FFFFFF; opacity: 1; display: flex; flex-direction: column; overflow: hidden">
+<div style="height: 100px; flex-shrink: 0; padding: 0 16px; background: #DCDCDC; display: flex; align-items: center; font-size: 40px; font-weight: 700">経路の詳細</div>
+<div style="flex-grow: 1; min-height: 0; background: #FFFFFF; display: flex; flex-direction: column"><div style="flex-grow: 1; padding: 20px 30px; display: flex; gap: 30px; align-items: center">
+<div style="flex-shrink: 0; border: 2px solid #8A8A8A"><sc-if value="{{d0}}"><svg role="img" aria-label="経路1の路線図。新宿から八王子、高崎、小山、友部、我孫子、成田、千葉を回って代々木へ" width="640" height="560" sc-camel-view-box="-6 0 352 300" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M196 240L170 185L215 28L226 0M170 185L120 120L40 50M198 236L250 190L296 120L318 62M72 250L18 258M92 170L170 185M104 240L128 204L170 185L214 196L240 246M196 240L150 298M268 262L300 298M268 262L252 298M180 242L240 246L268 262L290 235L300 205L250 190M40 50L70 26L130 22L215 28L318 62M170 232L120 238L72 250L84 205L92 170L70 105L40 50" stroke-width="1.6" stroke="#C9D5DC"></path><path d="M170 232L120 238L72 250" stroke="#F15A22" stroke-width="6"></path><path d="M72 250L84 205L92 170L70 105L40 50" stroke="#8E8579" stroke-width="6"></path><path d="M40 50L70 26L130 22L215 28" stroke="#E0A800" stroke-width="6"></path><path d="M215 28L318 62" stroke="#2A7DE1" stroke-width="6"></path><path d="M318 62L296 120L250 190" stroke="#1FA35A" stroke-width="6"></path><path d="M250 190L278 192L300 205L290 235L268 262" stroke="#7A5BD0" stroke-width="6"></path><path d="M268 262L240 246L205 240L180 242" stroke="#F2CC00" stroke-width="6"></path><g fill="#FFFFFF" stroke="#10222E" stroke-width="2.5"><circle cx="72" cy="250" r="5"></circle><circle cx="92" cy="170" r="5"></circle><circle cx="40" cy="50" r="5"></circle><circle cx="215" cy="28" r="5"></circle><circle cx="318" cy="62" r="5"></circle><circle cx="250" cy="190" r="5"></circle><circle cx="300" cy="205" r="5"></circle><circle cx="268" cy="262" r="5"></circle><circle cx="180" cy="242" r="6" stroke-width="3.5"></circle></g><circle cx="170" cy="232" r="8" fill="#10222E"></circle><text x="144" y="218" font-size="13" font-weight="900" style="fill: #10222E; stroke: #FFFFFF; stroke-width: 3; paint-order: stroke">新宿</text><text x="166" y="266" font-size="13" font-weight="900" style="fill: #10222E; stroke: #FFFFFF; stroke-width: 3; paint-order: stroke">代々木</text><text x="50" y="274" font-size="13" font-weight="700" style="fill: #10222E; stroke: #FFFFFF; stroke-width: 3; paint-order: stroke">八王子</text><text x="102" y="174" font-size="13" font-weight="700" style="fill: #10222E; stroke: #FFFFFF; stroke-width: 3; paint-order: stroke">高麗川</text><text x="0" y="76" font-size="13" font-weight="700" style="fill: #10222E; stroke: #FFFFFF; stroke-width: 3; paint-order: stroke">高崎</text><text x="228" y="20" font-size="13" font-weight="700" style="fill: #10222E; stroke: #FFFFFF; stroke-width: 3; paint-order: stroke">小山</text><text x="298" y="48" font-size="13" font-weight="700" style="fill: #10222E; stroke: #FFFFFF; stroke-width: 3; paint-order: stroke">友部</text><text x="204" y="180" font-size="13" font-weight="700" style="fill: #10222E; stroke: #FFFFFF; stroke-width: 3; paint-order: stroke">我孫子</text><text x="310" y="212" font-size="13" font-weight="700" style="fill: #10222E; stroke: #FFFFFF; stroke-width: 3; paint-order: stroke">成田</text><text x="278" y="280" font-size="13" font-weight="700" style="fill: #10222E; stroke: #FFFFFF; stroke-width: 3; paint-order: stroke">千葉</text></svg></sc-if><sc-if value="{{d1}}"><svg role="img" aria-label="経路2の路線図。新宿から八王子、高崎、小山、南浦和、西船橋を回って代々木へ" width="640" height="560" sc-camel-view-box="-6 0 352 300" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M196 240L170 185L215 28L226 0M170 185L120 120L40 50M198 236L250 190L296 120L318 62M72 250L18 258M92 170L170 185M104 240L128 204L170 185L214 196L240 246M196 240L150 298M268 262L300 298M268 262L252 298M180 242L240 246L268 262L290 235L300 205L250 190M40 50L70 26L130 22L215 28L318 62M170 232L120 238L72 250L84 205L92 170L70 105L40 50" stroke-width="1.6" stroke="#C9D5DC"></path><path d="M170 232L120 238L72 250" stroke="#F15A22" stroke-width="6"></path><path d="M72 250L84 205L92 170L70 105L40 50" stroke="#8E8579" stroke-width="6"></path><path d="M40 50L70 26L130 22L215 28" stroke="#E0A800" stroke-width="6"></path><path d="M215 28L170 185L178 206" stroke="#F68B1E" stroke-width="6"></path><path d="M178 206L214 198L240 246" stroke="#E8662A" stroke-width="6"></path><path d="M240 246L205 240L180 242" stroke="#F2CC00" stroke-width="6"></path><g fill="#FFFFFF" stroke="#10222E" stroke-width="2.5"><circle cx="72" cy="250" r="5"></circle><circle cx="92" cy="170" r="5"></circle><circle cx="40" cy="50" r="5"></circle><circle cx="215" cy="28" r="5"></circle><circle cx="178" cy="206" r="5"></circle><circle cx="240" cy="246" r="5"></circle><circle cx="180" cy="242" r="6" stroke-width="3.5"></circle></g><circle cx="170" cy="232" r="8" fill="#10222E"></circle><text x="144" y="218" font-size="13" font-weight="900" style="fill: #10222E; stroke: #FFFFFF; stroke-width: 3; paint-order: stroke">新宿</text><text x="166" y="266" font-size="13" font-weight="900" style="fill: #10222E; stroke: #FFFFFF; stroke-width: 3; paint-order: stroke">代々木</text><text x="50" y="274" font-size="13" font-weight="700" style="fill: #10222E; stroke: #FFFFFF; stroke-width: 3; paint-order: stroke">八王子</text><text x="102" y="174" font-size="13" font-weight="700" style="fill: #10222E; stroke: #FFFFFF; stroke-width: 3; paint-order: stroke">高麗川</text><text x="0" y="76" font-size="13" font-weight="700" style="fill: #10222E; stroke: #FFFFFF; stroke-width: 3; paint-order: stroke">高崎</text><text x="228" y="20" font-size="13" font-weight="700" style="fill: #10222E; stroke: #FFFFFF; stroke-width: 3; paint-order: stroke">小山</text><text x="186" y="206" font-size="13" font-weight="700" style="fill: #10222E; stroke: #FFFFFF; stroke-width: 3; paint-order: stroke">南浦和</text><text x="248" y="240" font-size="13" font-weight="700" style="fill: #10222E; stroke: #FFFFFF; stroke-width: 3; paint-order: stroke">西船橋</text></svg></sc-if></div>
+<dl style="flex-grow: 1; margin: 0; display: flex; flex-direction: column; gap: 20px">
+<div><dt style="font-size: 22px; color: #555555">距離</dt><dd style="margin: 0; font-size: 64px; font-weight: 700">{{dt.km}}<span style="font-size: 28px">km</span></dd></div>
+<div><dt style="font-size: 22px; color: #555555">時間のめやす</dt><dd style="margin: 0; font-size: 36px; font-weight: 700">{{dt.time}}</dd></div>
+<div><dt style="font-size: 22px; color: #555555">乗換</dt><dd style="margin: 0; font-size: 36px; font-weight: 700">{{dt.xfer}}</dd></div>
+<div><dt style="font-size: 22px; color: #555555">経由</dt><dd style="margin: 0; font-size: 24px; font-weight: 700; line-height: 1.5">{{dt.via}}</dd></div>
+</dl></div></div>
+<div style="height: 104px; flex-shrink: 0; padding: 0 40px; background: #DCDCDC; display: flex; align-items: center; gap: 20px"><button type="button" sc-camel-on-click="{{closeModal}}" style="height: 72px; padding: 0 14px; background: linear-gradient(#FFA448 0%, #E8780E 50%, #D46400 52%, #B85200 100%); border: 2px solid #222222; border-radius: 10px; color: #FFFFFF; font-size: 22px">前画面に戻る</button><span style="flex-grow: 1"></span><span style="font-size: 24px">この経路でよろしければ</span><span aria-hidden="true" style="color: #0A7A0A; font-size: 26px">▶</span><button type="button" sc-camel-on-click="{{dt.pick}}" style="width: 196px; height: 78px; background: linear-gradient(#2FA82F 0%, #0E800E 50%, #006A00 52%, #005200 100%); border: 3px solid #B6F06A; border-radius: 10px; color: #FFFFFF; font-size: 36px; font-weight: 700">選 択</button></div>
+</div>
+</div>
+</sc-if>
+</div>
+</template>
+<script>
+'use strict';
+/* ===== ひな形を画面にする小さなしくみ ===== */
+class DCLogic {
+  constructor(props) { this.props = props || {}; this.state = {}; }
+  setState(o) { Object.assign(this.state, o); paint(); }
+}
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const look = (scope, path) => { let v = scope; for (const k of path.split('.')) { if (v == null) return undefined; v = v[k]; } return v; };
+const fill = (str, scope) => str.replace(/\{\{\s*([\w.$]+)\s*\}\}/g, (m, p) => { const v = look(scope, p); return v == null ? '' : String(v); });
+const one = (str, scope) => { const m = /^\{\{\s*([\w.$]+)\s*\}\}$/.exec(str.trim()); return m ? look(scope, m[1]) : fill(str, scope); };
+function build(src, scope, out) {
+  for (const n of src.childNodes) {
+    if (n.nodeType === 3) { out.appendChild(document.createTextNode(fill(n.nodeValue, scope))); continue; }
+    if (n.nodeType !== 1) continue;
+    const tag = n.localName;
+    if (tag === 'sc-if') { if (one(n.getAttribute('value') || '', scope)) build(n, scope, out); continue; }
+    if (tag === 'sc-for') { const list = one(n.getAttribute('list') || '', scope) || [], as = n.getAttribute('as');
+      for (const item of list) build(n, Object.assign(Object.create(scope), { [as]: item }), out); continue; }
+    const svg = tag === 'svg' || out.namespaceURI === SVG_NS;
+    const el = svg ? document.createElementNS(SVG_NS, tag) : document.createElement(tag);
+    for (const a of n.attributes) {
+      if (a.name === 'sc-camel-on-click') { el.__click = one(a.value, scope); continue; }
+      if (a.name === 'sc-camel-view-box') { el.setAttribute('viewBox', fill(a.value, scope)); continue; }
+      el.setAttribute(a.name, fill(a.value, scope));
+    }
+    build(n, scope, el);
+    out.appendChild(el);
+  }
+}
+// 前の画面と見比べて、変わったところだけを書きかえる(きっぷが出てくる動きなどを途中でやり直さないため)
+function morph(live, next) {
+  const a = Array.from(live.childNodes), b = Array.from(next.childNodes);
+  b.forEach((nb, i) => {
+    const na = a[i];
+    if (!na) { live.appendChild(nb); return; }
+    if (na.nodeType !== nb.nodeType || na.nodeName !== nb.nodeName) { live.replaceChild(nb, na); return; }
+    if (nb.nodeType === 3) { if (na.nodeValue !== nb.nodeValue) na.nodeValue = nb.nodeValue; return; }
+    for (const at of Array.from(na.attributes)) if (!nb.hasAttribute(at.name)) na.removeAttribute(at.name);
+    for (const at of nb.attributes) if (na.getAttribute(at.name) !== at.value) na.setAttribute(at.name, at.value);
+    na.__click = nb.__click;
+    morph(na, nb);
+  });
+  for (let i = b.length; i < a.length; i++) live.removeChild(a[i]);
+}
+const stage = document.getElementById('stage'), tpl = document.getElementById('tpl').content;
+let comp = null;
+function paint() { const box = document.createElement('div'); build(tpl, comp.renderVals(), box); morph(stage, box); }
+stage.addEventListener('click', (e) => { for (let n = e.target; n && n !== stage; n = n.parentNode) if (typeof n.__click === 'function') { n.__click(e); return; } });
+function fit() { const k = Math.min(innerWidth / 1280, innerHeight / 1024); stage.style.transform = `translate(${(innerWidth - 1280 * k) / 2}px,${(innerHeight - 1024 * k) / 2}px) scale(${k})`; }
+addEventListener('resize', fit); fit();
+
+/* ===== 券売機の中身(デザインのロジックそのまま) ===== */
+const NOW = new Date(), MD = (NOW.getMonth() + 1) + '月' + NOW.getDate() + '日', MDW = MD + '（' + '日月火水木金土'[NOW.getDay()] + '）'; // 今日の日付
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = this.init(); }
+  init() { return { step: 0, modal: null, kana: '', to: null, hour: 7, min: 0, tmode: 'dep', adult: 1, child: 0, dirc: 0, len: 2, gray: false, route: null, detail: 0, buy: 'only', mode: 'oo', exp: {}, seat: 'free', ret: 'one', rdir: 'go', retOpen: false, paid: 0, card: false, rcpt: false, mono: false }; }
+  renderVals() {
+    const s = this.state;
+    const set = (o) => this.setState(o);
+    const yen = (n) => n.toLocaleString('ja-JP');
+    const RING = 'box-shadow: 0 0 0 5px #FFFFFF, 0 0 0 11px #FF1010';
+    const NORING = 'box-shadow: none';
+    const ST = [['代々木','よよぎ',160],['四ツ谷','よつや',200],['横浜','よこはま',580],['横須賀','よこすか',1170],['渋谷','しぶや',170],['品川','しながわ',210],['新大久保','しんおおくぼ',160],['千駄ケ谷','せんだがや',160],['原宿','はらしゆく',160],['東京','とうきよう',210],['御茶ノ水','おちやのみず',170],['上野','うえの',210],['高崎','たかさき',2310],['立川','たちかわ',490],['千葉','ちば',650],['代官山','',0]].filter((x) => x[1]);
+    // normalise: dakuten-insensitive like the real machine is not; keep exact but readings already use large kana
+    const rows = ['あかさたなはまやらわ', 'いきしちにひみゆりを', 'うくすつぬふむよるん', 'えけせてねへめ゛れ ', 'おこそとのほも゜ろー'];
+    const DK = { か:'が',き:'ぎ',く:'ぐ',け:'げ',こ:'ご',さ:'ざ',し:'じ',す:'ず',せ:'ぜ',そ:'ぞ',た:'だ',ち:'ぢ',つ:'づ',て:'で',と:'ど',は:'ば',ひ:'び',ふ:'ぶ',へ:'べ',ほ:'ぼ',が:'か',ぎ:'き',ぐ:'く',げ:'け',ご:'こ',ざ:'さ',じ:'し',ず:'す',ぜ:'せ',ぞ:'そ',だ:'た',ぢ:'ち',づ:'つ',で:'て',ど:'と',ば:'は',び:'ひ',ぶ:'ふ',べ:'へ',ぼ:'ほ' };
+    const HD = { は:'ぱ',ひ:'ぴ',ふ:'ぷ',へ:'ぺ',ほ:'ぽ',ば:'ぱ',び:'ぴ',ぶ:'ぷ',べ:'ぺ',ぼ:'ぽ',ぱ:'は',ぴ:'ひ',ぷ:'ふ',ぺ:'へ',ぽ:'ほ' };
+    const keys = [];
+    rows.forEach((row, r) => row.split('').forEach((ch) => {
+      const blank = ch === ' ';
+      const special = ch === '゛' || ch === '゜' || ch === 'ー';
+      const teal = r === 0 || special;
+      keys.push({ ch: blank ? '' : ch, aria: blank ? '空き' : ch, vis: blank ? 'hidden' : 'visible',
+        bg: teal ? 'linear-gradient(#5E8C8C 0%, #3E6C6C 10%, #345E5E 55%, #2A4E4E 90%, #102020 100%)' : 'linear-gradient(#6A6A6A 0%, #4A4A4A 10%, #3C3C3C 55%, #303030 90%, #0E0E0E 100%)',
+        pick: () => {
+          if (blank) return;
+          const last = s.kana.slice(-1);
+          if (ch === '゛') { if (DK[last]) set({ kana: s.kana.slice(0, -1) + DK[last] }); return; }
+          if (ch === '゜') { if (HD[last]) set({ kana: s.kana.slice(0, -1) + HD[last] }); return; }
+          if (s.kana.length < 10) set({ kana: s.kana + ch });
+        } });
+    }));
+    const hits = s.kana ? ST.filter((x) => x[1].startsWith(s.kana)) : [];
+    const cands = hits.slice(0, 9).map((x) => ({ name: x[0], pick: () => set({ to: x[0], modal: null, kana: '' }) }));
+    const to = s.to;
+    const fare = to ? (ST.find((x) => x[0] === to) || [0, 0, 160])[2] : 160;
+    const half = (n) => Math.floor(n / 2 / 10) * 10;
+    const DIRS = ['おまかせ', '群馬方面', '茨城方面', '千葉方面'];
+    const LENS = ['〜100km', '〜300km', '300km〜'];
+    const R = [
+      { km: '450.7', time: '約11〜12時間', xfer: '8回', via: '中央線・八高線・両毛線・水戸線・常磐線・成田線・総武線',
+        st: [['新宿','0'],['八王子','37'],['高麗川','68'],['高崎','134'],['小山','225'],['友部','275'],['我孫子','343'],['成田','376'],['千葉','405'],['代々木','451']],
+        ln: ['中央線（快速）','八高線','八高線','両毛線','水戸線','常磐線','成田線','成田線・総武線','総武線（各駅停車）'], ex: [0, 7], gr: [0, 5, 7] },
+      { km: '340', time: '約9時間', xfer: '6回', via: '中央線・八高線・両毛線・宇都宮線・武蔵野線・総武線',
+        st: [['新宿','0'],['八王子','37'],['高麗川','68'],['高崎','134'],['小山','225'],['南浦和','285'],['西船橋','318'],['代々木','340']],
+        ln: ['中央線（快速）','八高線','八高線','両毛線','宇都宮線','武蔵野線','総武線（各駅停車）'], ex: [0], gr: [0, 4] }
+    ];
+    const mk = (time, st, ln, via, ex, gr) => ({ time, st, ln, via, ex: ex || [], gr: gr || [], normal: true });
+    const two = (b, m) => [['新宿', '0分'], [b, m + '分']];
+    const N = {
+      '代々木': [mk('約3分', two('代々木', 3), ['山手線'], '山手線'), mk('約3分', two('代々木', 3), ['中央・総武線（各駅停車）'], '中央・総武線')],
+      '四ツ谷': [mk('約8分', two('四ツ谷', 8), ['中央線（快速）'], '中央東', [], [0])],
+      '横浜': [mk('約30分', two('横浜', 30), ['湘南新宿ライン'], '山手・東海道', [], [0]), mk('約40分', [['新宿','0分'],['品川','19分'],['横浜','40分']], ['山手線','東海道線'], '山手・東海道', [], [1])],
+      '横須賀': [mk('約70分', [['新宿','0分'],['大船','45分'],['横須賀','70分']], ['湘南新宿ライン','横須賀線'], '東海道・横須賀', [], [0, 1])],
+      '渋谷': [mk('約7分', two('渋谷', 7), ['山手線'], '山手線')],
+      '品川': [mk('約19分', two('品川', 19), ['山手線'], '山手線')],
+      '新大久保': [mk('約2分', two('新大久保', 2), ['山手線'], '山手線')],
+      '千駄ケ谷': [mk('約5分', two('千駄ケ谷', 5), ['中央・総武線（各駅停車）'], '中央・総武線')],
+      '原宿': [mk('約4分', two('原宿', 4), ['山手線'], '山手線')],
+      '東京': [mk('約15分', two('東京', 15), ['中央線（快速）'], '中央東', [], [0])],
+      '御茶ノ水': [mk('約11分', two('御茶ノ水', 11), ['中央線（快速）'], '中央東', [], [0])],
+      '上野': [mk('約25分', [['新宿','0分'],['神田','13分'],['上野','25分']], ['中央線（快速）','山手線'], '中央東・東北')],
+      '高崎': [mk('約110分', [['新宿','0分'],['大宮','30分'],['高崎','110分']], ['湘南新宿ライン','高崎線'], '赤羽・高崎', [], [0, 1])],
+      '立川': [mk('約27分', two('立川', 27), ['中央線（快速）'], '中央東', [0], [0])],
+      '千葉': [mk('約60分', [['新宿','0分'],['東京','15分'],['千葉','60分']], ['中央線（快速）','総武線（快速）'], '中央東・総武', [], [0, 1])]
+    };
+    const isN = s.mode === 'normal';
+    const list = isN ? (to && N[to] ? N[to] : []) : (to === '代々木' ? R : []);
+    const ok = list.length > 0;
+    const rr = s.route !== null && list[s.route] ? list[s.route] : null;
+    const buyEx = s.buy !== 'only';
+    const buyRide = true;
+    const isGr = s.buy === 'green';
+    const addName = isGr ? 'グリーン券' : '特急券';
+    // express options
+    const dirs = s.ret === 'one' ? ['go'] : (isN || s.rdir === 'both' ? ['go', 'back'] : [s.rdir]);
+    const expOpts = [];
+    const legList = rr ? (s.buy === 'exp' ? rr.ex : (isGr ? rr.gr : [])) : [];
+    if (rr) dirs.forEach((d) => legList.forEach((li) => {
+      const a0 = rr.st[li][0], b0 = rr.st[li + 1][0];
+      const a = d === 'go' ? a0 : b0, b = d === 'go' ? b0 : a0;
+      const key = d + li; const on = !!s.exp[key];
+      expOpts.push({ key, li, d, a, b, on: on ? 'true' : 'false', label: (s.ret === 'round' ? (d === 'go' ? '行き　' : '帰り　') : '') + a + ' ⇒ ' + b,
+        sub: rr.ln[li] + (isGr ? 'の普通列車グリーン車' : 'の特急'), btnLabel: on ? '選択中' : '選 択', btnStyle: on ? 'color: #FFF27A; ' + RING : 'color: #FFFFFF; ' + NORING,
+        pick: () => { const e = { ...s.exp }; if (e[key]) delete e[key]; else e[key] = true; set({ exp: e }); } });
+    }));
+    const expSel = buyEx ? expOpts.filter((e) => e.on === 'true') : [];
+    const expFee = isGr ? 1000 : ({ free: 1000, res: 1530, green: 2830 }[s.seat]);
+    const legs = s.ret === 'round' ? 2 : 1;
+    const ridePer = fare * s.adult + half(fare) * s.child;
+    const ride = buyRide ? ridePer * legs : 0;
+    const expPer = expFee * s.adult + half(expFee) * s.child;
+    const total = ride + expPer * expSel.length;
+    const ppl = '大人' + s.adult + '人　こども' + s.child + '人';
+    // timeline rows for a route (card / confirm)
+    const tl = (r, mark) => {
+      const out = [];
+      r.st.forEach((p, i) => {
+        const end = i === 0 || i === r.st.length - 1;
+        out.push({ isSt: true, isLn: false, name: p[0], km: p[1] + 'km', node: end ? '2px' : '999px', band: 'transparent', tab: '', tabBg: 'transparent' });
+        if (i < r.ln.length) {
+          const isEx = mark && expSel.some((e) => e.li === i && (e.d === 'go'));
+          const isExBack = mark && expSel.some((e) => e.li === i && e.d === 'back');
+          const exAny = isEx || isExBack;
+          out.push({ isSt: false, isLn: true, name: r.ln[i] + (exAny ? '　' + (isGr ? 'グリーン車' : '特急') : ''), km: '', node: '', band: exAny ? (isGr ? '#DDF3DD' : '#FFF6C8') : 'transparent', tab: exAny ? (isGr ? 'G' : '特急') : '', tabBg: exAny ? (isGr ? '#1F8F3A' : '#F08A00') : 'transparent' });
+        }
+      });
+      return out;
+    };
+    const cards = list.map((r, i) => ({ ...r, no: String(i + 1), rows: tl(r, false), ring: i === 0 ? RING : NORING, hasMap: !r.normal,
+      headL: r.normal ? '所要時間' : '距離', headV: r.normal ? r.time : r.km + 'km', headR: r.normal ? '経由：' + r.via : '時間のめやす：' + r.time,
+      tag: s.mode === 'saved' ? (i === 0 ? MDW + 'に乗る' : 'まだ日付なし') : '', fareTxt: yen(fare) + '円',
+      pick: () => set({ route: i, exp: {}, step: 4, modal: null }),
+      detail: () => set({ detail: i, modal: 'detail' }) }));
+    const dt = R[s.detail];
+    const cRows = rr ? tl(rr, true) : [];
+    // tickets
+    const tk = [];
+    const day = MD + '当日限り有効';
+    if (buyRide) {
+      if (s.ret === 'one') tk.push({ title: '乗車券', from: '新宿', to: to || '代々木', l3: rr && rr.normal ? '経由：' + rr.via : '経由：－－－', day, price: '￥' + yen(ridePer), note: '下車前途無効' });
+      else { tk.push({ title: '乗車券', from: '新宿', to: to || '代々木', l3: (rr && rr.normal ? '経由：' + rr.via : '経由：－－－') + '　（ゆき）', day, price: '￥' + yen(ridePer), note: '下車前途無効' }); tk.push({ title: '乗車券', from: to || '代々木', to: '新宿', l3: (rr && rr.normal ? '経由：' + rr.via : '経由：－－－') + '　（かえり）', day, price: '￥' + yen(ridePer), note: '下車前途無効' }); }
+    }
+    const seatName = { free: '自由席', res: '指定席（座席はイメージ）', green: 'グリーン車指定席（座席はイメージ）' }[s.seat];
+    expSel.forEach((e) => tk.push({ title: addName, from: e.a, to: e.b, l3: isGr ? '普通列車グリーン車' : seatName, day: MD, price: '￥' + yen(expPer), note: '' }));
+    const pplShort = '大人' + s.adult + (s.child ? '・小児' + s.child : '');
+    const tickets = tk.map((t, i) => ({ ...t, ppl: pplShort, x: (i * 16) + 'px', y: (i * 12) + 'px', delay: (0.5 + i * 2.4) + 's', aria: t.title + '　' + t.from + 'から' + t.to + '　' + t.price + '　見本' }));
+    const rcptLines = tk.map((t) => ({ name: t.title, price: t.price }));
+    const change = s.card ? 0 : Math.max(0, s.paid - total);
+    const pay = (v) => () => { const p = s.paid + v; set(p >= total ? { paid: p, step: 9 } : { paid: p }); };
+    // confirm table
+    const conf = [
+      { k: '乗車日', v: MDW },
+      { k: '区間', v: '新宿 ⇒ ' + (to || '－') + (s.ret === 'round' ? '（往復）' : '（片道）') },
+      { k: isN ? '経路' : '大回り経路', v: rr && rr.normal ? rr.via + '　' + rr.time : rr ? rr.km + 'km　' + rr.time + (s.ret === 'round' ? '　' + { go: '行きで大回り', back: '帰りで大回り', both: '行きも帰りも' }[s.rdir] : '') : '－' },
+      { k: 'きっぷ', v: { only: '乗車券のみ', exp: '特急券＋乗車券', green: 'グリーン券＋乗車券' }[s.buy] },
+      { k: addName, v: buyEx ? (expSel.length ? expSel.map((e) => e.a + '⇒' + e.b).join('、') + '　' + (isGr ? '普通列車グリーン車' : { free: '自由席', res: '指定席', green: 'グリーン車' }[s.seat]) : 'なし') : '－' },
+      { k: '人数', v: ppl }
+    ];
+    const headers = {
+      2: ['ご利用になる', '区間・日時・人数', 'を', 'お選びください'],
+      3: s.mode === 'saved' ? ['', '保存したルート', 'を', 'お選びください'] : (isN ? ['ご利用になる', '経路の組み合わせ', 'を', 'お選びください'] : ['ご利用になる', '大回りの経路', 'を', 'お選びください']),
+      4: ['', '購入するきっぷ', 'を', 'お選びください'],
+      5: [isGr ? 'グリーン車に乗る' : '特急に乗る', '区間', 'を', 'お選びください'],
+      6: ['', '次の中から', '', 'お選びください'],
+      7: ['よろしければ', '確認', 'を', '押してください'],
+      8: ['', '現金', 'または', 'カードをお入れください'],
+      9: ['', 'きっぷ', 'を', 'お取りください']
+    };
+    const h = headers[s.step] || ['', '', '', ''];
+    const notes = { 2: isN ? '所要時間が短い組み合わせを優先してご案内します。JR線のみご案内します。' : '距離の長い大回りを優先してご案内します。', 3: isN ? '所要時間が短い組み合わせを優先し、運賃は片道の金額をご案内しています。' : (s.mode === 'saved' ? 'アプリで保存したルートです。' : '距離の長い組み合わせを優先し、運賃は片道の金額をご案内しています。'), 4: '乗換の時間にご注意ください。', 5: (isGr ? 'グリーン券' : '特急券') + 'は区間ごとに発券します。', 6: '大回りは片道ごとに経路を選べます。', 7: '内容をご確認ください。', 8: 'あそび用の画面です。お金はかかりません。', 9: 'おつり・領収書のお取り忘れにご注意ください。' };
+    const backMap = { 1: 0, 2: 1, 3: s.mode === 'saved' ? 1 : 2, 4: 3, 6: 4, 5: 6, 7: buyEx ? 5 : 6 };
+    const v = {
+      goHref: rr && !rr.normal ? 'index.html#/route/' + ['kanto451', 'kita340'][s.route] : 'index.html',
+      dateW: MDW, dateDot: NOW.getFullYear() + '.' + String(NOW.getMonth() + 1).padStart(2, '0') + '.' + String(NOW.getDate()).padStart(2, '0'),
+      root: s.mono ? 'grayscale(1) contrast(1.15)' : 'none',
+      h1: h[0], h2: h[1], h3: h[2], h4: h[3], note: notes[s.step] || '',
+      grayTop: s.step <= 1, blackTop: s.step >= 2, showSumBtn: s.step >= 2 && s.step <= 8,
+      showBack: s.step >= 1 && s.step <= 7, showCancel: s.step >= 1 && s.step <= 8,
+      // form
+      toSet: !!to, toUnset: !to, toName: to || '', timeLabel: String(s.hour).padStart(2, '0') + ':' + String(s.min).padStart(2, '0'),
+      depStyle: s.tmode === 'dep' ? 'border-color: #0A6A0A; color: #0A6A0A' : 'border-color: transparent; color: #9A9A9A', arrStyle: s.tmode === 'arr' ? 'border-color: #0A6A0A; color: #0A6A0A' : 'border-color: transparent; color: #9A9A9A', ppl, condDir: DIRS[s.dirc], condLen: LENS[s.len], condGray: s.gray ? '出す' : '出さない',
+      inRing: to ? NORING : RING, searchRing: to ? RING : NORING, searchOpacity: to ? '1' : '0.45',
+      // kana
+      keys, kana: s.kana, hitCount: String(hits.length), cands, candCount: cands.length,
+      // routes
+      cards, noRoute: !ok, dt: { km: dt.km, time: dt.time, xfer: dt.xfer, via: dt.via, pick: () => set({ route: s.detail, exp: {}, step: 4, modal: null }) },
+      d0: s.detail === 0, d1: s.detail === 1,
+      // route rows (buy/confirm)
+      cRows, routeKm: rr ? rr.km : '', toLabel: to || '代々木',
+      exps: expOpts, showSeat: s.buy === 'exp', showGrNote: isGr,
+      seatOpts: [['free', '自由席'], ['res', '指定席'], ['green', 'グリーン車']].map((x) => ({ label: x[1], style: s.seat === x[0] ? 'color: #FFF27A; ' + RING : 'color: #FFFFFF; ' + NORING, pick: () => set({ seat: x[0] }) })),
+      expNextRing: expSel.length ? RING : NORING,
+      retOpen: s.retOpen, retRingOne: s.retOpen ? NORING : RING,
+      rideKind: s.ret === 'round' ? '乗車券<往復>' : '乗車券<片道>', showRideBracket: buyRide,
+      conf, totalFmt: yen(total), paidFmt: yen(s.paid), remainFmt: yen(Math.max(0, total - s.paid)),
+      rcptOn: s.rcpt, rcptBtn: s.rcpt ? '領収書　発行します' : '領収書',
+      rcptStyle: s.rcpt ? 'color: #FFF27A; ' + RING : 'color: #FFFFFF; ' + NORING,
+      tickets, rcptDelay: (0.5 + tk.length * 2.4) + 's', rcptLines, paidLabel: s.card ? 'カード' : '￥' + yen(s.paid), changeFmt: yen(change),
+      changeLine: change > 0 ? 'おつり ' + yen(change) + '円' : '', hasChange: change > 0,
+      // modals
+      mKana: s.modal === 'kana', mCand: s.modal === 'cand', mPpl: s.modal === 'ppl', mCond: s.modal === 'cond', mSum: s.modal === 'sum', mDetail: s.modal === 'detail', mTime: s.modal === 'time',
+      hourOpts: [5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23].map((x) => ({ label: String(x), style: s.hour === x ? 'color: #FFF27A; ' + RING : 'color: #FFFFFF; ' + NORING, pick: () => set({ hour: x }) })),
+      minOpts: [0,10,20,30,40,50].map((x) => ({ label: String(x).padStart(2, '0'), style: s.min === x ? 'color: #FFF27A; ' + RING : 'color: #FFFFFF; ' + NORING, pick: () => set({ min: x }) })),
+      modeOpts: [['dep', '出発'], ['arr', '到着']].map((x) => ({ label: x[1], style: s.tmode === x[0] ? 'color: #FFF27A; ' + RING : 'color: #FFFFFF; ' + NORING, pick: () => set({ tmode: x[0] }) })), anyModal: !!s.modal,
+      dirOpts: DIRS.map((d, i) => ({ label: d, style: s.dirc === i ? 'color: #FFF27A; ' + RING : 'color: #FFFFFF; ' + NORING, pick: () => set({ dirc: i }) })),
+      lenOpts: LENS.map((d, i) => ({ label: d, style: s.len === i ? 'color: #FFF27A; ' + RING : 'color: #FFFFFF; ' + NORING, pick: () => set({ len: i }) })),
+      grayOpts: ['出さない', '出す'].map((d, i) => ({ label: d, style: (s.gray ? 1 : 0) === i ? 'color: #FFF27A; ' + RING : 'color: #FFFFFF; ' + NORING, pick: () => set({ gray: i === 1 }) })),
+      adult: String(s.adult), child: String(s.child),
+      sumRows: [{ k: '区間', v: '新宿 ⇒ ' + (to || '－') }, { k: '利用日時', v: MDW + String(s.hour).padStart(2, '0') + ':' + String(s.min).padStart(2, '0') + (s.tmode === 'dep' ? ' 出発' : ' 到着') }, { k: '人数', v: ppl }, { k: '経路', v: rr ? (rr.normal ? rr.via : rr.km + 'km') : '－' }, { k: 'きっぷ', v: { only: '乗車券のみ', exp: '特急券＋乗車券', green: 'グリーン券＋乗車券' }[s.buy] }],
+      // handlers
+      buy0: () => set({ step: 1 }),
+      search0: () => set({ step: 2, mode: 'oo', to: null, route: null }), normal0: () => set({ step: 2, mode: 'normal', to: null, route: null }), saved0: () => set({ step: 3, mode: 'saved', to: '代々木', route: null }),
+      showCond: !isN,
+      openKana: () => set({ modal: 'kana', kana: '' }), fix: () => set({ kana: s.kana.slice(0, -1) }),
+      show: () => { if (hits.length) set({ modal: 'cand' }); }, redo: () => set({ modal: 'kana', kana: '' }),
+      closeModal: () => set({ modal: null }), openTime: () => set({ modal: 'time' }),
+      openPpl: () => set({ modal: 'ppl' }), openCond: () => set({ modal: 'cond' }), openSum: () => set({ modal: 'sum' }),
+      aMinus: () => set({ adult: Math.max(s.child ? 0 : 1, s.adult - 1) }), aPlus: () => set({ adult: Math.min(9, s.adult + 1) }),
+      cMinus: () => set({ child: Math.max(s.adult ? 0 : 1, s.child - 1) }), cPlus: () => set({ child: Math.min(9, s.child + 1) }),
+      search: () => { if (to) set({ step: 3 }); },
+      buyOnly: () => set({ buy: 'only', exp: {}, step: 6, retOpen: false }), buyExp: () => set({ buy: 'exp', exp: {}, step: 6, retOpen: false }), buyGr: () => set({ buy: 'green', exp: {}, step: 6, retOpen: false }),
+      retOne: () => set({ ret: 'one', retOpen: false, step: buyEx ? 5 : 7 }), retRound: () => (isN ? set({ ret: 'round', rdir: 'both', retOpen: false, step: buyEx ? 5 : 7 }) : set({ retOpen: true })),
+      rGo: () => set({ ret: 'round', rdir: 'go', retOpen: false, step: buyEx ? 5 : 7 }), rBack: () => set({ ret: 'round', rdir: 'back', retOpen: false, step: buyEx ? 5 : 7 }), rBoth: () => set({ ret: 'round', rdir: 'both', retOpen: false, step: buyEx ? 5 : 7 }),
+      expNext: () => set({ step: 7 }),
+      confirm: () => set({ step: 8, paid: 0, card: false }),
+      p10: pay(10), p50: pay(50), p100: pay(100), p500: pay(500), p1000: pay(1000), payCard: () => set({ card: true, step: 9 }), toggleRcpt: () => set({ rcpt: !s.rcpt }),
+      toggleMono: () => set({ mono: !s.mono }),
+      back: () => { if (s.step === 6 && s.retOpen) return set({ retOpen: false }); const p = backMap[s.step]; set({ step: p === undefined ? 0 : p, modal: null }); },
+      cancel: () => set({ ...this.init(), mono: s.mono }), home: () => set({ ...this.init(), mono: s.mono })
+    };
+    for (let i = 0; i <= 9; i++) v['s' + i] = s.step === i;
+    return v;
+  }
+}
+
+comp = new Component({});
+paint();
+</script>
+</body>
+</html>
