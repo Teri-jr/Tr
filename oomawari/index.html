@@ -337,11 +337,11 @@ ol,ul{list-style:none}
 <div id="app"></div>
 <div id="sheet"></div>
 <div id="toast" role="status" hidden></div>
-<script src="data.js?v=1.10.0"></script>
-<script src="engine.js?v=1.10.0"></script>
+<script src="data.js?v=1.10.1"></script>
+<script src="engine.js?v=1.10.1"></script>
 <script>
 'use strict';
-const APP_VERSION = '1.10.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.10.1'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ===== データ =====
    路線データは data.js、ルートの探索は engine.js。画面はここから E.search() などを呼ぶだけ。 */
@@ -420,7 +420,7 @@ function sorted(rs) {
 function suggestions(c) {
   const n0 = searchRoutes(c).length, out = [];
   if (n0 >= 8) return out; // もう十分ある
-  const tryIt = (label, o) => { const g = searchRoutes(Object.assign({}, c, o), 1500000).length - n0; if (g > 0) out.push({ label, o, g }); };
+  const tryIt = (label, o) => { const g = searchRoutes(Object.assign({}, c, o), c.mk ? 500000 : 1500000).length - n0; if (g > 0) out.push({ label, o, g }); };
   const e = toMin(c.end);
   if (e < 24 * 60 - 1) { const t = Math.min(e + 120, 23 * 60 + 59); tryIt(pad(Math.floor(t / 60)) + ':' + pad(t % 60) + ' までにする', { end: pad(Math.floor(t / 60)) + ':' + pad(t % 60) }); }
   [1, 2, 0].forEach((i) => { if (i !== c.len) tryIt('長さを「' + LENS[i] + '」にする', { len: i }); });
@@ -518,7 +518,7 @@ const ttLink = (r) => `<a class="tt" target="_blank" rel="noopener" href="https:
 const isSaved = (id) => saved.some((s) => s.id === id);
 // ルートの調整: 乗換駅を通らない・路線に乗らない・寄りたい駅を足す。条件(詳細条件と同じ noSt/noLine/mustSt)に足して、いまのルートにいちばん近いルートをさがしなおす
 // ルートの画面のいちばん上に出す、すぐ使える調整
-const okLine = (r, ic) => r.mk && !E.buildRoute(r.from, r.to, r.pcs.map((p) => p.slice(0, 3))) ? `<p class="okline mkl">末期モード：線路は1回ずつ。同じ駅を2回通るので、正規の大回り(きっぷの経路)にはならない</p>` : `<p class="okline">${ic}ルール上、成立しています</p>`;
+const okLine = (r, ic) => r.mk && !E.buildRoute(r.from, r.to, r.pcs.map((p) => p.slice(0, 3))) ? `<p class="okline mkl">末期モード：同じ駅を、停まらずに2回通る(線路は別)。正規の大回り(きっぷの経路)にはならない</p>` : `<p class="okline">${ic}ルール上、成立しています</p>`;
 function adjQuick(r) {
   const q = (act, t, on) => `<button type="button" class="qa${on ? ' on' : ''}" data-act="${act}" data-id="${esc(r.id)}"${on != null ? ` aria-pressed="${!!on}"` : ''}>${t}</button>`;
   return `<div class="adj adjq" role="group" aria-label="すぐ調整"><div class="row">${q('adjFast', '⚡ 速い列車を優先', cond.fast)}${xfers(r) > 0 ? q('adjFewer', '乗換を減らす') : ''}${q('adjLonger', 'もっと長く')}${q('adjShorter', 'もっと短く')}${r.mk ? '' : q('mkFrom', '✎ 路線図で手直し')}</div></div>`;
@@ -665,8 +665,7 @@ V.detail = () => { const sw = (k, label) => `<button type="button" class="sw" ro
 <h2 class="h2r">列車</h2>
 <div class="opt" style="min-height:56px"><span><span>特急・グリーン車を使う</span><small>別料金がかかります</small></span>${sw('exp', '特急・グリーン車を使う')}</div>
 <div class="opt" style="min-height:56px"><span><span>速い列車を優先する</span><small>乗換がふえても速い列車に乗りかえる(例：川崎で東海道線に)</small></span>${sw('fast', '速い列車を優先する')}</div>
-<div class="opt"><span><span>本数の少ない路線も使う</span><small>1時間に1本以下の区間</small></span>${sw('rare', '本数の少ない路線も使う')}</div>
-<div class="opt last" style="min-height:56px"><span><span>末期モード</span><small>線路がかぶらなければよい。駅は何回通ってもよい(湘南新宿ラインの細かいルート、東海道線で品川→横須賀線で横浜 など)。正規の大回りのきまりからは外れる</small></span>${sw('mk', '末期モード')}</div>
+<div class="opt last"><span><span>本数の少ない路線も使う</span><small>1時間に1本以下の区間</small></span>${sw('rare', '本数の少ない路線も使う')}</div>
 <h2 class="h2r">路線・駅</h2>
 <span class="lab" style="margin-top:14px">かならず乗る路線</span>${pills('mustLine', '路線', true)}
 <span class="lab" style="margin-top:14px">乗らない路線</span>${pills('noLine', '路線', true)}
@@ -675,7 +674,9 @@ V.detail = () => { const sw = (k, label) => `<button type="button" class="sw" ro
 <h2 class="h2r">前に乗ったルート</h2><div role="group" aria-label="前に乗ったルート" class="seg big" style="margin-top:10px;font-size:12px;white-space:nowrap">${PREVS.map((l, i) => `<button type="button" data-prev="${i}" aria-pressed="${cond.prev === i}">${l}</button>`).join('')}</div>
 <h2 class="h2r">グレーなルート</h2>
 <div class="opt last" style="padding:8px 0"><span><span>グレーなルートも全部出す</span><small class="w">「6の字」など、係員の判断が分かれる経路です。不正乗車とみなされるおそれがあります。</small></span>${sw('gray', 'グレーなルートも全部出す')}</div>
-<p class="note">出したルートには「グレー」の印が付きます。</p></section><div class="foot" style="padding-top:20px">${cta()}</div></div></div>`; };
+<p class="note">出したルートには「グレー」の印が付きます。</p>
+<h2 class="h2r">末期モード</h2>
+<div class="opt last" style="padding:8px 0"><span><span>線路がかぶらなければよい</span><small class="w">列車が停まらずに通りすぎる駅は数えない(停まる駅は1回だけ)。同じ線路は2回通らない。東海道線で品川→横須賀線で横浜、湘南新宿ラインの細かいルートなどが出ます。正規の大回りのきまりからは外れます。</small></span>${sw('mk', '末期モード')}</div></section><div class="foot" style="padding-top:20px">${cta()}</div></div></div>`; };
 
 // 乗車中: いまどこにいるか(km)を見積もる。位置情報が取れれば乗換駅どうしを結ぶ線に当てはめ、取れなければ乗りはじめてからの時間で見積もる。
 function ridePos(r) {
