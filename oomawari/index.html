@@ -341,7 +341,7 @@ ol,ul{list-style:none}
 <script src="engine.js?v=1.10.1"></script>
 <script>
 'use strict';
-const APP_VERSION = '1.11.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.12.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ===== データ =====
    路線データは data.js、ルートの探索は engine.js。画面はここから E.search() などを呼ぶだけ。 */
@@ -351,7 +351,7 @@ const NET = E.netPath; // 略図(342×300)の下地の線
 const REGIONS = [['群馬',58,50],['栃木',150,24],['茨城',248,52],['埼玉',106,96],['成田・銚子',268,120],['房総',214,226],['多摩',56,142],['神奈川',100,204]];
 const MAJOR = ['横浜','東神奈川','新横浜','菊名','鶴見','川崎','武蔵小杉','桜木町','大船','戸塚','東京','新宿','渋谷','池袋','上野','品川','神田','秋葉原','御茶ノ水','大宮','千葉','立川','八王子'];
 const LENS = ['〜100km','〜300km','300km〜','最長'];
-const SORTS = ['長い順','短い順','乗換が少ない順'];
+const SORTS = ['長い順','短い順','乗換が少ない順','時間が短い順'];
 
 /* ===== 保存するもの ===== */
 const LS = { cond:'oomawari.cond', saved:'oomawari.saved', ride:'oomawari.ride', ridden:'oomawari.ridden' };
@@ -414,6 +414,7 @@ function sorted(rs) {
   const a = rs.slice();
   if (ui.sort === 1) a.sort((x, y) => x.km - y.km);
   if (ui.sort === 2) a.sort((x, y) => xfers(x) - xfers(y) || y.km - x.km);
+  if (ui.sort === 3) a.sort((x, y) => baseMin(x, cond) - baseMin(y, cond) || y.km - x.km);
   return a;
 }
 // 「条件を変えると、もっと見つかります」の候補
