@@ -338,8 +338,8 @@ button{font-family:inherit;cursor:pointer}
 </sc-if>
 </div>
 </template>
-<script src="data.js?v=1.6.0"></script>
-<script src="engine.js?v=1.6.0"></script>
+<script src="data.js?v=1.6.1"></script>
+<script src="engine.js?v=1.6.1"></script>
 <script>
 'use strict';
 /* ===== ひな形を画面にする小さなしくみ ===== */
@@ -509,7 +509,7 @@ class Component extends DCLogic {
       sel.forEach((e) => { const g = grTk[grTk.length - 1], chuo = rr.ln[e.li] === '中央線快速';
         if (g && g.d === d && Math.abs(g.lastLi - e.li) === 1 && !chuo && !g.chuo) { g.b = e.b; g.km += legKm(e.li); g.lastLi = e.li; }
         else grTk.push({ d, a: e.a, b: e.b, km: legKm(e.li), lastLi: e.li, chuo }); }); });
-    grTk.forEach((g) => { g.km = Math.round(g.km * 10) / 10; g.fee = grFee(g.km, false); g.suica = grFee(g.km, true); });
+    grTk.forEach((g) => { g.km = Math.round(g.km * 10) / 10; g.fee = grFee(g.km, true); g.paper = grFee(g.km, false); }); // 基本はSuicaグリーン券の料金
     const legs = s.ret === 'round' ? 2 : 1;
     const ridePer = fare == null ? 0 : fare * s.adult + half(fare) * s.child;
     const ride = buyRide ? ridePer * legs : 0;
@@ -552,7 +552,7 @@ class Component extends DCLogic {
       else { tk.push({ title: '乗車券', from: HERE || '－', to: to || '－', l3: (rr && rr.normal ? '経由：' + rr.via : '経由：－－－') + '　（ゆき）', day, price: '￥' + yenOr(fare == null ? null : ridePer), note: '下車前途無効' }); tk.push({ title: '乗車券', from: to || '－', to: HERE || '－', l3: (rr && rr.normal ? '経由：' + rr.via : '経由：－－－') + '　（かえり）', day, price: '￥' + yenOr(fare == null ? null : ridePer), note: '下車前途無効' }); }
     }
     const seatName = { free: '自由席', res: '指定席（座席はイメージ）', green: 'グリーン車指定席（座席はイメージ）' }[s.seat];
-    if (isGr) grTk.forEach((g) => tk.push({ title: addName, from: g.a, to: g.b, l3: '普通列車グリーン車　' + g.km + 'km', day: MD + '当日1回限り有効', price: '￥' + yen(g.fee * (s.adult + s.child)), note: 'Suicaなら' + yen(g.suica) + '円' }));
+    if (isGr) grTk.forEach((g) => tk.push({ title: 'Suicaグリーン券', from: g.a, to: g.b, l3: '普通列車グリーン車　' + g.km + 'km', day: MD + '当日1回限り有効', price: '￥' + yen(g.fee * (s.adult + s.child)), note: '紙のきっぷ・車内は' + yen(g.paper) + '円' }));
     else expSel.forEach((e) => tk.push({ title: addName, from: e.a, to: e.b, l3: seatName, day: MD, price: '￥' + yen(expPer), note: '' }));
     const pplShort = '大人' + s.adult + (s.child ? '・小児' + s.child : '');
     const tickets = tk.map((t, i) => ({ ...t, ppl: pplShort, x: (i * 16) + 'px', y: (i * 12) + 'px', delay: (0.5 + i * 2.4) + 's', aria: t.title + '　' + t.from + 'から' + t.to + '　' + t.price + '　見本' }));
@@ -579,7 +579,7 @@ class Component extends DCLogic {
       9: ['', 'きっぷ', 'を', 'お取りください']
     };
     const h = headers[s.step] || ['', '', '', ''];
-    const notes = { 2: isN ? 'いちばん短い道のりをご案内します。JR線のみご案内します。' : s.from ? '距離の長い大回りを優先してご案内します。' : '先に出発駅を入力してください。', 3: isN ? 'いちばん短い道のりをご案内しています。' + '運賃は片道の金額です。' : (s.mode === 'saved' ? 'アプリで保存したルートです。' : (found.length > 2 ? '見つかった' + found.length + '本のうち、' : '') + '距離の長い順にご案内しています。運賃は片道の金額です。'), 4: '乗換の時間にご注意ください。', 5: expOpts.length ? (isGr ? 'グリーン料金は乗る距離で決まります（50kmまで1,010円・100kmまで1,260円・それ以上1,810円）。続けて乗る区間は1枚です。' : '特急券は区間ごとに発券します。') : (isGr ? 'この経路にはグリーン車のある列車がありません。' : '特急はまだ入っていません。') + '戻って「乗車券のみ」をお選びください。', 6: '大回りは片道ごとに経路を選べます。', 7: '内容をご確認ください。', 8: 'あそび用の画面です。お金はかかりません。', 9: 'おつり・領収書のお取り忘れにご注意ください。' };
+    const notes = { 2: isN ? 'いちばん短い道のりをご案内します。JR線のみご案内します。' : s.from ? '距離の長い大回りを優先してご案内します。' : '先に出発駅を入力してください。', 3: isN ? 'いちばん短い道のりをご案内しています。' + '運賃は片道の金額です。' : (s.mode === 'saved' ? 'アプリで保存したルートです。' : (found.length > 2 ? '見つかった' + found.length + '本のうち、' : '') + '距離の長い順にご案内しています。運賃は片道の金額です。'), 4: '乗換の時間にご注意ください。', 5: expOpts.length ? (isGr ? 'Suicaグリーン料金：50kmまで750円・100kmまで1,000円・それ以上1,550円（紙・車内は1,010・1,260・1,810円）。続けて乗る区間は1枚です。' : '特急券は区間ごとに発券します。') : (isGr ? 'この経路にはグリーン車のある列車がありません。' : '特急はまだ入っていません。') + '戻って「乗車券のみ」をお選びください。', 6: '大回りは片道ごとに経路を選べます。', 7: '内容をご確認ください。', 8: 'あそび用の画面です。お金はかかりません。', 9: 'おつり・領収書のお取り忘れにご注意ください。' };
     const backMap = { 1: 0, 2: 1, 3: s.mode === 'saved' ? 1 : 2, 4: 3, 6: 4, 5: 6, 7: buyEx ? 5 : 6 };
     const v = {
       goHref: rr && !rr.normal ? 'index.html#/route/' + encodeURIComponent(rr.id) : 'index.html', here: HERE || '－', net: E.netPath, ver: VER,
