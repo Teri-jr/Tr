@@ -60,7 +60,8 @@ button{font-family:inherit;cursor:pointer}
 
 <sc-if value="{{s2}}">
 <div style="flex-grow: 1; padding: 30px 64px 0; display: flex; flex-direction: column; gap: 10px">
-<div style="height: 80px; border: 2px solid #9A9A9A; background: #FFFFFF; display: flex"><span style="width: 196px; flex-shrink: 0; padding: 0 0 6px 8px; box-sizing: border-box; background: #EDEDED; font-size: 32px; display: flex; align-items: flex-end">出発駅</span><span style="flex-grow: 1; padding-left: 40px; display: flex; flex-direction: column; justify-content: center"><span style="font-size: 22px; color: #0A6A0A; padding-left: 30px">（当駅）</span><span style="font-size: 32px; font-weight: 700; color: #0A6A0A">{{here}}</span></span><span style="width: 166px; flex-shrink: 0; border-left: 2px solid #9A9A9A; background: #DCDCDC; display: flex; align-items: center; justify-content: center"><button type="button" sc-camel-on-click="{{openFrom}}" style="width: 128px; height: 62px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 32px">変 更</button></span></div>
+<sc-if value="{{fromUnset}}"><div style="height: 80px; border: 2px solid #9A9A9A; background: #FFFFFF; display: flex"><span style="width: 196px; flex-shrink: 0; padding: 0 0 6px 8px; box-sizing: border-box; background: #EDEDED; font-size: 32px; display: flex; align-items: flex-end">出発駅</span><span style="flex-grow: 1; padding-left: 40px; display: flex; flex-direction: column; justify-content: center"><span style="font-size: 46px; color: #1450E0; display: flex; align-items: center; gap: 20px">出発駅を指定してください<span aria-hidden="true" style="font-size: 36px; letter-spacing: -0.3em">▶▶▶</span></span></span><span style="width: 166px; flex-shrink: 0; border-left: 2px solid #9A9A9A; background: #DCDCDC; display: flex; align-items: center; justify-content: center"><button type="button" sc-camel-on-click="{{openFrom}}" style="width: 128px; height: 62px; background: linear-gradient(#55A8FF 0%, #1170F0 50%, #0058E0 52%, #0044B8 100%); border: 2px solid #001E60; border-radius: 10px; color: #FFFFFF; font-size: 32px">入 力</button></span></div></sc-if>
+<sc-if value="{{fromSet}}"><div style="height: 80px; border: 2px solid #9A9A9A; background: #FFFFFF; display: flex"><span style="width: 196px; flex-shrink: 0; padding: 0 0 6px 8px; box-sizing: border-box; background: #EDEDED; font-size: 32px; display: flex; align-items: flex-end">出発駅</span><span style="flex-grow: 1; padding-left: 40px; display: flex; flex-direction: column; justify-content: center"><span style="font-size: 36px; font-weight: 700; color: #0A6A0A">{{fromName}}</span></span><span style="width: 166px; flex-shrink: 0; border-left: 2px solid #9A9A9A; background: #DCDCDC; display: flex; align-items: center; justify-content: center"><button type="button" sc-camel-on-click="{{openFrom}}" style="width: 128px; height: 62px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 32px">変 更</button></span></div></sc-if>
 <sc-if value="{{toUnset}}"><div style="height: 80px; border: 2px solid #9A9A9A; background: #FFFFFF; display: flex"><span style="width: 196px; flex-shrink: 0; padding: 0 0 6px 8px; box-sizing: border-box; background: #EDEDED; font-size: 32px; display: flex; align-items: flex-end">到着駅</span><span style="flex-grow: 1; padding-left: 40px; display: flex; flex-direction: column; justify-content: center"><span style="font-size: 46px; color: #1450E0; display: flex; align-items: center; gap: 20px">到着駅を指定してください<span aria-hidden="true" style="font-size: 36px; letter-spacing: -0.3em">▶▶▶</span></span></span><span style="width: 166px; flex-shrink: 0; border-left: 2px solid #9A9A9A; background: #DCDCDC; display: flex; align-items: center; justify-content: center"><button type="button" sc-camel-on-click="{{openKana}}" style="width: 128px; height: 62px; background: linear-gradient(#55A8FF 0%, #1170F0 50%, #0058E0 52%, #0044B8 100%); border: 2px solid #001E60; border-radius: 10px; color: #FFFFFF; font-size: 32px">入 力</button></span></div></sc-if>
 <sc-if value="{{toSet}}"><div style="height: 80px; border: 2px solid #9A9A9A; background: #FFFFFF; display: flex"><span style="width: 196px; flex-shrink: 0; padding: 0 0 6px 8px; box-sizing: border-box; background: #EDEDED; font-size: 32px; display: flex; align-items: flex-end">到着駅</span><span style="flex-grow: 1; padding-left: 40px; display: flex; flex-direction: column; justify-content: center"><span style="font-size: 36px; font-weight: 700; color: #0A6A0A">{{toName}}</span></span><span style="width: 166px; flex-shrink: 0; border-left: 2px solid #9A9A9A; background: #DCDCDC; display: flex; align-items: center; justify-content: center"><button type="button" sc-camel-on-click="{{openKana}}" style="width: 128px; height: 62px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 32px">変 更</button></span></div></sc-if>
 <div style="height: 80px; border: 2px solid #9A9A9A; background: #FFFFFF; display: flex"><span style="width: 196px; flex-shrink: 0; padding: 0 0 6px 8px; box-sizing: border-box; background: #EDEDED; font-size: 32px; display: flex; align-items: flex-end">利用日時</span><span style="flex-grow: 1; padding-left: 40px; display: flex; flex-direction: column; justify-content: center"><span style="display: flex; align-items: baseline; gap: 40px"><span style="font-size: 32px; font-weight: 700; color: #0A6A0A">{{dateW}}</span><span style="font-size: 32px; font-weight: 700; color: #0A6A0A">{{timeLabel}}</span><span style="display: flex; gap: 6px"><span style="padding: 2px 10px; border: 2px solid; border-radius: 12px; font-size: 26px; font-weight: 700; {{depStyle}}">出発</span><span style="padding: 2px 10px; border: 2px solid; border-radius: 12px; font-size: 26px; font-weight: 700; {{arrStyle}}">到着</span></span></span></span><span style="width: 166px; flex-shrink: 0; border-left: 2px solid #9A9A9A; background: #DCDCDC; display: flex; align-items: center; justify-content: center"><button type="button" sc-camel-on-click="{{openTime}}" style="width: 128px; height: 62px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 32px">変 更</button></span></div>
@@ -337,8 +338,8 @@ button{font-family:inherit;cursor:pointer}
 </sc-if>
 </div>
 </template>
-<script src="data.js?v=1.2.3"></script>
-<script src="engine.js?v=1.2.3"></script>
+<script src="data.js?v=1.2.4"></script>
+<script src="engine.js?v=1.2.4"></script>
 <script>
 'use strict';
 /* ===== ひな形を画面にする小さなしくみ ===== */
@@ -400,9 +401,7 @@ const NOW = new Date(), MD = (NOW.getMonth() + 1) + '月' + NOW.getDate() + '日
 const load = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } };
 const KDEF = { from: '横浜', start: '07:00', end: '20:00', len: 2, xfer: 8, xmin: 15, meal: true, rare: true, mustLine: [], noLine: [], mustSt: [], noSt: [], prev: 0 };
 const APPC = Object.assign({}, KDEF, load('oomawari.cond', {}));
-// 当駅。券売機で「変更」したらその駅を覚える(アプリの出発駅は変えない)
-const K0 = load('oomawari.kioskHere', null);
-let HERE = E.has(K0) ? K0 : E.has(APPC.from) ? APPC.from : '横浜';
+
 const RIDDEN = load('oomawari.ridden', []);
 const pad2 = (n) => String(n).padStart(2, '0');
 const hmOf = (t) => { const m = /^(\d\d):(\d\d)$/.exec(t || ''); return m ? +m[1] * 60 + +m[2] : NaN; };
@@ -411,13 +410,9 @@ const hmTxt = (m) => pad2(Math.floor(m / 60)) + ':' + pad2(m % 60);
 const BIG = { 'ぁ': 'あ', 'ぃ': 'い', 'ぅ': 'う', 'ぇ': 'え', 'ぉ': 'お', 'っ': 'つ', 'ゃ': 'や', 'ゅ': 'ゆ', 'ょ': 'よ', 'ゎ': 'わ' };
 const bigKana = (y) => String(y || '').replace(/[ぁぃぅぇぉっゃゅょゎ]/g, (c) => BIG[c]);
 const EVERY = E.stations.map((x) => ({ n: x.n, y: bigKana(x.y) }));
-let ALL_ST, OO_ST;
-function setHere(n) {
-  HERE = n; try { localStorage.setItem('oomawari.kioskHere', JSON.stringify(n)); } catch (e) {}
-  ALL_ST = EVERY.filter((x) => x.n !== HERE);
-  OO_ST = E.dests(HERE, false).map((x) => ({ n: x.n, y: bigKana(x.y), fare: x.fare }));
-}
-setHere(HERE);
+// 出発駅ごとの、えらべる到着駅(大回りは運賃のわかる駅だけ)
+const ooCache = {};
+const ooPool = (f) => (f ? (ooCache[f] = ooCache[f] || E.dests(f, false).map((x) => ({ n: x.n, y: bigKana(x.y), fare: x.fare }))) : []);
 const REGS = E.data.regions;
 const GREEN = ['東海道線', '横須賀線', '湘南新宿ライン', '宇都宮線', '高崎線', '常磐線', '総武線快速']; // 普通列車グリーン車のある系統
 const kmTxt = (v) => String(Math.round(v * 10) / 10);
@@ -438,7 +433,7 @@ function plainCard(r) {
 }
 class Component extends DCLogic {
   constructor(p) { super(p); this.state = this.init(); }
-  init() { const t0 = hmOf(APPC.start); return { step: 0, modal: null, kana: '', to: null, hour: t0 >= 0 ? Math.min(23, Math.max(5, Math.floor(t0 / 60))) : 7, min: t0 >= 0 ? Math.floor(t0 % 60 / 10) * 10 : 0, tmode: 'dep', adult: 1, child: 0, dirc: 0, len: Math.min(2, Math.max(0, APPC.len | 0)), gray: false, route: null, detail: 0, buy: 'only', mode: 'oo', exp: {}, seat: 'free', ret: 'one', rdir: 'go', retOpen: false, paid: 0, card: false, rcpt: false, mono: false }; }
+  init() { const t0 = hmOf(APPC.start); return { step: 0, modal: null, kana: '', from: null, to: null, hour: t0 >= 0 ? Math.min(23, Math.max(5, Math.floor(t0 / 60))) : 7, min: t0 >= 0 ? Math.floor(t0 % 60 / 10) * 10 : 0, tmode: 'dep', adult: 1, child: 0, dirc: 0, len: Math.min(2, Math.max(0, APPC.len | 0)), gray: false, route: null, detail: 0, buy: 'only', mode: 'oo', exp: {}, seat: 'free', ret: 'one', rdir: 'go', retOpen: false, paid: 0, card: false, rcpt: false, mono: false }; }
   renderVals() {
     const s = this.state;
     const set = (o) => this.setState(o);
@@ -467,24 +462,25 @@ class Component extends DCLogic {
     const isN = s.mode === 'normal';
     // 大回りは運賃のわかる駅(いまは10kmまで)だけ。ふつうの経路はどの駅でも
     const forFrom = s.kmode === 'from';
-    const pool = forFrom ? EVERY : isN ? ALL_ST : OO_ST;
+    const pool = forFrom ? EVERY : isN ? EVERY.filter((x) => x.n !== s.from) : ooPool(s.from);
     const hits = s.kana ? pool.filter((x) => x.y.startsWith(s.kana)) : [];
-    const cands = hits.slice(0, 9).map((x) => ({ name: x.n, pick: () => { if (forFrom) { setHere(x.n); set({ to: null, route: null, modal: null, kana: '', kmode: 'to' }); } else set({ to: x.n, modal: null, kana: '' }); } }));
+    const cands = hits.slice(0, 9).map((x) => ({ name: x.n, pick: () => { if (forFrom) { const keep = s.to && s.to !== x.n && (isN || ooPool(x.n).some((y) => y.n === s.to)); set({ from: x.n, to: keep ? s.to : null, route: null, modal: null, kana: '', kmode: 'to' }); } else set({ to: x.n, modal: null, kana: '' }); } }));
     const half = (n) => Math.floor(n / 2 / 10) * 10;
     const DIRS = ['おまかせ'].concat(REGS.map((g) => g + '方面'));
     const LENS = ['〜100km', '〜300km', '300km〜'];
     // 探す条件(アプリと同じ形)。時刻は「出発」ならその時刻から、「到着」ならその時刻まで
     const tSel = s.hour * 60 + s.min, aS = hmOf(APPC.start), aE = hmOf(APPC.end);
-    const kc = s.mode === 'oo' && s.to ? Object.assign({}, APPC, { from: HERE, to: s.to, ic: false, want: s.dirc ? [REGS[s.dirc - 1]] : [], avoid: [], len: s.len, xfer: Math.min(8, APPC.xfer),
+    const kc = s.mode === 'oo' && s.from && s.to ? Object.assign({}, APPC, { from: s.from, to: s.to, ic: false, want: s.dirc ? [REGS[s.dirc - 1]] : [], avoid: [], len: s.len, xfer: Math.min(8, APPC.xfer),
       start: s.tmode === 'dep' ? hmTxt(tSel) : hmTxt(aS < tSel ? aS : Math.max(5 * 60, tSel - 13 * 60)), end: s.tmode === 'dep' ? hmTxt(aE > tSel ? aE : Math.min(23 * 60 + 59, tSel + 13 * 60)) : hmTxt(tSel) }) : null;
-    const savedL = s.mode === 'saved' ? load('oomawari.saved', []).map((x) => { const r = E.routeById(x.id); return r && r.from === HERE ? Object.assign(ooCard(r, APPC), { date: x.date }) : null; }).filter(Boolean) : [];
+    const savedL = s.mode === 'saved' ? load('oomawari.saved', []).map((x) => { const r = E.routeById(x.id); return r ? Object.assign(ooCard(r, APPC), { date: x.date }) : null; }).filter(Boolean) : [];
     const found = kc && s.step >= 3 ? kSearch(kc) : [];
-    const pr = isN && s.to && s.step >= 3 ? E.plain(HERE, s.to) : null;
+    const pr = isN && s.from && s.to && s.step >= 3 ? E.plain(s.from, s.to) : null;
     const list = isN ? (pr ? [plainCard(pr)] : []) : s.mode === 'saved' ? savedL : found.slice(0, 2).map((r) => ooCard(r, kc));
     const ok = list.length > 0;
     const rr = s.route !== null && list[s.route] ? list[s.route] : null;
     const to = s.mode === 'saved' ? (rr ? rr.to : null) : s.to;
-    const tkt = to ? E.ticket(HERE, to, false) : null, fare = tkt && tkt.fare != null ? tkt.fare : null; // 運賃のわからない区間は null
+    const HERE = s.mode === 'saved' ? (rr ? rr.from : null) : s.from; // 出発駅(保存したルートはそのルートの出発駅)
+    const tkt = HERE && to ? E.ticket(HERE, to, false) : null, fare = tkt && tkt.fare != null ? tkt.fare : null; // 運賃のわからない区間は null
     const yenOr = (n) => (n == null || isNaN(n) ? '－－－' : yen(n));
     const buyEx = s.buy !== 'only';
     const buyRide = true;
@@ -541,8 +537,8 @@ class Component extends DCLogic {
     const tk = [];
     const day = MD + '当日限り有効';
     if (buyRide) {
-      if (s.ret === 'one') tk.push({ title: '乗車券', from: HERE, to: to || '－', l3: rr && rr.normal ? '経由：' + rr.via : '経由：－－－', day, price: '￥' + yenOr(fare == null ? null : ridePer), note: '下車前途無効' });
-      else { tk.push({ title: '乗車券', from: HERE, to: to || '－', l3: (rr && rr.normal ? '経由：' + rr.via : '経由：－－－') + '　（ゆき）', day, price: '￥' + yenOr(fare == null ? null : ridePer), note: '下車前途無効' }); tk.push({ title: '乗車券', from: to || '－', to: HERE, l3: (rr && rr.normal ? '経由：' + rr.via : '経由：－－－') + '　（かえり）', day, price: '￥' + yenOr(fare == null ? null : ridePer), note: '下車前途無効' }); }
+      if (s.ret === 'one') tk.push({ title: '乗車券', from: HERE || '－', to: to || '－', l3: rr && rr.normal ? '経由：' + rr.via : '経由：－－－', day, price: '￥' + yenOr(fare == null ? null : ridePer), note: '下車前途無効' });
+      else { tk.push({ title: '乗車券', from: HERE || '－', to: to || '－', l3: (rr && rr.normal ? '経由：' + rr.via : '経由：－－－') + '　（ゆき）', day, price: '￥' + yenOr(fare == null ? null : ridePer), note: '下車前途無効' }); tk.push({ title: '乗車券', from: to || '－', to: HERE || '－', l3: (rr && rr.normal ? '経由：' + rr.via : '経由：－－－') + '　（かえり）', day, price: '￥' + yenOr(fare == null ? null : ridePer), note: '下車前途無効' }); }
     }
     const seatName = { free: '自由席', res: '指定席（座席はイメージ）', green: 'グリーン車指定席（座席はイメージ）' }[s.seat];
     expSel.forEach((e) => tk.push({ title: addName, from: e.a, to: e.b, l3: isGr ? '普通列車グリーン車' : seatName, day: MD, price: '￥' + yen(expPer), note: '' }));
@@ -554,7 +550,7 @@ class Component extends DCLogic {
     // confirm table
     const conf = [
       { k: '乗車日', v: MDW },
-      { k: '区間', v: HERE + ' ⇒ ' + (to || '－') + (s.ret === 'round' ? '（往復）' : '（片道）') },
+      { k: '区間', v: (HERE || '－') + ' ⇒ ' + (to || '－') + (s.ret === 'round' ? '（往復）' : '（片道）') },
       { k: isN ? '経路' : '大回り経路', v: rr && rr.normal ? rr.via + '　' + rr.time : rr ? rr.km + 'km　' + rr.time + (s.ret === 'round' ? '　' + { go: '行きで大回り', back: '帰りで大回り', both: '行きも帰りも' }[s.rdir] : '') : '－' },
       { k: 'きっぷ', v: { only: '乗車券のみ', exp: '特急券＋乗車券', green: 'グリーン券＋乗車券' }[s.buy] },
       { k: addName, v: buyEx ? (expSel.length ? expSel.map((e) => e.a + '⇒' + e.b).join('、') + '　' + (isGr ? '普通列車グリーン車' : { free: '自由席', res: '指定席', green: 'グリーン車' }[s.seat]) : 'なし') : '－' },
@@ -571,11 +567,11 @@ class Component extends DCLogic {
       9: ['', 'きっぷ', 'を', 'お取りください']
     };
     const h = headers[s.step] || ['', '', '', ''];
-    const notes = { 2: isN ? 'いちばん短い道のりをご案内します。JR線のみご案内します。' : '距離の長い大回りを優先してご案内します。到着駅は運賃のわかる駅（10kmまで）です。', 3: isN ? 'いちばん短い道のりをご案内しています。' + (fare == null ? '11km以上の運賃はまだ入っていません。' : '運賃は片道の金額です。') : (s.mode === 'saved' ? 'アプリで保存したルートです。' : (found.length > 2 ? '見つかった' + found.length + '本のうち、' : '') + '距離の長い順にご案内しています。運賃は片道の金額です。'), 4: '乗換の時間にご注意ください。', 5: expOpts.length ? (isGr ? 'グリーン券' : '特急券') + 'は区間ごとに発券します。' : (isGr ? 'この経路にはグリーン車のある列車がありません。' : '特急はまだ入っていません。') + '戻って「乗車券のみ」をお選びください。', 6: '大回りは片道ごとに経路を選べます。', 7: '内容をご確認ください。', 8: 'あそび用の画面です。お金はかかりません。', 9: 'おつり・領収書のお取り忘れにご注意ください。' };
+    const notes = { 2: isN ? 'いちばん短い道のりをご案内します。JR線のみご案内します。' : s.from ? '距離の長い大回りを優先してご案内します。到着駅は運賃のわかる駅（10kmまで）です。' : '先に出発駅を入力してください。', 3: isN ? 'いちばん短い道のりをご案内しています。' + (fare == null ? '11km以上の運賃はまだ入っていません。' : '運賃は片道の金額です。') : (s.mode === 'saved' ? 'アプリで保存したルートです。' : (found.length > 2 ? '見つかった' + found.length + '本のうち、' : '') + '距離の長い順にご案内しています。運賃は片道の金額です。'), 4: '乗換の時間にご注意ください。', 5: expOpts.length ? (isGr ? 'グリーン券' : '特急券') + 'は区間ごとに発券します。' : (isGr ? 'この経路にはグリーン車のある列車がありません。' : '特急はまだ入っていません。') + '戻って「乗車券のみ」をお選びください。', 6: '大回りは片道ごとに経路を選べます。', 7: '内容をご確認ください。', 8: 'あそび用の画面です。お金はかかりません。', 9: 'おつり・領収書のお取り忘れにご注意ください。' };
     const backMap = { 1: 0, 2: 1, 3: s.mode === 'saved' ? 1 : 2, 4: 3, 6: 4, 5: 6, 7: buyEx ? 5 : 6 };
     const v = {
-      goHref: rr && !rr.normal ? 'index.html#/route/' + encodeURIComponent(rr.id) : 'index.html', here: HERE, net: E.netPath, ver: VER,
-      noRouteMsg: s.mode === 'saved' ? HERE + 'から出る保存したルートはありません。' : isN ? 'この区間の経路が見つかりませんでした。' : '条件に合う大回りが見つかりませんでした。',
+      goHref: rr && !rr.normal ? 'index.html#/route/' + encodeURIComponent(rr.id) : 'index.html', here: HERE || '－', net: E.netPath, ver: VER,
+      noRouteMsg: s.mode === 'saved' ? '保存したルートはありません。' : isN ? 'この区間の経路が見つかりませんでした。' : '条件に合う大回りが見つかりませんでした。',
       noRouteSub: s.mode === 'saved' ? 'アプリで「保存」したルートがここに出ます。' : isN ? '' : '長さ・方面・時刻を変えると見つかることがあります。',
       dateW: MDW, dateDot: NOW.getFullYear() + '.' + String(NOW.getMonth() + 1).padStart(2, '0') + '.' + String(NOW.getDate()).padStart(2, '0'),
       root: s.mono ? 'grayscale(1) contrast(1.15)' : 'none',
@@ -583,9 +579,9 @@ class Component extends DCLogic {
       grayTop: s.step <= 1, blackTop: s.step >= 2, showSumBtn: s.step >= 2 && s.step <= 8,
       showBack: s.step >= 1 && s.step <= 7, showCancel: s.step >= 1 && s.step <= 8,
       // form
-      toSet: !!to, toUnset: !to, toName: to || '', timeLabel: String(s.hour).padStart(2, '0') + ':' + String(s.min).padStart(2, '0'),
+      fromSet: !!s.from, fromUnset: !s.from, fromName: s.from || '', toSet: !!to, toUnset: !to, toName: to || '', timeLabel: String(s.hour).padStart(2, '0') + ':' + String(s.min).padStart(2, '0'),
       depStyle: s.tmode === 'dep' ? 'border-color: #0A6A0A; color: #0A6A0A' : 'border-color: transparent; color: #9A9A9A', arrStyle: s.tmode === 'arr' ? 'border-color: #0A6A0A; color: #0A6A0A' : 'border-color: transparent; color: #9A9A9A', ppl, condDir: DIRS[s.dirc], condLen: LENS[s.len], condGray: s.gray ? '出す' : '出さない',
-      inRing: to ? NORING : RING, searchRing: to ? RING : NORING, searchOpacity: to ? '1' : '0.45',
+      inRing: NORING, searchRing: NORING, searchOpacity: s.from && to ? '1' : '0.45',
       // kana
       keys, kana: s.kana, hitCount: String(hits.length), cands, candCount: cands.length,
       // routes
@@ -612,19 +608,19 @@ class Component extends DCLogic {
       lenOpts: LENS.map((d, i) => ({ label: d, style: s.len === i ? 'color: #FFF27A; ' + RING : 'color: #FFFFFF; ' + NORING, pick: () => set({ len: i }) })),
       grayOpts: ['出さない', '出す'].map((d, i) => ({ label: d, style: (s.gray ? 1 : 0) === i ? 'color: #FFF27A; ' + RING : 'color: #FFFFFF; ' + NORING, pick: () => set({ gray: i === 1 }) })),
       adult: String(s.adult), child: String(s.child),
-      sumRows: [{ k: '区間', v: HERE + ' ⇒ ' + (to || '－') }, { k: '利用日時', v: MDW + String(s.hour).padStart(2, '0') + ':' + String(s.min).padStart(2, '0') + (s.tmode === 'dep' ? ' 出発' : ' 到着') }, { k: '人数', v: ppl }, { k: '経路', v: rr ? (rr.normal ? rr.via : rr.km + 'km') : '－' }, { k: 'きっぷ', v: { only: '乗車券のみ', exp: '特急券＋乗車券', green: 'グリーン券＋乗車券' }[s.buy] }],
+      sumRows: [{ k: '区間', v: (HERE || '－') + ' ⇒ ' + (to || '－') }, { k: '利用日時', v: MDW + String(s.hour).padStart(2, '0') + ':' + String(s.min).padStart(2, '0') + (s.tmode === 'dep' ? ' 出発' : ' 到着') }, { k: '人数', v: ppl }, { k: '経路', v: rr ? (rr.normal ? rr.via : rr.km + 'km') : '－' }, { k: 'きっぷ', v: { only: '乗車券のみ', exp: '特急券＋乗車券', green: 'グリーン券＋乗車券' }[s.buy] }],
       // handlers
       buy0: () => set({ step: 1 }),
       search0: () => set({ step: 2, mode: 'oo', to: null, route: null }), normal0: () => set({ step: 2, mode: 'normal', to: null, route: null }), saved0: () => set({ step: 3, mode: 'saved', to: null, route: null }),
       showCond: !isN,
-      openKana: () => set({ modal: 'kana', kana: '', kmode: 'to' }), openFrom: () => set({ modal: 'kana', kana: '', kmode: 'from' }),
-      kanaTitle: forFrom ? '出発駅名（当駅）' : '到着駅名（目的地）', candTitle: forFrom ? '出発駅（当駅）' : '到着駅（目的地）', fix: () => set({ kana: s.kana.slice(0, -1) }),
+      openKana: () => set({ modal: 'kana', kana: '', kmode: !isN && !s.from ? 'from' : 'to' }), openFrom: () => set({ modal: 'kana', kana: '', kmode: 'from' }),
+      kanaTitle: forFrom ? '出発駅名' : '到着駅名（目的地）', candTitle: forFrom ? '出発駅' : '到着駅（目的地）', fix: () => set({ kana: s.kana.slice(0, -1) }),
       show: () => { if (hits.length) set({ modal: 'cand' }); }, redo: () => set({ modal: 'kana', kana: '' }),
       closeModal: () => set({ modal: null }), openTime: () => set({ modal: 'time' }),
       openPpl: () => set({ modal: 'ppl' }), openCond: () => set({ modal: 'cond' }), openSum: () => set({ modal: 'sum' }),
       aMinus: () => set({ adult: Math.max(s.child ? 0 : 1, s.adult - 1) }), aPlus: () => set({ adult: Math.min(9, s.adult + 1) }),
       cMinus: () => set({ child: Math.max(s.adult ? 0 : 1, s.child - 1) }), cPlus: () => set({ child: Math.min(9, s.child + 1) }),
-      search: () => { if (to) set({ step: 3 }); },
+      search: () => { if (s.from && to) set({ step: 3 }); },
       buyOnly: () => set({ buy: 'only', exp: {}, step: 6, retOpen: false }), buyExp: () => set({ buy: 'exp', exp: {}, step: 6, retOpen: false }), buyGr: () => set({ buy: 'green', exp: {}, step: 6, retOpen: false }),
       retOne: () => set({ ret: 'one', retOpen: false, step: buyEx ? 5 : 7 }), retRound: () => (isN ? set({ ret: 'round', rdir: 'both', retOpen: false, step: buyEx ? 5 : 7 }) : set({ retOpen: true })),
       rGo: () => set({ ret: 'round', rdir: 'go', retOpen: false, step: buyEx ? 5 : 7 }), rBack: () => set({ ret: 'round', rdir: 'back', retOpen: false, step: buyEx ? 5 : 7 }), rBoth: () => set({ ret: 'round', rdir: 'both', retOpen: false, step: buyEx ? 5 : 7 }),
