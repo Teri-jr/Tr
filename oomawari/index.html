@@ -87,6 +87,7 @@ ol,ul{list-style:none}
 .chip{position:absolute;height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font-size:13px;font-weight:700;white-space:nowrap}
 .tkl{margin:8px 0 0;font-size:12px;color:var(--sub)}.tkst{display:contents;color:inherit;text-decoration:none}.ver{margin-left:6px;font-size:11px;font-weight:600;color:var(--sub)}
 #toast button{white-space:nowrap;flex-shrink:0}
+.nori-l{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:8px;font-size:13px}.nori-l li{display:grid;grid-template-columns:7em 1fr auto;align-items:center;gap:10px}.nori-l .bar{display:block;height:8px;background:var(--bd);border-radius:4px;overflow:hidden}.nori-l .bar i{display:block;height:100%;background:var(--tx)}.nori-l .d{font-variant-numeric:tabular-nums;color:var(--sub)}
 .mk-map{display:block;width:100%;height:auto;border:1px solid var(--bd);border-radius:12px;background:var(--sf);touch-action:manipulation}
 .mk-map text{font-weight:700;fill:var(--tx);stroke:var(--sf);paint-order:stroke;cursor:pointer}.mk-map .c{cursor:pointer}.mk-map .x{opacity:.35}
 .mk-l{display:flex;flex-direction:column}.mk-l button{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:54px;padding:8px 0;border:0;border-bottom:1px solid var(--bd);background:none;color:var(--tx);font:inherit;text-align:left;cursor:pointer}
@@ -333,11 +334,11 @@ ol,ul{list-style:none}
 <div id="app"></div>
 <div id="sheet"></div>
 <div id="toast" role="status" hidden></div>
-<script src="data.js?v=1.4.0"></script>
-<script src="engine.js?v=1.4.0"></script>
+<script src="data.js?v=1.5.0"></script>
+<script src="engine.js?v=1.5.0"></script>
 <script>
 'use strict';
-const APP_VERSION = '1.4.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.5.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ===== データ =====
    路線データは data.js、ルートの探索は engine.js。画面はここから E.search() などを呼ぶだけ。 */
@@ -566,12 +567,13 @@ const qBox = (ph) => `<label for="q" class="vh">駅名でさがす</label><input
 const qHit = (q) => { const k = q.replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 96)); return (n, y) => !q || n.includes(q) || y.startsWith(k); };
 V.station = () => { const q = ui.q.trim(), hit = qHit(q), from = cond.from;
   const row = (n, km, f, sub, off) => `<button type="button" class="st" data-st="${esc(n)}"${n === cond.to ? ' aria-current="true"' : ''}${off ? ' disabled style="opacity:.55"' : ''}><span><strong>${esc(n === from ? 'ぐるっと一周（' + n + 'にもどる）' : n)}</strong>${off ? `<small style="color:var(--wn)">${off}</small>` : n === cond.to ? '<small>えらんでいる駅</small>' : sub ? `<small>${sub}</small>` : ''}</span><span class="d">${km}km</span><span class="f"><b>${f}</b><i>円</i></span></button>`;
-  const ds = E.dests(from, cond.ic).filter((d) => hit(d.n, d.y)), min = ds.length ? ds[0].fare : 0, a = ds.filter((d) => d.fare === min), b = ds.filter((d) => d.fare !== min);
+  const ds = E.dests(from, cond.ic).filter((d) => hit(d.n, d.y)), a = ds, b = [];
+  const fg = []; ds.slice().sort((x, y) => x.fare - y.fare || x.km - y.km).forEach((d) => { const g = fg[fg.length - 1]; if (g && g.f === d.fare) g.l.push(d); else fg.push({ f: d.fare, l: [d] }); }); // 運賃ごとに安い順
   const lp = E.isLoopStation(from) && !q ? E.ticket(from, from, false) : null;
   return `<div class="scr"><div class="col"><header class="hd"><a href="#/" class="back">‹ もどる</a><a href="#/from" class="hl">出発駅を変える</a></header>
 <section style="padding:4px 24px 0;display:flex;flex-direction:column;gap:12px"><h1 class="pg-h1">${esc(from)}から、<br>どこまでのきっぷを買う？</h1>${qBox('駅名・よみがなでさがす')}</section>
-<section aria-label="近い駅" id="stl" class="grow" style="margin:22px 24px 0;display:flex;flex-direction:column">${lp ? `<h2 class="sh2" style="padding-bottom:8px">同じ駅にもどる</h2>${row(from, lp.km, lp.fare, '一周のきっぷを買う', cond.ic ? 'ICカードでは一周できません(紙のきっぷだけ)' : '')}` : ''}${a.length ? `<h2 class="sh2" style="margin-top:${lp ? 22 : 0}px;padding-bottom:8px">${min === E.data.fares[cond.ic ? 'ic' : 'paper'][0][1] ? '初乗りで行ける駅' : 'いちばん安く行ける駅'}</h2>${a.map((d) => row(d.n, d.km, d.fare)).join('')}` : ''}${b.length ? `<h2 class="sh2" style="margin-top:${a.length || lp ? 22 : 0}px;padding-bottom:8px">もう少し先</h2>${b.map((d) => row(d.n, d.km, d.fare)).join('')}` : ''}${a.length + b.length || lp ? '' : `<p class="empty">${q ? 'その名前の駅は、きっぷを買える範囲(10kmまで)に見つかりませんでした。' : 'この駅からは、まだ運賃を出せる到着駅がありません(地方交通線の運賃は準備中です)。'}</p>`}</section>
-<p class="note" style="padding:16px 24px 24px">きっぷは、出発駅から到着駅までのいちばん短い道のりの分だけ買います。いまは10kmまでの駅をえらべます。</p></div></div>`; };
+<section aria-label="近い駅" id="stl" class="grow" style="margin:22px 24px 0;display:flex;flex-direction:column">${lp ? `<h2 class="sh2" style="padding-bottom:8px">同じ駅にもどる</h2>${row(from, lp.km, lp.fare, '一周のきっぷを買う', cond.ic ? 'ICカードでは一周できません(紙のきっぷだけ)' : '')}` : ''}${fg.map((g, i) => `<h2 class="sh2" style="margin-top:${i || lp ? 22 : 0}px;padding-bottom:8px">${i === 0 && g.f === E.data.fares[cond.ic ? 'ic' : 'paper'][0][1] ? '初乗りで行ける駅' : g.f + '円で行ける駅'}<small style="font-weight:400;margin-left:8px">${g.l.length}駅</small></h2>${g.l.map((d) => row(d.n, d.km, d.fare)).join('')}`).join('')}${a.length + b.length || lp ? '' : `<p class="empty">${q ? 'その名前の駅は見つかりませんでした。' : 'この駅からは、運賃を出せる到着駅がありません。'}</p>`}</section>
+<p class="note" style="padding:16px 24px 24px">きっぷは、出発駅から到着駅までのいちばん安い道のりの分だけ買います(2026年3月改定後の運賃。地方交通線をまたぐときは目安)。</p></div></div>`; };
 
 // 自分でルートを作る: 分岐駅を1つずつえらんでつなぐ。行けない区間は理由つきで押せない。運賃のわかる駅に来たら「ここで降りる」
 function mkState() { if (!ui.mk || ui.mk.from !== cond.from) ui.mk = { from: cond.from, pcs: [] }; return ui.mk; }
@@ -598,7 +600,7 @@ V.make = () => { const m = mkState(), st = E.steps(m.from, m.pcs);
 <div class="mk-bar" style="margin:10px 24px 0"><button type="button" data-act="mkUndo"${m.pcs.length ? '' : ' disabled'}>1つ戻す</button><button type="button" data-act="mkReset"${m.pcs.length ? '' : ' disabled'}>最初から</button></div>
 ${ends ? `<section aria-label="降りる駅" style="margin:18px 24px 0"><h2 class="sh2" style="padding-bottom:4px">ここで終われます</h2><div class="mk-l">${ends}</div></section>` : ''}
 <section aria-label="次の駅" class="grow" style="margin:18px 24px 24px"><h2 class="sh2" style="padding-bottom:4px">次に行く分岐駅</h2><div class="mk-l">${list}</div>
-<p class="note" style="margin-top:12px">降りられるのは、運賃のわかる駅（いまは10kmまで）だけです。</p></section></div></div>`; };
+<p class="note" style="margin-top:12px">「ここで終われます」は、ここまで来た道のりがきっぷの道のりより長くなる駅です。</p></section></div></div>`; };
 
 // 出発駅をえらぶ
 V.from = () => { const q = ui.q.trim(), hit = qHit(q);
@@ -611,12 +613,19 @@ V.from = () => { const q = ui.q.trim(), hit = qHit(q);
 <section style="padding:4px 24px 0;display:flex;flex-direction:column;gap:12px"><h1 class="pg-h1">どの駅から<br>出発する？</h1>${qBox('駅名・よみがなでさがす')}</section>
 <section aria-label="駅" class="grow" style="margin:22px 24px 24px;display:flex;flex-direction:column">${body}</section></div></div>`; };
 
+// 乗りつぶし: 「このルートに乗った」を押したルートの区間を、路線図に濃く出す
+const noriHtml = () => { const c = E.coverage(ridden), pct = c.all ? Math.round(c.km / c.all * 1000) / 10 : 0, on = c.lines.filter((l) => l.km > 0);
+  return `<h2 class="pg-h1" style="margin-top:32px;padding-bottom:12px;border-bottom:2px solid var(--tx);line-height:1.5">乗りつぶし</h2>
+<p style="margin:12px 0 0;font-size:15px;font-weight:700">乗った区間 <b style="font-size:22px">${c.km}</b>km / ${c.all}km（${pct}%）</p>
+<svg class="nori" role="img" aria-label="乗りつぶし地図。乗った区間を太い線で表示" viewBox="0 0 342 300" fill="none" stroke-linecap="round" stroke-linejoin="round" style="margin-top:10px;width:100%;height:auto"><path d="${NET}" stroke-width="1.4" style="stroke:var(--bd)"/>${c.d ? `<path d="${c.d}" stroke-width="3.6" style="stroke:var(--tx)"/>` : ''}</svg>
+${on.length ? `<ul class="nori-l">${on.map((l) => `<li><span>${esc(l.line)}</span><span class="bar"><i style="width:${Math.min(100, l.km / l.all * 100).toFixed(1)}%"></i></span><span class="d">${l.km}/${l.all}km</span></li>`).join('')}</ul>` : `<p class="empty">まだ乗った区間がありません。ルートの画面で「このルートに乗った」を押すと、ここに線が引かれます。</p>`}
+<p class="note" style="margin-top:12px">記録はこの端末の中だけにあります。</p>`; };
 V.saved = () => { const t = ymd(today());
   const items = saved.map((s) => { const r = routeById(s.id); if (!r) return ''; const d = s.date ? new Date(s.date + 'T00:00:00') : null;
     return cardHtml(r, d ? dateTxt(d) + (s.date >= t ? 'に乗る' : 'に乗った') : 'まだ日付なし', `${r.from} → ${toTxt(r.from, r.to)}・${rtk(r).fare}円・${halfTxt(baseMin(r, cond))}`, false, ' t'); }).join('');
   return `<div class="scr"><div class="col"><header class="hd"><a href="#/" class="back">‹ さがす</a></header>
 <section class="grow" style="margin:4px 24px 0;display:flex;flex-direction:column"><h1 class="pg-h1" style="padding-bottom:12px;border-bottom:2px solid var(--tx);line-height:1.5">保存したルート</h1>${items || '<p class="empty">まだ保存したルートはありません。ルートの画面のしおりのボタンで保存できます。</p>'}
-<p class="note" style="margin-top:16px">保存したルートは、電波のない区間でも開けます。</p></section><div class="foot"><a href="#/" class="btn2">新しくさがす</a></div></div></div>`; };
+<p class="note" style="margin-top:16px">保存したルートは、電波のない区間でも開けます。</p>${noriHtml()}</section><div class="foot"><a href="#/" class="btn2">新しくさがす</a></div></div></div>`; };
 
 V.detail = () => { const sw = (k, label) => `<button type="button" class="sw" role="switch" data-sw="${k}" aria-checked="${!!cond[k]}" aria-label="${label}"><span></span></button>`;
   const stp = (k, label, unit) => `<span class="stp"><button type="button" data-stp="${k}" data-d="-1" aria-label="${label}を減らす">−</button><span><b>${cond[k]}</b><i>${unit}</i></span><button type="button" data-stp="${k}" data-d="1" aria-label="${label}を増やす">＋</button></span>`;

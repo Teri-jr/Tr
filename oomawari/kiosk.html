@@ -338,8 +338,8 @@ button{font-family:inherit;cursor:pointer}
 </sc-if>
 </div>
 </template>
-<script src="data.js?v=1.4.0"></script>
-<script src="engine.js?v=1.4.0"></script>
+<script src="data.js?v=1.5.0"></script>
+<script src="engine.js?v=1.5.0"></script>
 <script>
 'use strict';
 /* ===== ひな形を画面にする小さなしくみ ===== */
@@ -460,7 +460,7 @@ class Component extends DCLogic {
         } });
     }));
     const isN = s.mode === 'normal';
-    // 大回りは運賃のわかる駅(いまは10kmまで)だけ。ふつうの経路はどの駅でも
+    // 大回りは運賃の出せる駅だけ。ふつうの経路はどの駅でも
     const forFrom = s.kmode === 'from';
     const pool = forFrom ? EVERY : isN ? EVERY.filter((x) => x.n !== s.from) : ooPool(s.from);
     const hits = s.kana ? pool.filter((x) => x.y.startsWith(s.kana)) : [];
@@ -567,7 +567,7 @@ class Component extends DCLogic {
       9: ['', 'きっぷ', 'を', 'お取りください']
     };
     const h = headers[s.step] || ['', '', '', ''];
-    const notes = { 2: isN ? 'いちばん短い道のりをご案内します。JR線のみご案内します。' : s.from ? '距離の長い大回りを優先してご案内します。到着駅は運賃のわかる駅（10kmまで）です。' : '先に出発駅を入力してください。', 3: isN ? 'いちばん短い道のりをご案内しています。' + (fare == null ? '11km以上の運賃はまだ入っていません。' : '運賃は片道の金額です。') : (s.mode === 'saved' ? 'アプリで保存したルートです。' : (found.length > 2 ? '見つかった' + found.length + '本のうち、' : '') + '距離の長い順にご案内しています。運賃は片道の金額です。'), 4: '乗換の時間にご注意ください。', 5: expOpts.length ? (isGr ? 'グリーン券' : '特急券') + 'は区間ごとに発券します。' : (isGr ? 'この経路にはグリーン車のある列車がありません。' : '特急はまだ入っていません。') + '戻って「乗車券のみ」をお選びください。', 6: '大回りは片道ごとに経路を選べます。', 7: '内容をご確認ください。', 8: 'あそび用の画面です。お金はかかりません。', 9: 'おつり・領収書のお取り忘れにご注意ください。' };
+    const notes = { 2: isN ? 'いちばん短い道のりをご案内します。JR線のみご案内します。' : s.from ? '距離の長い大回りを優先してご案内します。' : '先に出発駅を入力してください。', 3: isN ? 'いちばん短い道のりをご案内しています。' + '運賃は片道の金額です。' : (s.mode === 'saved' ? 'アプリで保存したルートです。' : (found.length > 2 ? '見つかった' + found.length + '本のうち、' : '') + '距離の長い順にご案内しています。運賃は片道の金額です。'), 4: '乗換の時間にご注意ください。', 5: expOpts.length ? (isGr ? 'グリーン券' : '特急券') + 'は区間ごとに発券します。' : (isGr ? 'この経路にはグリーン車のある列車がありません。' : '特急はまだ入っていません。') + '戻って「乗車券のみ」をお選びください。', 6: '大回りは片道ごとに経路を選べます。', 7: '内容をご確認ください。', 8: 'あそび用の画面です。お金はかかりません。', 9: 'おつり・領収書のお取り忘れにご注意ください。' };
     const backMap = { 1: 0, 2: 1, 3: s.mode === 'saved' ? 1 : 2, 4: 3, 6: 4, 5: 6, 7: buyEx ? 5 : 6 };
     const v = {
       goHref: rr && !rr.normal ? 'index.html#/route/' + encodeURIComponent(rr.id) : 'index.html', here: HERE || '－', net: E.netPath, ver: VER,
