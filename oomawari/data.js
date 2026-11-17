@@ -9,6 +9,7 @@
    same: 旅規69条で同じ経路として扱う区間
    svc.warn: その列車に乗るときに出す注意
    turns: 折り返しの特例。at=分岐駅 to=折り返す駅 via=そこまでに通る駅 toward=toへ向かう辺 need=この辺を使うなら折り返しが必須 except=この辺とのあいだは直通なので特例を使わない
+   tracks: 末期モード用。1つの辺に線路が何組もあるとき、同じ線路を走る系統をまとめる(書いていない辺は、線路は1組とみなす)
    st:   駅 → [よみ, 緯度, 経度]
    fares: [キロの上限, 運賃]。2026年3月14日改定後(JR東日本「運賃改定のご案内」A表・B表)。300kmまで */
 (function (root) {
@@ -247,6 +248,29 @@ segs: [
  st:[["大網",0],["福俵",3.8],["東金",5.8],["求名",9.6],["成東",13.8]]}
 ],
 // 旅規69条: 両端の駅を両方とも通ると、もう一方の経路を通ったものとして扱う区間。as=そのとき通ったとみなす駅
+tracks: { // 末期モード(線路がかぶらなければよい)で使う。目安。湘南新宿ライン(東海道直通)は戸塚で東海道線の線路に移るが、横浜〜大船は横須賀線の線路として扱う
+  tokaido1: [['yamanote'], ['keihin'], ['tokaido'], ['yokosuka']],
+  tokaido2: [['keihin'], ['tokaido']],
+  tokaido3: [['keihin'], ['tokaido']],
+  tokaido4: [['keihin'], ['tokaido'], ['yokosuka', 'shonan_y', 'shonan_t']],
+  tokaido5: [['keihin', 'yokohama'], ['tokaido'], ['yokosuka', 'shonan_y', 'shonan_t']],
+  tokaido6: [['tokaido'], ['yokosuka', 'shonan_y', 'shonan_t']],
+  yamanote1: [['yamanote'], ['shonan_y', 'shonan_t', 'saikyo', 'sotetsu']],
+  yamanote2: [['yamanote'], ['chuo_r'], ['chuo_l'], ['shonan_y', 'shonan_t', 'saikyo', 'sotetsu']],
+  yamanote3: [['yamanote'], ['shonan_y', 'shonan_t', 'saikyo', 'sotetsu']],
+  tohoku1: [['yamanote'], ['keihin'], ['chuo_r'], ['utsunomiya', 'takasaki']],
+  tohoku2: [['yamanote'], ['keihin'], ['utsunomiya', 'takasaki']],
+  tohoku3: [['yamanote'], ['keihin'], ['utsunomiya', 'takasaki']],
+  tohoku4: [['yamanote'], ['keihin']],
+  tohoku6: [['keihin'], ['utsunomiya', 'takasaki']],
+  tohoku7: [['keihin'], ['utsunomiya', 'takasaki']],
+  joban1: [['joban_r'], ['joban_l']],
+  joban2: [['joban_r'], ['joban_l']],
+  joban3: [['joban_r'], ['joban_l']],
+  chuo_e2: [['chuo_r'], ['chuo_l']],
+  chuo_w1: [['chuo_r'], ['chuo_l']],
+  sobu2: [['chuo_l'], ['sobu_r']],
+  sobu3: [['chuo_l'], ['sobu_r']] },
 same: [
 {"segs":["hinkaku1","hinkaku2"],"as":["大井町","大森","蒲田","川崎"],"law":"旅規69条(品川・鶴見間)"},
 {"segs":["oku1"],"as":["西日暮里","田端","上中里","王子","東十条"],"law":"旅規69条(日暮里・赤羽間)"},
