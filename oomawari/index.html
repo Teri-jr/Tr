@@ -324,11 +324,11 @@ ol,ul{list-style:none}
 <div id="app"></div>
 <div id="sheet"></div>
 <div id="toast" role="status" hidden></div>
-<script src="data.js?v=1.1.0"></script>
-<script src="engine.js?v=1.1.0"></script>
+<script src="data.js?v=1.2.0"></script>
+<script src="engine.js?v=1.2.0"></script>
 <script>
 'use strict';
-const APP_VERSION = '1.1.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.2.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ===== データ =====
    路線データは data.js、ルートの探索は engine.js。画面はここから E.search() などを呼ぶだけ。 */
@@ -336,7 +336,7 @@ const E = OOMAWARI;
 const NET = E.netPath; // 略図(342×300)の下地の線
 // 方面: [名前, チップの中心x,y(342×300の略図の上)]
 const REGIONS = [['群馬',58,50],['栃木',150,24],['茨城',248,52],['埼玉',106,96],['成田・銚子',268,120],['房総',214,226],['多摩',56,142],['神奈川',100,204]];
-const MAJOR = ['東京','新宿','渋谷','池袋','上野','品川','神田','秋葉原','御茶ノ水','横浜','川崎','大宮','千葉','立川','八王子'];
+const MAJOR = ['横浜','東神奈川','新横浜','菊名','鶴見','川崎','武蔵小杉','桜木町','大船','戸塚','東京','新宿','渋谷','池袋','上野','品川','神田','秋葉原','御茶ノ水','大宮','千葉','立川','八王子'];
 const LENS = ['〜100km','〜300km','300km〜','最長'];
 const SORTS = ['長い順','短い順','乗換が少ない順'];
 
@@ -344,7 +344,7 @@ const SORTS = ['長い順','短い順','乗換が少ない順'];
 const LS = { cond:'oomawari.cond', saved:'oomawari.saved', ride:'oomawari.ride', ridden:'oomawari.ridden' };
 const load = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } };
 const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
-const DEF = { from:'新宿', to:'代々木', start:'07:00', end:'20:00', want:[], avoid:[], len:2, xfer:8, xmin:15, meal:true, exp:false, rare:true, mustLine:[], noLine:[], mustSt:[], noSt:[], gray:false, ic:false, prev:0 };
+const DEF = { from:'横浜', to:'東神奈川', start:'07:00', end:'20:00', want:[], avoid:[], len:2, xfer:8, xmin:15, meal:true, exp:false, rare:true, mustLine:[], noLine:[], mustSt:[], noSt:[], gray:false, ic:false, prev:0 };
 let cond = Object.assign({}, DEF, load(LS.cond, {}));
 let saved = load(LS.saved, []);   // [{id, at, date}]
 let ridden = load(LS.ridden, []); // 「このルートに乗った」を押したルートの id(端末の中だけに記録)
@@ -392,7 +392,7 @@ const sCache = new Map();
 function searchRoutes(c, budget) {
   const key = JSON.stringify([c.from, c.to, c.ic, c.start, c.end, c.len, c.xfer, c.xmin, c.meal, c.rare, c.want, c.avoid, c.mustLine, c.noLine, c.mustSt, c.noSt, c.prev, c.prev ? ridden : 0, budget || 0]);
   if (!sCache.has(key)) { if (sCache.size > 60) sCache.clear();
-    const res = E.search(c.from, c.to, Object.assign({}, c, { win: winMin(c), budget }), ridden);
+    const res = E.find(c, ridden, budget); // 券売機モードも同じ E.find() でさがす
     res.routes.forEach((r) => rCache.set(r.id, r)); sCache.set(key, res.routes); }
   return sCache.get(key);
 }
@@ -627,7 +627,7 @@ V.guide = () => `<div class="scr"><div class="col guide"><header class="hd"><a h
 <h1 class="pg-h1" style="line-height:1.5">使い方</h1><p>大回り乗車は、東京近郊区間の中なら、きっぷの区間をどんな経路で乗ってもよいという決まりを使って、いちばん安いきっぷで遠回りを楽しむ乗り方です。</p>
 <h2 class="h2r">守ること</h2><ul><li>すべて東京近郊区間の中を通る</li><li>同じ駅を2度通らない</li><li>途中で改札を出ない</li><li>紙のきっぷで乗る(ICカードは長時間の乗車で改札が閉まることがあります)</li></ul>
 <h2 class="h2r">このアプリでできること</h2><ul><li>使える時間と行きたい方面から、回れるルートをさがす</li><li>ルートを保存して、電波のない区間でも開く</li><li>乗っているあいだ、次の乗換までの距離を見る</li><li>係員の方に、経路と決まりを見せる</li></ul>
-<p class="note" style="margin-top:16px">関東の輪になっている路線だけを探します(行き止まりの路線はまだ入っていません)。営業キロ・所要時間・本数は手入力の目安です。発車時刻は当日の時刻表で確認してください。</p>
+<p class="note" style="margin-top:16px">関東の輪になっている路線と、神奈川の行き止まりの路線(横須賀線 大船〜久里浜、東海道線 茅ケ崎〜熱海、鶴見線 浜川崎〜扇町)から探します。ほかの行き止まりの路線はまだです。営業キロ・所要時間・本数は手入力の目安です。発車時刻は当日の時刻表で確認してください。</p>
 <p class="note" style="margin-top:8px"><a href="kiosk.html" style="text-decoration:underline">券売機モード（あそび）</a>　v${APP_VERSION}</p></section></div></div>`;
 
 /* ===== 画面の切りかえ ===== */

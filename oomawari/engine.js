@@ -31,6 +31,8 @@ function create(D) {
   G.forEach((g) => { adj[g.a].push([g.i, 1, g.b]); adj[g.b].push([g.i, -1, g.a]); });
   adj.forEach((a) => a.sort((x, y) => G[y[0]].len - G[x[0]].len)); // 長い辺から先にためす
   const isNode = (n) => nodeNo[n] !== undefined;
+  // 旅規69条: この辺をぜんぶ通ったら、もう一方の経路の駅も通ったとみなす
+  const sames = (D.same || []).map((x) => ({ segs: x.segs.map((id) => segNo[id]), as: x.as, law: x.law }));
   const turns = D.turns.map((t) => ({ at: t.at, to: t.to, via: t.via, law: t.law, toward: segNo[t.toward[0]], need: t.need.map((x) => segNo[x]) }));
 
   /* ===== 略図(342×300)への写しかた ===== */
@@ -109,6 +111,9 @@ function create(D) {
         g.regNames.forEach((r) => { regKm[r] = (regKm[r] || 0) + dk; }); }
       for (const dn of g.deemed) { if (seen.has(dn)) return null; seen.add(dn); } } // みなし通過駅
     const H = hops.length; if (!H || seq[H].n !== to) return null;
+    const deemedBy = [];
+    for (const sm of sames) { if (!sm.segs.every((s) => pcs.some((p) => p[0] === s && Math.abs(p[2] - p[1]) === G[s].n))) continue;
+      for (const dn of sm.as) { if (seen.has(dn)) return null; seen.add(dn); } deemedBy.push(sm); } // 69条で同じ経路とみなす
     // 折り返しの特例
     joint[0] = [null, pcs[0][0]]; joint[H] = [pcs[pcs.length - 1][0], null];
     const turnAt = {};
@@ -145,6 +150,7 @@ function create(D) {
       mins = Math.max(2, Math.round(mins)) + extraOf(h0) + (h === H ? extraOf(H) : 0);
       const u = turnAt[h], name = h < H && u && u.req ? u.t.to : seq[h].n, o2 = { tph };
       if (tph <= 1) { o2.rare = true; o2.warn = '1時間に1本ほど。発車時刻を先に調べておく'; rare = true; }
+      if (S.warn) o2.warn = (o2.warn ? o2.warn + '。' : '') + S.warn;
       if (seq[h0].n === '浜川崎' && h0 > 0) o2.warn = (o2.warn ? o2.warn + '。' : '') + '浜川崎は改札の外で乗り換え。ICカードは簡易改札機にタッチしない';
       legs.push([S.n, name + '方面', mins, S.c, pathD(seq.slice(h0, h + 1).map((x) => x.n)), o2]); legSvc.push(sv);
       const st = [name, f1(seq[h].km)]; if (h === H && noteOf(H)) st.push(noteOf(H)); else if (h < H && noteOf(h)) st.push(noteOf(h)); stops.push(st); h0 = h; }
@@ -152,7 +158,7 @@ function create(D) {
     const regs = D.regions.filter((r) => regM & regBit[r]), top = regs.slice().sort((a, b) => regKm[b] - regKm[a]);
     const title = regs.length >= 5 ? '関東をひとまわり。' : regs.length === 0 ? '都心をぐるり。' : regs.length === 1 ? regs[0] + 'をぐるり。' : top[0] + 'と' + top[1] + 'をぐるり。';
     const mid = stops.slice(1, -1).map((s) => s[0]);
-    const passed = seq.map((x) => x.n); Object.keys(turnAt).forEach((j) => { if (turnAt[j].req) turnAt[j].t.via.forEach((v) => passed.push(v)); });
+    const passed = seq.map((x) => x.n); deemedBy.forEach((sm) => sm.as.forEach((v) => passed.push(v))); Object.keys(turnAt).forEach((j) => { if (turnAt[j].req) turnAt[j].t.via.forEach((v) => passed.push(v)); });
     return { id: idOf(from, to, pcs), from, to, loop, km: f1(km), title, via: (mid.length > 6 ? mid.slice(0, 6).concat('ほか') : mid).join('・') || '乗換なし', regions: regs, stops, legs,
       rare, passed, hopKeys: hops.map((hp) => hopKey(hp.s, hp.h)), hopKm: hops.map((hp) => hp.km), hopSt: seq.map((x) => x.n), pcs, lines: legs.map((l) => l[0]) };
   }
@@ -228,6 +234,34 @@ function create(D) {
     return { routes: out, partial };
   }
 
+  /* ===== ふつうの乗りかた(いちばん短い道のり) =====
+     券売機モードの「経路の組み合わせ」用。駅ごとの最短の道をたどって、辺ごとに区切ってから buildRoute にかける */
+  function plain(from, to) {
+    if (!ST[from] || !ST[to] || from === to) return null;
+    const dist = { [from]: 0 }, prev = {}, done = new Set();
+    for (;;) { let u = null, best = Infinity; for (const k in dist) if (!done.has(k) && dist[k] < best) { best = dist[k]; u = k; }
+      if (u === null || u === to) break; done.add(u);
+      for (const e of nbr[u]) { const nd = best + e[1]; if (dist[e[0]] === undefined || nd < dist[e[0]] - 1e-9) { dist[e[0]] = nd; prev[e[0]] = u; } } }
+    if (dist[to] === undefined) return null;
+    const path = [to]; while (path[0] !== from) path.unshift(prev[path[0]]);
+    const pcs = [];
+    for (let i = 0; i + 1 < path.length; i++) { const a = path[i], b = path[i + 1]; let hit = null;
+      const last = pcs[pcs.length - 1];
+      if (last) { const g = G[last[0]], j = last[2], d = last[2] > last[1] ? 1 : -1; if (g.names[j] === a && g.names[j + d] === b) { last[2] = j + d; continue; } }
+      for (const sj of stSeg[a]) { const g = G[sj[0]]; if (g.names[sj[1] + 1] === b) { hit = [sj[0], sj[1], sj[1] + 1]; break; } if (g.names[sj[1] - 1] === b) { hit = [sj[0], sj[1], sj[1] - 1]; break; } }
+      if (!hit) return null; pcs.push(hit); }
+    return buildRoute(from, to, pcs);
+  }
+
+  /* ===== 画面からの入り口 =====
+     アプリ(index.html)も券売機モード(kiosk.html)も、条件をこの形で渡してここからさがす。表示のしかたが違うだけで、探しかたは同じ。
+     c: { from, to, ic, start:'HH:MM', end:'HH:MM', len, xfer, xmin, meal, rare, want, avoid, mustLine, noLine, mustSt, noSt, prev } */
+  const hm = (t) => { const m = /^(\d\d):(\d\d)$/.exec(t || ''); return m ? +m[1] * 60 + +m[2] : NaN; };
+  function find(c, riddenIds, budget) { return search(c.from, c.to, Object.assign({}, c, { win: hm(c.end) - hm(c.start), budget }), riddenIds); }
+  // 所要時間のめやす(分)。乗っている時間+乗換の時間(+食事30分)
+  const rideMins = (r) => r.legs.reduce((a, l) => a + l[2], 0);
+  const spanMins = (r, c) => { const b = rideMins(r) + (r.legs.length - 1) * c.xmin; return [b, b + (c.meal ? 30 : 0)]; };
+
   // 前に乗ったルートと重なる区間
   function overlap(r, riddenIds) {
     const set = riddenSet((riddenIds || []).filter((id) => id !== r.id)), out = []; let a = -1, km = 0;
@@ -239,7 +273,7 @@ function create(D) {
   const seenLine = new Set(), lineOpts = []; svcIds.forEach((k) => { if (!seenLine.has(SV[k].n)) { seenLine.add(SV[k].n); lineOpts.push({ n: SV[k].n, c: SV[k].c }); } });
   const stations = Object.keys(ST).map((n) => ({ n, y: ST[n][0] }));
   return { data: D, stations, nodes: nodeNames.slice(), lineOpts, netPath, xy, ll: (n) => (ST[n] ? [ST[n][1], ST[n][2]] : null), has: (n) => !!ST[n], isNode, isLoopStation,
-    ticket, dests, search, routeById, buildRoute, overlap, nearest };
+    ticket, dests, search, find, plain, rideMins, spanMins, routeById, buildRoute, overlap, nearest };
 }
 if (typeof module !== 'undefined' && module.exports) module.exports = { create };
 else root.OOMAWARI = create(root.OOMAWARI_DATA);
