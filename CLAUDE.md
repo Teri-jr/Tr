@@ -5,7 +5,7 @@ GitHub Pages で公開している個人用の学習アプリ置き場。main �
 - `/`(index.html, sw.js, manifest.json, changelog.json, アイコン): 受験勉強の運行表アプリ「StudyLine」
 - `vocab/`: 単語・熟語・漢字の暗記アプリ「記憶回路」(別アプリ。触るときはそちらの changelog.json を使う)
 - `home/`: 学校の iPad に置く待機画面「Platform」(別アプリ。触るときは `home/index.html` の `APP_VERSION` と `home/changelog.json` を使う。番号は StudyLine と同じ「大.中.小」)。StudyLine・記憶回路の保存データを同じサイトの localStorage から読む(記憶回路の復習記録は書き込みもする)
-- `oomawari/`: JRの大回り乗車のルートを見せる「大回りジェネレータ」(別アプリ)。`index.html` がアプリ本体(スマホ・タブレット・PCで並びが変わる)、`kiosk.html` が券売機モード(あそび)。`index.html` の `APP_VERSION` と `oomawari/changelog.json` で版を管理(番号は StudyLine と同じ「大.中.小」)。ルートはまだ見本で、`searchRoutes()` を本物の探索に差しかえる予定。`sw.js` は電波がないときに前回の控えを返す
+- `oomawari/`: JRの大回り乗車のルートを見せる「大回りジェネレータ」(別アプリ)。`index.html` がアプリ本体(スマホ・タブレット・PCで並びが変わる)、`kiosk.html` が券売機モード(あそび)。`index.html` の `APP_VERSION` と `oomawari/changelog.json` で版を管理(番号は StudyLine と同じ「大.中.小」)。`data.js` が路線データ(分岐駅から分岐駅までの辺・営業キロ・運転系統・折り返しの特例。手入力の目安で、差し替えるときはここだけ直す)、`engine.js` がルート探索(同じ駅を2回通らない道をさがす。画面とは別なので `node` でも動かせる)。`sw.js` は電波がないときに前回の控えを返す
 - `keikyu/`: 京急 運転士タブレット風アプリ（GPS版は JR横須賀線 品川〜戸塚・JR東海道線 品川〜茅ヶ崎・JR南武線・JR京浜東北・根岸線 にも切り替えられる）。`index.html` が GPS連動版、`sim.html` がシミュレーション版(どちらも1ファイル完結)。GPS版は `APP_VERSION`(keikyu/index.html 内)と `keikyu/changelog.json` で版を管理し、新しい版が出ると停車中に放送で知らせる。sim.html は版管理なし
 
 ## 更新するとき(どちらのアプリも共通)
