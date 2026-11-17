@@ -79,13 +79,15 @@ function create(D) {
     if (d[1]) return lookup(A, d[0]);
     if (d[3] || Math.ceil(d[0] - 1e-9) <= 10) return lookup(B, d[0]);
     return lookup(A, d[2]); };
+  // 運賃の区分(営業キロの帯)。幹線だけの道のりのときだけ [下限, 上限] を返す。それ以外は null
+  const bandOf = (km, t) => { if (!t) return null; const k = Math.ceil(km - 1e-9); let lo = 1; for (const r of t) { if (k <= r[0]) return [lo, r[0]]; lo = r[0] + 1; } return null; };
   const isLoopStation = (n) => !!D.loop && D.loop.stations.includes(n);
   // きっぷの情報。一周(from===to)は神田・秋葉原・御茶ノ水だけ
   function ticket(from, to, ic) {
     if (!ST[from] || !ST[to]) return null;
     if (from === to) return isLoopStation(from) ? { km: D.loop.km, fare: fareBy(D.loop.km, ic), loop: true } : null;
     const d = dists(from)[to]; if (!d) return null;
-    return { km: f1(d[0]), fare: fareOf(d, ic), est: !d[1] && !d[3] && Math.ceil(d[0] - 1e-9) > 10, loop: false };
+    return { km: f1(d[0]), fare: fareOf(d, ic), est: !d[1] && !d[3] && Math.ceil(d[0] - 1e-9) > 10, loop: false, band: bandOf(d[0], d[1] ? (ic ? D.fares.ic : D.fares.paper) : null) };
   }
   // 到着駅の候補(運賃のわかる駅を近い順に)
   function dests(from, ic) {
