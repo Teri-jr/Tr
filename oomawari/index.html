@@ -341,7 +341,7 @@ ol,ul{list-style:none}
 <script src="engine.js?v=1.10.1"></script>
 <script>
 'use strict';
-const APP_VERSION = '1.13.2'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.14.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ===== データ =====
    路線データは data.js、ルートの探索は engine.js。画面はここから E.search() などを呼ぶだけ。 */
@@ -354,7 +354,7 @@ const LENS = ['〜100km','〜300km','300km〜','最長'];
 const SORTS = ['長い順','短い順','乗換が少ない順','時間が短い順'];
 
 /* ===== 保存するもの ===== */
-const LS = { cond:'oomawari.cond', saved:'oomawari.saved', ride:'oomawari.ride', ridden:'oomawari.ridden' };
+const LS = { cond:'oomawari.cond', saved:'oomawari.saved', ride:'oomawari.ride', ridden:'oomawari.ridden', mk:'oomawari.mk' };
 const load = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } };
 const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
 const DEF = { from:'横浜', to:'東神奈川', start:'07:00', end:'20:00', want:[], avoid:[], len:2, xfer:8, xmin:15, meal:true, exp:false, rare:true, mustLine:[], noLine:[], mustSt:[], noSt:[], gray:false, ic:true, fast:false, mk:false, prev:0 }; // 基本はSuica(IC)
@@ -363,7 +363,8 @@ if (!cond.icV) { cond.ic = true; cond.icV = 1; } // 1.6.1: 基本をSuicaにし�
 let saved = load(LS.saved, []);   // [{id, at, date}]
 let ridden = load(LS.ridden, []); // 「このルートに乗った」を押したルートの id(端末の中だけに記録)
 let ride = load(LS.ride, null);   // {id, at(乗りはじめた時刻ms), to}
-const ui = { tap:'want', sort:0, q:'', pos:null, near:null };
+const mk0 = load(LS.mk, null); // 「ルートを作る」「路線図で手直し」の途中経過(戻っても消えないように端末に控える)
+const ui = { tap:'want', sort: Math.max(0, Math.min(3, +load('oomawari.sort', 0) | 0)), q:'', pos:null, near:null, mk: mk0 && typeof mk0.from === 'string' && Array.isArray(mk0.pcs) ? mk0 : undefined };
 const setCond = (o) => { Object.assign(cond, o); fixCond(); save(LS.cond, cond); };
 // きっぷの情報 {km, fare, loop}。運賃のわからない組みあわせは null
 const tkOf = (from, to) => { const t = E.ticket(from, to, cond.ic); return t && t.fare != null && !(t.loop && cond.ic) ? t : null; };
@@ -757,6 +758,7 @@ function render() {
     const y = wide && isRes(lastHash) && isRes(location.hash) ? scrollMem.cur : location.hash === '#/search' && scrollMem['#/search'] != null ? scrollMem['#/search'] : 0;
     scrollTo(0, y); lastHash = location.hash; closeSheet(); }
   if (name !== 'station' && name !== 'from') ui.q = '';
+  if (ui.mk) save(LS.mk, ui.mk);
   // 乗車中の画面だけ、位置情報を見て30秒ごとに描きなおす
   const onRide = name === 'ride' && ride;
   if (onRide && !rideTimer) { rideTimer = setInterval(render, 30000);
@@ -819,13 +821,14 @@ app.addEventListener('click', (e) => {
     if (rs.length) { location.hash = '#/route/' + encodeURIComponent(rs[0].id); return toast((up ? '少し長い' : '少し短い') + 'ルートにしました（' + rs[0].km + 'km）'); }
     const nl = up ? cond.len + 1 : cond.len - 1; if (nl < 0 || nl > 2) return toast(up ? 'これより長いルートは見つかりませんでした' : 'これより短いルートは見つかりませんでした');
     return adjust(r, { len: nl }, '長さを「' + LENS[nl] + '」にしました', true); }
-  if (act === 'mkFrom') { const r = curRoute(); const p = r && E.piecesOf(r.id); if (!p) return; ui.mk = { from: p.from, pcs: p.pcs.slice(0, -1).map((x) => x.slice()) }; if (cond.from !== p.from) setCond({ from: p.from });
-    location.hash = '#/make'; return toast('最後の区間の手前から。「1つ戻す」で戻って、別の線につなぎ直せます'); }
+  if (act === 'mkFrom') { const r = curRoute(); const p = r && E.piecesOf(r.id); if (!p) return; const again = ui.mk && ui.mk.base === r.id && ui.mk.from === p.from;
+    if (!again) ui.mk = { from: p.from, pcs: p.pcs.slice(0, -1).map((x) => x.slice()), base: r.id }; if (cond.from !== p.from) setCond({ from: p.from });
+    location.hash = '#/make'; return toast(again ? '前の続きから。「最初から」で白紙にできます' : '最後の区間の手前から。「1つ戻す」で戻って、別の線につなぎ直せます'); }
   if (act === 'mkUndo') { mkState().pcs.pop(); return render(); }
-  if (act === 'mkReset') { mkState().pcs = []; return render(); }
+  if (act === 'mkReset') { const m = mkState(); m.pcs = []; delete m.base; return render(); }
   if (act === 'adjMust') { const r = routeById(d.id); if (!r) return; const yo = {}; E.stations.forEach((x) => { yo[x.n] = x.y; }); const opts = E.nodes.filter((n) => !r.passed.includes(n) && !cond.mustSt.includes(n)).sort((x, y) => (yo[x] < yo[y] ? -1 : 1)).map((n) => ({ n }));
     return openSheet('寄りたい駅', opts, (o) => adjust(r, { mustSt: cond.mustSt.concat(o.n), noSt: cond.noSt.filter((x) => x !== o.n) }, o.n + 'を通るルートにしました')); }
-  if (act === 'sort') { ui.sort = (ui.sort + 1) % SORTS.length; return render(); }
+  if (act === 'sort') { ui.sort = (ui.sort + 1) % SORTS.length; save('oomawari.sort', ui.sort); return render(); }
   if (act === 'reset') { const keep = { to: cond.to, start: cond.start, end: cond.end, want: cond.want, avoid: cond.avoid }; setCond(Object.assign({}, DEF, keep)); return render(); }
   if (act === 'save') { if (isSaved(d.id)) { saved = saved.filter((s) => s.id !== d.id); toast('保存をやめました'); } else { saved.unshift({ id: d.id, at: Date.now(), date: null }); toast('保存しました'); } save(LS.saved, saved); return render(); }
   if (act === 'share') { const r = routeById(d.id), url = location.href.split('#')[0] + '#/route/' + encodeURIComponent(r.id), text = `${r.from}→${toTxt(r.from, r.to)} ${rtk(r).fare}円で${r.km}km。${r.via}`;
