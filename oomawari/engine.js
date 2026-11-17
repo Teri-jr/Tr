@@ -192,8 +192,11 @@ function create(D) {
     const vis = new Uint8Array(NN), stack = [], best = new Map(), limit = c.budget || STEP_LIMIT; let steps = 0, partial = false;
     const endAt = nodeNames.map(() => null); // その分岐駅から到着駅へ入る最後のひと区間
     if (tSeg) { const g = G[tSeg[0]]; [[g.a, 0], [g.b, g.n]].forEach((x) => { const p = part(tSeg[0], x[1], tSeg[1]); if (p) endAt[x[0]] = { pc: [tSeg[0], x[1], tSeg[1]], p }; }); }
+    // かならず通る駅があるときは、その駅を通る道だけを残す(あとでしぼると、同じ仲間の別の道に負けて消えてしまうため)
+    const mustN = c.mustSt || [], passAll = (pcs) => { const seen = new Set(); pcs.forEach((p) => { const g = G[p[0]]; for (let i = Math.min(p[1], p[2]); i <= Math.max(p[1], p[2]); i++) seen.add(g.names[i]); }); return mustN.every((n) => seen.has(n)); };
     function record(km, mins, legs, sc, reg, k0, k1, endPc) {
       if (km < minKm || km > maxKm || (reg & wantM) !== wantM || mins + (legs - 1) * c.xmin + base > c.win) return;
+      if (mustN.length && !passAll(endPc ? stack.concat([endPc]) : stack)) return; // かならず通る駅を通らない
       const key = k1 * 67108864 + k0, b = best.get(key);
       if (!b || sc > b.sc) best.set(key, { sc, km, pcs: endPc ? stack.concat([endPc]) : stack.slice() });
     }
