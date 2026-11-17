@@ -335,11 +335,11 @@ ol,ul{list-style:none}
 <div id="app"></div>
 <div id="sheet"></div>
 <div id="toast" role="status" hidden></div>
-<script src="data.js?v=1.6.0"></script>
-<script src="engine.js?v=1.6.0"></script>
+<script src="data.js?v=1.6.1"></script>
+<script src="engine.js?v=1.6.1"></script>
 <script>
 'use strict';
-const APP_VERSION = '1.6.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.6.1'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ===== データ =====
    路線データは data.js、ルートの探索は engine.js。画面はここから E.search() などを呼ぶだけ。 */
@@ -355,8 +355,9 @@ const SORTS = ['長い順','短い順','乗換が少ない順'];
 const LS = { cond:'oomawari.cond', saved:'oomawari.saved', ride:'oomawari.ride', ridden:'oomawari.ridden' };
 const load = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } };
 const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
-const DEF = { from:'横浜', to:'東神奈川', start:'07:00', end:'20:00', want:[], avoid:[], len:2, xfer:8, xmin:15, meal:true, exp:false, rare:true, mustLine:[], noLine:[], mustSt:[], noSt:[], gray:false, ic:false, prev:0 };
+const DEF = { from:'横浜', to:'東神奈川', start:'07:00', end:'20:00', want:[], avoid:[], len:2, xfer:8, xmin:15, meal:true, exp:false, rare:true, mustLine:[], noLine:[], mustSt:[], noSt:[], gray:false, ic:true, prev:0 }; // 基本はSuica(IC)
 let cond = Object.assign({}, DEF, load(LS.cond, {}));
+if (!cond.icV) { cond.ic = true; cond.icV = 1; } // 1.6.1: 基本をSuicaにした(前に紙にしていた端末も一度だけSuicaにもどす)
 let saved = load(LS.saved, []);   // [{id, at, date}]
 let ridden = load(LS.ridden, []); // 「このルートに乗った」を押したルートの id(端末の中だけに記録)
 let ride = load(LS.ride, null);   // {id, at(乗りはじめた時刻ms), to}
