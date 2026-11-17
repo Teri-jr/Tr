@@ -335,11 +335,11 @@ ol,ul{list-style:none}
 <div id="app"></div>
 <div id="sheet"></div>
 <div id="toast" role="status" hidden></div>
-<script src="data.js?v=1.6.2"></script>
-<script src="engine.js?v=1.6.2"></script>
+<script src="data.js?v=1.7.0"></script>
+<script src="engine.js?v=1.7.0"></script>
 <script>
 'use strict';
-const APP_VERSION = '1.6.2'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.7.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ===== データ =====
    路線データは data.js、ルートの探索は engine.js。画面はここから E.search() などを呼ぶだけ。 */
@@ -595,7 +595,7 @@ function mkMap(st) {
 ${r ? r.legs.map((l) => `<path d="${l[4]}" stroke="${l[3]}" stroke-width="${f(4.5 * k)}"/>`).join('') : ''}<circle cx="${f(o[0])}" cy="${f(o[1])}" r="${f(5 * k)}" style="fill:var(--tx)"/>${cs}
 <circle cx="${f(at[0])}" cy="${f(at[1])}" r="${f(7 * k)}" style="fill:var(--ok);stroke:var(--sf)" stroke-width="${f(2 * k)}"/><text x="${f(at[0] + 10 * k)}" y="${f(at[1] - 8 * k)}" stroke-width="${f(3 * k)}" style="font-weight:900">${esc(st.at)}</text></svg>`;
 }
-V.make = () => { const m = mkState(), st = E.steps(m.from, m.pcs);
+V.make = () => { const m = mkState(), st = E.steps(m.from, m.pcs, cond.ic);
   if (!st) { m.pcs = []; return V.make(); }
   const r = st.route, km = r ? r.km : 0;
   const list = st.cands.map((c, i) => `<button type="button"${c.ok ? ` data-mk="${i}"` : ' disabled'}><span><strong>${esc(c.to)}へ</strong><small>${esc(c.line)}（${esc(c.lines.join('・'))}）${c.ok ? '' : '<br>' + esc(c.why)}</small></span><span class="r">${c.km}km</span></button>`).join('') || '<p class="empty">この先に行ける区間はありません。1つ戻してください。</p>';
@@ -777,8 +777,8 @@ app.addEventListener('click', (e) => {
     return openSheet(k === 'mustLine' ? 'かならず乗る路線' : k === 'noLine' ? '乗らない路線' : k === 'mustSt' ? 'かならず通る駅' : '通らない駅', opts, (o) => { const other = { mustSt: 'noSt', noSt: 'mustSt', mustLine: 'noLine', noLine: 'mustLine' }[k];
       setCond({ [k]: cond[k].concat(o.n), [other]: cond[other].filter((x) => x !== o.n) }); render(); }); }
   const mkEl = e.target.closest('[data-mk],[data-mkend]');
-  if (mkEl && mkEl.dataset.mk != null) { const m = mkState(), st = E.steps(m.from, m.pcs), c = st && st.cands[+mkEl.dataset.mk]; if (c && c.ok) { m.pcs.push(c.pc); render(); } return; }
-  if (mkEl && mkEl.dataset.mkend != null) { const m = mkState(), st = E.steps(m.from, m.pcs), en = st && st.ends[+mkEl.dataset.mkend]; if (!en) return;
+  if (mkEl && mkEl.dataset.mk != null) { const m = mkState(), st = E.steps(m.from, m.pcs, cond.ic), c = st && st.cands[+mkEl.dataset.mk]; if (c && c.ok) { m.pcs.push(c.pc); render(); } return; }
+  if (mkEl && mkEl.dataset.mkend != null) { const m = mkState(), st = E.steps(m.from, m.pcs, cond.ic), en = st && st.ends[+mkEl.dataset.mkend]; if (!en) return;
     const r = E.buildRoute(m.from, en.n, en.pcs); if (!r) return toast('このルートは組み立てられませんでした'); rCache.set(r.id, r); location.hash = '#/route/' + encodeURIComponent(r.id); return; }
   if (d.adj || d.unadj) { const r = curRoute(); if (!r) return; const k = d.adj || d.unadj, v = d.v;
     if (d.unadj) return adjust(r, { [k]: cond[k].filter((x) => x !== v) }, v + 'の調整を外しました');
