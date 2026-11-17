@@ -134,13 +134,13 @@ function create(D) {
         if (req) { if (clash) return null; turnAt[j] = { t, req: true }; } else if (!clash) turnAt[j] = { t, req: false }; } }
     // 列車の割りあて: 乗換がいちばん少なく、同じなら早い組みあわせ
     const opt = hops.map((hp) => G[hp.s].hops[hp.h].filter((e) => !(banned && banned[e[0]]) && !(o.noRare && e[1] <= 1)));
-    const INF = 1e12, cost = [], back = [];
+    const INF = 1e12, cost = [], back = [], XP = o.fast ? 5 : 10000; // 乗換1回の重み。速い列車を優先するときは5分ぶん
     for (let h = 0; h < H; h++) { if (!opt[h].length) return null; cost.push(new Array(opt[h].length).fill(INF)); back.push(new Array(opt[h].length).fill(-1));
       const stn = seq[h].n, free = !!turnAt[h]; // 折り返しの特例がある駅は、通過する列車でも先の駅で乗り換えられる
       opt[h].forEach((e, x) => { const tm = hops[h].km / SV[svcIds[e[0]]].v * 60;
         if (h === 0) { if (free || !skip[e[0]].has(stn)) cost[0][x] = tm; return; }
         opt[h - 1].forEach((p, y) => { const c0 = cost[h - 1][y]; if (c0 >= INF) return; let c;
-          if (p[0] === e[0]) c = c0 + tm; else if (free || (!skip[p[0]].has(stn) && !skip[e[0]].has(stn))) c = c0 + 10000 + tm; else return;
+          if (p[0] === e[0]) c = c0 + tm; else if (free || (!skip[p[0]].has(stn) && !skip[e[0]].has(stn))) c = c0 + XP + tm; else return;
           if (c < cost[h][x]) { cost[h][x] = c; back[h][x] = y; } }); }); }
     let bx = -1, bc = INF; const endFree = !!turnAt[H];
     opt[H - 1].forEach((e, x) => { if ((endFree || !skip[e[0]].has(to)) && cost[H - 1][x] < bc) { bc = cost[H - 1][x]; bx = x; } });
@@ -175,7 +175,7 @@ function create(D) {
     return { id: idOf(from, to, pcs), from, to, loop, km: f1(km), title, via: (mid.length > 6 ? mid.slice(0, 6).concat('ほか') : mid).join('・') || '乗換なし', regions: regs, stops, legs,
       rare, passed, hopKeys: hops.map((hp) => hopKey(hp.s, hp.h)), hopKm: hops.map((hp) => hp.km), hopSt: seq.map((x) => x.n), pcs, lines: legs.map((l) => l[0]) };
   }
-  function routeById(id) { const r = piecesOf(id); return r ? buildRoute(r.from, r.to, r.pcs) : null; }
+  function routeById(id, o) { const r = piecesOf(id); return r ? buildRoute(r.from, r.to, r.pcs, o) : null; }
 
   /* ===== さがす =====
      c: { ic, win(使える分), len(0:〜100km 1:〜300km 2:300km〜 3:最長), xfer, xmin, meal, rare, want, avoid, mustLine, noLine, mustSt, noSt, prev }
@@ -239,8 +239,9 @@ function create(D) {
     const cand = Array.from(best.values()).sort((a, b) => b.sc - a.sc), out = [], want = c.len === 3 ? 1 : KEEP;
     let tried = 0;
     for (const cd of cand) { if (out.length >= want || tried++ > 600) break;
-      const r = buildRoute(from, to, cd.pcs, { banned, noRare: !c.rare }); if (!r) continue;
-      if (r.legs.length - 1 > c.xfer) continue;
+      let r = buildRoute(from, to, cd.pcs, { banned, noRare: !c.rare, fast: c.fast }); if (!r) continue;
+      if (!c.fast && r.legs.length - 1 > c.xfer) continue; // 速い列車を優先するときは、速くするための乗換は回数に数えない(乗換の少ない組みかたで判定)
+      if (c.fast) { const r0 = buildRoute(from, to, cd.pcs, { banned, noRare: !c.rare }); if (!r0 || r0.legs.length - 1 > c.xfer) continue; }
       if (r.legs.reduce((a, l) => a + l[2], 0) + (r.legs.length - 1) * c.xmin + base > c.win) continue;
       if ((c.mustLine || []).some((n) => !r.lines.includes(n)) || (c.mustSt || []).some((n) => !r.passed.includes(n))) continue;
       const ks = new Set(r.hopKeys); let dup = false;
@@ -372,7 +373,7 @@ function create(D) {
   const seenLine = new Set(), lineOpts = []; svcIds.forEach((k) => { if (!seenLine.has(SV[k].n)) { seenLine.add(SV[k].n); lineOpts.push({ n: SV[k].n, c: SV[k].c }); } });
   const stations = Object.keys(ST).map((n) => ({ n, y: ST[n][0] }));
   return { data: D, stations, nodes: nodeNames.slice(), lineOpts, netPath, xy, ll: (n) => (ST[n] ? [ST[n][1], ST[n][2]] : null), has: (n) => !!ST[n], isNode, isLoopStation,
-    ticket, dests, search, find, plain, steps, pcPath, rideMins, spanMins, routeById, buildRoute, overlap, nearest, coverage, greenFee, hasGreen };
+    ticket, dests, search, find, plain, steps, pcPath, rideMins, spanMins, routeById, buildRoute, overlap, nearest, coverage, greenFee, hasGreen, piecesOf };
 }
 if (typeof module !== 'undefined' && module.exports) module.exports = { create };
 else root.OOMAWARI = create(root.OOMAWARI_DATA);
