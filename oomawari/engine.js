@@ -155,6 +155,9 @@ function create(D) {
     opt[H - 1].forEach((e, x) => { if ((endFree || !skip[e[0]].has(to)) && cost[H - 1][x] < bc) { bc = cost[H - 1][x]; bx = x; } });
     if (bx < 0) return null; // 乗り継げる列車がない
     const pick = new Array(H); for (let h = H - 1; h >= 0; h--) { pick[h] = opt[h][bx]; bx = back[h][bx]; }
+    if (mk) { const stopAt = new Set(); // 末期モード: 列車が停まる駅は1回だけ(停まらずに通りすぎる駅は数えない)
+      for (let h = 0; h <= H; h++) { const n = seq[h].n, st = h === 0 || h === H || (h > 0 && !skip[pick[h - 1][0]].has(n)) || (h < H && !skip[pick[h][0]].has(n));
+        if (!st) continue; if (stopAt.has(n) && !(loop && h === H)) return null; stopAt.add(n); } }
     // 列車ごとにまとめる
     const legs = [], stops = [[from, 0]], legSvc = []; let h0 = 0;
     const noteOf = (j) => { const u = turnAt[j]; if (!u) return ''; const t = u.t;
@@ -239,12 +242,12 @@ function create(D) {
         else { vis[y] = 1; dfs(y, nk, nm, l, a0, a1, sc + p.sc, reg | p.reg, c0, c1); vis[y] = 0; }
         stack.pop(); }
     }
-    if (c.mk) return searchMk();
     (c.noSt || []).forEach((n) => { if (isNode(n) && n !== from && n !== to) vis[nodeNo[n]] = 1; });
     if (sSeg) { const g = G[sSeg[0]]; [[g.a, 0], [g.b, g.n]].forEach((x) => { const p = part(sSeg[0], sSeg[1], x[1]); if (!p || vis[x[0]]) return;
         if (tSeg && tSeg[0] === sSeg[0] && (x[1] === 0) === (tSeg[1] < sSeg[1])) return; // 到着駅を通りすぎる向き
         vis[x[0]] = 1; stack.push([sSeg[0], sSeg[1], x[1]]); dfs(x[0], p.km, p.mins, 1, p.m0, p.m1, p.sc, p.reg, 0, 0); stack.pop(); vis[x[0]] = 0; }); }
     else { vis[nodeNo[from]] = 1; dfs(nodeNo[from], 0, 0, 0, 0, 0, 0, 0, 0, 0); }
+    if (c.mk) return searchMk(); // 末期モード: ふつうの大回りに、線路だけを見たルートを足す
     return pickRoutes();
     /* 末期モード: 駅は何回通ってもよく、同じ線路(辺×線路の組)を2回通らない道をたどる。到着駅も途中で通ってよい */
     function searchMk() {
@@ -259,9 +262,19 @@ function create(D) {
       // 分岐駅ごとに、そこを通過する系統(乗り換えられない)
       const sk0 = new Int32Array(NN), sk1 = new Int32Array(NN);
       nodeNames.forEach((n, x) => svcIds.forEach((_, v) => { if (skip[v].has(n)) { if (v < 32) sk0[x] |= 1 << v; else sk1[x] |= 1 << (v - 32); } }));
-      const limMk = c.budget || 3000000; let lim2 = limMk, AD = adj; // 何回かに分けて、分岐駅で試す順番を変えてたどる(1回だと最初の方面ばかりになるため)
+      const limMk = c.budget || 1500000; let lim2 = limMk, AD = adj; steps = 0; const stopV = new Uint8Array(NN); if (!sSeg) stopV[nodeNo[from]] = 1; // 何回かに分けて、分岐駅で試す順番を変えてたどる(1回だと最初の方面ばかりになるため)
+      // まだ到着駅まで行けるか(停まった駅・使った線路を除いてたどる)。行けない枝は切る
+      const isEnd = new Uint8Array(NN); if (T >= 0) isEnd[T] = 1; endT.forEach((l, x) => { if (l.length) isEnd[x] = 1; });
+      const rv = new Int32Array(NN); let rvGen = 0; const q = new Int32Array(NN);
+      function reach(x) { if (isEnd[x]) return true; rvGen++; let h = 0, t = 0; q[t++] = x; rv[x] = rvGen;
+        while (h < t) { const u = q[h++];
+          for (const e of adj[u]) { const s = e[0], y = e[2]; if (rv[y] === rvGen || (sSeg && s === sSeg[0]) || (tSeg && s === tSeg[0])) continue;
+            let ok = false; for (let k = 0; k < TR[s].length && !ok; k++) { const p = fullT[s][k]; if (p && !used[s * 16 + k] && (!stopV[y] || (p.m0 & sk0[y]) || (p.m1 & sk1[y]))) ok = true; }
+            if (!ok) continue; if (isEnd[y] && !stopV[y]) return true; rv[y] = rvGen; q[t++] = y; } }
+        return false; }
       function dfsT(x, km, mins, legs, m0, m1, sc, reg, k0, k1) {
         if (steps > lim2) { partial = true; return; }
+        if (!reach(x)) return;
         for (const en of endT[x]) { if (sSeg && sSeg[0] === tSeg[0] && stack.length === 1) break; const p = en.p; let l = legs; if (!(m0 & p.m0) && !(m1 & p.m1)) l++; if (l <= maxLegs) record(km + p.km, mins + p.mins, l, sc + p.sc, reg | p.reg, k0, k1, en.pc); }
         for (const e of AD[x]) { const s = e[0], y = e[2];
           if ((sSeg && s === sSeg[0]) || (tSeg && s === tSeg[0])) continue;
@@ -274,9 +287,11 @@ function create(D) {
               l++; a0 = p.m0; a1 = p.m1; } if (l > maxLegs) continue;
             const nm = mins + p.mins; if (nm + (l - 1) * c.xmin + base > c.win) continue;
             const ci = cls[s], c0 = ci >= 0 && ci < 26 ? k0 | (1 << ci) : k0, c1 = ci >= 26 ? k1 | (1 << (ci - 26)) : k1;
+            const allStop = !(p.m0 & sk0[y]) && !(p.m1 & sk1[y]); // この線路の列車はみな y に停まる
+            if (allStop && stopV[y] && !(y === T && loop)) continue; // 停まる駅は1回だけ
             stack.push([s, e[1] > 0 ? 0 : G[s].n, e[1] > 0 ? G[s].n : 0, k]); used[s * 16 + k] = 1;
             if (y === T) record(nk, nm, l, sc + p.sc, reg | p.reg, c0, c1, null);
-            dfsT(y, nk, nm, l, a0, a1, sc + p.sc, reg | p.reg, c0, c1);
+            if (!(y === T && allStop)) { if (allStop) stopV[y]++; dfsT(y, nk, nm, l, a0, a1, sc + p.sc, reg | p.reg, c0, c1); if (allStop) stopV[y]--; } // 到着駅は停まらずに通るときだけ先へ
             used[s * 16 + k] = 0; stack.pop(); } }
       }
       const PASS = 6; let seed = 12345; const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x80000000; };
