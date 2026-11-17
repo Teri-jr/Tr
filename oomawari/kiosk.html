@@ -60,7 +60,7 @@ button{font-family:inherit;cursor:pointer}
 
 <sc-if value="{{s2}}">
 <div style="flex-grow: 1; padding: 30px 64px 0; display: flex; flex-direction: column; gap: 10px">
-<div style="height: 80px; border: 2px solid #9A9A9A; background: #FFFFFF; display: flex"><span style="width: 196px; flex-shrink: 0; padding: 0 0 6px 8px; box-sizing: border-box; background: #EDEDED; font-size: 32px; display: flex; align-items: flex-end">出発駅</span><span style="flex-grow: 1; padding-left: 40px; display: flex; flex-direction: column; justify-content: center"><span style="font-size: 22px; color: #0A6A0A; padding-left: 30px">（当駅）</span><span style="font-size: 32px; font-weight: 700; color: #0A6A0A">{{here}}</span></span><span style="width: 166px; flex-shrink: 0; border-left: 2px solid #9A9A9A; background: #DCDCDC; display: flex; align-items: center; justify-content: center"></span></div>
+<div style="height: 80px; border: 2px solid #9A9A9A; background: #FFFFFF; display: flex"><span style="width: 196px; flex-shrink: 0; padding: 0 0 6px 8px; box-sizing: border-box; background: #EDEDED; font-size: 32px; display: flex; align-items: flex-end">出発駅</span><span style="flex-grow: 1; padding-left: 40px; display: flex; flex-direction: column; justify-content: center"><span style="font-size: 22px; color: #0A6A0A; padding-left: 30px">（当駅）</span><span style="font-size: 32px; font-weight: 700; color: #0A6A0A">{{here}}</span></span><span style="width: 166px; flex-shrink: 0; border-left: 2px solid #9A9A9A; background: #DCDCDC; display: flex; align-items: center; justify-content: center"><button type="button" sc-camel-on-click="{{openFrom}}" style="width: 128px; height: 62px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 32px">変 更</button></span></div>
 <sc-if value="{{toUnset}}"><div style="height: 80px; border: 2px solid #9A9A9A; background: #FFFFFF; display: flex"><span style="width: 196px; flex-shrink: 0; padding: 0 0 6px 8px; box-sizing: border-box; background: #EDEDED; font-size: 32px; display: flex; align-items: flex-end">到着駅</span><span style="flex-grow: 1; padding-left: 40px; display: flex; flex-direction: column; justify-content: center"><span style="font-size: 46px; color: #1450E0; display: flex; align-items: center; gap: 20px">到着駅を指定してください<span aria-hidden="true" style="font-size: 36px; letter-spacing: -0.3em">▶▶▶</span></span></span><span style="width: 166px; flex-shrink: 0; border-left: 2px solid #9A9A9A; background: #DCDCDC; display: flex; align-items: center; justify-content: center"><button type="button" sc-camel-on-click="{{openKana}}" style="width: 128px; height: 62px; background: linear-gradient(#55A8FF 0%, #1170F0 50%, #0058E0 52%, #0044B8 100%); border: 2px solid #001E60; border-radius: 10px; color: #FFFFFF; box-shadow: 0 0 0 4px #FFFFFF, 0 0 0 9px #FF1010; font-size: 32px">入 力</button></span></div></sc-if>
 <sc-if value="{{toSet}}"><div style="height: 80px; border: 2px solid #9A9A9A; background: #FFFFFF; display: flex"><span style="width: 196px; flex-shrink: 0; padding: 0 0 6px 8px; box-sizing: border-box; background: #EDEDED; font-size: 32px; display: flex; align-items: flex-end">到着駅</span><span style="flex-grow: 1; padding-left: 40px; display: flex; flex-direction: column; justify-content: center"><span style="font-size: 36px; font-weight: 700; color: #0A6A0A">{{toName}}</span></span><span style="width: 166px; flex-shrink: 0; border-left: 2px solid #9A9A9A; background: #DCDCDC; display: flex; align-items: center; justify-content: center"><button type="button" sc-camel-on-click="{{openKana}}" style="width: 128px; height: 62px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 32px">変 更</button></span></div></sc-if>
 <div style="height: 80px; border: 2px solid #9A9A9A; background: #FFFFFF; display: flex"><span style="width: 196px; flex-shrink: 0; padding: 0 0 6px 8px; box-sizing: border-box; background: #EDEDED; font-size: 32px; display: flex; align-items: flex-end">利用日時</span><span style="flex-grow: 1; padding-left: 40px; display: flex; flex-direction: column; justify-content: center"><span style="display: flex; align-items: baseline; gap: 40px"><span style="font-size: 32px; font-weight: 700; color: #0A6A0A">{{dateW}}</span><span style="font-size: 32px; font-weight: 700; color: #0A6A0A">{{timeLabel}}</span><span style="display: flex; gap: 6px"><span style="padding: 2px 10px; border: 2px solid; border-radius: 12px; font-size: 26px; font-weight: 700; {{depStyle}}">出発</span><span style="padding: 2px 10px; border: 2px solid; border-radius: 12px; font-size: 26px; font-weight: 700; {{arrStyle}}">到着</span></span></span></span><span style="width: 166px; flex-shrink: 0; border-left: 2px solid #9A9A9A; background: #DCDCDC; display: flex; align-items: center; justify-content: center"><button type="button" sc-camel-on-click="{{openTime}}" style="width: 128px; height: 62px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 32px">変 更</button></span></div>
@@ -247,8 +247,8 @@ button{font-family:inherit;cursor:pointer}
 
 <sc-if value="{{mKana}}">
 <div style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; z-index: 50; background: rgba(16,16,16,0.72); display: flex; align-items: center; justify-content: center">
-<div role="dialog" aria-label="到着駅名（目的地）&lt;span style=" font-weight:="" 400;="" font-size:="" 34px"="">　を入力してください" style="position: relative; z-index: 1; width: 1170px; height: 910px; box-sizing: border-box; border: 6px solid #33FF00; border-radius: 10px; background-color: #FFFFFF; opacity: 1; display: flex; flex-direction: column; overflow: hidden"&gt;
-<div style="height: 100px; flex-shrink: 0; padding: 0 16px; background: #DCDCDC; display: flex; align-items: center; font-size: 40px; font-weight: 700">到着駅名（目的地）<span style="font-weight: 400; font-size: 34px">　を入力してください</span></div>
+<div role="dialog" aria-label="駅名&lt;span style=" font-weight:="" 400;="" font-size:="" 34px"="">　を入力してください" style="position: relative; z-index: 1; width: 1170px; height: 910px; box-sizing: border-box; border: 6px solid #33FF00; border-radius: 10px; background-color: #FFFFFF; opacity: 1; display: flex; flex-direction: column; overflow: hidden"&gt;
+<div style="height: 100px; flex-shrink: 0; padding: 0 16px; background: #DCDCDC; display: flex; align-items: center; font-size: 40px; font-weight: 700">{{kanaTitle}}<span style="font-weight: 400; font-size: 34px">　を入力してください</span></div>
 <div style="flex-grow: 1; min-height: 0; background: #FFFFFF; display: flex; flex-direction: column">
 <div style="margin: 40px 10px 0; height: 100px; padding: 0 16px; background: #4A6A6A; display: flex; align-items: center; gap: 24px">
 <span style="font-size: 18px; line-height: 1.5; color: #FFFFFF">入力例：東京　→とうきよう<br>　　　　原宿　→はらしゆく</span>
@@ -278,8 +278,8 @@ button{font-family:inherit;cursor:pointer}
 </sc-if>
 <sc-if value="{{mCand}}">
 <div style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; z-index: 50; background: rgba(16,16,16,0.72); display: flex; align-items: center; justify-content: center">
-<div role="dialog" aria-label="到着駅（目的地）&lt;span style=" font-weight:="" 400;="" font-size:="" 34px"="">をお選びください" style="position: relative; z-index: 1; width: 1170px; height: 910px; box-sizing: border-box; border: 6px solid #33FF00; border-radius: 10px; background-color: #FFFFFF; opacity: 1; display: flex; flex-direction: column; overflow: hidden"&gt;
-<div style="height: 100px; flex-shrink: 0; padding: 0 16px; background: #DCDCDC; display: flex; align-items: center; font-size: 40px; font-weight: 700">到着駅（目的地）<span style="font-weight: 400; font-size: 34px">をお選びください</span></div>
+<div role="dialog" aria-label="駅&lt;span style=" font-weight:="" 400;="" font-size:="" 34px"="">をお選びください" style="position: relative; z-index: 1; width: 1170px; height: 910px; box-sizing: border-box; border: 6px solid #33FF00; border-radius: 10px; background-color: #FFFFFF; opacity: 1; display: flex; flex-direction: column; overflow: hidden"&gt;
+<div style="height: 100px; flex-shrink: 0; padding: 0 16px; background: #DCDCDC; display: flex; align-items: center; font-size: 40px; font-weight: 700">{{candTitle}}<span style="font-weight: 400; font-size: 34px">をお選びください</span></div>
 <div style="flex-grow: 1; min-height: 0; background: #FFFFFF; display: flex; flex-direction: column">
 <p style="margin: 6px 36px 0; font-size: 19px; line-height: 1.5; color: #E00000">・駅名の入力を間違えた場合には「入力しなおす」を押してください。<br>・ご希望の駅がない場合には、アプリの「到着駅をえらぶ」でおさがしください。</p>
 <div style="margin: 36px 90px 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 36px">
@@ -337,8 +337,8 @@ button{font-family:inherit;cursor:pointer}
 </sc-if>
 </div>
 </template>
-<script src="data.js?v=1.2.0"></script>
-<script src="engine.js?v=1.2.0"></script>
+<script src="data.js?v=1.2.1"></script>
+<script src="engine.js?v=1.2.1"></script>
 <script>
 'use strict';
 /* ===== ひな形を画面にする小さなしくみ ===== */
@@ -399,7 +399,9 @@ const NOW = new Date(), MD = (NOW.getMonth() + 1) + '月' + NOW.getDate() + '日
 const load = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } };
 const KDEF = { from: '横浜', start: '07:00', end: '20:00', len: 2, xfer: 8, xmin: 15, meal: true, rare: true, mustLine: [], noLine: [], mustSt: [], noSt: [], prev: 0 };
 const APPC = Object.assign({}, KDEF, load('oomawari.cond', {}));
-const HERE = E.has(APPC.from) ? APPC.from : '横浜';
+// 当駅。券売機で「変更」したらその駅を覚える(アプリの出発駅は変えない)
+const K0 = load('oomawari.kioskHere', null);
+let HERE = E.has(K0) ? K0 : E.has(APPC.from) ? APPC.from : '横浜';
 const RIDDEN = load('oomawari.ridden', []);
 const pad2 = (n) => String(n).padStart(2, '0');
 const hmOf = (t) => { const m = /^(\d\d):(\d\d)$/.exec(t || ''); return m ? +m[1] * 60 + +m[2] : NaN; };
@@ -407,8 +409,14 @@ const hmTxt = (m) => pad2(Math.floor(m / 60)) + ':' + pad2(m % 60);
 // よみの小さい字を大きい字にそろえる(券売機のかなボタンには小さい字がない)
 const BIG = { 'ぁ': 'あ', 'ぃ': 'い', 'ぅ': 'う', 'ぇ': 'え', 'ぉ': 'お', 'っ': 'つ', 'ゃ': 'や', 'ゅ': 'ゆ', 'ょ': 'よ', 'ゎ': 'わ' };
 const bigKana = (y) => String(y || '').replace(/[ぁぃぅぇぉっゃゅょゎ]/g, (c) => BIG[c]);
-const ALL_ST = E.stations.filter((x) => x.n !== HERE).map((x) => ({ n: x.n, y: bigKana(x.y) }));
-const OO_ST = E.dests(HERE, false).map((x) => ({ n: x.n, y: bigKana(x.y), fare: x.fare }));
+const EVERY = E.stations.map((x) => ({ n: x.n, y: bigKana(x.y) }));
+let ALL_ST, OO_ST;
+function setHere(n) {
+  HERE = n; try { localStorage.setItem('oomawari.kioskHere', JSON.stringify(n)); } catch (e) {}
+  ALL_ST = EVERY.filter((x) => x.n !== HERE);
+  OO_ST = E.dests(HERE, false).map((x) => ({ n: x.n, y: bigKana(x.y), fare: x.fare }));
+}
+setHere(HERE);
 const REGS = E.data.regions;
 const GREEN = ['東海道線', '横須賀線', '湘南新宿ライン', '宇都宮線', '高崎線', '常磐線', '総武線快速']; // 普通列車グリーン車のある系統
 const kmTxt = (v) => String(Math.round(v * 10) / 10);
@@ -457,9 +465,10 @@ class Component extends DCLogic {
     }));
     const isN = s.mode === 'normal';
     // 大回りは運賃のわかる駅(いまは10kmまで)だけ。ふつうの経路はどの駅でも
-    const pool = isN ? ALL_ST : OO_ST;
+    const forFrom = s.kmode === 'from';
+    const pool = forFrom ? EVERY : isN ? ALL_ST : OO_ST;
     const hits = s.kana ? pool.filter((x) => x.y.startsWith(s.kana)) : [];
-    const cands = hits.slice(0, 9).map((x) => ({ name: x.n, pick: () => set({ to: x.n, modal: null, kana: '' }) }));
+    const cands = hits.slice(0, 9).map((x) => ({ name: x.n, pick: () => { if (forFrom) { setHere(x.n); set({ to: null, route: null, modal: null, kana: '', kmode: 'to' }); } else set({ to: x.n, modal: null, kana: '' }); } }));
     const half = (n) => Math.floor(n / 2 / 10) * 10;
     const DIRS = ['おまかせ'].concat(REGS.map((g) => g + '方面'));
     const LENS = ['〜100km', '〜300km', '300km〜'];
@@ -607,7 +616,8 @@ class Component extends DCLogic {
       buy0: () => set({ step: 1 }),
       search0: () => set({ step: 2, mode: 'oo', to: null, route: null }), normal0: () => set({ step: 2, mode: 'normal', to: null, route: null }), saved0: () => set({ step: 3, mode: 'saved', to: null, route: null }),
       showCond: !isN,
-      openKana: () => set({ modal: 'kana', kana: '' }), fix: () => set({ kana: s.kana.slice(0, -1) }),
+      openKana: () => set({ modal: 'kana', kana: '', kmode: 'to' }), openFrom: () => set({ modal: 'kana', kana: '', kmode: 'from' }),
+      kanaTitle: forFrom ? '出発駅名（当駅）' : '到着駅名（目的地）', candTitle: forFrom ? '出発駅（当駅）' : '到着駅（目的地）', fix: () => set({ kana: s.kana.slice(0, -1) }),
       show: () => { if (hits.length) set({ modal: 'cand' }); }, redo: () => set({ modal: 'kana', kana: '' }),
       closeModal: () => set({ modal: null }), openTime: () => set({ modal: 'time' }),
       openPpl: () => set({ modal: 'ppl' }), openCond: () => set({ modal: 'cond' }), openSum: () => set({ modal: 'sum' }),
