@@ -1,0 +1,722 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="大回り">
+<meta name="theme-color" content="#F6F7F5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#101214" media="(prefers-color-scheme: dark)">
+<title>大回りジェネレータ</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap">
+<style>
+/* 大回りジェネレータ: 1ファイル完結。画面は下の JS が #app に描く。
+   幅 760px 未満はスマホの画面、760px 以上は上にナビが付き、検索結果とルートを横に並べる(1200px 以上は3列)。 */
+*{box-sizing:border-box}
+:root{--bg:#F6F7F5;--sf:#FFFFFF;--tx:#15181C;--sub:#5C636B;--bd:#DDE0DC;--ink:#15181C;--it:#FFFFFF;--tk:#E4EFE2;--tkt:#1F5A33;--wn:#A84B06;--ok:#1B7A45;
+  --jp:'Zen Kaku Gothic New','Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;--num:Barlow,'Helvetica Neue',Arial,sans-serif}
+@media (prefers-color-scheme:dark){:root{--bg:#101214;--sf:#181B1F;--tx:#F1F3F1;--sub:#A4ABB3;--bd:#2C3136;--ink:#F1F3F1;--it:#101214;--tk:#1D2A20;--tkt:#A9DDB6;--wn:#F2B25C;--ok:#7FD6A0}}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:var(--jp);line-height:1.5;-webkit-tap-highlight-color:transparent}
+a{color:inherit;text-decoration:none}
+button,input{font-family:inherit}
+button{cursor:pointer;margin:0}
+h1,h2,p,ol,ul{margin:0;padding:0}
+ol,ul{list-style:none}
+[hidden]{display:none!important}
+.n{font-family:var(--num)}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+:focus-visible{outline:2px solid var(--tkt);outline-offset:2px}
+
+.scr{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom)}
+.wide .scr{min-height:0}
+.col{width:100%;max-width:480px;margin:0 auto;flex-grow:1;display:flex;flex-direction:column}
+.wide .col{padding-top:16px;min-height:calc(100vh - 57px)}
+.grow{flex-grow:1}
+
+/* 上の帯 */
+.hd{padding:10px 12px 0;display:flex;align-items:center;justify-content:space-between;min-height:54px}
+.hd.pad{padding:10px 24px 0}
+.hd strong{font-size:17px;font-weight:900;letter-spacing:.04em}
+.back{min-height:44px;padding:0 12px;display:flex;align-items:center;gap:4px;font-size:14px;font-weight:700;border:0;background:none;color:var(--tx)}
+.hl{min-height:44px;padding:0 12px;display:flex;align-items:center;font-size:13px;font-weight:700;color:var(--sub);border:0;background:none}
+.hd.pad .hl{padding:0}
+.icon-b{width:44px;height:44px;border:0;background:transparent;color:var(--tx);display:flex;align-items:center;justify-content:center}
+.pc-h{border-bottom:1px solid var(--bd);padding:6px 32px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 32px}
+.pc-h strong{font-size:18px;font-weight:900;letter-spacing:.04em}
+.pc-h nav{display:flex;flex-wrap:wrap;gap:4px}
+.pc-h nav a{min-height:44px;padding:0 14px;border-radius:999px;color:var(--sub);font-size:13px;font-weight:700;display:flex;align-items:center}
+.pc-h nav a[aria-current]{background:var(--ink);color:var(--it)}
+
+/* きっぷ */
+.tkw{container-type:inline-size}
+.ticket{--u:1px;position:relative;overflow:hidden;aspect-ratio:1.5;padding:calc(14*var(--u)) calc(22*var(--u)) calc(12*var(--u));border-radius:4px;background-color:#CDEDE2;
+  background-image:radial-gradient(circle,rgba(255,255,255,0) 4px,rgba(255,255,255,.6) 4px,rgba(255,255,255,.6) 5px,rgba(255,255,255,0) 5px),radial-gradient(circle,rgba(255,255,255,0) 8px,rgba(255,255,255,.45) 8px,rgba(255,255,255,.45) 9px,rgba(255,255,255,0) 9px);
+  background-size:22px 22px;color:#3A2230;display:flex;flex-direction:column;box-shadow:0 1px 3px rgba(0,0,0,.2);font-weight:500;width:100%;border:0;text-align:left;font-family:inherit}
+@supports (width:1cqw){.ticket{--u:calc(100cqw / 342)}}
+.ticket>*{position:relative}
+.ticket .band{position:absolute;left:0;right:0;top:60%;height:15%;background:rgba(70,200,170,.3)}
+.ticket .t1{align-self:center;padding:0 2px 2px .6em;border-bottom:2px solid #3A2230;font-size:calc(15*var(--u));letter-spacing:.6em}
+.ticket .t2{margin-top:calc(12*var(--u));display:flex;align-items:center;justify-content:space-between;font-size:calc(30*var(--u));line-height:1.3}
+.ticket .t2 svg{width:calc(26*var(--u));height:calc(14*var(--u));flex-shrink:0}
+.ticket .t3{font-size:calc(12*var(--u));letter-spacing:.08em}
+.ticket .t4{display:flex;align-items:baseline;justify-content:space-between;font-size:calc(13*var(--u));line-height:1.3}
+.ticket .t4 b{font-weight:500;font-size:calc(21*var(--u))}
+.ticket .t4 .yen{font-size:calc(22*var(--u));letter-spacing:.04em}
+.ticket .t5{padding-left:calc(22*var(--u));font-size:calc(13*var(--u));letter-spacing:.08em}
+.ticket .t6{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;font-size:calc(11*var(--u));line-height:1.35;letter-spacing:.04em}
+.ticket .t6 b{font-weight:500;font-size:calc(14*var(--u))}
+
+/* 使える時間 */
+.lab{font-size:12px;font-weight:700;color:var(--sub)}
+.timeR{display:flex;align-items:baseline;gap:10px}
+.timeB{position:relative;min-height:52px;padding:0;border:none;border-bottom:2px solid var(--tx);background:transparent;color:var(--tx);font-family:var(--num);font-size:40px;font-weight:600;line-height:1.1}
+.timeB input{position:absolute;inset:0;width:100%;height:100%;opacity:0;border:0;padding:0;font-size:16px}
+.timeR span{font-size:13px;font-weight:700}
+.timeR .dur{margin-left:auto;color:var(--sub)}
+
+/* 方面 */
+.seg{display:flex;border:1px solid var(--bd);border-radius:10px;padding:2px;gap:2px}
+.seg button{min-height:40px;padding:0 12px;border:none;border-radius:8px;background:transparent;color:var(--sub);font-size:13px;font-weight:700}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--it)}
+.seg.big{border-radius:12px;padding:3px;gap:3px}
+.seg.big button{flex:1 1 auto;min-height:44px;border-radius:9px;padding:0 4px}
+.map{position:relative;width:100%;aspect-ratio:342/300}
+.map svg{position:absolute;left:0;top:0;width:100%;height:100%}
+.chip{position:absolute;height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font-size:13px;font-weight:700;white-space:nowrap}
+.chip.want{border-color:var(--ink);background:var(--ink);color:var(--it)}
+.chip.avoid{border:1px dashed var(--sub);color:var(--sub);text-decoration:line-through}
+.map .here{position:absolute;font-size:13px;font-weight:900}
+.rowlink{min-height:60px;border-top:2px solid var(--tx);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.rowlink>span:first-child{display:flex;flex-direction:column;line-height:1.4;min-width:0}
+.rowlink strong{font-size:15px}
+.rowlink small{font-size:12px;color:var(--sub)}
+.rowlink .ch{font-size:18px;color:var(--sub)}
+.cta{height:56px;border-radius:14px;border:0;background:var(--ink);color:var(--it);font-size:16px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:8px;width:100%}
+.cta .n{font-size:22px;font-weight:700}
+.btn2{height:56px;border:1px solid var(--bd);border-radius:14px;background:transparent;color:var(--tx);font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.foot{padding:16px 24px 24px}
+.note{font-size:12px;color:var(--sub)}
+
+/* PCの条件画面 */
+.pc-cond{max-width:1120px;margin:0 auto;padding:40px 32px 48px;display:flex;flex-wrap:wrap;gap:40px 64px}
+.pc-cond .left{flex:1 1 360px;max-width:420px;display:flex;flex-direction:column}
+.pc-cond .right{flex:999 1 480px;min-width:0;display:flex;flex-direction:column;gap:14px}
+.pc-cond .map{max-width:560px;margin:0 auto;aspect-ratio:560/491}
+.wide .pc-cond .chip{height:44px;padding:0 18px;font-size:15px}
+.wide .pc-cond .seg button{min-height:44px;padding:0 16px;font-size:14px}
+.wide .pc-cond .here{font-size:15px}
+.wide .pc-cond .cta{height:60px;font-size:17px}
+.wide .pc-cond .cta .n{font-size:24px}
+
+/* 検索結果 */
+.sum{padding:12px 16px;background:var(--tk);border-radius:10px;display:flex;align-items:center;gap:12px}
+.sum>span:first-child{flex-grow:1;display:flex;flex-direction:column;line-height:1.4;min-width:0}
+.sum strong{font-size:17px;font-weight:900}
+.sum small{font-size:12px;font-weight:500;color:var(--tkt)}
+.sum .chg{font-size:13px;font-weight:700;color:var(--tkt);flex-shrink:0}
+.lh{display:flex;align-items:baseline;justify-content:space-between;padding-bottom:6px;border-bottom:2px solid var(--tx)}
+.lh h1,.lh h2{font-size:15px;font-weight:900}
+.lh button{min-height:44px;padding:0;border:none;background:transparent;color:var(--sub);font-size:12px;font-weight:700}
+.card{padding:16px 0;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:14px}
+.card svg{flex-shrink:0}
+.card>span{flex-grow:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+.card .tag{font-size:11px;font-weight:700;color:var(--ok)}
+.card .tag.t{color:var(--tkt)}
+.card .km{display:flex;align-items:baseline;gap:4px}
+.card .km b{font-family:var(--num);font-size:30px;font-weight:700;line-height:1.1}
+.card .km i{font-style:normal;font-size:12px;font-weight:700}
+.card .meta{font-size:12px;font-weight:500;color:var(--sub)}
+.card .via{font-size:13px;font-weight:500}
+.wide .card[aria-current]{margin:0 -12px;padding:16px 12px;border-radius:10px;background:var(--sf)}
+.more{padding:18px 0 0;display:flex;flex-direction:column}
+.more button{min-height:48px;border:0;border-bottom:1px solid var(--bd);background:none;color:var(--tx);font-size:14px;font-weight:500;display:flex;align-items:center;justify-content:space-between;padding:0;text-align:left}
+.more button:last-child{border-bottom:0}
+.more button b{font-weight:700;flex-shrink:0}
+.empty{padding:28px 0 8px;font-size:14px;font-weight:500;color:var(--sub)}
+
+/* ルート */
+.okline{font-size:13px;font-weight:700;color:var(--ok);display:flex;align-items:center;gap:6px}
+.rt-h1{font-size:24px;font-weight:900;line-height:1.35}
+.rt-km{margin:4px 0 0;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.rt-km b{font-family:var(--num);font-size:44px;font-weight:700;line-height:1}
+.rt-km i{font-style:normal;font-size:14px;font-weight:900}
+.rt-km small{margin-left:8px;font-size:12px;font-weight:500;color:var(--sub)}
+.rt-meta{font-size:13px;font-weight:500;color:var(--sub)}
+.rmap{display:block;width:100%;height:auto}
+.rmap text{font-weight:700;fill:var(--tx);stroke:none}
+.rmap text.e{font-weight:900}
+.itin{border-top:2px solid var(--tx);display:flex;flex-direction:column}
+.it-h{display:flex;gap:10px;padding:8px 0 2px;font-size:11px;font-weight:700;color:var(--sub)}
+.it-h>span:nth-child(1){width:44px;text-align:right}
+.it-h>span:nth-child(2){width:14px}
+.it-h>span:nth-child(3){flex-grow:1;display:flex;justify-content:space-between}
+.it-r{display:flex;gap:10px;min-height:44px}
+.it-r.l{min-height:40px}
+.it-r.l.w{min-height:56px}
+.it-km{width:44px;flex-shrink:0;align-self:center;text-align:right;font-family:var(--num);font-size:18px;font-weight:700}
+.it-rail{position:relative;width:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.it-rail i{position:absolute;left:4px;width:6px;height:50%}
+.it-rail i.u{top:0}.it-rail i.d{bottom:0}
+.it-rail b{position:relative;width:6px;height:6px;border-radius:999px;background:var(--bg);border:3px solid var(--tx);box-sizing:content-box}
+.it-rail b.s{width:14px;height:14px;background:var(--tx);border:0}
+.it-rail b.g{border-width:4px}
+.it-r.l .it-rail{align-items:stretch}
+.it-r.l .it-rail i{position:static;height:auto}
+.it-st{flex-grow:1;align-self:center;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.it-st strong{font-size:17px;font-weight:700}
+.it-st strong.e{font-weight:900}
+.it-st span{font-size:12px;color:var(--sub)}
+.it-st span.k{font-size:11px;font-weight:700;color:var(--tkt)}
+.it-ln{flex-grow:1;align-self:center;display:flex;flex-direction:column;font-size:13px}
+.it-ln>span:first-child{display:flex;justify-content:space-between;gap:8px}
+.it-ln .m{color:var(--sub);flex-shrink:0}
+.it-ln .w{font-size:12px;font-weight:700;color:var(--wn)}
+.it-ln .t{font-size:12px;font-weight:700;color:var(--tkt);padding:2px 0 6px}
+.it-r.l.tb{min-height:0}
+.it-ln>span:first-child{flex-wrap:wrap}
+.it-ln .m{margin-left:auto}
+.tt.rode{width:100%;border:0;border-bottom:1px solid var(--bd);background:none;color:var(--tx);padding:0;text-align:left}
+.tt.rode span{font-size:12px;color:var(--sub)}
+.tt{min-height:48px;border-top:1px solid var(--bd);border-bottom:1px solid var(--bd);font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.sq{width:56px;height:56px;flex-shrink:0;border:1px solid var(--bd);border-radius:14px;background:transparent;color:var(--tx);display:flex;align-items:center;justify-content:center}
+.sq[aria-pressed=true] svg{fill:currentColor}
+
+/* 検索結果とルートを並べる(タブレット・PC) */
+.res{display:flex;align-items:stretch;min-height:calc(100vh - 57px)}
+.res .ls{flex:0 0 320px;padding:16px 24px 32px;border-right:1px solid var(--bd);display:flex;flex-direction:column}
+.res .mn{flex:1 1 0;min-width:0;padding:28px 36px 40px;display:flex;flex-direction:column}
+.res .rs{flex:0 0 340px;padding:28px 28px 32px;border-left:1px solid var(--bd);display:flex;flex-direction:column}
+.w3 .res .ls{flex-basis:340px;padding:16px 28px 32px}
+.w3 .res .mn{padding:28px 40px 40px}
+.res .ls .back{align-self:flex-start;padding:0}
+.res .sum{flex-direction:column;align-items:stretch;gap:0;line-height:1.4}
+.res .rt-h1{margin-top:4px;font-size:28px}
+.stats{margin-top:14px;display:flex;flex-wrap:wrap;gap:12px 36px}
+.stats div{display:flex;flex-direction:column;line-height:1.3}
+.stats small{font-size:11px;font-weight:700;color:var(--sub)}
+.stats b{font-family:var(--num);font-size:30px;font-weight:700}
+.stats i{font-style:normal;font-size:13px;font-weight:900}
+.res .rmap{max-width:640px;align-self:center;margin-top:12px}
+.acts{margin-top:16px;display:flex;flex-wrap:wrap;gap:10px}
+.acts button,.acts a{height:52px;border-radius:14px;font-size:14px;font-weight:700}
+.acts button{padding:0 22px;border:1px solid var(--bd);background:transparent;color:var(--tx)}
+.acts a{flex:1 1 200px;background:var(--ink);color:var(--it);font-size:15px;font-weight:900;display:flex;align-items:center;justify-content:center}
+.sec-h{font-size:15px;font-weight:900;margin:0 0 10px}
+
+/* 乗車中 */
+.pill{margin-right:12px;padding:4px 12px;border-radius:999px;background:var(--tk);color:var(--tkt);font-size:12px;font-weight:700}
+.now{padding:10px 24px 0;display:flex;align-items:center;gap:10px}
+.bar{width:6px;height:36px;flex-shrink:0}
+.now>span:last-child,.nx>div>span:nth-child(2){display:flex;flex-direction:column;line-height:1.3}
+.now small{font-size:11px;font-weight:700;color:var(--sub)}
+.now strong{font-size:16px}
+.next{padding:26px 24px 0;display:flex;flex-direction:column}
+.next>span{font-size:14px;font-weight:700}
+.next>span strong{font-size:22px;font-weight:900}
+.next>div{display:flex;align-items:baseline;gap:8px}
+.next .ato{font-size:18px;font-weight:900}
+.next .big{font-family:var(--num);font-size:120px;font-weight:700;line-height:1}
+.next .u{font-size:22px;font-weight:900}
+.next .pace{margin-left:auto;text-align:right;line-height:1.3}
+.next .pace small{font-size:12px;color:var(--sub)}
+.next .pace b{font-size:18px;font-weight:900}
+.nx{margin:18px 24px 0;padding:16px 0;border-top:2px solid var(--tx);border-bottom:1px solid var(--bd);display:flex;flex-direction:column;gap:6px}
+.nx>div{display:flex;align-items:center;gap:10px}
+.nx .bar{height:40px}
+.nx>div>span:nth-child(2){flex-grow:1}
+.nx small{font-size:12px;font-weight:700;color:var(--sub)}
+.nx strong{font-size:18px}
+.nx .r{text-align:right;font-size:12px;font-weight:700;color:var(--sub);line-height:1.4}
+.nx p{font-size:12px;font-weight:700;color:var(--wn)}
+.prog{padding:22px 24px 0;display:flex;flex-direction:column;gap:8px}
+.prog .tr{position:relative;padding-top:14px}
+.prog .tr>div{display:flex;gap:2px;height:8px}
+.prog .tr>b{position:absolute;top:8px;width:12px;height:12px;border-radius:999px;background:var(--bg);border:4px solid var(--tx);box-sizing:content-box;transform:translateX(-50%)}
+.prog .lg{display:flex;justify-content:space-between;font-size:12px;color:var(--sub)}
+.prog .lg b{font-family:var(--num);font-size:16px;font-weight:700;color:var(--tx)}
+.after{margin:22px 24px 0;flex-grow:1;display:flex;flex-direction:column}
+.after h2{margin:0 0 4px;font-size:12px;font-weight:700;color:var(--sub)}
+.after div{min-height:44px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:12px;font-size:14px}
+.after div:last-child{border-bottom:0}
+.after strong{width:60px;flex-shrink:0}
+.after span{font-size:12px;color:var(--sub)}
+.after span.g{flex-grow:1}
+.after span b{font-family:var(--num);font-size:16px;font-weight:600;color:var(--tx)}
+.two{padding:16px 24px 24px;display:flex;gap:10px}
+.two>*{flex:1 1 0;min-width:0;padding:0;height:56px;border-radius:14px;font-size:14px}
+.two button{border:1px solid var(--bd);background:transparent;color:var(--tx);font-weight:700}
+.two a{background:var(--ink);color:var(--it);font-weight:900;display:flex;align-items:center;justify-content:center}
+
+/* 係員に見せる */
+.show{padding:20px 24px 24px;gap:18px}
+.show header{display:flex;flex-direction:column;gap:2px}
+.show header span{font-size:13px;font-weight:700;color:var(--sub)}
+.show h1{font-size:28px;font-weight:900;line-height:1.3}
+.stk{background:var(--tk);color:var(--tkt);border-radius:10px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.stk>span:first-child{display:flex;flex-direction:column;line-height:1.35}
+.stk small{font-size:11px;font-weight:700;letter-spacing:.2em}
+.stk strong{font-size:24px;font-weight:900;color:var(--tx)}
+.stk em{font-style:normal;font-size:12px;font-weight:500}
+.stk .f{text-align:center;line-height:1.1}
+.stk .f b{font-family:var(--num);font-size:32px;font-weight:700;color:var(--tx)}
+.stk .f i{font-style:normal;font-size:12px;font-weight:700}
+.sh2{padding-bottom:6px;border-bottom:2px solid var(--tx);font-size:13px;font-weight:900}
+.sec{display:flex;flex-direction:column;gap:8px}
+.via-l{display:flex;flex-direction:column;font-size:17px;font-weight:700}
+.via-l li{min-height:36px;display:flex;align-items:center;gap:10px}
+.via-l i{width:6px;height:22px;flex-shrink:0}
+.via-l i.o{height:6px;margin:0 -3px;border-radius:999px;border:3px solid var(--tx);box-sizing:content-box}
+.via-l span{font-size:12px;font-weight:500;color:var(--sub)}
+.chk{display:flex;flex-direction:column;gap:6px;font-size:15px;font-weight:700}
+.chk li{display:flex;align-items:center;gap:10px}
+.chk svg{color:var(--ok);flex-shrink:0}
+
+/* 駅をえらぶ・保存・詳細条件・使い方 */
+.pg-h1{font-size:24px;font-weight:900;line-height:1.35}
+.q{height:52px;padding:0 16px;border:none;border-bottom:2px solid var(--tx);border-radius:0;background:transparent;color:var(--tx);font-size:17px;font-weight:500;width:100%}
+.q:focus{outline:none;border-bottom-color:var(--tkt)}
+.st{min-height:57px;border:0;border-bottom:1px solid var(--bd);background:none;color:var(--tx);display:flex;align-items:center;gap:12px;width:100%;padding:0;text-align:left}
+.st>span:first-child{flex-grow:1;display:flex;flex-direction:column;line-height:1.3}
+.st strong{font-size:18px;font-weight:700}
+.st[aria-current] strong{font-weight:900}
+.st small{font-size:11px;font-weight:700;color:var(--tkt)}
+.st .d{font-family:var(--num);font-size:14px;font-weight:500;color:var(--sub)}
+.st .f{width:60px;text-align:right}
+.st .f b{font-family:var(--num);font-size:20px;font-weight:700}
+.st .f i{font-style:normal;font-size:11px;font-weight:700}
+.opt{min-height:60px;padding:6px 0;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.opt.last{border-bottom:0;min-height:56px}
+.opt>span:first-child{display:flex;flex-direction:column;line-height:1.4}
+.opt>span:first-child>span:first-child{font-size:15px;font-weight:500}
+.opt small{font-size:12px;color:var(--sub)}
+.opt small.w{font-weight:700;color:var(--wn);line-height:1.45}
+.stp{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.stp button{width:44px;height:44px;border:1px solid var(--bd);border-radius:12px;background:transparent;color:var(--tx);font-size:20px;font-weight:500}
+.stp>span{min-width:52px;text-align:center}
+.stp b{font-family:var(--num);font-size:22px;font-weight:700}
+.stp i{font-style:normal;font-size:12px;font-weight:700}
+.sw{position:relative;width:52px;height:32px;flex-shrink:0;border:none;border-radius:999px;background:var(--bd)}
+.sw span{position:absolute;left:3px;top:3px;width:26px;height:26px;border-radius:999px;background:var(--sf);transition:left .15s}
+.sw[aria-checked=true]{background:var(--ink)}
+.sw[aria-checked=true] span{left:23px;background:var(--it)}
+.h2r{margin:26px 0 0;padding-bottom:8px;border-bottom:2px solid var(--tx);font-size:13px;font-weight:900}
+.pills{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px}
+.pl{min-height:44px;padding:0 14px;border:none;border-radius:999px;background:var(--ink);color:var(--it);font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}
+.pl i{width:10px;height:10px;border-radius:999px}
+.pl.add{border:1px dashed var(--sub);background:transparent;color:var(--sub)}
+.guide p{font-size:14px;margin-top:10px}
+.guide li{font-size:14px;font-weight:500;padding:10px 0;border-bottom:1px solid var(--bd)}
+
+/* 下から出る選択リスト・お知らせ */
+.sheet{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.4);display:flex;align-items:flex-end;justify-content:center}
+.sheet>div{width:100%;max-width:480px;max-height:70vh;overflow:auto;background:var(--bg);border-radius:14px 14px 0 0;padding:18px 24px calc(18px + env(safe-area-inset-bottom))}
+.sheet h2{font-size:15px;font-weight:900;padding-bottom:8px;border-bottom:2px solid var(--tx)}
+.sheet button{min-height:52px;width:100%;border:0;border-bottom:1px solid var(--bd);background:none;color:var(--tx);font-size:16px;font-weight:700;text-align:left;padding:0;display:flex;align-items:center;gap:10px}
+.sheet button i{width:10px;height:10px;border-radius:999px}
+.sheet .x{border-bottom:0;color:var(--sub);font-size:14px;justify-content:center}
+#toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:30;max-width:calc(100% - 32px);padding:12px 18px;border-radius:14px;background:var(--ink);color:var(--it);font-size:13px;font-weight:700;display:flex;align-items:center;gap:14px;box-shadow:0 4px 16px rgba(0,0,0,.25)}
+#toast button{border:0;background:none;color:inherit;font-size:13px;font-weight:900;text-decoration:underline;padding:0}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="sheet"></div>
+<div id="toast" role="status" hidden></div>
+<script src="data.js?v=1.1.0"></script>
+<script src="engine.js?v=1.1.0"></script>
+<script>
+'use strict';
+const APP_VERSION = '1.1.0'; // 変えたら changelog.json の先頭も同じ番号にする
+
+/* ===== データ =====
+   路線データは data.js、ルートの探索は engine.js。画面はここから E.search() などを呼ぶだけ。 */
+const E = OOMAWARI;
+const NET = E.netPath; // 略図(342×300)の下地の線
+// 方面: [名前, チップの中心x,y(342×300の略図の上)]
+const REGIONS = [['群馬',58,50],['栃木',150,24],['茨城',248,52],['埼玉',106,96],['成田・銚子',268,120],['房総',214,226],['多摩',56,142],['神奈川',100,204]];
+const MAJOR = ['東京','新宿','渋谷','池袋','上野','品川','神田','秋葉原','御茶ノ水','横浜','川崎','大宮','千葉','立川','八王子'];
+const LENS = ['〜100km','〜300km','300km〜','最長'];
+const SORTS = ['長い順','短い順','乗換が少ない順'];
+
+/* ===== 保存するもの ===== */
+const LS = { cond:'oomawari.cond', saved:'oomawari.saved', ride:'oomawari.ride', ridden:'oomawari.ridden' };
+const load = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } };
+const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+const DEF = { from:'新宿', to:'代々木', start:'07:00', end:'20:00', want:[], avoid:[], len:2, xfer:8, xmin:15, meal:true, exp:false, rare:true, mustLine:[], noLine:[], mustSt:[], noSt:[], gray:false, ic:false, prev:0 };
+let cond = Object.assign({}, DEF, load(LS.cond, {}));
+let saved = load(LS.saved, []);   // [{id, at, date}]
+let ridden = load(LS.ridden, []); // 「このルートに乗った」を押したルートの id(端末の中だけに記録)
+let ride = load(LS.ride, null);   // {id, at(乗りはじめた時刻ms), to}
+const ui = { tap:'want', sort:0, q:'', pos:null, near:null };
+const setCond = (o) => { Object.assign(cond, o); fixCond(); save(LS.cond, cond); };
+// きっぷの情報 {km, fare, loop}。運賃のわからない組みあわせは null
+const tkOf = (from, to) => { const t = E.ticket(from, to, cond.ic); return t && t.fare != null && !(t.loop && cond.ic) ? t : null; };
+// 保存してあった条件が、いまの路線データで使えないときは直す
+function fixCond() {
+  if (!E.has(cond.from)) cond.from = DEF.from;
+  if (!E.has(cond.to) || !tkOf(cond.from, cond.to)) { const d = E.dests(cond.from, cond.ic)[0]; cond.to = d ? d.n : cond.from; }
+}
+fixCond();
+
+/* ===== 計算 ===== */
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = (n) => String(n).padStart(2, '0');
+const toMin = (t) => { const m = /^(\d\d):(\d\d)$/.exec(t || ''); return m ? +m[1] * 60 + +m[2] : NaN; };
+const winMin = (c) => toMin(c.end) - toMin(c.start);
+const tk = () => tkOf(cond.from, cond.to) || { km: 0, fare: 0 };
+const fare = () => tk().fare;
+const rtk = (r) => E.ticket(r.from, r.to, cond.ic) || { km: 0, fare: 0 }; // そのルートのきっぷ
+const toTxt = (from, to) => from === to ? to + '（一周）' : to;
+const PREVS = ['気にしない','なるべく避ける','できるだけ避ける'];
+// 前に乗ったルートと重なる区間
+const overlap = (r) => E.overlap(r, ridden).list;
+const rCache = new Map();
+const routeById = (id) => { if (!rCache.has(id)) rCache.set(id, E.routeById(id)); return rCache.get(id); };
+const xfers = (r) => r.stops.length - 2;
+const rideMin = (r) => r.legs.reduce((a, l) => a + l[2], 0);
+const baseMin = (r, c) => rideMin(r) + xfers(r) * c.xmin;
+const totalMin = (r, c) => baseMin(r, c) + (c.meal ? 30 : 0);
+const durTxt = (m) => '約' + (m >= 60 ? Math.floor(m / 60) + '時間' : '') + (m % 60 ? (m % 60) + '分' : '');
+const halfTxt = (m) => { const h = Math.round(m / 30) / 2; return '約' + Math.floor(h) + '時間' + (h % 1 ? '半' : ''); };
+const spanTxt = (r, c) => { const a = Math.floor(baseMin(r, c) / 60), b = Math.round(totalMin(r, c) / 60); return b > a ? '約' + a + '〜' + b + '時間' : halfTxt(totalMin(r, c)); };
+const winTxt = (c) => { const w = winMin(c); return !(w > 0) ? '－' : Math.floor(w / 60) + '時間' + (w % 60 ? (w % 60) + '分' : ''); };
+const today = () => new Date();
+const WD = '日月火水木金土';
+const dateTxt = (d) => (d.getMonth() + 1) + '月' + d.getDate() + '日（' + WD[d.getDay()] + '）';
+const ymd = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+
+// 条件に合うルートを返す(同じ条件なら前の結果を使う)
+const sCache = new Map();
+function searchRoutes(c, budget) {
+  const key = JSON.stringify([c.from, c.to, c.ic, c.start, c.end, c.len, c.xfer, c.xmin, c.meal, c.rare, c.want, c.avoid, c.mustLine, c.noLine, c.mustSt, c.noSt, c.prev, c.prev ? ridden : 0, budget || 0]);
+  if (!sCache.has(key)) { if (sCache.size > 60) sCache.clear();
+    const res = E.search(c.from, c.to, Object.assign({}, c, { win: winMin(c), budget }), ridden);
+    res.routes.forEach((r) => rCache.set(r.id, r)); sCache.set(key, res.routes); }
+  return sCache.get(key);
+}
+function sorted(rs) {
+  const a = rs.slice();
+  if (ui.sort === 1) a.sort((x, y) => x.km - y.km);
+  if (ui.sort === 2) a.sort((x, y) => xfers(x) - xfers(y) || y.km - x.km);
+  return a;
+}
+// 「条件を変えると、もっと見つかります」の候補
+function suggestions(c) {
+  const n0 = searchRoutes(c).length, out = [];
+  if (n0 >= 8) return out; // もう十分ある
+  const tryIt = (label, o) => { const g = searchRoutes(Object.assign({}, c, o), 1500000).length - n0; if (g > 0) out.push({ label, o, g }); };
+  const e = toMin(c.end);
+  if (e < 24 * 60 - 1) { const t = Math.min(e + 120, 23 * 60 + 59); tryIt(pad(Math.floor(t / 60)) + ':' + pad(t % 60) + ' までにする', { end: pad(Math.floor(t / 60)) + ':' + pad(t % 60) }); }
+  [1, 2, 0].forEach((i) => { if (i !== c.len) tryIt('長さを「' + LENS[i] + '」にする', { len: i }); });
+  if (c.xfer < 12) tryIt('乗換を' + (c.xfer + 2) + '回までにする', { xfer: c.xfer + 2 });
+  if (c.want.length || c.avoid.length) tryIt('方面をおまかせにする', { want: [], avoid: [] });
+  if (c.mustLine.length || c.noLine.length || c.mustSt.length || c.noSt.length) tryIt('路線・駅の指定を外す', { mustLine: [], noLine: [], mustSt: [], noSt: [] });
+  if (!c.rare) tryIt('本数の少ない路線も使う', { rare: true });
+  return out.sort((a, b) => b.g - a.g).slice(0, 2);
+}
+const detailTxt = (c) => [LENS[c.len], '乗換' + c.xfer + '回まで'].concat(c.mustLine.map((n) => n + 'に乗る'), [c.exp ? '特急あり' : '特急なし']).join('・') + ' ほか';
+const sumTxt = (c) => [c.start + '〜' + c.end].concat(c.want.map((g) => g + '方面'), [LENS[c.len], c.exp ? '特急あり' : '特急なし'], c.ic ? ['ICで乗る'] : []).join('・');
+
+/* ===== 部品 ===== */
+const CHECK = (s, w) => `<svg aria-hidden="true" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w || 3}" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>`;
+function ticketHtml() {
+  const d = today(), from = cond.from, to = cond.to, tot = from.length + to.length, big = tot <= 6, fs = big ? 30 : Math.max(11, Math.round(30 * 6.6 / tot));
+  const sp = (s) => { const e = !big ? .08 : s.length <= 2 ? 1 : .45; return `<span style="letter-spacing:${e}em;margin-right:-${e}em">${esc(s)}</span>`; };
+  return `<section aria-label="きっぷ" class="tkw"><a class="ticket" href="#/station" aria-label="きっぷ ${esc(from)}から${esc(to)} ${fare()}円。駅を変える">
+<span class="band" aria-hidden="true"></span><span class="t1">乗車券</span>
+<span class="t2"${big ? '' : ` style="font-size:calc(${fs}*var(--u));min-height:calc(39*var(--u))"`}>${sp(from)}<svg aria-hidden="true" viewBox="0 0 26 14" fill="currentColor"><path d="M0 5h16V0l10 7-10 7V9H0z"/></svg>${sp(to)}</span>
+<span class="t3">経由：${from === to ? '一周' : '－－－'}</span>
+<span class="t4"><span><b>${d.getMonth() + 1}</b>月<b>${d.getDate()}</b>日当日限り有効</span><span class="yen">￥${fare()}</span></span>
+<span class="t5">下車前途無効</span>
+<span class="t6"><span>${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}<br><b>00000-00</b></span><span>大回りジェネレータ発行<br>（きっぷのイメージ）</span><b>見本</b></span></a></section>`;
+}
+const timeHtml = () => `<section aria-label="使える時間" style="display:flex;flex-direction:column;gap:2px"><span class="lab">使える時間</span><div class="timeR">
+<button type="button" class="timeB" data-time="start" aria-label="出発 ${esc(cond.start)}">${esc(cond.start)}<input type="time" tabindex="-1" aria-hidden="true" value="${esc(cond.start)}" data-tin="start"></button><span>から</span>
+<button type="button" class="timeB" data-time="end" aria-label="帰着 ${esc(cond.end)}">${esc(cond.end)}<input type="time" tabindex="-1" aria-hidden="true" value="${esc(cond.end)}" data-tin="end"></button><span>まで</span>
+<span class="dur">${winTxt(cond)}</span></div></section>`;
+function mapHtml(pc) {
+  const o = E.xy(cond.from), hx = Math.max(2, Math.min(80, (o[0] + 7) / 342 * 100)), hy = Math.max(0, (o[1] - 24) / 300 * 100);
+  const circles = REGIONS.map((g) => cond.want.includes(g[0]) ? `<circle cx="${g[1]}" cy="${g[2]}" r="40" style="fill:var(--tk)"/>` : cond.avoid.includes(g[0]) ? `<circle cx="${g[1]}" cy="${g[2]}" r="26" stroke-width="${pc ? 1.2 : 1.5}" stroke-dasharray="4 5" style="stroke:var(--sub)"/>` : '').join('');
+  const chips = REGIONS.map((g) => { const w = cond.want.includes(g[0]), a = cond.avoid.includes(g[0]);
+    return `<button type="button" class="chip${w ? ' want' : a ? ' avoid' : ''}" data-region="${esc(g[0])}" aria-pressed="${w || a}" aria-label="${esc(g[0])}${w ? '（行きたい）' : a ? '（さけたい）' : ''}" style="left:${g[1] / 342 * 100}%;top:${g[2] / 300 * 100}%;transform:translate(-50%,-50%)">${w ? '✓ ' : ''}${esc(g[0])}</button>`; }).join('');
+  return `<div class="map"><svg aria-hidden="true" viewBox="0 0 342 300" fill="none" stroke-linecap="round" stroke-linejoin="round">${circles}<path d="${NET}" stroke-width="${pc ? 1.2 : 1.6}" style="stroke:var(--bd)"/><circle cx="${o[0].toFixed(1)}" cy="${o[1].toFixed(1)}" r="${pc ? 5 : 6}" style="fill:var(--tx)"/></svg>${chips}<div class="here" style="left:${hx}%;top:${hy}%">${esc(cond.from)}</div></div>`;
+}
+const tapSeg = (pc) => `<div role="group" aria-label="${pc ? 'クリック' : 'タップ'}したときの動き" class="seg"><button type="button" data-tap="want" aria-pressed="${ui.tap === 'want'}">行きたい</button><button type="button" data-tap="avoid" aria-pressed="${ui.tap === 'avoid'}">さけたい</button></div>`;
+const detailLink = () => `<a href="#/detail" class="rowlink"><span><strong>詳細条件</strong><small>${esc(detailTxt(cond))}</small></span><span class="ch">›</span></a>`;
+const cta = () => `<a href="#/search" class="cta"><span class="n">${searchRoutes(cond).length}</span>ルートを見る</a>`;
+const thumb = (r) => `<svg aria-hidden="true" width="92" height="81" viewBox="0 0 342 300" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="${NET}" stroke-width="4" style="stroke:var(--bd)"/>${r.legs.map((l) => `<path d="${l[4]}" stroke="${l[3]}" stroke-width="13"/>`).join('')}<circle cx="${E.xy(r.from)[0].toFixed(1)}" cy="${E.xy(r.from)[1].toFixed(1)}" r="13" style="fill:var(--tx)"/></svg>`;
+function cardHtml(r, tag, meta, cur, tagCls) {
+  return `<a href="#/route/${esc(r.id)}" class="card"${cur ? ' aria-current="true"' : ''}>${thumb(r)}<span>${tag ? `<span class="tag${tagCls || ''}">${esc(tag)}</span>` : ''}<span class="km"><b>${Math.round(r.km)}</b><i>km</i></span><span class="meta">${esc(meta)}</span><span class="via">${esc(r.via)}</span></span></a>`;
+}
+function listHtml(rs, curId, H) {
+  const sg = suggestions(cond);
+  return `<div class="lh"><${H}>${rs.length ? rs.length + 'つのルート' : 'ルートなし'}</${H}><button type="button" data-act="sort" aria-label="並べかえ（いまは${SORTS[ui.sort]}）">${SORTS[ui.sort]}</button></div>
+${rs.map((r) => cardHtml(r, rs.length > 1 && r === rs.slice().sort((a, b) => b.km - a.km)[0] ? 'いちばん長い' : '', halfTxt(baseMin(r, cond)) + '・乗換' + xfers(r) + '回', r.id === curId)).join('')}
+${rs.length ? '' : `<p class="empty">${winMin(cond) > 0 ? 'この条件に合うルートは見つかりませんでした。' : '使える時間が0分です。出発と帰着の時刻を見直してください。'}</p>`}
+${sg.length ? `<div class="more"><span class="lab">条件を変えると、もっと見つかります</span>${sg.map((s, i) => `<button type="button" data-sg="${i}">${esc(s.label)}<b>＋${s.g} ›</b></button>`).join('')}</div>` : ''}`;
+}
+const sumHtml = (wide) => `<a href="#/" class="sum"><span><strong>${esc(cond.from)} → ${esc(toTxt(cond.from, cond.to))}　${cond.ic ? 'IC ' : ''}<span class="n">${fare()}</span>円</strong><small>${esc(sumTxt(cond))}</small></span>${wide ? '' : '<span class="chg">変更</span>'}</a>`;
+function rmapHtml(r, wide) {
+  // 乗る範囲だけを大きく写す(k = 縮尺。線の太さや文字もそれに合わせる)
+  const names = r.stops.map((s) => s[0]), P = names.map((n) => E.xy(n)), o = E.xy(r.from), end = E.xy(r.to), all = r.hopSt.map((n) => E.xy(n)).concat(P);
+  let x0 = Math.min.apply(null, all.map((p) => p[0])), x1 = Math.max.apply(null, all.map((p) => p[0])), y0 = Math.min.apply(null, all.map((p) => p[1])), y1 = Math.max.apply(null, all.map((p) => p[1]));
+  const W = Math.max((x1 - x0) * 1.5, (y1 - y0) * 1.3 * 342 / 300, 40), H = W * 300 / 342, k = W / 342; x0 = (x0 + x1) / 2 - W / 2; y0 = (y0 + y1) / 2 - H / 2;
+  const f = (v) => v.toFixed(2);
+  const dots = names.slice(1, -1).map((n, i) => `<circle cx="${f(P[i + 1][0])}" cy="${f(P[i + 1][1])}" r="${f(3.5 * k)}"/>`).join('') + (r.loop ? '' : `<circle cx="${f(end[0])}" cy="${f(end[1])}" r="${f(4.5 * k)}" stroke-width="${f(3 * k)}"/>`);
+  // 駅名: 出発駅は左、到着駅は右、乗換駅は空いているところに置く(重なるものは出さない)
+  const boxes = [], out = [];
+  const put = (n, p, cls, sides) => { const w = (n.length * 13 + 2) * k;
+    for (const sd of sides) { const x = sd === 'l' ? p[0] - 8 * k - w : sd === 'r' ? p[0] + 8 * k : p[0] - w / 2, y = sd === 'u' ? p[1] - 9 * k : sd === 'd' ? p[1] + 19 * k : p[1] + 5 * k;
+      if (x < x0 || x + w > x0 + W || y < y0 + 12 * k || y > y0 + H - 2 * k || boxes.some((b) => x < b[0] + b[2] && b[0] < x + w && Math.abs(y - b[1]) < 14 * k)) continue;
+      boxes.push([x, y, w]); out.push(`<text x="${f(x)}" y="${f(y)}"${cls}>${esc(n)}</text>`); return; } };
+  put(r.from, o, ' class="e"', r.loop ? ['l', 'r', 'u', 'd'] : ['l', 'u', 'd', 'r']);
+  if (!r.loop) put(r.to, end, ' class="e"', ['r', 'd', 'u', 'l']);
+  names.slice(1, -1).forEach((n, i) => { if (n !== r.from && n !== r.to) put(n, P[i + 1], '', P[i + 1][0] > x0 + W * .7 ? ['l', 'r', 'u', 'd'] : ['r', 'l', 'u', 'd']); });
+  return `<svg class="rmap" role="img" aria-label="${esc(r.from + 'から' + names.slice(1, -1).join('、') + 'を回って' + r.to + 'に着く経路図')}" viewBox="${f(x0)} ${f(y0)} ${f(W)} ${f(H)}" fill="none" stroke-linecap="round" stroke-linejoin="round" style="font-size:${f(13 * k)}px"><path d="${NET}" stroke-width="${f(1.2 * k)}" style="stroke:var(--bd)"/>${r.legs.map((l) => `<path d="${l[4]}" stroke="${l[3]}" stroke-width="${f(4 * k)}"/>`).join('')}<g style="fill:var(--bg);stroke:var(--tx)" stroke-width="${f(2 * k)}">${dots}</g><circle cx="${f(o[0])}" cy="${f(o[1])}" r="${f(6 * k)}" style="fill:var(--tx)"/>${out.join('')}</svg>`;
+}
+function itinHtml(r) {
+  const last = r.stops.length - 1;
+  let h = '<div class="it-h"><span>km</span><span></span><span><span>駅・列車</span><span>乗っている時間・本数の目安</span></span></div>';
+  r.stops.forEach((s, i) => {
+    const up = i > 0 ? `<i class="u" style="background:${r.legs[i - 1][3]}"></i>` : '', dn = i < last ? `<i class="d" style="background:${r.legs[i][3]}"></i>` : '';
+    h += `<div class="it-r"><div class="it-km">${i ? s[1] : 0}</div><div class="it-rail">${up}${dn}<b${i === 0 ? ' class="s"' : i === last ? ' class="g"' : ''}></b></div><div class="it-st"><strong${i === 0 || i === last ? ' class="e"' : ''}>${esc(s[0])}</strong>${i === 0 ? '<span class="k">ここできっぷを買う</span>' : i === last ? '<span class="k">ここではじめて改札を出る</span>' : s[2] ? '<span class="k">折り返し可</span>' : '<span>乗換</span>'}</div></div>`;
+    if (s[2]) h += `<div class="it-r l tb"><div class="it-km"></div><div class="it-rail">${i < last ? `<i style="background:${r.legs[i][3]}"></i>` : ''}</div><div class="it-ln"><span class="t">${esc(s[2])}</span></div></div>`;
+    if (i < last) { const l = r.legs[i], w = l[5] && l[5].warn, tph = l[5] && l[5].tph;
+      h += `<div class="it-r l${w ? ' w' : ''}"><div class="it-km"></div><div class="it-rail"><i style="background:${l[3]}"></i></div><div class="it-ln"><span><span><strong>${esc(l[0])}</strong>　${esc(l[1])}</span><span class="m">${durTxt(l[2])}${tph ? '・毎時' + tph + '本' : ''}</span></span>${w ? `<span class="w">${esc(w)}</span>` : ''}</div></div>`; }
+  });
+  return `<section aria-label="旅程" class="itin">${h}</section>`;
+}
+const ttLink = (r) => `<a class="tt" target="_blank" rel="noopener" href="https://transit.yahoo.co.jp/search/result?from=${encodeURIComponent(r.stops[0][0])}&to=${encodeURIComponent(r.stops[1][0])}">発車時刻を乗換案内でしらべる<span>›</span></a>`;
+const isSaved = (id) => saved.some((s) => s.id === id);
+const pcHeader = (cur) => `<header class="pc-h"><strong>大回り</strong><nav>${[['#/', 'さがす', 's'], ['#/saved', '保存したルート', 'v'], ['#/guide', '使い方', 'g']].map((x) => `<a href="${x[0]}"${cur === x[2] ? ' aria-current="page"' : ''}>${x[1]}</a>`).join('')}<a href="kiosk.html">券売機モード</a></nav></header>`;
+
+/* ===== 画面 ===== */
+const V = {};
+V.cond = (wide) => wide ? pcHeader('s') + `<main class="pc-cond"><div class="left"><h1 style="margin:0 0 18px;font-size:28px;font-weight:900;line-height:1.35">きっぷ1枚で、どこまで遠回りする？</h1>${ticketHtml()}<div style="margin-top:24px">${timeHtml()}</div><div style="margin-top:24px">${detailLink()}</div><div style="margin-top:28px">${cta()}</div></div>
+<section aria-label="方面" class="right"><div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px"><h2 style="font-size:18px;font-weight:900">どっち方面へ行く？</h2>${tapSeg(true)}</div>${mapHtml(true)}<p style="font-size:13px;color:var(--sub)">えらばなければ、方面はおまかせになります。</p></section></main>`
+  : `<div class="scr"><header class="hd pad"><strong>大回り</strong><a href="#/saved" class="hl">保存したルート</a></header>
+<div style="margin:8px 24px 0">${ticketHtml()}</div><div style="margin:20px 24px 0">${timeHtml()}</div>
+<section aria-label="方面" style="margin:24px 24px 0;display:flex;flex-direction:column;gap:10px"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><h1 style="font-size:15px;font-weight:900">どっち方面へ行く？</h1>${tapSeg(false)}</div>${mapHtml(false)}<p class="note">えらばなければ、方面はおまかせになります。</p></section>
+<section aria-label="詳細条件" class="grow" style="margin:14px 24px 0;display:flex;flex-direction:column">${detailLink()}</section><div class="foot">${cta()}</div></div>`;
+
+V.search = () => { const rs = sorted(searchRoutes(cond));
+  return `<div class="scr"><header class="hd"><a href="#/" class="back">‹ 条件</a><a href="#/saved" class="hl">保存したルート</a></header><div style="margin:4px 24px 0">${sumHtml(false)}</div>
+<section aria-label="ルート一覧" class="grow" style="margin:22px 24px 0;display:flex;flex-direction:column">${listHtml(rs, null, 'h1')}</section>
+<p class="note" style="padding:14px 24px 22px;font-size:11px">営業キロ・所要時間・本数は手入力の目安です。発車時刻は当日の時刻表で確認してください。</p></div>`; };
+
+const savB = (r) => `<button type="button" class="sq" data-act="save" data-id="${esc(r.id)}" aria-label="保存" aria-pressed="${isSaved(r.id)}"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 4h12v16l-6-4-6 4z"/></svg></button>`;
+const rodeB = (r) => `<button type="button" class="tt rode" data-act="rode" data-id="${esc(r.id)}" aria-pressed="${ridden.includes(r.id)}">${ridden.includes(r.id) ? '✓ このルートに乗った' : 'このルートに乗った'}<span>${ridden.includes(r.id) ? '取り消す' : '記録する'}</span></button>`;
+const ovHtml = (r, st) => { const o = overlap(r); return o.length ? `<p class="note" style="${st}">前回と重なる区間：${esc(o.join('、'))}</p>` : ''; };
+V.route = (r) => { const rs = sorted(searchRoutes(cond)), i = rs.findIndex((x) => x.id === r.id);
+  return `<div class="scr"><header class="hd"><a href="#/search" class="back">‹ 一覧</a><span class="n" style="font-size:14px;font-weight:600;color:var(--sub)">${i >= 0 ? (i + 1) + ' / ' + rs.length : ''}</span>
+<button type="button" class="icon-b" data-act="share" data-id="${esc(r.id)}" aria-label="共有"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4M8 8l4-4 4 4M5 13v6h14v-6"/></svg></button></header>
+<section aria-label="概要" style="padding:6px 24px 0;display:flex;flex-direction:column;gap:4px"><p class="okline">${CHECK(16)}ルール上、成立しています</p><h1 class="rt-h1">${rtk(r).fare}円で、${esc(r.title)}</h1>
+<p class="rt-km"><b>${r.km}</b><i>km</i><small>きっぷの距離の${Math.round(r.km / rtk(r).km)}倍</small></p><p class="rt-meta">${spanTxt(r, cond)}　・　乗換${xfers(r)}回　・　列車${r.legs.length}本</p></section>
+<section aria-label="経路図" style="padding:10px 24px 0">${rmapHtml(r, false)}</section><div class="grow" style="margin:18px 24px 0">${itinHtml(r)}</div>
+<div style="margin:12px 24px 0">${ttLink(r)}${rodeB(r)}</div>${ovHtml(r, 'padding:14px 24px 0')}<p class="note" style="padding:14px 24px 0">時刻は載せていません。所要時間は目安です。${cond.ic ? 'ICカードは長時間の乗車で改札が閉まることがあります。止められたら有人改札で説明してください。' : '紙のきっぷで。ICカードは長時間の乗車で改札が閉まることがあります。'}</p>
+<div class="foot" style="display:flex;gap:10px">${savB(r)}<a href="#/ride" data-act="go" data-id="${esc(r.id)}" class="cta" style="flex-grow:1;width:auto">このルートで出発する</a></div></div>`; };
+
+// タブレット・PC: 左に一覧、中央にルート、(幅があれば)右に旅程
+V.result = (r, w3) => { const rs = sorted(searchRoutes(cond));
+  const it = r ? `<h2 class="sec-h">旅程</h2>${itinHtml(r)}<div style="margin-top:12px">${ttLink(r)}</div>${rodeB(r)}${ovHtml(r, 'margin-top:12px')}<p class="note" style="margin-top:12px">時刻は載せていません。所要時間は目安です。</p>` : '';
+  return pcHeader('s') + `<div class="res"><aside class="ls"><a href="#/" class="back">‹ 条件を変更</a>${sumHtml(true)}<div style="margin-top:18px">${listHtml(rs, r && r.id, 'h2')}</div>
+<p class="note" style="margin-top:auto;padding-top:24px;font-size:11px">営業キロ・所要時間・本数は手入力の目安です。発車時刻は当日の時刻表で確認してください。</p></aside>
+<main class="mn">${r ? `<p class="okline">✓ ルール上、成立しています</p><h1 class="rt-h1">${rtk(r).fare}円で、${esc(r.title)}</h1>
+<div class="stats"><div><small>距離・きっぷの${Math.round(r.km / rtk(r).km)}倍</small><span><b>${r.km}</b><i>km</i></span></div><div><small>所要時間の目安</small><span><b>${spanTxt(r, cond).replace(/時間.*/, '')}</b><i>${spanTxt(r, cond).replace(/^[^時]*/, '')}</i></span></div><div><small>乗換</small><span><b>${xfers(r)}</b><i>回</i></span></div><div><small>運賃</small><span><b>${rtk(r).fare}</b><i>円</i></span></div></div>
+${rmapHtml(r, true)}<div class="acts"><button type="button" data-act="save" data-id="${esc(r.id)}" aria-pressed="${isSaved(r.id)}">${isSaved(r.id) ? '保存済み' : '保存'}</button><button type="button" data-act="share" data-id="${esc(r.id)}">共有</button><a href="#/ride" data-act="go" data-id="${esc(r.id)}">このルートで出発する</a></div>${w3 ? '' : `<div style="margin-top:32px;display:flex;flex-direction:column">${it}</div>`}` : '<p class="empty">左の条件を変えて、ルートをさがしてください。</p>'}</main>
+${w3 && r ? `<aside class="rs">${it}</aside>` : ''}</div>`; };
+
+const qBox = (ph) => `<label for="q" class="vh">駅名でさがす</label><input id="q" class="q" type="text" placeholder="${ph}" autocomplete="off" value="${esc(ui.q)}">`;
+const qHit = (q) => { const k = q.replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 96)); return (n, y) => !q || n.includes(q) || y.startsWith(k); };
+V.station = () => { const q = ui.q.trim(), hit = qHit(q), from = cond.from;
+  const row = (n, km, f, sub, off) => `<button type="button" class="st" data-st="${esc(n)}"${n === cond.to ? ' aria-current="true"' : ''}${off ? ' disabled style="opacity:.55"' : ''}><span><strong>${esc(n === from ? 'ぐるっと一周（' + n + 'にもどる）' : n)}</strong>${off ? `<small style="color:var(--wn)">${off}</small>` : n === cond.to ? '<small>えらんでいる駅</small>' : sub ? `<small>${sub}</small>` : ''}</span><span class="d">${km}km</span><span class="f"><b>${f}</b><i>円</i></span></button>`;
+  const ds = E.dests(from, cond.ic).filter((d) => hit(d.n, d.y)), min = ds.length ? ds[0].fare : 0, a = ds.filter((d) => d.fare === min), b = ds.filter((d) => d.fare !== min);
+  const lp = E.isLoopStation(from) && !q ? E.ticket(from, from, false) : null;
+  return `<div class="scr"><div class="col"><header class="hd"><a href="#/" class="back">‹ もどる</a><a href="#/from" class="hl">出発駅を変える</a></header>
+<section style="padding:4px 24px 0;display:flex;flex-direction:column;gap:12px"><h1 class="pg-h1">${esc(from)}から、<br>どこまでのきっぷを買う？</h1>${qBox('駅名・よみがなでさがす')}</section>
+<section aria-label="近い駅" id="stl" class="grow" style="margin:22px 24px 0;display:flex;flex-direction:column">${lp ? `<h2 class="sh2" style="padding-bottom:8px">同じ駅にもどる</h2>${row(from, lp.km, lp.fare, '一周のきっぷを買う', cond.ic ? 'ICカードでは一周できません(紙のきっぷだけ)' : '')}` : ''}${a.length ? `<h2 class="sh2" style="margin-top:${lp ? 22 : 0}px;padding-bottom:8px">${min === E.data.fares[cond.ic ? 'ic' : 'paper'][0][1] ? '初乗りで行ける駅' : 'いちばん安く行ける駅'}</h2>${a.map((d) => row(d.n, d.km, d.fare)).join('')}` : ''}${b.length ? `<h2 class="sh2" style="margin-top:${a.length || lp ? 22 : 0}px;padding-bottom:8px">もう少し先</h2>${b.map((d) => row(d.n, d.km, d.fare)).join('')}` : ''}${a.length + b.length || lp ? '' : `<p class="empty">${q ? 'その名前の駅は、きっぷを買える範囲(10kmまで)に見つかりませんでした。' : 'この駅からは、まだ運賃を出せる到着駅がありません(地方交通線の運賃は準備中です)。'}</p>`}</section>
+<p class="note" style="padding:16px 24px 24px">きっぷは、出発駅から到着駅までのいちばん短い道のりの分だけ買います。いまは10kmまでの駅をえらべます。</p></div></div>`; };
+
+// 出発駅をえらぶ
+V.from = () => { const q = ui.q.trim(), hit = qHit(q);
+  const row = (n, sub) => `<button type="button" class="st" data-from="${esc(n)}"${n === cond.from ? ' aria-current="true"' : ''}><span><strong>${esc(n)}</strong>${n === cond.from ? '<small>いまの出発駅</small>' : sub ? `<small>${esc(sub)}</small>` : ''}</span></button>`;
+  const loopTxt = (n) => E.isLoopStation(n) ? '一周のきっぷも買える' : '';
+  const found = q ? E.stations.filter((x) => hit(x.n, x.y)).sort((x, y) => x.n.length - y.n.length).slice(0, 40) : [];
+  const body = q ? (found.length ? found.map((x) => row(x.n, loopTxt(x.n))).join('') : '<p class="empty">その名前の駅は見つかりませんでした。行き止まりの路線の駅は、まだ入っていません。</p>')
+    : `<button type="button" class="st" data-act="near"><span><strong>現在地の近くの駅</strong><small>位置情報を使います</small></span><span class="d">›</span></button>${ui.near ? ui.near.map((x) => row(x.n, '約' + x.km + 'km')).join('') : ''}<h2 class="sh2" style="margin-top:22px;padding-bottom:8px">主な駅</h2>${MAJOR.map((n) => row(n, loopTxt(n))).join('')}`;
+  return `<div class="scr"><div class="col"><header class="hd"><a href="#/station" class="back">‹ もどる</a></header>
+<section style="padding:4px 24px 0;display:flex;flex-direction:column;gap:12px"><h1 class="pg-h1">どの駅から<br>出発する？</h1>${qBox('駅名・よみがなでさがす')}</section>
+<section aria-label="駅" class="grow" style="margin:22px 24px 24px;display:flex;flex-direction:column">${body}</section></div></div>`; };
+
+V.saved = () => { const t = ymd(today());
+  const items = saved.map((s) => { const r = routeById(s.id); if (!r) return ''; const d = s.date ? new Date(s.date + 'T00:00:00') : null;
+    return cardHtml(r, d ? dateTxt(d) + (s.date >= t ? 'に乗る' : 'に乗った') : 'まだ日付なし', `${r.from} → ${toTxt(r.from, r.to)}・${rtk(r).fare}円・${halfTxt(baseMin(r, cond))}`, false, ' t'); }).join('');
+  return `<div class="scr"><div class="col"><header class="hd"><a href="#/" class="back">‹ さがす</a></header>
+<section class="grow" style="margin:4px 24px 0;display:flex;flex-direction:column"><h1 class="pg-h1" style="padding-bottom:12px;border-bottom:2px solid var(--tx);line-height:1.5">保存したルート</h1>${items || '<p class="empty">まだ保存したルートはありません。ルートの画面のしおりのボタンで保存できます。</p>'}
+<p class="note" style="margin-top:16px">保存したルートは、電波のない区間でも開けます。</p></section><div class="foot"><a href="#/" class="btn2">新しくさがす</a></div></div></div>`; };
+
+V.detail = () => { const sw = (k, label) => `<button type="button" class="sw" role="switch" data-sw="${k}" aria-checked="${!!cond[k]}" aria-label="${label}"><span></span></button>`;
+  const stp = (k, label, unit) => `<span class="stp"><button type="button" data-stp="${k}" data-d="-1" aria-label="${label}を減らす">−</button><span><b>${cond[k]}</b><i>${unit}</i></span><button type="button" data-stp="${k}" data-d="1" aria-label="${label}を増やす">＋</button></span>`;
+  const lineColor = (n) => { const o = E.lineOpts.find((x) => x.n === n); return o ? o.c : 'var(--sub)'; };
+  const pills = (k, add, line) => `<div class="pills">${cond[k].map((n) => `<button type="button" class="pl" data-rm="${k}" data-v="${esc(n)}" aria-label="${esc(n)}を外す">${line ? `<i style="background:${lineColor(n)}"></i>` : ''}${esc(n)}　×</button>`).join('')}<button type="button" class="pl add" data-add="${k}">＋ ${add}を追加</button></div>`;
+  return `<div class="scr"><div class="col"><header class="hd"><a href="#/" class="back">‹ 条件</a><button type="button" class="hl" data-act="reset" style="font-size:14px">リセット</button></header>
+<section class="grow" style="margin:4px 24px 0;display:flex;flex-direction:column"><h1 class="pg-h1" style="margin:0 0 18px;line-height:1.5">詳細条件</h1>
+<h2 class="h2r" style="margin-top:0">きっぷ</h2><div role="group" aria-label="きっぷの種類" class="seg big" style="margin-top:10px"><button type="button" data-ic="0" aria-pressed="${!cond.ic}">紙のきっぷ</button><button type="button" data-ic="1" aria-pressed="${!!cond.ic}">ICカード</button></div>${cond.ic ? '<p class="note" style="margin-top:8px;font-weight:700;color:var(--wn)">長時間乗ると、出るときに改札で止められることがあります。</p>' : ''}
+<h2 class="h2r">長さ</h2><div role="group" aria-label="乗る距離" class="seg big" style="margin-top:10px">${LENS.map((l, i) => `<button type="button" data-len="${i}" aria-pressed="${cond.len === i}">${l}</button>`).join('')}</div>
+<h2 class="h2r">乗換</h2>
+<div class="opt"><span><span>乗換の回数</span></span>${stp('xfer', '乗換の回数', '回まで')}</div>
+<div class="opt"><span><span>乗換1回の見込み</span><small>所要時間の目安に足します</small></span>${stp('xmin', '乗換1回の見込み', '分')}</div>
+<div class="opt last"><span><span>食事の休憩を1回入れる</span><small>30分。大きい駅の乗換にあてます</small></span>${sw('meal', '食事の休憩を1回入れる')}</div>
+<h2 class="h2r">列車</h2>
+<div class="opt" style="min-height:56px"><span><span>特急・グリーン車を使う</span><small>別料金がかかります</small></span>${sw('exp', '特急・グリーン車を使う')}</div>
+<div class="opt last"><span><span>本数の少ない路線も使う</span><small>1時間に1本以下の区間</small></span>${sw('rare', '本数の少ない路線も使う')}</div>
+<h2 class="h2r">路線・駅</h2>
+<span class="lab" style="margin-top:14px">かならず乗る路線</span>${pills('mustLine', '路線', true)}
+<span class="lab" style="margin-top:14px">乗らない路線</span>${pills('noLine', '路線', true)}
+<span class="lab" style="margin-top:14px">かならず通る駅</span>${pills('mustSt', '駅')}
+<span class="lab" style="margin-top:14px">通らない駅</span>${pills('noSt', '駅')}
+<h2 class="h2r">前に乗ったルート</h2><div role="group" aria-label="前に乗ったルート" class="seg big" style="margin-top:10px;font-size:12px;white-space:nowrap">${PREVS.map((l, i) => `<button type="button" data-prev="${i}" aria-pressed="${cond.prev === i}">${l}</button>`).join('')}</div>
+<h2 class="h2r">グレーなルート</h2>
+<div class="opt last" style="padding:8px 0"><span><span>グレーなルートも全部出す</span><small class="w">「6の字」など、係員の判断が分かれる経路です。不正乗車とみなされるおそれがあります。</small></span>${sw('gray', 'グレーなルートも全部出す')}</div>
+<p class="note">出したルートには「グレー」の印が付きます。</p></section><div class="foot" style="padding-top:20px">${cta()}</div></div></div>`; };
+
+// 乗車中: いまどこにいるか(km)を見積もる。位置情報が取れれば乗換駅どうしを結ぶ線に当てはめ、取れなければ乗りはじめてからの時間で見積もる。
+function ridePos(r) {
+  const total = r.stops[r.stops.length - 1][1];
+  if (ui.pos) { let best = null;
+    r.legs.forEach((l, i) => { const a = E.ll(r.stops[i][0]), b = E.ll(r.stops[i + 1][0]), k = Math.cos(a[0] * Math.PI / 180) * 111.3;
+      const bx = (b[1] - a[1]) * k, by = (b[0] - a[0]) * 111.3, px = (ui.pos[1] - a[1]) * k, py = (ui.pos[0] - a[0]) * 111.3;
+      const t = Math.max(0, Math.min(1, (px * bx + py * by) / (bx * bx + by * by))), d = Math.hypot(px - t * bx, py - t * by);
+      if (!best || d < best.d) best = { d, km: r.stops[i][1] + t * (r.stops[i + 1][1] - r.stops[i][1]) }; });
+    if (best && best.d < 25) return { km: best.km, gps: true }; }
+  let m = Math.max(0, (Date.now() - ride.at) / 60000), km = total;
+  for (let i = 0; i < r.legs.length; i++) { const d = r.legs[i][2];
+    if (m <= d) { km = r.stops[i][1] + m / d * (r.stops[i + 1][1] - r.stops[i][1]); break; }
+    m -= d; if (m <= cond.xmin) { km = r.stops[i + 1][1]; break; } m -= cond.xmin; }
+  return { km: Math.min(km, total), gps: false };
+}
+V.ride = () => { const r = ride && routeById(ride.id);
+  if (!r) return `<div class="scr"><div class="col"><header class="hd"><a href="#/" class="back">‹ さがす</a></header><p class="empty" style="margin:0 24px">まだ出発していません。ルートをえらんで「このルートで出発する」を押してください。</p></div></div>`;
+  const total = r.stops[r.stops.length - 1][1], p = ridePos(r), pos = p.km, done = pos >= total - .05;
+  let i = r.legs.findIndex((l, k) => pos < r.stops[k + 1][1]); if (i < 0) i = r.legs.length - 1;
+  const leg = r.legs[i], nxSt = r.stops[i + 1], rem = Math.max(0, nxSt[1] - pos), legKm = nxSt[1] - r.stops[i][1], lastLeg = i === r.legs.length - 1, nl = r.legs[i + 1];
+  const after = r.stops.slice(i + 2, i + 5).map((s, k) => { const j = i + 2 + k, to = r.legs[j]; return `<div><strong>${esc(s[0])}</strong><span class="g">${to ? esc(to[0]) + 'へ' : 'ここで改札を出る'}</span><span>あと <b>${Math.round(s[1] - pos)}</b> km</span></div>`; }).join('');
+  return `<div class="scr"><div class="col"><header class="hd"><a href="#/route/${esc(r.id)}" class="back">‹ 旅程</a><span class="pill">改札は出ない</span></header>
+<section aria-label="いまの列車" class="now"><span class="bar" style="background:${leg[3]}"></span><span><small>${done ? '乗りおわった列車' : 'いま乗っている列車'}</small><strong>${esc(leg[0])}　${esc(leg[1])}</strong></span></section>
+<section aria-label="次の乗換" class="next"><span>${lastLeg ? '到着駅' : '次の乗換'}　<strong>${esc(nxSt[0])}</strong>　まで</span><div><span class="ato">あと</span><span class="big">${Math.round(rem)}</span><span class="u">km</span><span class="pace"><small>${p.gps ? 'このペースなら' : '時間からの見積もり'}</small><br><b>${done ? '到着' : durTxt(Math.max(1, Math.round(rem / legKm * leg[2])))}</b></span></div></section>
+<section aria-label="乗換先" class="nx"><div><span class="bar" style="background:${nl ? nl[3] : 'var(--tx)'}"></span><span><small>降りたら</small><strong>${nl ? esc(nl[0]) + '　' + esc(nl[1]) : '改札を出る'}</strong></span><span class="r">${nl ? '発車時刻は<br>駅の発車標で' : 'ここではじめて<br>改札を出ます'}</span></div>${nl && nl[2] >= 60 ? `<p>この先は約${Math.round(r.stops[i + 2][1] - nxSt[1])}km。${nl[2] >= 105 ? '2時間近く' : nl[2] >= 80 ? '1時間半ほど' : '1時間ほど'}乗ります。</p>` : ''}</section>
+<section aria-label="進み具合" class="prog"><div class="tr"><div>${r.legs.map((l, k) => `<span style="flex:${r.stops[k + 1][1] - r.stops[k][1]} 1 0;background:${l[3]}${k > i ? ';opacity:.3' : ''}"></span>`).join('')}</div><b style="left:${Math.max(3, Math.min(97, pos / total * 100))}%"></b></div>
+<div class="lg"><span><b>${Math.round(pos)}</b> km 走った</span><span>残り <b>${Math.round(total - pos)}</b> km</span></div></section>
+<section aria-label="このあと" class="after">${after ? `<h2>このあとの乗換</h2>${after}` : ''}</section>
+<div class="two"><button type="button" data-act="replan">ここから組み直す</button><a href="#/show">係員に見せる</a></div></div></div>`; };
+
+V.show = () => { const r = (ride && routeById(ride.id)) || searchRoutes(cond)[0], at = ride ? new Date(ride.at) : null, d = at || today();
+  if (!r) return `<div class="scr"><div class="col"><header class="hd"><a href="#/" class="back">‹ さがす</a></header><p class="empty" style="margin:0 24px">見せるルートがありません。先にルートをえらんでください。</p></div></div>`;
+  const notes = r.stops.filter((x) => x[2]).map((x) => x[2]);
+  const rows = []; r.legs.forEach((l, i) => { const prev = rows[rows.length - 1];
+    if (prev && prev.line === l[0]) prev.mid.push(r.stops[i][0]); else rows.push({ st: r.stops[i][0], line: l[0], c: l[3], sl: l[5] && l[5].sl, mid: [] }); });
+  return `<div class="scr"><div class="col show"><header><span>係員の方へ</span><h1>大回り乗車をしています</h1></header>
+<section aria-label="乗車券" class="stk"><span><small>乗車券</small><strong>${esc(r.from)} → ${esc(toTxt(r.from, r.to))}</strong><em>${d.getMonth() + 1}月${d.getDate()}日　${esc(r.from)} ${at ? pad(at.getHours()) + ':' + pad(at.getMinutes()) : esc(cond.start)} 入場</em></span><span class="f"><b>${rtk(r).fare}</b><br><i>円</i></span></section>
+<section aria-label="経路" class="sec"><h2 class="sh2">乗車経路</h2><ol class="via-l">${rows.map((x) => `<li><i style="background:${x.c}"></i>${esc(x.st)}<span>${esc(x.sl || x.line + (x.mid.length ? `（${x.mid.join('・')} 経由）` : ''))}</span></li>`).join('')}<li><i class="o"></i>${esc(r.to)}<span>ここで出場</span></li></ol>${notes.map((t) => `<p class="note">${esc(t)}</p>`).join('')}</section>
+<section aria-label="確認" class="sec grow"><h2 class="sh2">確認</h2><ul class="chk">${['すべて東京近郊区間内', '同じ駅を2度通っていない', '途中で改札を出ていない'].map((t) => `<li>${CHECK(18)}${t}</li>`).join('')}</ul><p class="note" style="margin-top:6px">旅客営業規則 第157条第2項（大都市近郊区間内の選択乗車）</p></section>
+<a href="#/ride" class="btn2" data-act="closeShow">閉じる</a></div></div>`; };
+
+V.guide = () => `<div class="scr"><div class="col guide"><header class="hd"><a href="#/" class="back">‹ さがす</a></header><section class="grow" style="margin:4px 24px 24px;display:flex;flex-direction:column">
+<h1 class="pg-h1" style="line-height:1.5">使い方</h1><p>大回り乗車は、東京近郊区間の中なら、きっぷの区間をどんな経路で乗ってもよいという決まりを使って、いちばん安いきっぷで遠回りを楽しむ乗り方です。</p>
+<h2 class="h2r">守ること</h2><ul><li>すべて東京近郊区間の中を通る</li><li>同じ駅を2度通らない</li><li>途中で改札を出ない</li><li>紙のきっぷで乗る(ICカードは長時間の乗車で改札が閉まることがあります)</li></ul>
+<h2 class="h2r">このアプリでできること</h2><ul><li>使える時間と行きたい方面から、回れるルートをさがす</li><li>ルートを保存して、電波のない区間でも開く</li><li>乗っているあいだ、次の乗換までの距離を見る</li><li>係員の方に、経路と決まりを見せる</li></ul>
+<p class="note" style="margin-top:16px">関東の輪になっている路線だけを探します(行き止まりの路線はまだ入っていません)。営業キロ・所要時間・本数は手入力の目安です。発車時刻は当日の時刻表で確認してください。</p>
+<p class="note" style="margin-top:8px"><a href="kiosk.html" style="text-decoration:underline">券売機モード（あそび）</a>　v${APP_VERSION}</p></section></div></div>`;
+
+/* ===== 画面の切りかえ ===== */
+const app = document.getElementById('app');
+const mqW = matchMedia('(min-width:760px)'), mq3 = matchMedia('(min-width:1200px)');
+let lastHash = null, rideTimer = null, geoId = null;
+function render() {
+  const h = location.hash.replace(/^#\/?/, ''), parts = h.split('/'), wide = mqW.matches, w3 = mq3.matches;
+  let rid = parts.slice(1).join('/'); try { rid = decodeURIComponent(rid); } catch (e) {}
+  const name = parts[0] || 'cond', r = name === 'route' ? routeById(rid) : null;
+  let html;
+  if (name === 'search' || name === 'route') html = wide ? V.result(r || sorted(searchRoutes(cond))[0] || null, w3) : (r ? V.route(r) : V.search());
+  else if (name === 'cond' || !V[name]) html = V.cond(wide);
+  else html = (wide && name !== 'show' ? pcHeader(name === 'saved' ? 'v' : name === 'guide' ? 'g' : name === 'ride' ? '' : 's') : '') + V[name]();
+  document.documentElement.className = (wide ? 'wide' : '') + (w3 ? ' w3' : '');
+  const keepQ = (name === 'station' || name === 'from') && document.activeElement && document.activeElement.id === 'q';
+  app.innerHTML = html;
+  if (keepQ) { const q = document.getElementById('q'); q.focus(); q.setSelectionRange(q.value.length, q.value.length); }
+  if (lastHash !== location.hash) { scrollTo(0, 0); lastHash = location.hash; closeSheet(); }
+  if (name !== 'station' && name !== 'from') ui.q = '';
+  // 乗車中の画面だけ、位置情報を見て30秒ごとに描きなおす
+  const onRide = name === 'ride' && ride;
+  if (onRide && !rideTimer) { rideTimer = setInterval(render, 30000);
+    if (navigator.geolocation) geoId = navigator.geolocation.watchPosition((p) => { ui.pos = [p.coords.latitude, p.coords.longitude]; if (location.hash === '#/ride') render(); }, () => { ui.pos = null; }, { enableHighAccuracy: false, maximumAge: 30000 }); }
+  if (!onRide && rideTimer) { clearInterval(rideTimer); rideTimer = null; if (geoId != null) navigator.geolocation.clearWatch(geoId); geoId = null; }
+}
+addEventListener('hashchange', render);
+mqW.addEventListener('change', render); mq3.addEventListener('change', render);
+
+/* ===== 操作 ===== */
+let toastT = null;
+function toast(msg, btn, fn) {
+  const t = document.getElementById('toast'); t.textContent = msg;
+  if (btn) { const b = document.createElement('button'); b.type = 'button'; b.textContent = btn; b.onclick = fn; t.appendChild(b); }
+  t.hidden = false; clearTimeout(toastT); if (!btn) toastT = setTimeout(() => { t.hidden = true; }, 3200);
+}
+function closeSheet() { document.getElementById('sheet').innerHTML = ''; }
+function openSheet(title, opts, pick) {
+  const s = document.getElementById('sheet');
+  s.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div><h2>${esc(title)}</h2>${opts.map((o, i) => `<button type="button" data-i="${i}">${o.c ? `<i style="background:${o.c}"></i>` : ''}${esc(o.n)}</button>`).join('') || '<p class="empty">追加できるものはありません。</p>'}<button type="button" class="x">やめる</button></div></div>`;
+  s.firstChild.onclick = (e) => { const b = e.target.closest('button'); if (e.target === s.firstChild || (b && b.classList.contains('x'))) return closeSheet(); if (b) { closeSheet(); pick(opts[+b.dataset.i]); } };
+}
+const toggleIn = (arr, v) => arr.includes(v) ? arr.filter((x) => x !== v) : arr.concat(v);
+app.addEventListener('click', (e) => {
+  const b = e.target.closest('button,a'); if (!b) return; const d = b.dataset;
+  if (d.time) { const inp = b.querySelector('input'); try { inp.showPicker(); } catch (er) { inp.focus(); } return; }
+  if (d.tap) { ui.tap = d.tap; return render(); }
+  if (d.region) { const g = d.region, other = ui.tap === 'want' ? 'avoid' : 'want';
+    setCond({ [ui.tap]: toggleIn(cond[ui.tap], g), [other]: cond[other].filter((x) => x !== g) }); return render(); }
+  if (d.sg) { setCond(suggestions(cond)[+d.sg].o); if (location.hash.startsWith('#/route')) location.hash = '#/search'; else render(); return; }
+  if (d.st) { setCond({ to: d.st }); ui.q = ''; location.hash = '#/'; return; }
+  if (d.from) { if (d.from !== cond.from) { cond.to = ''; setCond({ from: d.from }); } ui.q = ''; location.hash = '#/station'; return; }
+  if (d.len) { setCond({ len: +d.len }); return render(); }
+  if (d.ic) { setCond({ ic: d.ic === '1' }); return render(); } // 一周をえらんでいてICにしたら、fixCond がいちばん近い駅に直す
+  if (d.prev) { setCond({ prev: +d.prev }); return render(); }
+  if (d.stp) { const lim = d.stp === 'xfer' ? [0, 20, 1] : [0, 60, 5]; setCond({ [d.stp]: Math.max(lim[0], Math.min(lim[1], cond[d.stp] + +d.d * lim[2])) }); return render(); }
+  if (d.sw) { setCond({ [d.sw]: !cond[d.sw] }); if (d.sw === 'exp' && cond.exp) toast('特急・グリーン車を入れた所要時間は、まだ出せません(いまは普通列車の目安です)'); if (d.sw === 'gray' && cond.gray) toast('グレーなルート(6の字など)は、まだ出しません'); return render(); }
+  if (d.rm) { setCond({ [d.rm]: cond[d.rm].filter((x) => x !== d.v) }); return render(); }
+  if (d.add) { const k = d.add, line = k === 'mustLine' || k === 'noLine', seen = new Set(), opts = [];
+    (line ? E.lineOpts : E.nodes.map((n) => ({ n }))).forEach((o) => { if (!seen.has(o.n) && !cond[k].includes(o.n) && o.n !== cond.from && o.n !== cond.to) { seen.add(o.n); opts.push(o); } });
+    return openSheet(k === 'mustLine' ? 'かならず乗る路線' : k === 'noLine' ? '乗らない路線' : k === 'mustSt' ? 'かならず通る駅' : '通らない駅', opts, (o) => { const other = { mustSt: 'noSt', noSt: 'mustSt', mustLine: 'noLine', noLine: 'mustLine' }[k];
+      setCond({ [k]: cond[k].concat(o.n), [other]: cond[other].filter((x) => x !== o.n) }); render(); }); }
+  const act = d.act; if (!act) return;
+  if (act === 'sort') { ui.sort = (ui.sort + 1) % SORTS.length; return render(); }
+  if (act === 'reset') { const keep = { to: cond.to, start: cond.start, end: cond.end, want: cond.want, avoid: cond.avoid }; setCond(Object.assign({}, DEF, keep)); return render(); }
+  if (act === 'save') { if (isSaved(d.id)) { saved = saved.filter((s) => s.id !== d.id); toast('保存をやめました'); } else { saved.unshift({ id: d.id, at: Date.now(), date: null }); toast('保存しました'); } save(LS.saved, saved); return render(); }
+  if (act === 'share') { const r = routeById(d.id), url = location.href.split('#')[0] + '#/route/' + encodeURIComponent(r.id), text = `${r.from}→${toTxt(r.from, r.to)} ${rtk(r).fare}円で${r.km}km。${r.via}`;
+    if (navigator.share) navigator.share({ title: '大回りルート', text, url }).catch(() => {}); else if (navigator.clipboard) navigator.clipboard.writeText(text + ' ' + url).then(() => toast('リンクをコピーしました'), () => toast('コピーできませんでした')); else toast('この端末では共有できません'); return; }
+  if (act === 'go') { ride = { id: d.id, at: Date.now() }; save(LS.ride, ride); ui.pos = null;
+    const s = saved.find((x) => x.id === d.id); if (s) { s.date = ymd(today()); save(LS.saved, saved); } return; }
+  if (act === 'rode') { ridden = ridden.includes(d.id) ? ridden.filter((x) => x !== d.id) : ridden.concat(d.id); save(LS.ridden, ridden); toast(ridden.includes(d.id) ? '乗ったルートとして記録しました' : '記録を取り消しました'); return render(); }
+  if (act === 'replan') return toast('ここからの組み直しは、まだ使えません');
+  if (act === 'near') { if (!navigator.geolocation) return toast('この端末では位置情報を使えません');
+    navigator.geolocation.getCurrentPosition((p) => { ui.near = E.nearest(p.coords.latitude, p.coords.longitude, 5); render(); }, () => toast('現在地を取れませんでした'), { maximumAge: 60000, timeout: 10000 }); return; }
+});
+app.addEventListener('change', (e) => { const k = e.target.dataset.tin; if (k && toMin(e.target.value) >= 0) { setCond({ [k]: e.target.value }); render(); } });
+app.addEventListener('input', (e) => { if (e.target.id === 'q') { ui.q = e.target.value; render(); } });
+addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheet(); });
+
+/* ===== 新しい版のお知らせ・オフライン ===== */
+const isNewer = (a, b) => { const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number); for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); } return false; };
+async function checkVersion() {
+  try { const r = await fetch('changelog.json?t=' + Date.now(), { cache: 'no-store' }); if (!r.ok) return; const j = await r.json();
+    if (j[0] && isNewer(j[0].version, APP_VERSION)) toast('新しいバージョンがあります', '更新', () => location.reload()); } catch (e) {}
+}
+if (location.protocol.startsWith('http')) { checkVersion(); setInterval(checkVersion, 600000);
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {}); }
+
+render();
+</script>
+</body>
+</html>
