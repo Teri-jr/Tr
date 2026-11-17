@@ -33,7 +33,7 @@ function create(D) {
   const isNode = (n) => nodeNo[n] !== undefined;
   // 旅規69条: この辺をぜんぶ通ったら、もう一方の経路の駅も通ったとみなす
   const sames = (D.same || []).map((x) => ({ segs: x.segs.map((id) => segNo[id]), as: x.as, law: x.law }));
-  const turns = D.turns.map((t) => ({ at: t.at, to: t.to, via: t.via, law: t.law, toward: segNo[t.toward[0]], need: t.need.map((x) => segNo[x]) }));
+  const turns = D.turns.map((t) => ({ at: t.at, to: t.to, via: t.via, law: t.law, toward: segNo[t.toward[0]], need: t.need.map((x) => segNo[x]), except: (t.except || []).map((x) => segNo[x]), only: t.only ? t.only.map((x) => segNo[x]) : null }));
 
   /* ===== 略図(342×300)への写しかた ===== */
   const B = { w: 138.93, e: 140.88, s: 34.87, n: 36.46 }, KX = 111.3 * Math.cos(35.7 * Math.PI / 180), KY = 111.3;
@@ -128,7 +128,7 @@ function create(D) {
     joint[0] = [null, pcs[0][0]]; joint[H] = [pcs[pcs.length - 1][0], null];
     const turnAt = {};
     for (const j in joint) { const X = seq[j].n, pv = joint[j][0], nx = joint[j][1];
-      for (const t of turns) { if (t.at !== X || pv === t.toward || nx === t.toward) continue;
+      for (const t of turns) { if (t.at !== X || pv === t.toward || nx === t.toward || t.except.includes(pv) || t.except.includes(nx) || (t.only && !((pv == null || t.only.includes(pv)) && (nx == null || t.only.includes(nx))))) continue;
         const req = t.need.length > 0; if (req ? !(t.need.includes(pv) || t.need.includes(nx)) : (pv == null || nx == null)) continue;
         const clash = t.via.some((v) => seen.has(v));
         if (req) { if (clash) return null; turnAt[j] = { t, req: true }; } else if (!clash) turnAt[j] = { t, req: false }; } }
