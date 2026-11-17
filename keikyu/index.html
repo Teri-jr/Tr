@@ -529,7 +529,7 @@ function planTimes(route,k){
   return {ev:s.events,traj:s.traj};
 }
 // ---- バージョン（変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする） ----
-const APP_VERSION='1.7.2';
+const APP_VERSION='1.7.3';
 const isNewer=(a,b)=>{ const x=String(a).split(".").map(Number), y=String(b).split(".").map(Number); for(let i=0;i<3;i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0); } return false; };
 let upd=null; // {version, items}：新しい版が出ていたら入る。announced=放送済み
 async function checkUpdate(){
@@ -573,22 +573,22 @@ const MAJOR_KQ=new Set(["泉岳寺","品川","京急蒲田","京急川崎","横�
 // u/d 上り・下りの待避線（副本線）、a 空港線へ行き来する線、c 中線、o 他社の線
 const SOTAI="=,U2,D1,=", SHIMA="U2,=,D1", SHIMA4="u4,=,U3,D2,=,d1";
 const LAYOUT_KQ={"泉岳寺":"U4,=,o3,o2,=,D1","品川":"d3<,=,U2,D1,=","鮫洲":"UX,u2,=,d1,DX","平和島":SHIMA4,
- "京急蒲田":"a4,=,u5,U6,D3,d2,=,a1","京急川崎":"u7,=,U6,D5,=,d4","京急鶴見":"U3,=,u2,D1,=","生麦":"U3,=,d2,D1,=",
- "子安":SHIMA4,"神奈川新町":SHIMA4,"戸部":SHIMA,"黄金町":SHIMA,"南太田":"=,u2,UX,DX,d1,=","上大岡":SHIMA4,
- "京急富岡":"U3,=,u2,D1,=","金沢文庫":SHIMA4,"金沢八景":"u4,=,U3,d2,=,D1","逸見":"=,u2,UX,DX,d1,=","県立大学":SHIMA,
+ "京急蒲田":"a4,=,u5,U6,D3,d2,=,a1","京急川崎":"u7,=,U6,D5,=,d4","京急鶴見":"u3,=,U2,D1,=","生麦":"U3,=,d2,D1,=",
+ "子安":SHIMA4,"神奈川新町":SHIMA4,"横浜":"U2,=,D1,=","戸部":SHIMA,"黄金町":SHIMA,"南太田":"=,u2,UX,DX,d1,=","上大岡":SHIMA4,
+ "京急富岡":"u3,=,U2,D1,=","金沢文庫":SHIMA4,"金沢八景":"u4,=,U3,d2,=,D1","逸見":"=,u2,UX,DX,d1,=","県立大学":SHIMA,
  "堀ノ内":"u4,=,U3,d2,=,D1","浦賀":SHIMA,"羽田空港第1・第2ターミナル":SHIMA,"小島新田":SHIMA,"逗子・葉山":"=,D1",
  "京急久里浜":"U4,=,c3,=,D1","京急長沢":SHIMA,"大師線:京急川崎":"U2,=,D3"};
 // 京急蒲田は上下2階建て（上り4〜6番線・下り1〜3番線）を、上り側・下り側に分けて描く
-// ※推定：京急蒲田・京急鶴見・京急富岡・金沢八景・堀ノ内の線の並び、2面4線の駅で内側が本線であること
+// 線とホームの並びは配線略図.net の図と見比べた。番線の割り当ての一部（京急蒲田・金沢八景・堀ノ内など）は推定
 const TERMINAL_KQ=new Set(["浦賀","三崎口","羽田空港第1・第2ターミナル","小島新田","逗子・葉山","泉岳寺"]);
-function parseLayout(str){ return str.split(",").map(t=>{ if(t==="=") return {t:"="}; const end=t.endsWith("<"), v=t.slice(1).replace("<","");
-  return {t:t[0],n:v==="X"?"":v,pass:v==="X",endQ:end}; }); }
+function parseLayout(str){ return str.split(",").map(t=>{ if(t==="=") return {t:"="}; const end=t.endsWith("<"), endD=t.endsWith(">"), v=t.slice(1).replace(/[<>]/,"");
+  return {t:t[0],n:v==="X"?"":v,pass:v==="X",endQ:end,endD}; }); }
 // 待避駅（up=泉岳寺方面の上りのみ、down=下りのみ）
 const TAIHI_KQ={"鮫洲":"both","平和島":"both","京急蒲田":"both","京急川崎":"both","京急鶴見":"up","生麦":"down","子安":"both","神奈川新町":"both","南太田":"both","上大岡":"both","京急富岡":"up","金沢文庫":"both","金沢八景":"both","逸見":"both","堀ノ内":"up"};
 const TAIHI_SEC=120;
 // ---- JR横須賀線（品川〜戸塚）：普通のみ。番線と配線は Wikipedia 各駅記事の「のりば」「駅構造」から（上り側→下り側） ----
 const KINDS_JR={futsu:{label:"普通",color:"#1b4f9c",sub:"#efe4c0",subFg:"#1b1b1b",stops:null,vmax:120,acc:0.64,dwell:30,long:{"横浜":40,"武蔵小杉":40}}};
-const LAYOUT_JR={"品川":"U13,=,D15,=","西大井":"=,U2,D1,=","武蔵小杉":"=,U4,D3,=","新川崎":"U1,=,D2","横浜":"U10,=,D9","保土ケ谷":"U1,=,D2","東戸塚":"U1,=,D2","戸塚":"U1,=,o2,o3,=,D4"};
+const LAYOUT_JR={"品川":"U13,=,D15,=","西大井":"=,U2,D1,=","武蔵小杉":"U4,=,D3,=","新川崎":"U1,=,D2","横浜":"U10,=,D9","保土ケ谷":"U1,=,D2","東戸塚":"U1,=,D2","戸塚":"U1,=,o2,o3,=,D4"};
 // ---- JR東海道線（品川〜茅ケ崎）：普通のみ（走り方の値は実際の所要時間に合わせた）。京浜東北線・横須賀線だけの駅は通過（ホームなし） ----
 const KINDS_TOKAIDO={futsu:{label:"普通",color:"#f0861e",sub:"#0b7a3e",stops:["品川","川崎","横浜","戸塚","大船","藤沢","辻堂","茅ケ崎"],vmax:100,acc:0.45,dwell:60,long:{"横浜":90,"川崎":80,"大船":80}}};
 const PASS_ONLY="UX,DX";
@@ -596,10 +596,10 @@ const LAYOUT_TOKAIDO={"品川":"=,U6,D12,=","大井町":PASS_ONLY,"大森":PASS_
   "横浜":"u8,=,U7,D6,=,d5","保土ケ谷":PASS_ONLY,"東戸塚":PASS_ONLY,"戸塚":"o1,=,U2,D3,=,o4","大船":"u1,=,U2,D3,=,d4","藤沢":"U3,=,D4","辻堂":"U2,=,D1","茅ケ崎":"U5,=,D6"};
 // ---- JR南武線（川崎〜立川）：普通と快速（快速の停車駅はおおよそ）。下りは立川方面 ----
 const KINDS_NAMBU={
-  futsu:{label:"普通",color:"#111",sub:"#ffd400",subFg:"#111",taihi:true,stops:null,vmax:80,acc:0.6,dwell:35,long:{"武蔵小杉":45,"登戸":45}},
+  futsu:{label:"普通",color:"#f2f2ee",fg:"#111",sub:"#ffd400",subFg:"#111",taihi:true,stops:null,vmax:80,acc:0.6,dwell:35,long:{"武蔵小杉":45,"登戸":45}},
   kaisoku:{label:"快速",color:"#ff00ff",sub:"#ffd400",subFg:"#111",stops:["川崎","鹿島田","武蔵小杉","武蔵中原","武蔵新城","武蔵溝ノ口","登戸","稲田堤","稲城長沼","府中本町","分倍河原","立川"],vmax:85,acc:0.6,dwell:50,long:{"武蔵小杉":60,"登戸":60}}};
 const S1="=,U1,D2,=", S2="=,U2,D1,=";
-const LAYOUT_NAMBU={"川崎":"U6,=,D5","尻手":"=,U1,D2,=,o3","矢向":"u3,=,U2,D1,=","鹿島田":S1,"平間":S1,"向河原":S1,"武蔵小杉":"U1,=,D2","武蔵中原":"U1,=,u2,d3,=,D4",
+const LAYOUT_NAMBU={"川崎":"U6,=,D5","尻手":"=,U1,D2,=,o3","矢向":"u3,=,U2,D1,=","鹿島田":S1,"平間":S1,"向河原":S1,"武蔵小杉":S1,"武蔵中原":"U1,=,u2,d3,=,D4",
   "武蔵新城":"U1,=,D2","武蔵溝ノ口":"=,U1,D2,=,d3","津田山":"U1,=,D2","久地":S1,"宿河原":S2,"登戸":"u3,=,U2,D1,=","中野島":S2,"稲田堤":S1,"矢野口":"U2,=,D1",
   "稲城長沼":"U1,=,u2,d3,=,D4","南多摩":"U2,=,D1","府中本町":"=,U1,o2,=,o3,D4,=","分倍河原":S1,"西府":S1,"谷保":S2,"矢川":"U2,=,D1","西国立":S1,"立川":"U8,=,D7"};
 // 南武線の待避駅（推定を含む）
@@ -608,14 +608,14 @@ const TAIHI_NAMBU={"矢向":"up","武蔵中原":"both","武蔵溝ノ口":"down",
 const KH_ALL="大宮,さいたま新都心,与野,北浦和,浦和,南浦和,蕨,西川口,川口,赤羽,東十条,王子,上中里,田端,西日暮里,日暮里,鶯谷,上野,御徒町,秋葉原,神田,東京,有楽町,新橋,浜松町,田町,高輪ゲートウェイ,品川,大井町,大森,蒲田,川崎,鶴見,新子安,東神奈川,横浜,桜木町,関内,石川町,山手,根岸,磯子,新杉田,洋光台,港南台,本郷台,大船".split(",");
 const KH_RAPID_PASS=new Set(["西日暮里","日暮里","鶯谷","御徒町","有楽町","新橋"]);
 const KINDS_KEIHIN={
-  kakueki:{label:"各駅停車",color:"#111",sub:"#00a7db",stops:null,vmax:85,acc:0.55,dwell:40,long:{"東京":55,"横浜":55,"上野":50,"品川":50,"大宮":45}},
+  kakueki:{label:"各駅停車",color:"#f2f2ee",fg:"#111",sub:"#00a7db",stops:null,vmax:85,acc:0.55,dwell:40,long:{"東京":55,"横浜":55,"上野":50,"品川":50,"大宮":45}},
   kaisoku:{label:"快速",color:"#ff00ff",sub:"#00a7db",stops:KH_ALL.filter(n=>!KH_RAPID_PASS.has(n)),vmax:85,acc:0.55,dwell:40,long:{"東京":55,"横浜":55,"上野":50,"品川":50,"大宮":45}}};
 const SH21="U2,=,D1", SH12="U1,=,D2", YM14="U1,=,o2,o3,=,D4", YM41="U4,=,o3,o2,=,D1";
 // 山手線と並ぶ駅は間の2・3番線が山手線（o）。桜木町は配線略図.net の図で確かめた。上野・新橋・田町は記事が取れず、隣の駅にならった推定
 const LAYOUT_KEIHIN={"大宮":SH21,"さいたま新都心":SH21,"与野":SH12,"北浦和":SH21,"浦和":SH21,"南浦和":"U4,=,u3,d2,=,D1","蕨":SH21,"西川口":SH21,"川口":SH21,"赤羽":SH21,
   "東十条":"U3,=,c2,=,D1","王子":SH12,"上中里":SH12,"田端":YM14,"西日暮里":YM41,"日暮里":"U12,=,o11,o10,=,D9","鶯谷":YM14,"上野":YM14,"御徒町":YM41,"秋葉原":YM14,"神田":YM41,
-  "東京":"U3,=,o4,o5,=,D6","有楽町":YM14,"新橋":YM14,"浜松町":YM14,"田町":YM14,"高輪ゲートウェイ":"o1,=,o2,U3,=,D4","品川":"o3,=,U4,D5,=,o6","大井町":SH12,"大森":SH21,"蒲田":SH21,
-  "川崎":"U4,=,D3","鶴見":SH21,"新子安":SH21,"東神奈川":YM41,"横浜":"U4,=,D3","桜木町":"u4,=,U3,=,D1","関内":"=,U2,D1,=","石川町":"=,U2,D1,=","山手":"=,U2,D1,=","根岸":SH21,
+  "東京":"U3,=,o4,o5,=,D6","有楽町":YM14,"新橋":YM14,"浜松町":YM14,"田町":YM14,"高輪ゲートウェイ":"o1,=,o2,U3,=,D4","品川":"o3,=,U4,D5,=,o6","大井町":SH12,"大森":SH21,"蒲田":"U4,=,c3<,=,D1",
+  "川崎":"U4,=,D3","鶴見":SH21,"新子安":SH21,"東神奈川":YM41,"横浜":"U4,=,D3","桜木町":"U4,=,c3>,=,D1","関内":"=,U2,D1,=","石川町":"=,U2,D1,=","山手":"=,U2,D1,=","根岸":SH21,
   "磯子":SH12,"新杉田":"=,U2,D1,=","洋光台":SH21,"港南台":SH21,"本郷台":SH21,"大船":"U10,=,D9"};
 // ---- 路線ごとの設定 ----
 const NETS={
@@ -1127,11 +1127,11 @@ function buildZaisen(){
         if(onPath){ const mainY=my; o+=`<line x1="${x1-18}" y1="${mainY}" x2="${x2+18}" y2="${mainY}" stroke="#3a4352" stroke-width="5"/>`; }
         const col=t.t==="o"?"#2c3646":onPath?"#4b86d6":"#3a4352";
         if(t.t==="o"||my==null) o+=`<line x1="${x1-6}" y1="${y}" x2="${x2+6}" y2="${y}" stroke="${col}" stroke-width="4"/>`;
-        else if(t.endQ){ // 泉岳寺側が行き止まり：下りの区間なら左、上りの区間なら右が行き止まり
-          o+=r.down?`<path d="M${x1} ${y} L${x2} ${y} L${x2+18} ${my}" fill="none" stroke="${col}" stroke-width="4"/><line x1="${x1}" y1="${y-6}" x2="${x1}" y2="${y+6}" stroke="${col}" stroke-width="3"/>`
+        else if(t.endQ||t.endD){ // 行き止まり：上り方（<）なら下りの区間で左、下り方（>）なら下りの区間で右
+          o+=(t.endQ?r.down:!r.down)?`<path d="M${x1} ${y} L${x2} ${y} L${x2+18} ${my}" fill="none" stroke="${col}" stroke-width="4"/><line x1="${x1}" y1="${y-6}" x2="${x1}" y2="${y+6}" stroke="${col}" stroke-width="3"/>`
                    :`<path d="M${x1-18} ${my} L${x1} ${y} L${x2} ${y}" fill="none" stroke="${col}" stroke-width="4"/><line x1="${x2}" y1="${y-6}" x2="${x2}" y2="${y+6}" stroke="${col}" stroke-width="3"/>`; }
         else o+=`<path d="M${x1-18} ${my} L${x1} ${y} L${x2} ${y} L${x2+18} ${my}" fill="none" stroke="${col}" stroke-width="4"/>`;
-        o+=`<text class="ztk" x="${x2+5}" y="${y+4}">${t.t==="c"?"2・3":t.n}</text>`; });
+        o+=`<text class="ztk" x="${x2+5}" y="${y+4}">${t.t==="c"&&t.n==="3"?"2・3":t.n}</text>`; });
       // 長い駅名が枠からはみ出さないよう、端では内側に寄せる
       const tw=(r.name.length+2)*14, anc=X+tw/2>W-4?"end":X-tw/2<4?"start":"middle", tx=anc==="end"?W-4:anc==="start"?4:X;
       o+=`<text class="zn${r.stop?"":" zpass"}" id="zn${i}" x="${tx}" y="${top+18}" text-anchor="${anc}">${r.name}</text>`; }
