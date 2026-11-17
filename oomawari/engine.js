@@ -272,15 +272,20 @@ function create(D) {
     return pcs;
   }
   const plainMemo = {};
+  // 候補の道(短い順)のうち、距離がいちばん短い道の1.15倍(+2km)までで、乗換がいちばん少なく、同じなら早いもの
   function plain(from, to) {
     if (!ST[from] || !ST[to] || from === to) return null;
     const key = from + '>' + to; if (key in plainMemo) return plainMemo[key];
     const tryPath = (path) => { const pcs = toPcs(path); return pcs ? buildRoute(from, to, pcs) : null; };
     const first = sp(from, to); if (!first) return (plainMemo[key] = null);
-    let r = tryPath(first.path); if (r) return (plainMemo[key] = r);
+    let best = null, lim = Infinity;
+    const consider = (p) => { const r = tryPath(p.path); if (!r) return;
+      if (lim === Infinity) lim = p.d * 1.15 + 2;
+      if (!best || r.legs.length < best.legs.length || (r.legs.length === best.legs.length && rideMins(r) < rideMins(best))) best = r; };
+    consider(first);
     // Yen の方法で、次に短い道を順に出してためす
     const A = [first], B = [], seenP = new Set([first.path.join('|')]);
-    for (let k = 1; k < 25; k++) { const prevP = A[k - 1].path;
+    for (let k = 1; k < 40; k++) { const prevP = A[k - 1].path;
       for (let i = 0; i + 1 < prevP.length; i++) { const spur = prevP[i], root = prevP.slice(0, i + 1);
         const banE = new Set(), banN = new Set(root.slice(0, -1));
         for (const p of A) if (p.path.length > i && p.path.slice(0, i + 1).join('|') === root.join('|')) { banE.add(p.path[i] + '|' + p.path[i + 1]); banE.add(p.path[i + 1] + '|' + p.path[i]); }
@@ -289,9 +294,10 @@ function create(D) {
         let d = 0; for (let j = 0; j + 1 < path.length; j++) d += edgeKm(path[j], path[j + 1]);
         B.push({ path, d }); }
       if (!B.length) break;
-      B.sort((x, y) => x.d - y.d); const nx = B.shift(); A.push(nx);
-      r = tryPath(nx.path); if (r) return (plainMemo[key] = r); }
-    return (plainMemo[key] = null);
+      B.sort((x, y) => x.d - y.d); const nx = B.shift();
+      if (nx.d > lim || (best && best.legs.length === 1)) break;
+      A.push(nx); consider(nx); }
+    return (plainMemo[key] = best);
   }
 
   /* ===== 自分でルートを作る =====
@@ -347,6 +353,8 @@ function create(D) {
     if (a >= 0) out.push(r.hopSt[a] + '〜' + r.hopSt[r.hopSt.length - 1]);
     return { list: out, km };
   }
+  const greenFee = (km, suica) => { const b = D.green.fee.find((x) => Math.ceil(km - 1e-9) <= x[0]) || D.green.fee[D.green.fee.length - 1]; return suica ? b[2] : b[1]; };
+  const hasGreen = (svcName) => D.green.svc.includes(svcName);
   /* ===== 乗りつぶし: 「このルートに乗った」の区間を合わせて、路線ごとに何km乗ったか ===== */
   function coverage(riddenIds) {
     const set = riddenSet(riddenIds), lines = {}, ds = []; let km = 0, all = 0;
@@ -361,7 +369,7 @@ function create(D) {
   const seenLine = new Set(), lineOpts = []; svcIds.forEach((k) => { if (!seenLine.has(SV[k].n)) { seenLine.add(SV[k].n); lineOpts.push({ n: SV[k].n, c: SV[k].c }); } });
   const stations = Object.keys(ST).map((n) => ({ n, y: ST[n][0] }));
   return { data: D, stations, nodes: nodeNames.slice(), lineOpts, netPath, xy, ll: (n) => (ST[n] ? [ST[n][1], ST[n][2]] : null), has: (n) => !!ST[n], isNode, isLoopStation,
-    ticket, dests, search, find, plain, steps, pcPath, rideMins, spanMins, routeById, buildRoute, overlap, nearest, coverage };
+    ticket, dests, search, find, plain, steps, pcPath, rideMins, spanMins, routeById, buildRoute, overlap, nearest, coverage, greenFee, hasGreen };
 }
 if (typeof module !== 'undefined' && module.exports) module.exports = { create };
 else root.OOMAWARI = create(root.OOMAWARI_DATA);
