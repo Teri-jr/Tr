@@ -327,11 +327,11 @@ ol,ul{list-style:none}
 <div id="app"></div>
 <div id="sheet"></div>
 <div id="toast" role="status" hidden></div>
-<script src="data.js?v=1.3.0"></script>
-<script src="engine.js?v=1.3.0"></script>
+<script src="data.js?v=1.3.1"></script>
+<script src="engine.js?v=1.3.1"></script>
 <script>
 'use strict';
-const APP_VERSION = '1.3.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.3.1'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ===== データ =====
    路線データは data.js、ルートの探索は engine.js。画面はここから E.search() などを呼ぶだけ。 */
@@ -662,6 +662,8 @@ V.guide = () => `<div class="scr"><div class="col guide"><header class="hd"><a h
 const app = document.getElementById('app');
 const mqW = matchMedia('(min-width:760px)'), mq3 = matchMedia('(min-width:1200px)');
 let lastHash = null, rideTimer = null, geoId = null;
+const scrollMem = { cur: 0 }; // いまのスクロール位置と、一覧のスクロール位置
+addEventListener('scroll', () => { scrollMem.cur = scrollY; if (location.hash === '#/search') scrollMem['#/search'] = scrollY; }, { passive: true });
 function render() {
   const h = location.hash.replace(/^#\/?/, ''), parts = h.split('/'), wide = mqW.matches, w3 = mq3.matches;
   let rid = parts.slice(1).join('/'); try { rid = decodeURIComponent(rid); } catch (e) {}
@@ -674,7 +676,11 @@ function render() {
   const keepQ = (name === 'station' || name === 'from') && document.activeElement && document.activeElement.id === 'q';
   app.innerHTML = html;
   if (keepQ) { const q = document.getElementById('q'); q.focus(); q.setSelectionRange(q.value.length, q.value.length); }
-  if (lastHash !== location.hash) { scrollTo(0, 0); lastHash = location.hash; closeSheet(); }
+  if (lastHash !== location.hash) {
+    // 画面が変わったときのスクロール: 広い画面で一覧からルートを選んだときはそのまま。一覧に戻ったときは前の位置。それ以外は先頭へ
+    const isRes = (h) => /^#\/(search|route)(\/|$)/.test(h || '');
+    const y = wide && isRes(lastHash) && isRes(location.hash) ? scrollMem.cur : location.hash === '#/search' && scrollMem['#/search'] != null ? scrollMem['#/search'] : 0;
+    scrollTo(0, y); lastHash = location.hash; closeSheet(); }
   if (name !== 'station' && name !== 'from') ui.q = '';
   // 乗車中の画面だけ、位置情報を見て30秒ごとに描きなおす
   const onRide = name === 'ride' && ride;
