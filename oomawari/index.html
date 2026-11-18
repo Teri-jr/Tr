@@ -150,6 +150,7 @@ ol,ul{list-style:none}
 
 /* ルート */
 .okline{font-size:13px;font-weight:700;color:var(--ok);display:flex;align-items:center;gap:6px}
+.card .tag.gray{color:var(--wn);margin-left:6px}
 .okline.mkl{color:var(--wn);display:block;line-height:1.5}
 .rt-h1{font-size:24px;font-weight:900;line-height:1.35}
 .rt-km{margin:4px 0 0;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
@@ -341,7 +342,7 @@ ol,ul{list-style:none}
 <script src="engine.js?v=1.10.1"></script>
 <script>
 'use strict';
-const APP_VERSION = '1.15.1'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.16.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ===== データ =====
    路線データは data.js、ルートの探索は engine.js。画面はここから E.search() などを呼ぶだけ。 */
@@ -405,7 +406,7 @@ const ymd = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.g
 // 条件に合うルートを返す(同じ条件なら前の結果を使う)
 const sCache = new Map();
 function searchRoutes(c, budget) {
-  const key = JSON.stringify([c.fast, !!c.mk, c.from, c.to, c.ic, c.start, c.end, c.len, c.xfer, c.xmin, c.meal, c.rare, c.want, c.avoid, c.mustLine, c.noLine, c.mustSt, c.noSt, c.prev, c.prev ? ridden : 0, budget || 0]);
+  const key = JSON.stringify([c.fast, !!c.mk, !!c.gray, c.from, c.to, c.ic, c.start, c.end, c.len, c.xfer, c.xmin, c.meal, c.rare, c.want, c.avoid, c.mustLine, c.noLine, c.mustSt, c.noSt, c.prev, c.prev ? ridden : 0, budget || 0]);
   if (!sCache.has(key)) { if (sCache.size > 60) sCache.clear();
     const res = E.find(c, ridden, budget); // 券売機モードも同じ E.find() でさがす
     res.routes.forEach((r) => rCache.set((c.fast ? 'f:' : '') + r.id, r)); sCache.set(key, res.routes); }
@@ -477,7 +478,7 @@ const detailLink = () => `<a href="#/detail" class="rowlink"><span><strong>詳�
 const cta = () => `<a href="#/search" class="cta"><span class="n">${searchRoutes(cond).length}</span>ルートを見る</a>`;
 const thumb = (r) => `<svg aria-hidden="true" width="92" height="81" viewBox="0 0 342 300" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="${NET}" stroke-width="4" style="stroke:var(--bd)"/>${r.legs.map((l) => `<path d="${l[4]}" stroke="${l[3]}" stroke-width="13"/>`).join('')}<circle cx="${E.xy(r.from)[0].toFixed(1)}" cy="${E.xy(r.from)[1].toFixed(1)}" r="13" style="fill:var(--tx)"/></svg>`;
 function cardHtml(r, tag, meta, cur, tagCls) {
-  return `<a href="#/route/${esc(r.id)}" class="card"${cur ? ' aria-current="true"' : ''}>${thumb(r)}<span>${tag ? `<span class="tag${tagCls || ''}">${esc(tag)}</span>` : ''}<span class="km"><b>${Math.round(r.km)}</b><i>km</i></span><span class="meta">${esc(meta)}</span><span class="via">${esc(r.via)}</span></span></a>`;
+  return `<a href="#/route/${esc(r.id)}" class="card"${cur ? ' aria-current="true"' : ''}>${thumb(r)}<span>${tag ? `<span class="tag${tagCls || ''}">${esc(tag)}</span>` : ''}${r.gray ? '<span class="tag gray">グレー</span>' : ''}<span class="km"><b>${Math.round(r.km)}</b><i>km</i></span><span class="meta">${esc(meta)}</span><span class="via">${esc(r.via)}</span></span></a>`;
 }
 function listHtml(rs, curId, H) {
   const sg = suggestions(cond);
@@ -526,7 +527,7 @@ const ttLink = (r) => `<a class="tt" target="_blank" rel="noopener" href="https:
 const isSaved = (id) => saved.some((s) => s.id === id);
 // ルートの調整: 乗換駅を通らない・路線に乗らない・寄りたい駅を足す。条件(詳細条件と同じ noSt/noLine/mustSt)に足して、いまのルートにいちばん近いルートをさがしなおす
 // ルートの画面のいちばん上に出す、すぐ使える調整
-const okLine = (r, ic) => r.mk && !E.buildRoute(r.from, r.to, r.pcs.map((p) => p.slice(0, 3))) ? `<p class="okline mkl">末期モード：同じ駅を、停まらずに2回通る(線路は別)。正規の大回り(きっぷの経路)にはならない</p>` : `<p class="okline">${ic}ルール上、成立しています</p>`;
+const okLine = (r, ic) => r.gray ? `<p class="okline mkl">グレー：途中で通った${esc(r.to)}で最後に降りる「6の字」の形です。JRの回答が分かれていて、係員の判断しだいで認められないおそれがあります</p>` : r.mk && !E.buildRoute(r.from, r.to, r.pcs.map((p) => p.slice(0, 3))) ? `<p class="okline mkl">末期モード：同じ駅を、停まらずに2回通る(線路は別)。正規の大回り(きっぷの経路)にはならない</p>` : `<p class="okline">${ic}ルール上、成立しています</p>`;
 function adjQuick(r) {
   const q = (act, t, on) => `<button type="button" class="qa${on ? ' on' : ''}" data-act="${act}" data-id="${esc(r.id)}"${on != null ? ` aria-pressed="${!!on}"` : ''}>${t}</button>`;
   return `<div class="adj adjq" role="group" aria-label="すぐ調整"><div class="row">${q('adjFast', '⚡ 速い列車を優先', cond.fast)}${xfers(r) > 0 ? q('adjFewer', '乗換を減らす') : ''}${q('adjLonger', 'もっと長く')}${q('adjShorter', 'もっと短く')}${r.mk ? '' : q('mkFrom', '✎ 路線図で手直し')}</div></div>`;
@@ -555,6 +556,32 @@ function adjust(r, o, msg, strict, once) { // once: 乗らない路線など、�
   location.hash = '#/route/' + encodeURIComponent(n.id);
   setTimeout(() => { const t = document.getElementById('toast'); if (t.textContent.startsWith(msg)) t.hidden = true; }, 8000);
   toast(msg, '元に戻す', () => { setCond(before); document.getElementById('toast').hidden = true; location.hash = '#/route/' + encodeURIComponent(r.id); render(); });
+}
+// ルートを画像にする(共有用)。スマホの共有シートで画像として送れる
+function routeImageBlob(r) {
+  const W = 1080, P = 64, F = "'Zen Kaku Gothic New','Hiragino Sans','Noto Sans JP','Yu Gothic',sans-serif", tk = rtk(r), n = r.stops.length;
+  const H = 520 + (n - 1) * 150 + 40 + (r.gray ? 190 : 0) + 90;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
+  const wrap = (t, x, y, mw, lh, font, col) => { g.font = font; g.fillStyle = col; let line = '', yy = y; for (const ch of t) { if (g.measureText(line + ch).width > mw) { g.fillText(line, x, yy); line = ch; yy += lh; } else line += ch; } g.fillText(line, x, yy); return yy; };
+  g.fillStyle = '#FFFFFF'; g.fillRect(0, 0, W, H);
+  g.fillStyle = '#0E1116'; g.fillRect(0, 0, W, 150);
+  g.fillStyle = '#FFFFFF'; g.font = `700 40px ${F}`; g.fillText('大回りジェネレータ', P, 92); g.font = `500 28px ${F}`; g.fillStyle = '#A9B1BD'; g.textAlign = 'right'; g.fillText(r.gray ? 'グレーなルート' : 'ルール上、成立', W - P, 92); g.textAlign = 'left';
+  g.fillStyle = '#0E1116'; g.font = `700 76px ${F}`; g.fillText(`${tk.fare}円で ${r.km}km`, P, 270);
+  g.font = `500 40px ${F}`; g.fillStyle = '#39414D'; g.fillText(`${r.from} → ${toTxt(r.from, r.to)}　${cond.ic ? 'IC' : 'きっぷ'}`, P, 340);
+  const sp = E.spanMins(r, cond), a = Math.floor(sp[0] / 60), b = Math.round(sp[1] / 60), tm = b > a ? `約${a}〜${b}時間` : durTxt(sp[1]);
+  [['所要時間の目安', tm], ['乗換', `${n - 2}回`], ['きっぷの距離', `${tk.km}km`]].forEach((x, i) => { const cx = P + i * 320; g.font = `500 26px ${F}`; g.fillStyle = '#6B7482'; g.fillText(x[0], cx, 410); g.font = `700 40px ${F}`; g.fillStyle = '#0E1116'; g.fillText(x[1], cx, 462); });
+  let y = 540;
+  for (let i = 0; i < n; i++) {
+    const st = r.stops[i], leg = r.legs[i];
+    if (leg) { g.fillStyle = leg[3] || '#888'; g.fillRect(P + 88, y + 18, 12, 132);
+      g.font = `700 32px ${F}`; g.fillStyle = '#0E1116'; g.fillText(`${leg[0]}　${leg[1]}`, P + 136, y + 74); g.font = `500 26px ${F}`; g.fillStyle = '#6B7482'; g.fillText(`乗車 約${leg[2]}分`, P + 136, y + 116); }
+    g.beginPath(); g.arc(P + 94, y + 8, 22, 0, Math.PI * 2); g.fillStyle = i === 0 || i === n - 1 ? '#0E1116' : '#FFFFFF'; g.fill(); g.lineWidth = 8; g.strokeStyle = '#0E1116'; g.stroke();
+    g.font = `700 44px ${F}`; g.fillStyle = '#0E1116'; g.fillText(st[0], P + 150 - 14, y + 22 - (leg ? 0 : 0)); 
+    g.textAlign = 'right'; g.font = `500 30px ${F}`; g.fillStyle = '#6B7482'; g.fillText(`${st[1]}km`, W - P, y + 22); g.textAlign = 'left';
+    y += 150; }
+  if (r.gray) { g.fillStyle = '#FFF3D6'; g.fillRect(P, y - 40, W - 2 * P, 100); wrap('6の字(途中で通った駅で最後に降りる形)。JRの回答が分かれています。', P + 24, y + 12, W - 2 * P - 48, 36, `700 28px ${F}`, '#8A5A00'); y += 120; }
+  g.font = `500 24px ${F}`; g.fillStyle = '#8C94A0'; g.fillText('teri-jr.github.io/Tr/oomawari', P, H - 40);
+  return new Promise((res) => cv.toBlob((bl) => res(bl), 'image/png'));
 }
 const pcHeader = (cur) => `<header class="pc-h"><strong>大回り<span class="ver">v${APP_VERSION}</span></strong><nav>${[['#/', 'さがす', 's'], ['#/make', 'ルートを作る', 'm'], ['#/saved', '保存したルート', 'v'], ['#/guide', '使い方', 'g']].map((x) => `<a href="${x[0]}"${cur === x[2] ? ' aria-current="page"' : ''}>${x[1]}</a>`).join('')}<a href="kiosk.html">券売機モード</a></nav></header>`;
 
@@ -799,7 +826,7 @@ app.addEventListener('click', (e) => {
   if (d.ic) { setCond({ ic: d.ic === '1' }); return render(); } // 一周をえらんでいてICにしたら、fixCond がいちばん近い駅に直す
   if (d.prev) { setCond({ prev: +d.prev }); return render(); }
   if (d.stp) { const lim = d.stp === 'xfer' ? [0, 20, 1] : [0, 60, 5]; setCond({ [d.stp]: Math.max(lim[0], Math.min(lim[1], cond[d.stp] + +d.d * lim[2])) }); return render(); }
-  if (d.sw) { setCond({ [d.sw]: !cond[d.sw] }); if (d.sw === 'exp' && cond.exp) toast('ルートの画面に、グリーン車の区間と料金の目安を出します(所要時間は普通列車の目安のまま)'); if (d.sw === 'gray' && cond.gray) toast('グレーなルート(6の字など)は、まだ出しません'); return render(); }
+  if (d.sw) { setCond({ [d.sw]: !cond[d.sw] }); if (d.sw === 'exp' && cond.exp) toast('ルートの画面に、グリーン車の区間と料金の目安を出します(所要時間は普通列車の目安のまま)'); if (d.sw === 'gray' && cond.gray) toast('グレーなルート(6の字)も出します。係員の判断で認められないおそれがあります'); return render(); }
   if (d.rm) { setCond({ [d.rm]: cond[d.rm].filter((x) => x !== d.v) }); return render(); }
   if (d.add) { const k = d.add, line = k === 'mustLine' || k === 'noLine', seen = new Set(), opts = [];
     (line ? E.lineOpts : E.nodes.map((n) => ({ n }))).forEach((o) => { if (!seen.has(o.n) && !cond[k].includes(o.n) && o.n !== cond.from && o.n !== cond.to) { seen.add(o.n); opts.push(o); } });
@@ -832,8 +859,15 @@ app.addEventListener('click', (e) => {
   if (act === 'sort') { ui.sort = (ui.sort + 1) % SORTS.length; save('oomawari.sort', ui.sort); return render(); }
   if (act === 'reset') { const keep = { to: cond.to, start: cond.start, end: cond.end, want: cond.want, avoid: cond.avoid }; setCond(Object.assign({}, DEF, keep)); return render(); }
   if (act === 'save') { if (isSaved(d.id)) { saved = saved.filter((s) => s.id !== d.id); toast('保存をやめました'); } else { saved.unshift({ id: d.id, at: Date.now(), date: null }); toast('保存しました'); } save(LS.saved, saved); return render(); }
-  if (act === 'share') { const r = routeById(d.id), url = location.href.split('#')[0] + '#/route/' + encodeURIComponent(r.id), text = `${r.from}→${toTxt(r.from, r.to)} ${rtk(r).fare}円で${r.km}km。${r.via}`;
-    if (navigator.share) navigator.share({ title: '大回りルート', text, url }).catch(() => {}); else if (navigator.clipboard) navigator.clipboard.writeText(text + ' ' + url).then(() => toast('リンクをコピーしました'), () => toast('コピーできませんでした')); else toast('この端末では共有できません'); return; }
+  if (act === 'share') { const r = routeById(d.id); if (!r) return;
+    const url = location.href.split('#')[0] + '#/route/' + encodeURIComponent(r.id), text = `${r.from}→${toTxt(r.from, r.to)} ${rtk(r).fare}円で${r.km}km。${r.via}`;
+    const linkOnly = () => { if (navigator.share) navigator.share({ title: '大回りルート', text, url }).catch(() => {}); else if (navigator.clipboard) navigator.clipboard.writeText(text + ' ' + url).then(() => toast('リンクをコピーしました'), () => toast('コピーできませんでした')); else toast('この端末では共有できません'); };
+    routeImageBlob(r).then((blob) => { if (!blob) return linkOnly();
+      const file = new File([blob], `oomawari-${r.from}-${r.to}.png`, { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) return navigator.share({ files: [file], title: '大回りルート', text: text + ' ' + url }).catch(() => {});
+      // 画像を共有できない端末(パソコンなど): 画像を保存して、リンクもコピーする
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file.name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      if (navigator.clipboard) navigator.clipboard.writeText(text + ' ' + url).catch(() => {}); toast('ルートの画像を保存しました'); }).catch(linkOnly); return; }
   if (act === 'go') { ride = { id: d.id, at: Date.now() }; save(LS.ride, ride); ui.pos = null;
     const s = saved.find((x) => x.id === d.id); if (s) { s.date = ymd(today()); save(LS.saved, saved); } return; }
   if (act === 'rode') { ridden = ridden.includes(d.id) ? ridden.filter((x) => x !== d.id) : ridden.concat(d.id); save(LS.ridden, ridden); toast(ridden.includes(d.id) ? '乗ったルートとして記録しました' : '記録を取り消しました'); return render(); }
