@@ -392,7 +392,7 @@ function fit() { const W = innerWidth, H = innerHeight, phone = W < H && W < 800
 // 券売機の「ピッ」: 画面のボタンを押したとき(最初に押したときに音を使えるようにする)
 let actx = null;
 function beep() { try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === 'suspended') actx.resume();
-  const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime; o.type = 'square'; o.frequency.value = 2400; o.connect(g); g.connect(actx.destination);
+  const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime; o.type = 'square'; o.frequency.value = 3300; o.connect(g); g.connect(actx.destination);
   g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.08, t + 0.004); g.gain.setValueAtTime(0.08, t + 0.07); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.09); o.start(t); o.stop(t + 0.1); } catch (e) {} }
 stage.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b && !b.disabled) beep(); }, true);
 rotBtn.addEventListener('click', () => { rotOff = !rotOff; try { localStorage.setItem('oomawari-kiosk-norot', rotOff ? '1' : '0'); } catch (e) {} fit(); });
@@ -459,6 +459,8 @@ class Component extends DCLogic {
     const rows = ['あかさたなはまやらわ', 'いきしちにひみゆりを', 'うくすつぬふむよるん', 'えけせてねへめ゛れ ', 'おこそとのほも゜ろー'];
     const DK = { か:'が',き:'ぎ',く:'ぐ',け:'げ',こ:'ご',さ:'ざ',し:'じ',す:'ず',せ:'ぜ',そ:'ぞ',た:'だ',ち:'ぢ',つ:'づ',て:'で',と:'ど',は:'ば',ひ:'び',ふ:'ぶ',へ:'べ',ほ:'ぼ',が:'か',ぎ:'き',ぐ:'く',げ:'け',ご:'こ',ざ:'さ',じ:'し',ず:'す',ぜ:'せ',ぞ:'そ',だ:'た',ぢ:'ち',づ:'つ',で:'て',ど:'と',ば:'は',び:'ひ',ぶ:'ふ',べ:'へ',ぼ:'ほ' };
     const HD = { は:'ぱ',ひ:'ぴ',ふ:'ぷ',へ:'ぺ',ほ:'ぽ',ば:'ぱ',び:'ぴ',ぶ:'ぷ',べ:'ぺ',ぼ:'ぽ',ぱ:'は',ぴ:'ひ',ぷ:'ふ',ぺ:'へ',ぽ:'ほ' };
+    // 文字を打ったあと、候補が残り1件になったら、自動で候補の画面にする(出発駅・到着駅のどちらでも、その1駅だけを出す)
+    const adv = (nk) => set(pool.filter((x) => x.y.startsWith(nk)).length === 1 ? { kana: nk, modal: 'cand', cpage: 0 } : { kana: nk });
     const keys = [];
     rows.forEach((row, r) => row.split('').forEach((ch) => {
       const blank = ch === ' ';
@@ -469,10 +471,9 @@ class Component extends DCLogic {
         pick: () => {
           if (blank) return;
           const last = s.kana.slice(-1);
-          if (ch === '゛') { if (DK[last]) set({ kana: s.kana.slice(0, -1) + DK[last] }); return; }
-          if (ch === '゜') { if (HD[last]) set({ kana: s.kana.slice(0, -1) + HD[last] }); return; }
-          if (s.kana.length < 10) { const nk = s.kana + ch; // 候補が残り1件になったら、自動で候補の画面にする(その1駅だけを出す)
-            set(pool.filter((x) => x.y.startsWith(nk)).length === 1 ? { kana: nk, modal: 'cand', cpage: 0 } : { kana: nk }); }
+          if (ch === '゛') { if (DK[last]) adv(s.kana.slice(0, -1) + DK[last]); return; }
+          if (ch === '゜') { if (HD[last]) adv(s.kana.slice(0, -1) + HD[last]); return; }
+          if (s.kana.length < 10) adv(s.kana + ch);
         } });
     }));
     const isN = s.mode === 'normal';
