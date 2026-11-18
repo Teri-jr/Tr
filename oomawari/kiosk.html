@@ -482,7 +482,7 @@ class Component extends DCLogic {
     const LENS = ['〜100km', '〜300km', '300km〜'];
     // 探す条件(アプリと同じ形)。時刻は「出発」ならその時刻から、「到着」ならその時刻まで
     const tSel = s.hour * 60 + s.min, aS = hmOf(APPC.start), aE = hmOf(APPC.end);
-    const kc = s.mode === 'oo' && s.from && s.to ? Object.assign({}, APPC, { from: s.from, to: s.to, ic: true, want: s.dirc ? [REGS[s.dirc - 1]] : [], avoid: [], len: s.len, xfer: Math.max(12, APPC.xfer || 0),
+    const kc = s.mode === 'oo' && s.from && s.to ? Object.assign({}, APPC, { from: s.from, to: s.to, ic: true, want: s.dirc ? [REGS[s.dirc - 1]] : [], avoid: [], len: s.len, gray: !!s.gray, xfer: Math.max(12, APPC.xfer || 0),
       start: s.tmode === 'dep' ? hmTxt(tSel) : hmTxt(aS < tSel ? aS : Math.max(5 * 60, tSel - 13 * 60)), end: s.tmode === 'dep' ? hmTxt(aE > tSel ? aE : Math.min(23 * 60 + 59, tSel + 13 * 60)) : hmTxt(tSel) }) : null;
     const savedL = s.mode === 'saved' ? load('oomawari.saved', []).map((x) => { const r = E.routeById(x.id); return r ? Object.assign(ooCard(r, APPC), { date: x.date }) : null; }).filter(Boolean) : [];
     const found = kc && s.step >= 3 ? kSearch(kc) : [];
@@ -547,7 +547,7 @@ class Component extends DCLogic {
       return out;
     };
     const cards = list.map((r, i) => ({ ...r, no: String(i + 1), rows: tl(r, false), ring: i === 0 ? RING : NORING, hasMap: !r.normal,
-      headL: r.normal ? '所要時間' : '距離', headV: r.normal ? r.time : r.km + 'km', headR: r.normal ? '経由：' + r.via : '時間のめやす：' + r.time,
+      headL: r.normal ? '所要時間' : '距離', headV: r.normal ? r.time : r.km + 'km', headR: r.normal ? '経由：' + r.via : (r.r && r.r.gray ? 'グレー(6の字)　' : '') + '時間のめやす：' + r.time,
       tag: s.mode === 'saved' ? (r.date ? r.date.replace(/^\d+-0?(\d+)-0?(\d+)$/, '$1月$2日') + 'に乗った' : 'まだ乗っていない') : '', fareTxt: (() => { const t = E.ticket(r.from, r.to, r.from !== r.to); return t && t.fare != null ? yen(t.fare) + '円' : '－－－'; })(),
       pick: () => set({ route: i, exp: {}, step: 4, modal: null }),
       detail: () => set({ detail: i, modal: 'detail' }) }));
