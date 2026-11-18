@@ -342,7 +342,7 @@ ol,ul{list-style:none}
 <script src="engine.js?v=1.10.1"></script>
 <script>
 'use strict';
-const APP_VERSION = '1.16.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.17.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ===== データ =====
    路線データは data.js、ルートの探索は engine.js。画面はここから E.search() などを呼ぶだけ。 */
@@ -488,7 +488,7 @@ ${rs.length ? '' : `<p class="empty">${winMin(cond) > 0 ? 'この条件に合う
 ${sg.length ? `<div class="more"><span class="lab">条件を変えると、もっと見つかります</span>${sg.map((s, i) => `<button type="button" data-sg="${i}">${esc(s.label)}<b>＋${s.g} ›</b></button>`).join('')}</div>` : ''}`;
 }
 const sumHtml = (wide) => `<a href="#/" class="sum"><span><strong>${esc(cond.from)} → ${esc(toTxt(cond.from, cond.to))}　${cond.ic ? 'IC ' : ''}<span class="n">${fare()}</span>円</strong><small>${esc(sumTxt(cond))}</small></span>${wide ? '' : '<span class="chg">変更</span>'}</a>`;
-function rmapHtml(r, wide) {
+function rmapHtml(r, wide, img) {
   // 乗る範囲だけを大きく写す(k = 縮尺。線の太さや文字もそれに合わせる)
   const names = r.stops.map((s) => s[0]), P = names.map((n) => E.xy(n)), o = E.xy(r.from), end = E.xy(r.to), all = r.hopSt.map((n) => E.xy(n)).concat(P);
   let x0 = Math.min.apply(null, all.map((p) => p[0])), x1 = Math.max.apply(null, all.map((p) => p[0])), y0 = Math.min.apply(null, all.map((p) => p[1])), y1 = Math.max.apply(null, all.map((p) => p[1]));
@@ -504,7 +504,10 @@ function rmapHtml(r, wide) {
   put(r.from, o, ' class="e"', r.loop ? ['l', 'r', 'u', 'd'] : ['l', 'u', 'd', 'r']);
   if (!r.loop) put(r.to, end, ' class="e"', ['r', 'd', 'u', 'l']);
   names.slice(1, -1).forEach((n, i) => { if (n !== r.from && n !== r.to) put(n, P[i + 1], '', P[i + 1][0] > x0 + W * .7 ? ['l', 'r', 'u', 'd'] : ['r', 'l', 'u', 'd']); });
-  return `<svg class="rmap" role="img" aria-label="${esc(r.from + 'から' + names.slice(1, -1).join('、') + 'を回って' + r.to + 'に着く経路図')}" viewBox="${f(x0)} ${f(y0)} ${f(W)} ${f(H)}" fill="none" stroke-linecap="round" stroke-linejoin="round" style="font-size:${f(13 * k)}px"><path d="${NET}" stroke-width="${f(1.2 * k)}" style="stroke:var(--bd)"/>${r.legs.map((l) => `<path d="${l[4]}" stroke="${l[3]}" stroke-width="${f(4 * k)}"/>`).join('')}<g style="fill:var(--bg);stroke:var(--tx)" stroke-width="${f(2 * k)}">${dots}</g><circle cx="${f(o[0])}" cy="${f(o[1])}" r="${f(6 * k)}" style="fill:var(--tx)"/>${out.join('')}</svg>`;
+  const svg = `<svg class="rmap" role="img" aria-label="${esc(r.from + 'から' + names.slice(1, -1).join('、') + 'を回って' + r.to + 'に着く経路図')}" viewBox="${f(x0)} ${f(y0)} ${f(W)} ${f(H)}" fill="none" stroke-linecap="round" stroke-linejoin="round" style="font-size:${f(13 * k)}px"><path d="${NET}" stroke-width="${f(1.2 * k)}" style="stroke:var(--bd)"/>${r.legs.map((l) => `<path d="${l[4]}" stroke="${l[3]}" stroke-width="${f(4 * k)}"/>`).join('')}<g style="fill:var(--bg);stroke:var(--tx)" stroke-width="${f(2 * k)}">${dots}</g><circle cx="${f(o[0])}" cy="${f(o[1])}" r="${f(6 * k)}" style="fill:var(--tx)"/>${out.join('')}</svg>`;
+  if (!img) return svg;
+  // 共有画像用: 色と文字をSVGの中に入れて、単独の画像として読めるようにする
+  return svg.replace(/var\(--bd\)/g, '#C9CED6').replace(/var\(--tx\)/g, '#0E1116').replace(/var\(--bg\)/g, '#FFFFFF').replace('<svg ', `<svg xmlns="http://www.w3.org/2000/svg" width="${img}" height="${Math.round(img * 300 / 342)}" `).replace('</svg>', "<style>text{font-weight:700;fill:#0E1116;stroke:#fff;stroke-width:3px;paint-order:stroke;font-family:'Zen Kaku Gothic New','Hiragino Sans','Noto Sans JP','Yu Gothic',sans-serif}text.e{font-weight:900}</style></svg>");
 }
 function itinHtml(r) {
   const last = r.stops.length - 1;
@@ -558,9 +561,13 @@ function adjust(r, o, msg, strict, once) { // once: 乗らない路線など、�
   toast(msg, '元に戻す', () => { setCond(before); document.getElementById('toast').hidden = true; location.hash = '#/route/' + encodeURIComponent(r.id); render(); });
 }
 // ルートを画像にする(共有用)。スマホの共有シートで画像として送れる
-function routeImageBlob(r) {
+async function routeImageBlob(r) {
   const W = 1080, P = 64, F = "'Zen Kaku Gothic New','Hiragino Sans','Noto Sans JP','Yu Gothic',sans-serif", tk = rtk(r), n = r.stops.length;
-  const H = 520 + (n - 1) * 150 + 40 + (r.gray ? 190 : 0) + 90;
+  const MW = W - 2 * P, MH = Math.round(MW * 300 / 342);
+  let mapImg = null;
+  try { const u = URL.createObjectURL(new Blob([rmapHtml(r, false, MW)], { type: 'image/svg+xml' })); mapImg = new Image(); mapImg.src = u; await mapImg.decode(); URL.revokeObjectURL(u); } catch (e) { mapImg = null; }
+  const MY = 500, TL = MY + (mapImg ? MH + 50 : 0);
+  const H = 520 + (mapImg ? MH + 50 : 0) + (n - 1) * 150 + 40 + (r.gray ? 190 : 0) + 90;
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
   const wrap = (t, x, y, mw, lh, font, col) => { g.font = font; g.fillStyle = col; let line = '', yy = y; for (const ch of t) { if (g.measureText(line + ch).width > mw) { g.fillText(line, x, yy); line = ch; yy += lh; } else line += ch; } g.fillText(line, x, yy); return yy; };
   g.fillStyle = '#FFFFFF'; g.fillRect(0, 0, W, H);
@@ -570,7 +577,8 @@ function routeImageBlob(r) {
   g.font = `500 40px ${F}`; g.fillStyle = '#39414D'; g.fillText(`${r.from} → ${toTxt(r.from, r.to)}　${cond.ic ? 'IC' : 'きっぷ'}`, P, 340);
   const sp = E.spanMins(r, cond), a = Math.floor(sp[0] / 60), b = Math.round(sp[1] / 60), tm = b > a ? `約${a}〜${b}時間` : durTxt(sp[1]);
   [['所要時間の目安', tm], ['乗換', `${n - 2}回`], ['きっぷの距離', `${tk.km}km`]].forEach((x, i) => { const cx = P + i * 320; g.font = `500 26px ${F}`; g.fillStyle = '#6B7482'; g.fillText(x[0], cx, 410); g.font = `700 40px ${F}`; g.fillStyle = '#0E1116'; g.fillText(x[1], cx, 462); });
-  let y = 540;
+  if (mapImg) { g.fillStyle = '#F4F6F9'; g.fillRect(P, MY, MW, MH); g.drawImage(mapImg, P, MY, MW, MH); }
+  let y = TL + 40;
   for (let i = 0; i < n; i++) {
     const st = r.stops[i], leg = r.legs[i];
     if (leg) { g.fillStyle = leg[3] || '#888'; g.fillRect(P + 88, y + 18, 12, 132);
@@ -579,7 +587,7 @@ function routeImageBlob(r) {
     g.font = `700 44px ${F}`; g.fillStyle = '#0E1116'; g.fillText(st[0], P + 150 - 14, y + 22 - (leg ? 0 : 0)); 
     g.textAlign = 'right'; g.font = `500 30px ${F}`; g.fillStyle = '#6B7482'; g.fillText(`${st[1]}km`, W - P, y + 22); g.textAlign = 'left';
     y += 150; }
-  if (r.gray) { g.fillStyle = '#FFF3D6'; g.fillRect(P, y - 40, W - 2 * P, 100); wrap('6の字(途中で通った駅で最後に降りる形)。JRの回答が分かれています。', P + 24, y + 12, W - 2 * P - 48, 36, `700 28px ${F}`, '#8A5A00'); y += 120; }
+  if (r.gray) { g.fillStyle = '#FFF3D6'; g.fillRect(P, y - 40, W - 2 * P, 100); wrap('6の字(通った駅に最後に降りる形)。JRの回答が分かれています', P + 24, y + 12, W - 2 * P - 48, 36, `700 28px ${F}`, '#8A5A00'); y += 120; }
   g.font = `500 24px ${F}`; g.fillStyle = '#8C94A0'; g.fillText('teri-jr.github.io/Tr/oomawari', P, H - 40);
   return new Promise((res) => cv.toBlob((bl) => res(bl), 'image/png'));
 }
