@@ -66,7 +66,9 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outli
 .side{display:flex;flex-direction:column;gap:8px;align-items:center}
 #clock{width:120px;height:120px}
 .dclock{font-size:20px;letter-spacing:.08em}
-.mset{font-size:10px;color:var(--muted);line-height:1.5;align-self:flex-start;padding-left:8px}
+.mset{font-size:11px;color:var(--muted);line-height:1.5;align-self:stretch;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+.menu{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.6);display:grid;place-items:center;padding:16px}
+.menubox{background:#10151e;border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:16px;width:min(480px,100%);max-height:100%;overflow:auto}
 .meter{width:100%;background:var(--panel);border-radius:8px;padding:8px;display:grid;gap:2px;text-align:center}
 .meter small{font-size:10px;color:var(--muted);letter-spacing:.06em}
 .meter b{font-size:24px}
@@ -185,7 +187,6 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outli
   .run{grid-template-rows:auto auto}
   .list{flex:none;min-height:0;max-height:60dvh}
   .ctrl{position:sticky;bottom:0;z-index:6;padding-bottom:max(6px,env(safe-area-inset-bottom,0px))}
-  .mset{display:none}
   .hover{font-size:96px}
   .kind{font-size:56px!important}
   .next{font-size:34px!important}
@@ -305,7 +306,7 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outli
         <div class="side">
           <canvas id="clock" width="240" height="240" aria-label="時計"></canvas>
           <div class="dclock num" id="dclock">--:--:--</div>
-          <div class="mset" id="mset">放送：自動<br>音量：11</div>
+          <button class="mset" id="mset" type="button" aria-haspopup="dialog">☰ 放送：自動<br>音量：11</button>
           <div class="meter"><small>速度</small><b class="num" id="spd">0<span> km/h</span></b></div>
           <div class="meter"><small>次停車駅まで</small><b class="num" id="rem">0<span> m</span></b></div>
         </div>
@@ -322,7 +323,7 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outli
             <span class="gps num" id="gps"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 3l5 5-2 2-5-5zM16 14l5 5-2 2-5-5zM9 9l6 6-3 3-6-6zM15 3a6 6 0 016 6h-2a4 4 0 00-4-4zm0 3a3 3 0 013 3h-2a1 1 0 00-1-1z"/></svg><span id="gpsTxt">GPS 受信待ち</span></span>
             <span class="delay num" id="delay">遅延 00:00:00</span>
             <span class="dbadge" id="dbadge" hidden>ダイヤ乱れ</span>
-            <span class="dist" id="phase">GPS 受信待ち</span>
+            <span class="dist" id="phase" hidden></span>
             <span class="annc" id="annc"></span>
           </div>
           <div class="dbg num" id="dbg" hidden></div>
@@ -344,13 +345,21 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outli
           <button id="gapBtn">GPS断</button>
         </span>
         <span class="sp"></span>
-        <button id="minus">−10秒</button>
-        <button id="plus">＋10秒</button>
-        <button id="dbgBtn" aria-pressed="false">詳細</button>
-        <button id="vtest">音声テスト</button>
         <button id="updBtn" class="updGo" hidden>更新</button>
-        <button id="back">設定へ</button>
-        <span id="vstat" style="flex-basis:100%;font-size:12px;color:var(--muted)"></span>
+        <button id="back">乗務終了</button>
+      </div>
+      <!-- メニュー：走行は止めずに、途中で変えられる設定だけ -->
+      <div class="menu" id="menu" hidden role="dialog" aria-label="メニュー">
+        <div class="menubox">
+          <div class="field"><span>音声</span><div class="seg" data-k="voice"><button data-v="on">読み上げあり</button><button data-v="off">なし</button></div></div>
+          <div class="field"><span>天候</span><div class="seg" data-k="weather"><button data-v="fine">晴れ</button><button data-v="rain">雨（スキット注意）</button></div></div>
+          <div class="field"><span>ダイヤ</span><div class="seg" data-k="disorder"><button data-v="off">平常</button><button data-v="on">ダイヤ乱れ</button></div></div>
+          <div class="field"><span>測位の頻度</span><div class="seg" data-k="rate"><button data-v="std">標準</button><button data-v="hi">高頻度</button></div></div>
+          <div class="field"><span>遅延の補正</span><div class="seg"><button id="minus" type="button">−10秒</button><button id="plus" type="button">＋10秒</button></div></div>
+          <div class="seg"><button id="dbgBtn" type="button" aria-pressed="false">詳細表示</button><button id="vtest" type="button">音声テスト</button></div>
+          <span id="vstat" class="hint"></span>
+          <button class="go" id="menuClose" type="button">閉じる</button>
+        </div>
       </div>
     </section>
   </div>
@@ -491,7 +500,7 @@ function planTimes(route,k){
   return {ev:s.events,traj:s.traj};
 }
 // ---- バージョン（変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする） ----
-const APP_VERSION='1.7.5';
+const APP_VERSION='1.8.0';
 const isNewer=(a,b)=>{ const x=String(a).split(".").map(Number), y=String(b).split(".").map(Number); for(let i=0;i<3;i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0); } return false; };
 let upd=null; // {version, items}：新しい版が出ていたら入る。announced=放送済み
 async function checkUpdate(){
@@ -616,8 +625,17 @@ document.querySelectorAll(".seg[data-k]").forEach(seg=>{
     cfg[seg.dataset.k]=b.dataset.v;
     if(seg.dataset.k==="src") srcSync();
     if(seg.dataset.k==="net") netSync();
+    segSync(); if(G) applyLive(seg.dataset.k);
   });
 });
+// 設定画面とメニューの同じ項目の押し状態を、cfg に合わせる
+function segSync(){ document.querySelectorAll(".seg[data-k]").forEach(sg=>sg.querySelectorAll("button[data-v]").forEach(b=>b.setAttribute("aria-pressed",cfg[sg.dataset.k]===b.dataset.v))); }
+// 乗務中に変えた設定を反映（走行の位置や予定はそのまま）
+function applyLive(k){
+  if(k==="voice") $("mset").innerHTML="☰ 放送："+(cfg.voice==="on"?"自動":"切")+"<br>音量：11";
+  if(k==="disorder") $("dbadge").hidden=cfg.disorder!=="on";
+  if(k==="rate"&&!testMode&&watchId!=null){ stopGeo(); startGeo(); }
+}
 function srcSync(){
   document.querySelectorAll(".testonly").forEach(e=>e.hidden=cfg.src!=="test");
   const w=$("geoWarn"), bad=cfg.src==="gps"&&(!("geolocation" in navigator)||!window.isSecureContext);
@@ -1215,7 +1233,7 @@ $("start").addEventListener("click",()=>{
   { const kl=$("kindLbl"); kl.style.removeProperty("font-size"); kl.style.letterSpacing=K.label.length>2?".05em":""; kl.style.paddingLeft=K.label.length>2?"0":"";
     requestAnimationFrame(()=>fitText(kl,K.label.length*(K.label.length>2?1.08:1.45))); }
   $("carsLbl").textContent=cfg.cars;
-  $("mset").innerHTML="放送："+(cfg.voice==="on"?"自動":"切")+"<br>音量：11"; msgUntil=0; skidUntil=0;
+  $("mset").innerHTML="☰ 放送："+(cfg.voice==="on"?"自動":"切")+"<br>音量：11"; msgUntil=0; skidUntil=0;
   $("rangeLbl").textContent=`${route[0].name} - ${route[route.length-1].name} 駅一覧`;
   renderList(); Z=null;
   $("dbadge").hidden=cfg.disorder!=="on";
@@ -1247,6 +1265,9 @@ $("taihiBtn").addEventListener("click",()=>{
 });
 $("haltBtn").addEventListener("click",()=>{ if(testMode) insertHalt(SIM,route,K,simDecel(),40+Math.random()*50); });
 $("gapBtn").addEventListener("click",()=>{ if(testMode) SIM.gap={from:SIM.t,len:60}; });
+$("mset").addEventListener("click",()=>{ segSync(); $("menu").hidden=false; });
+$("menuClose").addEventListener("click",()=>{ $("menu").hidden=true; });
+$("menu").addEventListener("click",e=>{ if(e.target.id==="menu") $("menu").hidden=true; });
 $("minus").addEventListener("click",()=>{offset-=10;});
 $("plus").addEventListener("click",()=>{offset+=10;});
 $("dbgBtn").addEventListener("click",e=>{showDbg=!showDbg; e.target.setAttribute("aria-pressed",showDbg); $("dbg").hidden=!showDbg;});
@@ -1255,7 +1276,7 @@ document.querySelectorAll(".updGo").forEach(b=>b.addEventListener("click",reload
 // あとで：バーを閉じる（下の「更新」ボタンは残す）。乗務終了のときにもう一度出す
 $("updLater").addEventListener("click",()=>{ hideUpdBar(); if(upd) upd.later=true; });
 $("appVer").textContent="v"+APP_VERSION;
-$("back").addEventListener("click",()=>{
+$("back").addEventListener("click",()=>{ $("menu").hidden=true;
   cancelAnimationFrame(raf); stopGeo(); try{speechSynthesis.cancel()}catch(_){}
   try{ wakeLock&&wakeLock.release(); }catch(_){} wakeLock=null;
   $("runv").hidden=true; $("setup").hidden=false; $("note").hidden=false;
