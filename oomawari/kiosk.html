@@ -509,31 +509,39 @@ class Component extends DCLogic {
     const legKm = (li) => rr && rr.r ? Math.abs(rr.r.stops[li + 1][1] - rr.r.stops[li][1]) : 0;
     // えらぶ単位: 特急は列車ごと。グリーン車は、改札を出ずに続けて乗るグリーン車をひとまとめ(保土ケ谷〜東京〜千葉は1枚)。
     // 中央線快速のグリーン車はほかの線と通しにできないので分ける
+    // 特急: 乗る駅と降りる駅がどちらも停車駅の区間(列車ごと)。グリーン車は、改札を出ずに続けて乗るグリーン車をひとまとめ(保土ケ谷〜東京〜千葉は1枚)。
+    // 中央線快速のグリーン車はほかの線と通しにできないので分ける
     const units = [];
-    if (rr) (s.buy === 'exp' ? rr.ex : (isGr ? rr.gr : [])).slice().sort((x, y) => x - y).forEach((li) => {
+    if (rr && isGr) rr.gr.slice().sort((x, y) => x - y).forEach((li) => {
       const u = units[units.length - 1], cu = (k) => rr.ln[k] === '中央線快速';
-      if (isGr && u && u[1] === li - 1 && !cu(li) && !cu(u[1])) u[1] = li; else units.push([li, li]); });
-    if (rr) dirs.forEach((d) => units.forEach(([l0, l1]) => {
+      if (u && u[1] === li - 1 && !cu(li) && !cu(u[1])) u[1] = li; else units.push([li, li]); });
+    const exSecs = rr && rr.r && s.buy === 'exp' ? E.expOptions(rr.r) : []; // 特急の区間
+    const secLegs = (e) => { const sh = rr.r.stopHop, o = []; for (let k = 0; k < sh.length - 1; k++) if (sh[k] < e.j && sh[k + 1] > e.i) o.push(k); return o; };
+    if (rr) dirs.forEach((d) => {
+      if (!isGr) exSecs.forEach((e, n) => {
+        const a = d === 'go' ? e.a : e.b, b = d === 'go' ? e.b : e.a, key = d + 'x' + n, on = !!s.exp[key], fee = E.expFee(e.km, false), lg = secLegs(e);
+        expOpts.push({ key, li: lg[0], l1: lg[lg.length - 1], d, a, b, km: e.km, fee, name: e.n, on: on ? 'true' : 'false', label: (s.ret === 'round' ? (d === 'go' ? '行き　' : '帰り　') : '') + a + ' ⇒ ' + b,
+          sub: e.n + '　' + e.km + 'km　' + yen(fee) + '円', btnLabel: on ? '選択中' : '選 択', btnStyle: on ? 'color: #FFF27A; ' + RING : 'color: #FFFFFF; ' + NORING,
+          pick: () => { const x = { ...s.exp }; if (x[key]) delete x[key]; else x[key] = true; set({ exp: x }); } }); });
+      units.forEach(([l0, l1]) => {
       const a0 = rr.st[l0][0], b0 = rr.st[l1 + 1][0];
       const a = d === 'go' ? a0 : b0, b = d === 'go' ? b0 : a0;
       let km = 0; for (let k = l0; k <= l1; k++) km += legKm(k); km = Math.round(km * 10) / 10;
       const lines = []; for (let k = l0; k <= l1; k++) if (!lines.includes(rr.ln[k])) lines.push(rr.ln[k]);
       const key = d + l0 + '-' + l1; const on = !!s.exp[key];
       expOpts.push({ key, li: l0, l1, d, a, b, km, on: on ? 'true' : 'false', label: (s.ret === 'round' ? (d === 'go' ? '行き　' : '帰り　') : '') + a + ' ⇒ ' + b,
-        sub: lines.join('・') + (isGr ? 'の普通列車グリーン車　' + km + 'km・Suica ' + yen(grFee(km, true)) + '円' : 'の特急'), btnLabel: on ? '選択中' : '選 択', btnStyle: on ? 'color: #FFF27A; ' + RING : 'color: #FFFFFF; ' + NORING,
-        pick: () => { const e = { ...s.exp }; if (e[key]) delete e[key]; else e[key] = true; set({ exp: e }); } });
-    }));
+        sub: lines.join('・') + 'の普通列車グリーン車　' + km + 'km・Suica ' + yen(grFee(km, true)) + '円', btnLabel: on ? '選択中' : '選 択', btnStyle: on ? 'color: #FFF27A; ' + RING : 'color: #FFFFFF; ' + NORING,
+        pick: () => { const e = { ...s.exp }; if (e[key]) delete e[key]; else e[key] = true; set({ exp: e }); } }); }); });
     const expSel = buyEx ? expOpts.filter((e) => e.on === 'true') : [];
-    const expFee = isGr ? 0 : ({ free: 1000, res: 1530, green: 2830 }[s.seat]);
-    // グリーン券は1まとまりで1枚。料金はグリーン車に乗る区間の合計キロで決まる(基本はSuicaグリーン料金)
+        // グリーン券は1まとまりで1枚。料金はグリーン車に乗る区間の合計キロで決まる(基本はSuicaグリーン料金)
     const grTk = isGr ? expSel.map((e) => ({ d: e.d, a: e.a, b: e.b, km: e.km, fee: grFee(e.km, true), paper: grFee(e.km, false) })) : [];
     const legs = s.ret === 'round' ? 2 : 1;
     const halfF = (n) => (icFare ? Math.floor(n / 2) : half(n)); // こどものIC運賃は1円単位で切り捨て
     const ridePer = fare == null ? 0 : fare * s.adult + halfF(fare) * s.child;
     const ride = buyRide ? ridePer * legs : 0;
-    const expPer = expFee * s.adult + half(expFee) * s.child;
+    const expTot = expSel.reduce((t, e) => t + e.fee * s.adult + half(e.fee) * s.child, 0); // 特急券は区間ごとの営業キロで決まる。こどもは半額
     const grTotal = grTk.reduce((t, g) => t + g.fee * (s.adult + s.child), 0); // グリーン料金はこどもも大人と同額
-    const total = ride + (isGr ? grTotal : expPer * expSel.length);
+    const total = ride + (isGr ? grTotal : expTot);
     const ppl = '大人' + s.adult + '人　こども' + s.child + '人';
     // timeline rows for a route (card / confirm)
     const tl = (r, mark) => {
@@ -569,9 +577,9 @@ class Component extends DCLogic {
       if (s.ret === 'one') tk.push({ title: icFare ? '乗車券（IC運賃）' : '乗車券', from: HERE || '－', to: to || '－', l3: '経由：' + (rr && rr.keiyu ? rr.keiyu : '－－－'), day, price: '￥' + yenOr(fare == null ? null : ridePer), note: '下車前途無効' });
       else { tk.push({ title: icFare ? '乗車券（IC運賃）' : '乗車券', from: HERE || '－', to: to || '－', l3: '経由：' + (rr && rr.keiyu ? rr.keiyu : '－－－') + '　（ゆき）', day, price: '￥' + yenOr(fare == null ? null : ridePer), note: '下車前途無効' }); tk.push({ title: icFare ? '乗車券（IC運賃）' : '乗車券', from: to || '－', to: HERE || '－', l3: (rr && rr.normal ? '経由：' + rr.via : '経由：－－－') + '　（かえり）', day, price: '￥' + yenOr(fare == null ? null : ridePer), note: '下車前途無効' }); }
     }
-    const seatName = { free: '自由席', res: '指定席', green: 'グリーン車指定席' }[s.seat];
+    const seatName = s.seat === 'free' ? '座席未指定' : '指定席';
     if (isGr) grTk.forEach((g) => tk.push({ title: 'Suicaグリーン券', from: g.a, to: g.b, l3: '普通列車グリーン車　' + g.km + 'km', day: MD + '当日1回限り有効', price: '￥' + yen(g.fee * (s.adult + s.child)), note: '紙のきっぷ・車内は' + yen(g.paper) + '円' }));
-    else expSel.forEach((e) => tk.push({ title: addName, from: e.a, to: e.b, l3: seatName, day: MD, price: '￥' + yen(expPer), note: '' }));
+    else expSel.forEach((e) => tk.push({ title: e.name + ' 特急券', from: e.a, to: e.b, l3: seatName + '　' + e.km + 'km', day: MD, price: '￥' + yen(e.fee * s.adult + half(e.fee) * s.child), note: '座席未指定券も同額' }));
     const pplShort = '大人' + s.adult + (s.child ? '・小児' + s.child : '');
     const tickets = tk.map((t, i) => ({ ...t, ppl: pplShort, x: (i * 16) + 'px', y: (i * 12) + 'px', delay: (0.5 + i * 2.4) + 's', aria: t.title + '　' + t.from + 'から' + t.to + '　' + t.price + '' }));
     const change = s.card ? 0 : Math.max(0, s.paid - total);
@@ -582,7 +590,7 @@ class Component extends DCLogic {
       { k: '区間', v: (HERE || '－') + ' ⇒ ' + (to || '－') + (s.ret === 'round' ? '（往復）' : '（片道）') },
       { k: isN ? '経路' : '大回り経路', v: rr && rr.normal ? rr.keiyu + '　' + rr.time : rr ? rr.km + 'km　' + rr.time + (s.ret === 'round' ? '　' + { go: '行きで大回り', back: '帰りで大回り', both: '行きも帰りも' }[s.rdir] : '') : '－' },
       { k: 'きっぷ', v: { only: '乗車券のみ', exp: '特急券＋乗車券', green: 'グリーン券＋乗車券' }[s.buy] },
-      { k: addName, v: buyEx ? (expSel.length ? (isGr ? grTk.map((g) => g.a + '⇒' + g.b + '（' + g.km + 'km・' + yen(g.fee) + '円）') : expSel.map((e) => e.a + '⇒' + e.b)).join('、') + '　' + (isGr ? '普通列車グリーン車' : { free: '自由席', res: '指定席', green: 'グリーン車' }[s.seat]) : 'なし') : '－' },
+      { k: addName, v: buyEx ? (expSel.length ? (isGr ? grTk.map((g) => g.a + '⇒' + g.b + '（' + g.km + 'km・' + yen(g.fee) + '円）') : expSel.map((e) => e.name + ' ' + e.a + '⇒' + e.b + '（' + e.km + 'km・' + yen(e.fee) + '円）')).join('、') + '　' + (isGr ? '普通列車グリーン車' : (s.seat === 'free' ? '座席未指定' : '指定席')) : 'なし') : '－' },
       { k: '人数', v: ppl }
     ];
     const headers = {
@@ -596,7 +604,7 @@ class Component extends DCLogic {
       9: ['', 'きっぷ', 'を', 'お取りください']
     };
     const h = headers[s.step] || ['', '', '', ''];
-    const notes = { 2: isN ? 'いちばん短い道のり(JR線のみ)' : s.from ? '長い大回りを優先します' : '先に出発駅を入力してください。', 3: isN ? 'いちばん短い道のり。運賃はIC・片道' : (s.mode === 'saved' ? 'アプリで保存したルート' : (APPC.mk ? '末期モード(正規の大回りではありません)。' : '') + kRelax + (found.length > 2 ? found.length + '本から長い順（' + (rp * 2 + 1) + '〜' + Math.min(found.length, rp * 2 + 2) + '件目）。' : '') + '運賃はIC・片道'), 4: '乗換時間にご注意ください', 5: expOpts.length ? (isGr ? 'Suicaグリーン料金: 〜50km 750円・〜100km 1,000円・101km〜 1,550円。続けて乗る区間は1枚' : '特急券は区間ごとに発券') : (isGr ? 'この経路にグリーン車はありません。' : '特急は未対応です。') + '「乗車券のみ」にしてください', 6: '', 7: '内容をご確認ください', 8: '', 9: 'おつりをお忘れなく' };
+    const notes = { 2: isN ? 'いちばん短い道のり(JR線のみ)' : s.from ? '長い大回りを優先します' : '先に出発駅を入力してください。', 3: isN ? 'いちばん短い道のり。運賃はIC・片道' : (s.mode === 'saved' ? 'アプリで保存したルート' : (APPC.mk ? '末期モード(正規の大回りではありません)。' : '') + kRelax + (found.length > 2 ? found.length + '本から長い順（' + (rp * 2 + 1) + '〜' + Math.min(found.length, rp * 2 + 2) + '件目）。' : '') + '運賃はIC・片道'), 4: '乗換時間にご注意ください', 5: expOpts.length ? (isGr ? 'Suicaグリーン料金: 〜50km 750円・〜100km 1,000円・101km〜 1,550円。続けて乗る区間は1枚' : '特急券は区間ごとに発券。料金は首都圏の特急料金(事前料金)の目安。停車駅は目安') : (isGr ? 'この経路にグリーン車はありません。' : 'この経路に使える特急はありません。') + '「乗車券のみ」にしてください', 6: '', 7: '内容をご確認ください', 8: '', 9: 'おつりをお忘れなく' };
     const backMap = { 1: 0, 2: 1, 3: s.mode === 'saved' ? 1 : 2, 4: 3, 6: 4, 5: 6, 7: buyEx ? 5 : 6 };
     const v = {
       goHref: rr ? 'index.html#/route/' + encodeURIComponent(rr.id) : 'index.html', here: HERE || '－', net: E.netPath, ver: VER,
@@ -619,7 +627,7 @@ class Component extends DCLogic {
       // route rows (buy/confirm)
       cRows, routeKm: rr ? rr.km : '', toLabel: to || '－',
       exps: expOpts, showSeat: s.buy === 'exp', showGrNote: isGr,
-      seatOpts: [['free', '自由席'], ['res', '指定席'], ['green', 'グリーン車']].map((x) => ({ label: x[1], style: s.seat === x[0] ? 'color: #FFF27A; ' + RING : 'color: #FFFFFF; ' + NORING, pick: () => set({ seat: x[0] }) })),
+      seatOpts: [['res', '指定席'], ['free', '座席未指定']].map((x) => ({ label: x[1], style: s.seat === x[0] ? 'color: #FFF27A; ' + RING : 'color: #FFFFFF; ' + NORING, pick: () => set({ seat: x[0] }) })),
       expNextRing: expSel.length ? RING : NORING,
       retOpen: s.retOpen, retRingOne: s.retOpen ? NORING : RING,
       rideKind: s.ret === 'round' ? '乗車券<往復>' : '乗車券<片道>', showRideBracket: buyRide,

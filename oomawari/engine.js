@@ -191,7 +191,7 @@ function create(D) {
       for (let h = 0; h <= H; h++) { const n = seq[h].n, st = h === 0 || h === H || (h > 0 && !skip[pick[h - 1][0]].has(n)) || (h < H && !skip[pick[h][0]].has(n));
         if (!st) continue; if (stopAt.has(n) && !(loop && h === H)) return null; stopAt.add(n); } }
     // 列車ごとにまとめる
-    const legs = [], stops = [[from, 0]], legSvc = []; let h0 = 0;
+    const legs = [], stops = [[from, 0]], legSvc = [], stopHop = [0]; let h0 = 0;
     const noteOf = (j) => { const u = turnAt[j]; if (!u) return ''; const t = u.t;
       const X = seq[j].n, skips = (j > 0 && skip[pick[j - 1][0]].has(X)) || (j < H && skip[pick[j][0]].has(X)); // 乗る列車がこの駅を通過する
       if (!u.req && skips && j > 0 && j < H) return '列車が' + t.at + 'に停まらないので、' + t.to + 'で乗り換えて折り返す（折り返し可・' + t.law + '）';
@@ -212,14 +212,14 @@ function create(D) {
       { const tb = (D.through || {})[svcIds[sv]], parts = []; // 直通列車は、走る区間ごとの路線名を「・」でつなげて見せる(例: 横須賀線・総武快速線)
         if (tb) { for (let x = h0; x < h; x++) { const nm = tb[G[hops[x].s].id] || S.n; if (parts[parts.length - 1] !== nm) parts.push(nm); } if (parts.length > 1) o2.disp = parts.join('・'); } }
       legs.push([S.n, name + '方面', mins, S.c, pathD(seq.slice(h0, h + 1).map((x) => x.n)), o2]); legSvc.push(sv);
-      const st = [name, f1(seq[h].km)]; if (h === H && noteOf(H)) st.push(noteOf(H)); else if (h < H && noteOf(h)) st.push(noteOf(h)); stops.push(st); h0 = h; }
+      const st = [name, f1(seq[h].km)]; if (h === H && noteOf(H)) st.push(noteOf(H)); else if (h < H && noteOf(h)) st.push(noteOf(h)); stops.push(st); stopHop.push(h); h0 = h; }
     if (noteOf(0)) stops[0].push(noteOf(0));
     const regs = D.regions.filter((r) => regM & regBit[r]), top = regs.slice().sort((a, b) => regKm[b] - regKm[a]);
     const title = regs.length >= 5 ? '関東をひとまわり。' : regs.length === 0 ? '都心をぐるり。' : regs.length === 1 ? regs[0] + 'をぐるり。' : top[0] + 'と' + top[1] + 'をぐるり。';
     const mid = stops.slice(1, -1).map((s) => s[0]);
     const passed = seq.map((x) => x.n); deemedBy.forEach((sm) => sm.as.forEach((v) => passed.push(v))); Object.keys(turnAt).forEach((j) => { if (turnAt[j].req) turnAt[j].t.via.forEach((v) => passed.push(v)); });
     return { id: idOf(from, to, pcs), mk, gray: grayRoute, from, to, loop, km: f1(km), title, via: (mid.length > 6 ? mid.slice(0, 6).concat('ほか') : mid).join('・') || '乗換なし', regions: regs, stops, legs,
-      rare, passed, hopKeys: hops.map((hp) => hopKey(hp.s, hp.h)), hopKm: hops.map((hp) => hp.km), hopSt: seq.map((x) => x.n), pcs, lines: legs.map((l) => l[0]) };
+      rare, passed, hopKeys: hops.map((hp) => hopKey(hp.s, hp.h)), hopKm: hops.map((hp) => hp.km), hopSt: seq.map((x) => x.n), hopSeg: hops.map((hp) => G[hp.s].id), stopHop, pcs, lines: legs.map((l) => l[0]) };
   }
   function routeById(id, o) { const r = piecesOf(id); return r ? buildRoute(r.from, r.to, r.pcs, Object.assign({ gray: true }, o)) : null; } // 開くだけなら、グレーなルートも組み立てる
 
@@ -471,6 +471,16 @@ function create(D) {
     return { list: out, km };
   }
   const greenFee = (km, suica) => { const b = D.green.fee.find((x) => Math.ceil(km - 1e-9) <= x[0]) || D.green.fee[D.green.fee.length - 1]; return suica ? b[2] : b[1]; };
+  // 特急: 走る区間(辺)と停車駅(data.js の express)を、ルートの駅の並びに重ねる。乗る駅と降りる駅がどちらも停車駅の区間だけ出す。料金は営業キロで引く
+  const expFee = (km, inCar) => { const b = D.expFee.find((x) => Math.ceil(km - 1e-9) <= x[0]) || D.expFee[D.expFee.length - 1]; return b[1] + (inCar ? D.expFee.inCar : 0); };
+  const expOptions = (r) => { const out = [], P = r.hopSt, H = P.length - 1;
+    (D.express || []).forEach((X) => { const sg = new Set(X.segs), st = new Set(X.stops);
+      for (let h = 0; h < H;) { if (!sg.has(r.hopSeg[h])) { h++; continue; }
+        let e = h; while (e < H && sg.has(r.hopSeg[e])) e++;
+        let i = -1, j = -1; for (let k = h; k <= e; k++) if (st.has(P[k])) { if (i < 0) i = k; j = k; }
+        if (i >= 0 && j > i) { let km = 0; for (let k = i; k < j; k++) km += r.hopKm[k]; if (km >= 15) out.push({ id: X.id, n: X.n, c: X.c, i, j, a: P[i], b: P[j], km: Math.round(km * 10) / 10 }); } // 15km未満は、ほかの線へ直通する列車の端だけなので出さない
+        h = e; } });
+    return out; };
   const hasGreen = (svcName) => D.green.svc.includes(svcName);
   /* ===== 乗りつぶし: 「このルートに乗った」の区間を合わせて、路線ごとに何km乗ったか ===== */
   function coverage(riddenIds) {
@@ -486,7 +496,7 @@ function create(D) {
   const seenLine = new Set(), lineOpts = []; svcIds.forEach((k) => { if (!seenLine.has(SV[k].n)) { seenLine.add(SV[k].n); lineOpts.push({ n: SV[k].n, c: SV[k].c }); } });
   const stations = Object.keys(ST).map((n) => ({ n, y: ST[n][0] }));
   return { data: D, stations, nodes: nodeNames.slice(), lineOpts, netPath, xy, ll: (n) => (ST[n] ? [ST[n][1], ST[n][2]] : null), has: (n) => !!ST[n], isNode, isLoopStation,
-    ticket, dests, search, find, plain, keiyu, steps, pcPath, rideMins, spanMins, routeById, buildRoute, overlap, nearest, coverage, greenFee, hasGreen, piecesOf };
+    ticket, dests, search, find, plain, keiyu, steps, pcPath, rideMins, spanMins, routeById, buildRoute, overlap, nearest, coverage, greenFee, hasGreen, expFee, expOptions, piecesOf };
 }
 if (typeof module !== 'undefined' && module.exports) module.exports = { create };
 else root.OOMAWARI = create(root.OOMAWARI_DATA);
