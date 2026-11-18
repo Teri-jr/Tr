@@ -117,6 +117,21 @@ function create(D) {
     return { from, to, pcs };
   }
   const idOf = (from, to, pcs) => from + ':' + to + ':' + pcs.map((p) => G[p[0]].id + (p[2] > p[1] ? '' : '-') + (p.length > 3 ? '~' + p[3] : '')).join('.');
+  // きっぷ(マルス券)の「経由」に印字する路線名。辺の正式な路線(東海道本線→「東海道」など)を乗った順にならべる。
+  // 品鶴線(品川〜西大井〜武蔵小杉〜新川崎〜鶴見)は、全部通れば「横須賀線」、品川側だけなら「西大井」、鶴見側だけなら「新川崎」。
+  // 東北本線の埼京線(赤羽〜武蔵浦和〜大宮)と日暮里〜尾久〜赤羽は、ふつうの東北本線として「東北」と出す(駅名が出るかは資料で未確認)。代々木〜新宿は、前後が中央本線なら「中央東」、それ以外は「山手」
+  const KEIYU = { '東海道本線': '東海道', '横須賀線': '横須賀', '山手線': '山手', '赤羽線': '赤羽', '東北本線': '東北', '常磐線': '常磐', '中央本線': '中央東', '総武本線': '総武' };
+  function keiyu(r) {
+    const pp = r && piecesOf(r.id); if (!pp) return [];
+    const out = [], push = (t) => { if (out[out.length - 1] !== t) out.push(t); };
+    for (let i = 0; i < pp.pcs.length; i++) { const g = G[pp.pcs[i][0]];
+      if (g.id === 'hinkaku1' || g.id === 'hinkaku2') { const seen = new Set();
+        while (i < pp.pcs.length && /^hinkaku/.test(G[pp.pcs[i][0]].id)) { const q = pp.pcs[i], h = G[q[0]]; for (let k = Math.min(q[1], q[2]); k <= Math.max(q[1], q[2]); k++) seen.add(h.names[k]); i++; }
+        i--; push(seen.has('品川') && seen.has('鶴見') ? '横須賀線' : seen.has('鶴見') ? '新川崎' : '西大井'); continue; }
+      if (g.id === 'yamanote2' && ((i > 0 && G[pp.pcs[i - 1][0]].line === '中央本線') || (i + 1 < pp.pcs.length && G[pp.pcs[i + 1][0]].line === '中央本線'))) { push('中央東'); continue; }
+      push(KEIYU[g.line] || g.line.replace(/線$/, '').replace(/本$/, '')); }
+    return out;
+  }
   function riddenSet(ids) { const set = new Set(); (ids || []).forEach((id) => { const r = piecesOf(id); if (r) r.pcs.forEach((p) => { for (let h = Math.min(p[1], p[2]); h < Math.max(p[1], p[2]); h++) set.add(hopKey(p[0], h)); }); }); return set; }
 
   /* ===== 1本のルートを組み立てる(駅の重なり・折り返し・列車の割りあてを確かめる) ===== */
@@ -469,7 +484,7 @@ function create(D) {
   const seenLine = new Set(), lineOpts = []; svcIds.forEach((k) => { if (!seenLine.has(SV[k].n)) { seenLine.add(SV[k].n); lineOpts.push({ n: SV[k].n, c: SV[k].c }); } });
   const stations = Object.keys(ST).map((n) => ({ n, y: ST[n][0] }));
   return { data: D, stations, nodes: nodeNames.slice(), lineOpts, netPath, xy, ll: (n) => (ST[n] ? [ST[n][1], ST[n][2]] : null), has: (n) => !!ST[n], isNode, isLoopStation,
-    ticket, dests, search, find, plain, steps, pcPath, rideMins, spanMins, routeById, buildRoute, overlap, nearest, coverage, greenFee, hasGreen, piecesOf };
+    ticket, dests, search, find, plain, keiyu, steps, pcPath, rideMins, spanMins, routeById, buildRoute, overlap, nearest, coverage, greenFee, hasGreen, piecesOf };
 }
 if (typeof module !== 'undefined' && module.exports) module.exports = { create };
 else root.OOMAWARI = create(root.OOMAWARI_DATA);
