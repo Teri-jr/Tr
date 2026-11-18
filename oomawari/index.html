@@ -343,7 +343,7 @@ ol,ul{list-style:none}
 <script src="engine.js?v=1.10.1"></script>
 <script>
 'use strict';
-const APP_VERSION = '1.25.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.25.1'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ===== データ =====
    路線データは data.js、ルートの探索は engine.js。画面はここから E.search() などを呼ぶだけ。 */
@@ -461,7 +461,7 @@ function ticketHtml() {
 <span class="t3">経由：${from === to ? '一周' : '－－－'}</span>
 <span class="t4"><span><b>${d.getMonth() + 1}</b>月<b>${d.getDate()}</b>日当日限り有効</span><span class="yen">￥${fare()}</span></span>
 <span class="t5">下車前途無効</span>
-<span class="t6"><span>${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}<br><b>00000-00</b></span><span>大回りジェネレータ発行<br>（きっぷのイメージ）</span><b>見本</b></span></div><p class="tkl">駅名を押すと、出発駅・到着駅を変えられます</p>${basisHtml()}</section>`;
+<span class="t6"><span>${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}<br><b>00000-00</b></span><span>大回りジェネレータ発行</span></span></div><p class="tkl">駅名を押すと、出発駅・到着駅を変えられます</p>${basisHtml()}</section>`;
 }
 const timeHtml = () => `<section aria-label="使える時間" style="display:flex;flex-direction:column;gap:2px"><span class="lab">使える時間</span><div class="timeR">
 <button type="button" class="timeB" data-time="start" aria-label="出発 ${esc(cond.start)}">${esc(cond.start)}<input type="time" tabindex="-1" aria-hidden="true" value="${esc(cond.start)}" data-tin="start"></button><span>から</span>
@@ -773,7 +773,7 @@ V.guide = () => `<div class="scr"><div class="col guide"><header class="hd"><a h
 <h2 class="h2r">守ること</h2><ul><li>すべて東京近郊区間の中を通る</li><li>同じ駅を2度通らない</li><li>途中で改札を出ない</li><li>紙のきっぷで乗る(ICカードは長時間の乗車で改札が閉まることがあります)</li></ul>
 <h2 class="h2r">このアプリでできること</h2><ul><li>使える時間と行きたい方面から、回れるルートをさがす</li><li>ルートを保存して、電波のない区間でも開く</li><li>乗っているあいだ、次の乗換までの距離を見る</li><li>係員の方に、経路と決まりを見せる</li></ul>
 <p class="note" style="margin-top:16px">関東の輪になっている路線と、神奈川の行き止まりの路線(横須賀線 大船〜久里浜、東海道線 茅ケ崎〜熱海、鶴見線 浜川崎〜扇町)から探します。ほかの行き止まりの路線はまだです。営業キロ・所要時間・本数は手入力の目安です。発車時刻は当日の時刻表で確認してください。</p>
-<p class="note" style="margin-top:8px"><a href="kiosk.html" style="text-decoration:underline">券売機モード（あそび）</a>　v${APP_VERSION}</p></section></div></div>`;
+<p class="note" style="margin-top:8px"><a href="kiosk.html" style="text-decoration:underline">券売機モード</a>　v${APP_VERSION}</p></section></div></div>`;
 
 /* ===== 画面の切りかえ ===== */
 const app = document.getElementById('app');

@@ -9,7 +9,7 @@
 <title>大回りジェネレータ 券売機モード</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@500&display=swap">
 <style>
-/* 券売機モード(あそび): 1280×1024 の画面を作り、端末の大きさに合わせて拡大縮小する */
+/* 券売機モード: 1280×1024 の画面を作り、端末の大きさに合わせて拡大縮小する */
 html,body{height:100%;margin:0;background:#000;overflow:hidden}
 html,body{position:fixed;left:0;top:0;width:100%} /* 1280px の画面がはみ出しても、スマホが表示を広げないようにする */
 #rot{position:fixed;right:8px;bottom:8px;z-index:9;display:none;padding:8px 12px;border:1px solid #666;border-radius:18px;background:#222;color:#EEE;font-size:13px;opacity:.8}
@@ -28,7 +28,7 @@ button{font-family:inherit;cursor:pointer}
 <div style="position: relative; isolation: isolate; width: 1280px; height: 1024px; overflow: hidden; background: #DCDCDC; color: #111111; font-family: 'BIZ UDPGothic', sans-serif; line-height: 1.35; display: flex; flex-direction: column; filter: {{root}}">
 
 <sc-if value="{{grayTop}}">
-<div style="height: 140px; flex-shrink: 0; padding: 0 40px; background: #ABABAB; display: flex; align-items: center; justify-content: space-between"><span style="font-size: 20px; font-weight: 700; color: #333333">大回りジェネレータ　券売機モード（あそび）<span style="margin-left: 12px; font-size: 16px; font-weight: 400">v{{ver}}</span></span><a href="index.html" style="height: 64px; padding: 0 20px; box-sizing: border-box; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 22px; text-decoration: none; display: flex; align-items: center">アプリに戻る</a></div>
+<div style="height: 140px; flex-shrink: 0; padding: 0 40px; background: #ABABAB; display: flex; align-items: center; justify-content: space-between"><span style="font-size: 20px; font-weight: 700; color: #333333">大回りジェネレータ　券売機モード<span style="margin-left: 12px; font-size: 16px; font-weight: 400">v{{ver}}</span></span><a href="index.html" style="height: 64px; padding: 0 20px; box-sizing: border-box; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 22px; text-decoration: none; display: flex; align-items: center">アプリに戻る</a></div>
 </sc-if>
 <sc-if value="{{blackTop}}">
 <div style="height: 140px; flex-shrink: 0; padding: 0 20px 0 12px; background: repeating-linear-gradient(#000000 0 2px, #1C1C1C 2px 4px); color: #FFFFFF; display: flex; align-items: center; gap: 20px; box-shadow: 0 2px 0 #9A9A9A">
@@ -187,8 +187,6 @@ button{font-family:inherit;cursor:pointer}
 <div aria-hidden="true" style="position: absolute; left: 250px; top: 330px; width: 190px; height: 70px; border: 3px solid #E0C400; border-radius: 8px 8px 0 0; background: #2A2A2A"></div>
 <div aria-hidden="true" style="position: absolute; left: 0; right: 0; bottom: 0; height: 60px; background: #2E2E2E"></div>
 </div>
-<button type="button" sc-camel-on-click="{{toggleRcpt}}" style="position: absolute; right: 40px; top: 140px; width: 210px; height: 100px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; {{rcptStyle}}; font-size: 26px">{{rcptBtn}}</button>
-<span style="position: absolute; right: 40px; top: 260px; width: 210px; font-size: 17px; text-align: center">領収書が必要な方は<br>先に押してください</span>
 </div>
 </sc-if>
 
@@ -207,32 +205,13 @@ button{font-family:inherit;cursor:pointer}
 <span style="position: relative; font-size: 12px; letter-spacing: 0.06em">{{t.l3}}</span>
 <span style="position: relative; display: flex; align-items: baseline; justify-content: space-between; font-size: 13px; line-height: 1.3"><span>{{t.day}}</span><span style="font-size: 22px; letter-spacing: 0.04em">{{t.price}}</span></span>
 <span style="position: relative; padding-left: 22px; font-size: 13px; letter-spacing: 0.08em">{{t.note}}</span>
-<span style="position: relative; margin-top: auto; display: flex; justify-content: space-between; align-items: flex-end; font-size: 11px; line-height: 1.35; letter-spacing: 0.04em"><span>{{dateDot}}<br><span style="font-size: 14px">00000-00</span></span><span>{{t.ppl}}<br>（きっぷのイメージ）</span><span style="font-size: 14px">見本</span></span>
+<span style="position: relative; margin-top: auto; display: flex; justify-content: space-between; align-items: flex-end; font-size: 11px; line-height: 1.35; letter-spacing: 0.04em"><span>{{dateDot}}<br><span style="font-size: 14px">00000-00</span></span><span>{{t.ppl}}</span></span>
 </div>
 </div>
 </sc-for>
 </div>
 </div>
-<sc-if value="{{rcptOn}}">
-<div style="display: flex; flex-direction: column; align-items: center">
-<span style="font-size: 18px; color: #555555">領収書</span>
-<div aria-hidden="true" style="width: 210px; height: 14px; border-radius: 3px; background: #1F1F1F; box-shadow: inset 0 3px 5px rgba(0,0,0,0.6)"></div>
-<div style="width: 190px; height: 450px; overflow: hidden">
-<div class="prt" style="width: 190px; box-sizing: border-box; padding: 14px 12px 18px; background: #FFFFFF; box-shadow: 0 2px 6px rgba(0,0,0,0.2); font-size: 12px; line-height: 1.6; animation-delay: {{rcptDelay}}; display: flex; flex-direction: column">
-<strong style="align-self: center; font-size: 17px; letter-spacing: 0.4em">領収書</strong>
-<span style="margin-top: 6px; border-bottom: 1px solid #111111; font-size: 13px">お客さま　　　　　様</span>
-<span style="margin-top: 8px">2026年11月15日</span>
-<sc-for list="{{rcptLines}}" as="x"><span style="display: flex; justify-content: space-between"><span>{{x.name}}</span><span>{{x.price}}</span></span></sc-for>
-<span style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #111111; display: flex; justify-content: space-between; font-size: 15px; font-weight: 700"><span>合計</span><span>￥{{totalFmt}}</span></span>
-<span style="display: flex; justify-content: space-between"><span>お預り</span><span>{{paidLabel}}</span></span>
-<span style="display: flex; justify-content: space-between"><span>おつり</span><span>￥{{changeFmt}}</span></span>
-<span style="margin-top: 8px">上記正に領収いたしました</span>
-<span style="margin-top: 4px">大回りジェネレータ（イメージ）</span>
-<span style="margin-top: 8px; align-self: center; padding: 2px 10px; border: 1px solid #111111; font-size: 14px">見本</span>
-</div>
-</div>
-</div>
-</sc-if>
+
 <div style="flex-grow: 1; padding-top: 60px; display: flex; flex-direction: column; gap: 20px">
 <p style="margin: 0; font-size: 40px; font-weight: 700; line-height: 1.4">ありがとうございました</p>
 <sc-if value="{{hasChange}}"><p style="margin: 0; font-size: 30px; color: #0A6A0A; font-weight: 700">{{changeLine}}</p></sc-if>
@@ -572,12 +551,12 @@ class Component extends DCLogic {
       return out;
     };
     const cards = list.map((r, i) => ({ ...r, no: String(i + 1), rows: tl(r, false), ring: i === 0 ? RING : NORING, hasMap: !r.normal,
-      headL: r.normal ? '所要時間' : '距離', headV: r.normal ? r.time : r.km + 'km', headR: r.normal ? '経由：' + r.via : (r.r && r.r.gray ? 'グレー(6の字)　' : '') + '時間のめやす：' + r.time,
+      headL: r.normal ? '所要時間' : '距離', headV: r.normal ? r.time : r.km + 'km', headR: r.normal ? '経由：' + r.keiyu : (r.r && r.r.gray ? 'グレー(6の字)　' : '') + '時間のめやす：' + r.time,
       tag: s.mode !== 'saved' && !isN && found.length > 2 ? (rp * 2 + i + 1) + '件目' : s.mode === 'saved' ? (r.date ? r.date.replace(/^\d+-0?(\d+)-0?(\d+)$/, '$1月$2日') + 'に乗った' : 'まだ乗っていない') : '', fareTxt: (() => { const t = E.ticket(r.from, r.to, r.from !== r.to); return t && t.fare != null ? yen(t.fare) + '円' : '－－－'; })(),
       pick: () => set({ route: i, exp: {}, step: 4, modal: null }),
       detail: () => set({ detail: i, modal: 'detail' }) }));
     const dr = list[s.detail] || list[0];
-    const dt = dr ? { km: dr.km || '', time: dr.time, xfer: dr.xfer || (dr.ln.length - 1) + '回', via: dr.via, aria: '経路' + (s.detail + 1) + 'の路線図。' + dr.st.map((x) => x[0]).join('、'),
+    const dt = dr ? { km: dr.km || '', time: dr.time, xfer: dr.xfer || (dr.ln.length - 1) + '回', via: dr.keiyu || dr.via, aria: '経路' + (s.detail + 1) + 'の路線図。' + dr.st.map((x) => x[0]).join('、'),
       paths: dr.r.legs.map((l) => ({ d: l[4], c: l[3] })),
       dots: dr.r.stops.map((x, i) => { const p = E.xy(x[0]); return { x: p[0].toFixed(1), y: p[1].toFixed(1), r: i === 0 || i === dr.r.stops.length - 1 ? 5 : 3.5 }; }),
       labels: dr.r.stops.filter((x, i) => i === 0 || i === dr.r.stops.length - 1).map((x, i) => { const p = E.xy(x[0]); return { n: x[0], a: i ? 'start' : 'end', x: (p[0] + (i ? 6 : -6)).toFixed(1), y: (p[1] + (i ? -4 : 12)).toFixed(1) }; }) }
@@ -590,19 +569,18 @@ class Component extends DCLogic {
       if (s.ret === 'one') tk.push({ title: icFare ? '乗車券（IC運賃）' : '乗車券', from: HERE || '－', to: to || '－', l3: '経由：' + (rr && rr.keiyu ? rr.keiyu : '－－－'), day, price: '￥' + yenOr(fare == null ? null : ridePer), note: '下車前途無効' });
       else { tk.push({ title: icFare ? '乗車券（IC運賃）' : '乗車券', from: HERE || '－', to: to || '－', l3: '経由：' + (rr && rr.keiyu ? rr.keiyu : '－－－') + '　（ゆき）', day, price: '￥' + yenOr(fare == null ? null : ridePer), note: '下車前途無効' }); tk.push({ title: icFare ? '乗車券（IC運賃）' : '乗車券', from: to || '－', to: HERE || '－', l3: (rr && rr.normal ? '経由：' + rr.via : '経由：－－－') + '　（かえり）', day, price: '￥' + yenOr(fare == null ? null : ridePer), note: '下車前途無効' }); }
     }
-    const seatName = { free: '自由席', res: '指定席（座席はイメージ）', green: 'グリーン車指定席（座席はイメージ）' }[s.seat];
+    const seatName = { free: '自由席', res: '指定席', green: 'グリーン車指定席' }[s.seat];
     if (isGr) grTk.forEach((g) => tk.push({ title: 'Suicaグリーン券', from: g.a, to: g.b, l3: '普通列車グリーン車　' + g.km + 'km', day: MD + '当日1回限り有効', price: '￥' + yen(g.fee * (s.adult + s.child)), note: '紙のきっぷ・車内は' + yen(g.paper) + '円' }));
     else expSel.forEach((e) => tk.push({ title: addName, from: e.a, to: e.b, l3: seatName, day: MD, price: '￥' + yen(expPer), note: '' }));
     const pplShort = '大人' + s.adult + (s.child ? '・小児' + s.child : '');
-    const tickets = tk.map((t, i) => ({ ...t, ppl: pplShort, x: (i * 16) + 'px', y: (i * 12) + 'px', delay: (0.5 + i * 2.4) + 's', aria: t.title + '　' + t.from + 'から' + t.to + '　' + t.price + '　見本' }));
-    const rcptLines = tk.map((t) => ({ name: t.title, price: t.price }));
+    const tickets = tk.map((t, i) => ({ ...t, ppl: pplShort, x: (i * 16) + 'px', y: (i * 12) + 'px', delay: (0.5 + i * 2.4) + 's', aria: t.title + '　' + t.from + 'から' + t.to + '　' + t.price + '' }));
     const change = s.card ? 0 : Math.max(0, s.paid - total);
     const pay = (v) => () => { const p = s.paid + v; set(p >= total ? { paid: p, step: 9 } : { paid: p }); };
     // confirm table
     const conf = [
       { k: '乗車日', v: MDW },
       { k: '区間', v: (HERE || '－') + ' ⇒ ' + (to || '－') + (s.ret === 'round' ? '（往復）' : '（片道）') },
-      { k: isN ? '経路' : '大回り経路', v: rr && rr.normal ? rr.via + '　' + rr.time : rr ? rr.km + 'km　' + rr.time + (s.ret === 'round' ? '　' + { go: '行きで大回り', back: '帰りで大回り', both: '行きも帰りも' }[s.rdir] : '') : '－' },
+      { k: isN ? '経路' : '大回り経路', v: rr && rr.normal ? rr.keiyu + '　' + rr.time : rr ? rr.km + 'km　' + rr.time + (s.ret === 'round' ? '　' + { go: '行きで大回り', back: '帰りで大回り', both: '行きも帰りも' }[s.rdir] : '') : '－' },
       { k: 'きっぷ', v: { only: '乗車券のみ', exp: '特急券＋乗車券', green: 'グリーン券＋乗車券' }[s.buy] },
       { k: addName, v: buyEx ? (expSel.length ? (isGr ? grTk.map((g) => g.a + '⇒' + g.b + '（' + g.km + 'km・' + yen(g.fee) + '円）') : expSel.map((e) => e.a + '⇒' + e.b)).join('、') + '　' + (isGr ? '普通列車グリーン車' : { free: '自由席', res: '指定席', green: 'グリーン車' }[s.seat]) : 'なし') : '－' },
       { k: '人数', v: ppl }
@@ -618,7 +596,7 @@ class Component extends DCLogic {
       9: ['', 'きっぷ', 'を', 'お取りください']
     };
     const h = headers[s.step] || ['', '', '', ''];
-    const notes = { 2: isN ? 'いちばん短い道のり(JR線のみ)' : s.from ? '長い大回りを優先します' : '先に出発駅を入力してください。', 3: isN ? 'いちばん短い道のり。運賃はIC・片道' : (s.mode === 'saved' ? 'アプリで保存したルート' : (APPC.mk ? '末期モード(正規の大回りではありません)。' : '') + kRelax + (found.length > 2 ? found.length + '本から長い順（' + (rp * 2 + 1) + '〜' + Math.min(found.length, rp * 2 + 2) + '件目）。' : '') + '運賃はIC・片道'), 4: '乗換時間にご注意ください', 5: expOpts.length ? (isGr ? 'Suicaグリーン料金: 〜50km 750円・〜100km 1,000円・101km〜 1,550円。続けて乗る区間は1枚' : '特急券は区間ごとに発券') : (isGr ? 'この経路にグリーン車はありません。' : '特急は未対応です。') + '「乗車券のみ」にしてください', 6: '', 7: '内容をご確認ください', 8: 'あそび用です。お金はかかりません', 9: 'おつり・領収書をお忘れなく' };
+    const notes = { 2: isN ? 'いちばん短い道のり(JR線のみ)' : s.from ? '長い大回りを優先します' : '先に出発駅を入力してください。', 3: isN ? 'いちばん短い道のり。運賃はIC・片道' : (s.mode === 'saved' ? 'アプリで保存したルート' : (APPC.mk ? '末期モード(正規の大回りではありません)。' : '') + kRelax + (found.length > 2 ? found.length + '本から長い順（' + (rp * 2 + 1) + '〜' + Math.min(found.length, rp * 2 + 2) + '件目）。' : '') + '運賃はIC・片道'), 4: '乗換時間にご注意ください', 5: expOpts.length ? (isGr ? 'Suicaグリーン料金: 〜50km 750円・〜100km 1,000円・101km〜 1,550円。続けて乗る区間は1枚' : '特急券は区間ごとに発券') : (isGr ? 'この経路にグリーン車はありません。' : '特急は未対応です。') + '「乗車券のみ」にしてください', 6: '', 7: '内容をご確認ください', 8: '', 9: 'おつりをお忘れなく' };
     const backMap = { 1: 0, 2: 1, 3: s.mode === 'saved' ? 1 : 2, 4: 3, 6: 4, 5: 6, 7: buyEx ? 5 : 6 };
     const v = {
       goHref: rr ? 'index.html#/route/' + encodeURIComponent(rr.id) : 'index.html', here: HERE || '－', net: E.netPath, ver: VER,
@@ -646,9 +624,7 @@ class Component extends DCLogic {
       retOpen: s.retOpen, retRingOne: s.retOpen ? NORING : RING,
       rideKind: s.ret === 'round' ? '乗車券<往復>' : '乗車券<片道>', showRideBracket: buyRide,
       conf, totalFmt: yen(total), paidFmt: yen(s.paid), remainFmt: yen(Math.max(0, total - s.paid)),
-      rcptOn: s.rcpt, rcptBtn: s.rcpt ? '領収書　発行します' : '領収書',
-      rcptStyle: s.rcpt ? 'color: #FFF27A; ' + RING : 'color: #FFFFFF; ' + NORING,
-      tickets, rcptDelay: (0.5 + tk.length * 2.4) + 's', rcptLines, paidLabel: s.card ? 'カード' : '￥' + yen(s.paid), changeFmt: yen(change),
+      tickets, paidLabel: s.card ? 'カード' : '￥' + yen(s.paid), changeFmt: yen(change),
       changeLine: change > 0 ? 'おつり ' + yen(change) + '円' : '', hasChange: change > 0,
       // modals
       mKana: s.modal === 'kana', mCand: s.modal === 'cand', mPpl: s.modal === 'ppl', mCond: s.modal === 'cond',  mSum: s.modal === 'sum', mDetail: s.modal === 'detail', mTime: s.modal === 'time',
@@ -685,7 +661,7 @@ class Component extends DCLogic {
       rGo: () => set({ ret: 'round', rdir: 'go', retOpen: false, step: buyEx ? 5 : 7 }), rBack: () => set({ ret: 'round', rdir: 'back', retOpen: false, step: buyEx ? 5 : 7 }), rBoth: () => set({ ret: 'round', rdir: 'both', retOpen: false, step: buyEx ? 5 : 7 }),
       expNext: () => set({ step: 7 }),
       confirm: () => set({ step: 8, paid: 0, card: false }),
-      p10: pay(10), p50: pay(50), p100: pay(100), p500: pay(500), p1000: pay(1000), payCard: () => set({ card: true, step: 9 }), toggleRcpt: () => set({ rcpt: !s.rcpt }),
+      p10: pay(10), p50: pay(50), p100: pay(100), p500: pay(500), p1000: pay(1000), payCard: () => set({ card: true, step: 9 }),
       toggleMono: () => set({ mono: !s.mono }),
       back: () => { if (s.step === 6 && s.retOpen) return set({ retOpen: false }); const p = backMap[s.step]; set({ step: p === undefined ? 0 : p, modal: null }); },
       cancel: () => set({ ...this.init(), mono: s.mono }), home: () => set({ ...this.init(), mono: s.mono })
