@@ -150,6 +150,7 @@ ol,ul{list-style:none}
 
 /* ルート */
 .okline{font-size:13px;font-weight:700;color:var(--ok);display:flex;align-items:center;gap:6px}
+.card .tag.no{margin-right:6px;color:var(--sub)}
 .card .tag.gray{color:var(--wn);margin-left:6px}
 .okline.mkl{color:var(--wn);display:block;line-height:1.5}
 .rt-h1{font-size:24px;font-weight:900;line-height:1.35}
@@ -342,7 +343,7 @@ ol,ul{list-style:none}
 <script src="engine.js?v=1.10.1"></script>
 <script>
 'use strict';
-const APP_VERSION = '1.20.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.21.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ===== データ =====
    路線データは data.js、ルートの探索は engine.js。画面はここから E.search() などを呼ぶだけ。 */
@@ -358,7 +359,7 @@ const SORTS = ['長い順','短い順','乗換が少ない順','時間が短い�
 const LS = { cond:'oomawari.cond', saved:'oomawari.saved', ride:'oomawari.ride', ridden:'oomawari.ridden', mk:'oomawari.mk' };
 const load = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } };
 const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
-const DEF = { from:'横浜', to:'東神奈川', start:'07:00', end:'20:00', want:[], avoid:[], len:2, xfer:8, xmin:15, meal:true, exp:false, rare:true, mustLine:[], noLine:[], mustSt:[], noSt:[], gray:false, noThru:false, ic:true, fast:false, mk:false, prev:0 }; // 基本はSuica(IC)
+const DEF = { from:'横浜', to:'東神奈川', start:'07:00', end:'20:00', want:[], avoid:[], len:2, xfer:8, xmin:15, meal:true, exp:false, rare:true, mustLine:[], noLine:[], mustSt:[], noSt:[], gray:false, noThru:false, keep:8, ic:true, fast:false, mk:false, prev:0 }; // 基本はSuica(IC)
 let cond = Object.assign({}, DEF, load(LS.cond, {}));
 if (!cond.icV) { cond.ic = true; cond.icV = 1; } // 1.6.1: 基本をSuicaにした(前に紙にしていた端末も一度だけSuicaにもどす)
 let saved = load(LS.saved, []);   // [{id, at, date}]
@@ -406,7 +407,7 @@ const ymd = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.g
 // 条件に合うルートを返す(同じ条件なら前の結果を使う)
 const sCache = new Map();
 function searchRoutes(c, budget) {
-  const key = JSON.stringify([c.fast, !!c.mk, !!c.gray, !!c.noThru, c.from, c.to, c.ic, c.start, c.end, c.len, c.xfer, c.xmin, c.meal, c.rare, c.want, c.avoid, c.mustLine, c.noLine, c.mustSt, c.noSt, c.prev, c.prev ? ridden : 0, budget || 0]);
+  const key = JSON.stringify([c.fast, !!c.mk, !!c.gray, !!c.noThru, c.keep || 0, c.from, c.to, c.ic, c.start, c.end, c.len, c.xfer, c.xmin, c.meal, c.rare, c.want, c.avoid, c.mustLine, c.noLine, c.mustSt, c.noSt, c.prev, c.prev ? ridden : 0, budget || 0]);
   if (!sCache.has(key)) { if (sCache.size > 60) sCache.clear();
     const res = E.find(c, ridden, budget); // 券売機モードも同じ E.find() でさがす
     res.routes.forEach((r) => rCache.set((c.fast ? 'f:' : '') + r.id, r)); sCache.set(key, res.routes); }
@@ -477,13 +478,14 @@ const tapSeg = (pc) => `<div role="group" aria-label="${pc ? 'クリック' : '�
 const detailLink = () => `<a href="#/detail" class="rowlink"><span><strong>詳細条件</strong><small>${esc(detailTxt(cond))}</small></span><span class="ch">›</span></a><a href="#/make" class="rowlink" style="border-top-width:1px"><span><strong>ルートを自分で作る</strong><small>路線図をなぞって組み立てる</small></span><span class="ch">›</span></a>`;
 const cta = () => `<a href="#/search" class="cta"><span class="n">${searchRoutes(cond).length}</span>ルートを見る</a>`;
 const thumb = (r) => `<svg aria-hidden="true" width="92" height="81" viewBox="0 0 342 300" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="${NET}" stroke-width="4" style="stroke:var(--bd)"/>${r.legs.map((l) => `<path d="${l[4]}" stroke="${l[3]}" stroke-width="13"/>`).join('')}<circle cx="${E.xy(r.from)[0].toFixed(1)}" cy="${E.xy(r.from)[1].toFixed(1)}" r="13" style="fill:var(--tx)"/></svg>`;
-function cardHtml(r, tag, meta, cur, tagCls) {
-  return `<a href="#/route/${esc(r.id)}" class="card"${cur ? ' aria-current="true"' : ''}>${thumb(r)}<span>${tag ? `<span class="tag${tagCls || ''}">${esc(tag)}</span>` : ''}${r.gray ? '<span class="tag gray">グレー</span>' : ''}<span class="km"><b>${Math.round(r.km)}</b><i>km</i></span><span class="meta">${esc(meta)}</span><span class="via">${esc(r.via)}</span></span></a>`;
+function cardHtml(r, tag, meta, cur, tagCls, no) {
+  return `<a href="#/route/${esc(r.id)}" class="card"${cur ? ' aria-current="true"' : ''}>${thumb(r)}<span>${no ? `<span class="tag no">${no}件目</span>` : ''}${tag ? `<span class="tag${tagCls || ''}">${esc(tag)}</span>` : ''}${r.gray ? '<span class="tag gray">グレー</span>' : ''}<span class="km"><b>${Math.round(r.km)}</b><i>km</i></span><span class="meta">${esc(meta)}</span><span class="via">${esc(r.via)}</span></span></a>`;
 }
 function listHtml(rs, curId, H) {
   const sg = suggestions(cond);
   return `<div class="lh"><${H}>${rs.length ? rs.length + 'つのルート' : 'ルートなし'}</${H}><button type="button" data-act="sort" aria-label="並べかえ（いまは${SORTS[ui.sort]}）">${SORTS[ui.sort]}</button></div>
-${rs.map((r) => cardHtml(r, rs.length > 1 && r === rs.slice().sort((a, b) => b.km - a.km)[0] ? 'いちばん長い' : '', halfTxt(baseMin(r, cond)) + '・乗換' + xfers(r) + '回', r.id === curId)).join('')}
+${rs.map((r, i) => cardHtml(r, rs.length > 1 && r === rs.slice().sort((a, b) => b.km - a.km)[0] ? 'いちばん長い' : '', halfTxt(baseMin(r, cond)) + '・乗換' + xfers(r) + '回', r.id === curId, '', i + 1)).join('')}
+${rs.length >= cond.keep && cond.keep < 64 ? '<div class="more"><button type="button" data-act="moreRes">もっと出す（＋8件）</button></div>' : ''}
 ${rs.length ? '' : `<p class="empty">${winMin(cond) > 0 ? 'この条件に合うルートは見つかりませんでした。' : '使える時間が0分です。出発と帰着の時刻を見直してください。'}</p>`}
 ${sg.length ? `<div class="more"><span class="lab">条件を変えると、もっと見つかります</span>${sg.map((s, i) => `<button type="button" data-sg="${i}">${esc(s.label)}<b>＋${s.g} ›</b></button>`).join('')}</div>` : ''}`;
 }
@@ -717,6 +719,8 @@ V.detail = () => { const sw = (k, label) => `<button type="button" class="sw" ro
 <span class="lab" style="margin-top:14px">かならず通る駅</span>${pills('mustSt', '駅')}
 <span class="lab" style="margin-top:14px">通らない駅</span>${pills('noSt', '駅')}
 <h2 class="h2r">前に乗ったルート</h2><div role="group" aria-label="前に乗ったルート" class="seg big" style="margin-top:10px;font-size:12px;white-space:nowrap">${PREVS.map((l, i) => `<button type="button" data-prev="${i}" aria-pressed="${cond.prev === i}">${l}</button>`).join('')}</div>
+<h2 class="h2r">結果の件数</h2>
+<div class="opt last"><span><span>出すルートの数</span><small>多いほど、似たルートも出ます（少し時間がかかります）</small></span>${stp('keep', '出すルートの数', '件まで')}</div>
 <h2 class="h2r">グレーなルート</h2>
 <div class="opt last" style="padding:8px 0"><span><span>グレーなルートも全部出す</span><small class="w">「6の字」など、係員の判断が分かれる経路です。不正乗車とみなされるおそれがあります。</small></span>${sw('gray', 'グレーなルートも全部出す')}</div>
 <p class="note">出したルートには「グレー」の印が付きます。</p>
@@ -834,7 +838,7 @@ app.addEventListener('click', (e) => {
   if (d.len) { setCond({ len: +d.len }); return render(); }
   if (d.ic) { setCond({ ic: d.ic === '1' }); return render(); } // 一周をえらんでいてICにしたら、fixCond がいちばん近い駅に直す
   if (d.prev) { setCond({ prev: +d.prev }); return render(); }
-  if (d.stp) { const lim = d.stp === 'xfer' ? [0, 20, 1] : [0, 60, 5]; setCond({ [d.stp]: Math.max(lim[0], Math.min(lim[1], cond[d.stp] + +d.d * lim[2])) }); return render(); }
+  if (d.stp) { const lim = d.stp === 'xfer' ? [0, 20, 1] : d.stp === 'keep' ? [8, 64, 8] : [0, 60, 5]; setCond({ [d.stp]: Math.max(lim[0], Math.min(lim[1], cond[d.stp] + +d.d * lim[2])) }); return render(); }
   if (d.sw) { setCond({ [d.sw]: !cond[d.sw] }); if (d.sw === 'exp' && cond.exp) toast('ルートの画面に、グリーン車の区間と料金の目安を出します(所要時間は普通列車の目安のまま)'); if (d.sw === 'gray' && cond.gray) toast('グレーなルート(6の字)も出します。係員の判断で認められないおそれがあります'); return render(); }
   if (d.rm) { setCond({ [d.rm]: cond[d.rm].filter((x) => x !== d.v) }); return render(); }
   if (d.add) { const k = d.add, line = k === 'mustLine' || k === 'noLine', seen = new Set(), opts = [];
@@ -869,6 +873,7 @@ app.addEventListener('click', (e) => {
   if (act === 'sort') { ui.sort = (ui.sort + 1) % SORTS.length; save('oomawari.sort', ui.sort); return render(); }
   if (act === 'reset') { const keep = { to: cond.to, start: cond.start, end: cond.end, want: cond.want, avoid: cond.avoid }; setCond(Object.assign({}, DEF, keep)); return render(); }
   if (act === 'save') { if (isSaved(d.id)) { saved = saved.filter((s) => s.id !== d.id); toast('保存をやめました'); } else { saved.unshift({ id: d.id, at: Date.now(), date: null }); toast('保存しました'); } save(LS.saved, saved); return render(); }
+  if (act === 'moreRes') { setCond({ keep: Math.min(64, cond.keep + 8) }); return render(); }
   if (act === 'share') { const r = routeById(d.id); if (!r) return;
     const url = location.href.split('#')[0] + '#/route/' + encodeURIComponent(r.id), text = `${r.from}→${toTxt(r.from, r.to)} ${rtk(r).fare}円で${r.km}km。${r.via}`;
     const linkOnly = () => { if (navigator.share) navigator.share({ title: '大回りルート', text, url }).catch(() => {}); else if (navigator.clipboard) navigator.clipboard.writeText(text + ' ' + url).then(() => toast('リンクをコピーしました'), () => toast('コピーできませんでした')); else toast('この端末では共有できません'); };

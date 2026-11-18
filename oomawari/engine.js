@@ -331,16 +331,16 @@ function create(D) {
     }
     function pickRoutes() {
     // 点数の高い順に、列車を割りあてて確かめ、似ていないものを選ぶ
-    const cand = Array.from(best.values()).sort((a, b) => b.sc - a.sc), out = [], want = c.len === 3 ? 1 : KEEP;
+    const cand = Array.from(best.values()).sort((a, b) => b.sc - a.sc), out = [], want = c.len === 3 ? 1 : (c.keep || KEEP), dupAt = c.keep > KEEP ? 0.9 : 0.72;
     let tried = 0;
-    for (const cd of cand) { if (out.length >= want || tried++ > 600) break;
+    for (const cd of cand) { if (out.length >= want || tried++ > (c.keep > KEEP ? 2500 : 600)) break;
       let r = buildRoute(from, to, cd.pcs, { banned, noRare: !c.rare, fast: c.fast, gray: !!c.gray, noThru: !!c.noThru }); if (!r) continue;
       if (!c.fast && r.legs.length - 1 > c.xfer) continue; // 速い列車を優先するときは、速くするための乗換は回数に数えない(乗換の少ない組みかたで判定)
       if (c.fast) { const r0 = buildRoute(from, to, cd.pcs, { banned, noRare: !c.rare, gray: !!c.gray, noThru: !!c.noThru }); if (!r0 || r0.legs.length - 1 > c.xfer) continue; }
       if (r.legs.reduce((a, l) => a + l[2], 0) + (r.legs.length - 1) * c.xmin + base > c.win) continue;
       if ((c.mustLine || []).some((n) => !r.lines.includes(n)) || (c.mustSt || []).some((n) => !r.passed.includes(n))) continue;
       const ks = new Set(r.hopKeys); let dup = false;
-      for (const q of out) { let sh = 0; q.hopKeys.forEach((k, i) => { if (ks.has(k)) sh += q.hopKm[i]; }); if (sh / Math.min(q.km, r.km) > 0.72) { dup = true; break; } }
+      for (const q of out) { let sh = 0; q.hopKeys.forEach((k, i) => { if (ks.has(k)) sh += q.hopKm[i]; }); if (sh / Math.min(q.km, r.km) > dupAt) { dup = true; break; } }
       if (!dup) out.push(r); }
     out.sort((a, b) => b.km - a.km);
     return { routes: out, partial };
