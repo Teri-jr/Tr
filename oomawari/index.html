@@ -341,7 +341,7 @@ ol,ul{list-style:none}
 <script src="engine.js?v=1.10.1"></script>
 <script>
 'use strict';
-const APP_VERSION = '1.15.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.15.1'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ===== データ =====
    路線データは data.js、ルートの探索は engine.js。画面はここから E.search() などを呼ぶだけ。 */
@@ -543,7 +543,7 @@ ${cur.length ? `<small>いまの調整（押すと外す）</small><div class="r
 // いまのルートといちばん重なるルート(同じなら長いほう)
 function closest(rs, r) { const ks = new Map(); r.hopKeys.forEach((k, i) => ks.set(k, r.hopKm[i])); let best = null, bs = -1;
   rs.forEach((q) => { let sh = 0; q.hopKeys.forEach((k, i) => { if (ks.has(k)) sh += q.hopKm[i]; }); if (sh > bs + 1e-6 || (Math.abs(sh - bs) < 1e-6 && q.km > best.km)) { bs = sh; best = q; } }); return best; }
-function adjust(r, o, msg, strict) {
+function adjust(r, o, msg, strict, once) { // once: 乗らない路線など、この1回だけの調整(条件には残さない)
   const before = { mustSt: cond.mustSt, noSt: cond.noSt, noLine: cond.noLine, xfer: cond.xfer, len: cond.len };
   // そのままで見つからなければ、乗換を4回ふやす・長さを一段短くする、の順にゆるめてみる
   const tries = [[{}, '']]; if (!strict && cond.xfer < 20) tries.push([{ xfer: Math.min(20, cond.xfer + 4) }, '乗換を' + Math.min(20, cond.xfer + 4) + '回までにして']);
@@ -551,6 +551,7 @@ function adjust(r, o, msg, strict) {
   let n = null;
   for (const t of tries) { setCond(Object.assign({}, before, o, t[0])); n = closest(searchRoutes(cond), r); if (n) { msg = t[1] + msg; break; } }
   if (!n) { setCond(before); render(); return toast('その調整では、条件に合うルートが見つかりませんでした'); }
+  if (once) setCond({ noLine: before.noLine }); // 1回きり。次の検索には持ちこさない
   location.hash = '#/route/' + encodeURIComponent(n.id);
   setTimeout(() => { const t = document.getElementById('toast'); if (t.textContent.startsWith(msg)) t.hidden = true; }, 8000);
   toast(msg, '元に戻す', () => { setCond(before); document.getElementById('toast').hidden = true; location.hash = '#/route/' + encodeURIComponent(r.id); render(); });
@@ -811,7 +812,7 @@ app.addEventListener('click', (e) => {
   if (d.adj || d.unadj) { const r = curRoute(); if (!r) return; const k = d.adj || d.unadj, v = d.v;
     if (d.unadj) return adjust(r, { [k]: cond[k].filter((x) => x !== v) }, v + 'の調整を外しました');
     const other = { mustSt: 'noSt', noSt: 'mustSt', noLine: 'mustLine' }[k];
-    return adjust(r, { [k]: cond[k].concat(v), [other]: cond[other].filter((x) => x !== v) }, k === 'noLine' ? v + 'に乗らないルートにしました' : v + 'を通らないルートにしました'); }
+    return adjust(r, { [k]: cond[k].concat(v), [other]: cond[other].filter((x) => x !== v) }, k === 'noLine' ? v + 'に乗らないルートにしました（この1回だけ）' : v + 'を通らないルートにしました', false, k === 'noLine'); }
   const act = d.act; if (!act) return;
   if (act === 'adjFast') { const r = curRoute(); setCond({ fast: !cond.fast }); if (r) { const n = routeById(r.id); toast(cond.fast ? '速い列車を優先しました' + (n ? '（乗っている時間' + durTxt(Math.round(E.rideMins(n))) + '・乗換' + xfers(n) + '回）' : '') : '乗換の少ない列車にもどしました'); } return render(); }
   if (act === 'adjFewer') { const r = curRoute(); if (!r) return; if (cond.fast) { setCond({ fast: false }); render(); return toast('速い列車の優先をやめて、乗換の少ない列車にしました'); }
