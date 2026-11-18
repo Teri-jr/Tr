@@ -35,13 +35,13 @@ body{background:var(--bg);color:var(--fg);font-family:var(--f-ui);
 button{font-family:inherit;color:inherit;cursor:pointer}
 button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outline-offset:2px}
 .num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.hint{font-size:12px;color:var(--muted);line-height:1.6}
 
 /* 画面の高さいっぱいに広げ、駅一覧が残りの高さを全部使う */
 .device{max-width:1100px;margin:0 auto;height:100%}
 .screen{background:var(--screen);border-radius:8px;overflow:auto;height:100%;min-height:520px;display:flex;flex-direction:column}
-.status{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);padding:6px 12px 2px}
 
-/* setup */
+/* ---- 設定画面 ---- */
 .setup{padding:20px;display:grid;gap:18px;max-width:560px;margin:0 auto;width:100%}
 .setup h1{font-size:22px;margin:4px 0 0;text-wrap:balance}
 .setup p{margin:0;color:var(--muted);font-size:13px;line-height:1.6}
@@ -51,102 +51,132 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outli
 .seg button{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-size:15px;min-width:72px}
 .seg button[aria-pressed="true"]{background:var(--dest);border-color:var(--dest-hi)}
 .secpick{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.secpick select,.secpick button{background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:16px;font-family:inherit}
+.secpick select,.secpick button,.secpick input[type=time]{background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:16px;font-family:inherit}
 .secpick select{flex:1;min-width:120px}
+.secpick input[type=time]{font-family:var(--f-num);flex:1;min-width:140px}
 .go{background:var(--ok);border:0;border-radius:10px;padding:14px;font-size:17px;font-weight:700;color:#06130a}
+.go:disabled{opacity:.4;cursor:not-allowed}
+.upd{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#24304a;border:1px solid var(--dest-hi);border-radius:8px;padding:10px 12px;margin-top:10px;font-size:13px;line-height:1.5}
+.upd span{flex:1;min-width:200px}
+.updGo{background:var(--warn)!important;color:#111!important;border:0!important;border-radius:6px;padding:8px 12px;font-weight:700}
+.note{max-width:980px;margin:10px auto 0;font-size:12px;color:var(--muted);line-height:1.6}
 
-/* run */
+/* ---- 乗務画面：左の計器 ---- */
 .run{display:grid;grid-template-columns:150px 1fr;grid-template-rows:minmax(0,1fr);gap:10px;padding:8px 10px 10px;flex:1;min-height:0}
 .side{display:flex;flex-direction:column;gap:8px;align-items:center}
 #clock{width:120px;height:120px}
 .dclock{font-size:20px;letter-spacing:.08em}
+.mset{font-size:10px;color:var(--muted);line-height:1.5;align-self:flex-start;padding-left:8px}
 .meter{width:100%;background:var(--panel);border-radius:8px;padding:8px;display:grid;gap:2px;text-align:center}
 .meter small{font-size:10px;color:var(--muted);letter-spacing:.06em}
 .meter b{font-size:24px}
 .meter b span{font-size:12px;font-weight:400;color:var(--muted)}
 
-.main{display:flex;flex-direction:column;gap:6px;min-width:0;min-height:0}
-.head{display:grid;grid-template-columns:1fr 150px;grid-template-rows:auto auto;border-radius:4px;overflow:hidden}
-.kind{grid-column:1;background:var(--kind-kaitoku);text-align:center;font-size:88px;font-weight:700;letter-spacing:.4em;padding:6px 0 6px .4em;line-height:1.1}
-.next{grid-column:1;background:var(--ks,var(--dest));color:var(--ksf,#fff);border-top:2px solid var(--screen);text-align:center;font-size:56px;font-weight:700;padding:8px 4px}
-.next small{font-size:12px;font-weight:400;opacity:.8;margin-right:6px}
+/* ---- ヘッダー（種別・次駅・両数）と、その上に重ねる表示 ---- */
+.main{display:flex;flex-direction:column;gap:6px;min-width:0;min-height:0;position:relative}
+.head{display:grid;grid-template-columns:1fr 150px;grid-template-rows:auto auto;border-radius:4px;overflow:hidden;position:relative;container-type:inline-size;flex-shrink:0}
+.kind{grid-column:1;grid-row:1;background:var(--kind-kaitoku);text-align:center;font-size:88px;font-weight:700;letter-spacing:.4em;padding:6px 0 6px .4em;line-height:1.1}
+.next{grid-column:1;grid-row:2;background:var(--ks,var(--dest));color:var(--ksf,#fff);border-top:2px solid var(--screen);text-align:center;font-size:56px;font-weight:700;padding:8px 4px;white-space:nowrap;overflow:hidden}
+.next.msg{background:#efefea;color:#111;font-weight:400;font-size:min(56px,8.6cqw)!important;letter-spacing:.02em}
+.next.msg.blink{background:#111;color:#f4f4f0}
+.next.sec{background:#f4f4f0;color:#e60012;font-size:min(56px,8.6cqw)!important;letter-spacing:.02em}
+.next.sec.blink{background:#e60012;color:#f4f4f0}
+/* スキット注意は幅に合わせて文字を縮めて1行に収める */
+.next.skid{background:#1f6fd1;color:#ffe23a;letter-spacing:.02em;font-size:min(56px,7.2cqw)!important}
+.next.skid.blink{background:#ffe23a;color:#1f6fd1}
+.next.taihi{background:#ecebe6;color:#111;font-weight:700;font-size:min(56px,6cqw)!important;letter-spacing:0}
+.next.updmsg{font-size:min(56px,6.4cqw)!important}
+.next.blank{color:transparent}
 .cars{grid-column:2;grid-row:1/3;background:var(--ks,var(--dest));color:var(--ksf,#fff);border-left:2px solid var(--screen);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
 .cars b{font-size:60px;line-height:1}
 .cars span{font-size:20px}
-.cars small{font-size:16px;opacity:.85}
+.hover{position:absolute;top:0;bottom:0;left:0;background:#efefea;color:#111;display:grid;place-items:center;font-size:160px;line-height:1;font-weight:400;letter-spacing:.06em;z-index:2;white-space:nowrap;overflow:hidden}
+.hover.blink{background:#111;color:#f4f4f0}
+#hStop{right:150px}
+#hCars{right:0}
+/* 新バージョンのお知らせ：種別の欄を「更新／あとで」に分ける */
+.updkind{grid-column:1;grid-row:1;z-index:3;display:grid;grid-template-columns:1fr 1fr;gap:2px;background:var(--screen)}
+.updkind button{border:0;font-weight:700;font-size:min(64px,9cqw);letter-spacing:.1em;border-radius:0}
+.updkind .updGo{border-radius:0!important;padding:0}
+#updLater{background:#3a4352;color:#fff}
 
-.statusrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.delay{display:inline-flex;align-items:center;gap:6px;background:var(--ok);color:#06130a;border-radius:4px;padding:4px 10px;font-size:13px;font-weight:700}
-.delay.warn{background:var(--warn)}
-.delay.bad{background:var(--bad);color:#fff}
+/* ---- 状態の行 ---- */
+.statusrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;flex-shrink:0}
+.delay,.gps,.dbadge{display:inline-flex;align-items:center;gap:6px;background:var(--ok);color:#06130a;border-radius:4px;padding:4px 10px;font-size:13px;font-weight:700}
+.delay.warn,.gps.warn{background:var(--warn)}
+.delay.bad,.gps.bad,.dbadge{background:var(--bad);color:#fff}
+.gps svg{width:14px;height:14px}
+.gps.lost svg{opacity:.25}
 .dist{font-size:13px;color:var(--muted)}
-.dist b{color:var(--fg)}
 .annc{margin-left:auto;font-size:13px;background:#24304a;border:1px solid var(--dest);border-radius:4px;padding:3px 8px;opacity:0;transition:opacity .2s}
 .annc.on{opacity:1}
+.dbg{font-size:11px;color:var(--muted);flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-.listhead{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:4px 2px;border-bottom:1px solid var(--line)}
+/* ---- 駅一覧 ---- */
+.listhead{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:4px 2px;border-bottom:1px solid var(--line);flex-shrink:0}
 .listhead span:last-child{color:var(--muted);font-size:11px}
 .list{overflow-y:auto;flex:1;min-height:200px;scroll-behavior:smooth}
-/* iPadなど縦向き：駅一覧を大きめにして下まで使う */
-@media (orientation:portrait) and (min-width:700px){
-  .run{grid-template-columns:180px 1fr}
-  .row{font-size:22px;padding:16px 8px;grid-template-columns:minmax(0,1fr) 120px 36px 120px}
-  .trk{width:30px;height:30px;font-size:15px}
-  .listhead{font-size:16px}
-  .ctrl button{font-size:16px;padding:12px 14px}
-  #clock{width:160px;height:160px}
-  /* 上の表示を全幅にしてさらに約2倍 */
-  .run{grid-template-columns:150px 1fr}
-  #clock{width:130px;height:130px}
-  .head{grid-template-columns:1fr 170px}
-  #hStop{right:170px}
-  .kind{font-size:min(160px,19cqw)!important;line-height:1.05;letter-spacing:.25em;padding-left:.25em;white-space:nowrap}
-  .next{font-size:min(110px,12cqw)!important}
-  .cars b{font-size:96px}
-  .cars span{font-size:28px}
-  .cars small{font-size:20px}
-  .hover{font-size:220px!important}
-  #hStop{font-size:min(220px,31cqw)!important}
-}
 .row{display:grid;grid-template-columns:minmax(0,1fr) 88px 30px 88px;align-items:center;gap:6px;padding:9px 6px;border-bottom:1px solid var(--line);font-size:15px}
 .row .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .nm::before{content:"";display:inline-block;width:14px}
 .row .t{text-align:right}
-.trk{width:22px;height:22px;border-radius:50%;border:2px solid var(--track);color:var(--fg);display:grid;place-items:center;font-size:12px;font-weight:700;justify-self:center}
-.pass{justify-self:center;width:16px;height:18px;background:var(--track);clip-path:polygon(0 0,100% 0,100% 62%,50% 100%,0 62%)}
+.row .tb{font-size:10px;border:1px solid var(--warn);color:var(--warn);border-radius:3px;padding:0 3px;margin-left:4px;vertical-align:2px}
+.row .dep.red{color:#ff3b30;font-weight:700}
 .row.pass-row{color:var(--muted);font-size:14px}
 .row.passed{opacity:.35}
 .row.target{background:#1d2b42}
 .row.target .nm{color:#fff;font-weight:700}
+.row.target .nm::before{content:"▶";color:var(--warn);font-size:11px;vertical-align:1px}
+.trk{width:22px;height:22px;border-radius:50%;border:2px solid var(--track);color:var(--fg);display:grid;place-items:center;font-size:12px;font-weight:700;justify-self:center}
+.trk.tbk{background:var(--warn);border-color:var(--warn);color:#111}
+.pass{justify-self:center;width:16px;height:18px;background:var(--track);clip-path:polygon(0 0,100% 0,100% 62%,50% 100%,0 62%)}
 
+/* ---- 操作バー ---- */
 .ctrl{display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px 10px;border-top:1px solid var(--line);background:#10151e}
 .ctrl button{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 10px;font-size:13px}
 .ctrl button[aria-pressed="true"]{background:var(--dest);border-color:var(--dest-hi)}
+#taihiBtn[aria-pressed="true"]{background:var(--warn);border-color:var(--warn);color:#111}
 .ctrl .sp{flex:1}
-.note{max-width:980px;margin:10px auto 0;font-size:12px;color:var(--muted);line-height:1.6}
 
-@media (max-width:640px){
-  .run{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
-  .side{flex-direction:row;flex-wrap:wrap;justify-content:center}
-  #clock{width:84px;height:84px}
-  .meter{width:auto;flex:1;min-width:90px}
-  .row{grid-template-columns:minmax(0,1fr) 76px 26px 76px;font-size:14px}
+/* ---- 在線図（横向きで幅があるときだけ出す） ---- */
+.zaisen{display:none}
+.zn{font-size:13px;fill:#e9eef6}
+.zn.zpass{fill:#8b97a8}
+.zn.past{fill:#56606e}
+.zn.tgt{fill:#fff;font-weight:700;font-size:16px}
+.ztk{font-size:11px;font-weight:700;fill:#c3cad6;stroke:#05080d;stroke-width:4px;paint-order:stroke;font-family:var(--f-num)}
+
+/* ---- 画面サイズ別 ---- */
+/* 大きい画面（iPad縦、または横向きで幅が広い）：上の表示を大きく、駅一覧も大きめ */
+@media (orientation:portrait) and (min-width:700px),(orientation:landscape) and (min-width:1100px) and (min-height:640px){
+  .listhead{font-size:16px}
+  .kind{font-size:min(160px,19cqw)!important;line-height:1.05;letter-spacing:.25em;padding-left:.25em;white-space:nowrap}
+  .next{font-size:min(110px,12cqw)!important}
+  .cars b{font-size:96px}
+  .cars span{font-size:28px}
+  #hStop{font-size:min(220px,31cqw)!important}
 }
-.gps{display:inline-flex;align-items:center;gap:6px;background:var(--ok);color:#06130a;border-radius:4px;padding:4px 10px;font-size:13px;font-weight:700}
-.gps.warn{background:var(--warn)}
-.gps.bad{background:var(--bad);color:#fff}
-.gps.lost svg{opacity:.25}
-.head{position:relative}
-.hover{position:absolute;top:0;bottom:0;left:0;background:#efefea;color:#111;display:grid;place-items:center;font-size:160px;line-height:1;font-weight:400;letter-spacing:.06em;z-index:2}
-#hStop{right:150px}
-#hCars{right:0}
-.next.msg{background:#efefea;color:#111;font-weight:400}
-.head{container-type:inline-size;flex-shrink:0}
-.statusrow,.listhead{flex-shrink:0}
-.hover{white-space:nowrap;overflow:hidden}
-.dbadge{background:var(--bad);color:#fff;border-radius:4px;padding:4px 10px;font-size:13px;font-weight:700}
-.next.sec{background:#f4f4f0;color:#e60012;font-size:min(56px,8.6cqw)!important;letter-spacing:.02em}
-.next.sec.blink{background:#e60012;color:#f4f4f0}
-.row .dep.red{color:#ff3b30;font-weight:700}
+/* iPad縦 */
+@media (orientation:portrait) and (min-width:700px){
+  #clock{width:130px;height:130px}
+  .head{grid-template-columns:1fr 170px}
+  #hStop{right:170px}
+  .hover{font-size:220px!important}
+}
+/* 横向きで幅が広い：左は縦向きと同じ表示、残りに在線図 */
+@media (orientation:landscape) and (min-width:1100px) and (min-height:640px){
+  .device{max-width:none}
+  .run{grid-template-columns:120px minmax(0,42vw) minmax(0,1fr)}
+  .row{font-size:18px;padding:11px 6px;grid-template-columns:minmax(0,1fr) 96px 32px 96px}
+  .trk{width:30px;height:30px;font-size:15px}
+  .ctrl button{font-size:15px;padding:10px 12px}
+  #clock{width:110px;height:110px}
+  .hover{font-size:min(220px,30cqw)!important}
+  .zaisen{display:flex;flex-direction:column;min-height:0;min-width:0;background:#05080d;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .zh{font-size:13px;color:var(--muted);padding:8px 12px 4px}
+  .zbody{flex:1;min-height:0;overflow-y:auto;scroll-behavior:smooth}
+  #zsvg{display:block;width:100%}
+}
 /* スマホ（縦・横）：画面の高さに詰め込まずページごとスクロール。操作ボタンは下に固定 */
 @media (max-width:640px),(max-height:600px){
   .device,.screen{height:auto}
@@ -155,99 +185,36 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outli
   .run{grid-template-rows:auto auto}
   .list{flex:none;min-height:0;max-height:60dvh}
   .ctrl{position:sticky;bottom:0;z-index:6;padding-bottom:max(6px,env(safe-area-inset-bottom,0px))}
-}
-@media (max-height:600px) and (min-width:641px){
+  .mset{display:none}
   .hover{font-size:96px}
   .kind{font-size:56px!important}
   .next{font-size:34px!important}
-  .head{grid-template-columns:1fr 110px}
-  #hStop{right:110px}
   .cars b{font-size:40px}
+}
+/* 横向きで高さが低い画面 */
+@media (max-height:600px) and (min-width:641px){
   .run{grid-template-columns:130px 1fr}
   #clock{width:70px;height:70px}
-  .mset{display:none}
+  .head{grid-template-columns:1fr 110px}
+  #hStop{right:110px}
 }
+/* スマホ縦：計器を横に並べて詰め、駅一覧の高さを稼ぐ */
 @media (max-width:640px){
-  /* スマホ：上の計器類を詰めて、駅一覧の高さを稼ぐ */
-  .run{gap:6px;padding:6px}
-  .side{gap:6px}
+  .run{grid-template-columns:1fr;gap:6px;padding:6px}
+  .side{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:6px}
   #clock{width:60px;height:60px}
   .dclock{font-size:16px}
-  .mset{display:none}
-  .meter{padding:4px 6px}
+  .meter{width:auto;flex:1;min-width:90px;padding:4px 6px}
   .meter b{font-size:18px}
-  .ctrl{gap:4px;padding:6px}
+  .ctrl{gap:4px;padding:6px 6px max(6px,env(safe-area-inset-bottom,0px))}
   .ctrl .sp{display:none}
   .ctrl button{font-size:12px;padding:7px 8px}
-  .row{padding:7px 4px}
+  .row{grid-template-columns:minmax(0,1fr) 76px 26px 76px;font-size:14px;padding:7px 4px}
+  .head{grid-template-columns:1fr 96px}
+  #hStop{right:96px}
+  .cars span{font-size:14px}
 }
-.next{white-space:nowrap;overflow:hidden}
-/* スキット注意は幅に合わせて文字を縮めて1行に収める */
-.next.msg{font-size:min(56px,8.6cqw)!important;letter-spacing:.02em}
-.next.msg.blink{background:#111;color:#f4f4f0}
-.next.skid{background:#1f6fd1;color:#ffe23a;letter-spacing:.02em;font-size:min(56px,7.2cqw)!important}
-.next.skid.blink{background:#ffe23a;color:#1f6fd1}
-.hover.blink{background:#111;color:#f4f4f0}
-.next.taihi{background:#ecebe6;color:#111;font-weight:700;font-size:min(56px,6cqw)!important;letter-spacing:0}
-.row .tb{font-size:10px;border:1px solid var(--warn);color:var(--warn);border-radius:3px;padding:0 3px;margin-left:4px;vertical-align:2px}
-#taihiBtn[aria-pressed="true"]{background:var(--warn);border-color:var(--warn);color:#111}
-.next.blank{color:transparent}
-.mset{font-size:10px;color:var(--muted);line-height:1.5;align-self:flex-start;padding-left:8px}
-.gps svg{width:14px;height:14px}
-.main{position:relative}
-.alert{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%) scale(.9);background:rgba(10,14,22,.92);border:3px solid var(--warn);color:#fff;border-radius:10px;padding:14px 26px;font-size:44px;font-weight:700;letter-spacing:.08em;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s,transform .15s;z-index:5;text-align:center}
-.alert.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
-.alert.stop{border-color:var(--bad)}
-.alert.info{border-color:var(--dest-hi)}
-.row .nm::before{content:"";display:inline-block;width:14px}
-.row.target .nm::before{content:"▶";color:var(--warn);font-size:11px;vertical-align:1px}
-@media (max-width:640px){.alert{font-size:30px;padding:10px 16px}.hover{font-size:96px}.head{grid-template-columns:1fr 96px}#hStop{right:96px}.kind{font-size:56px!important}.next{font-size:34px!important}.cars b{font-size:40px}.cars span{font-size:14px}.cars small{font-size:12px}}
-@media (prefers-reduced-motion:reduce){.list{scroll-behavior:auto}.annc,.alert{transition:none}}
-.hint{font-size:12px;color:var(--muted);line-height:1.6}
-.secpick input[type=time]{background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:16px;font-family:var(--f-num);flex:1;min-width:140px}
-.dbg{font-size:11px;color:var(--muted);flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.upd{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#24304a;border:1px solid var(--dest-hi);border-radius:8px;padding:10px 12px;margin-top:10px;font-size:13px;line-height:1.5}
-.upd span{flex:1;min-width:200px}
-.updGo{background:var(--warn)!important;color:#111!important;border:0!important;border-radius:6px;padding:8px 12px;font-weight:700}
-.head>.kind{grid-row:1}
-.head>.next{grid-row:2}
-.updkind{grid-column:1;grid-row:1;z-index:3;display:grid;grid-template-columns:1fr 1fr;gap:2px;background:var(--screen)}
-.updkind button{border:0;font-weight:700;font-size:min(64px,9cqw);letter-spacing:.1em;border-radius:0}
-.updkind .updGo{border-radius:0!important;padding:0}
-#updLater{background:#3a4352;color:#fff}
-.next.updmsg{font-size:min(56px,6.4cqw)!important}
-.go:disabled{opacity:.4;cursor:not-allowed}
-
-/* 在線図：横向きで幅があるときだけ。左は縦向きと同じ表示、残りに在線図 */
-.zaisen{display:none}
-@media (orientation:landscape) and (min-width:1100px) and (min-height:640px){
-  .device{max-width:none}
-  .run{grid-template-columns:120px minmax(0,42vw) minmax(0,1fr)}
-  .zaisen{display:flex;flex-direction:column;min-height:0;min-width:0;background:#05080d;border:1px solid var(--line);border-radius:6px;overflow:hidden}
-  .zh{font-size:13px;color:var(--muted);padding:8px 12px 4px}
-  .zbody{flex:1;min-height:0;overflow-y:auto;scroll-behavior:smooth}
-  #zsvg{display:block;width:100%}
-  .row{font-size:20px;padding:13px 8px;grid-template-columns:minmax(0,1fr) 110px 34px 110px}
-  .trk{width:30px;height:30px;font-size:15px}
-  .listhead{font-size:16px}
-  .ctrl button{font-size:15px;padding:10px 12px}
-  #clock{width:110px;height:110px}
-  .head{grid-template-columns:1fr 150px}
-  #hStop{right:150px}
-  .row{font-size:18px;padding:11px 6px;grid-template-columns:minmax(0,1fr) 96px 32px 96px}
-  .kind{font-size:min(160px,19cqw)!important;line-height:1.05;letter-spacing:.25em;padding-left:.25em;white-space:nowrap}
-  .next{font-size:min(110px,12cqw)!important}
-  .cars b{font-size:96px}
-  .cars span{font-size:28px}
-  .hover{font-size:min(220px,30cqw)!important}
-  #hStop{font-size:min(220px,31cqw)!important}
-}
-.trk.tbk{background:var(--warn);border-color:var(--warn);color:#111}
-.zn{font-size:13px;fill:#e9eef6}
-.ztk{font-size:11px;font-weight:700;fill:#c3cad6;stroke:#05080d;stroke-width:4px;paint-order:stroke;font-family:var(--f-num)}
-.zn.zpass{fill:#8b97a8}
-.zn.past{fill:#56606e}
-.zn.tgt{fill:#fff;font-weight:700;font-size:16px}
+@media (prefers-reduced-motion:reduce){.list,.zbody{scroll-behavior:auto}.annc{transition:none}}
 </style>
 
 <div class="device">
@@ -350,7 +317,7 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outli
         <div class="main">
           <div class="head">
             <div class="kind" id="kindLbl">快特</div>
-            <div class="next" id="nextLbl"><small>次</small>上大岡</div>
+            <div class="next" id="nextLbl">　</div>
             <div class="cars"><b class="num" id="carsLbl">8</b><span>ツーマン</span></div>
             <div class="updkind" id="updKind" hidden><button type="button" class="updGo">更新</button><button type="button" id="updLater">あとで</button></div>
             <div class="hover" id="hStop" hidden>停車</div>
@@ -529,7 +496,7 @@ function planTimes(route,k){
   return {ev:s.events,traj:s.traj};
 }
 // ---- バージョン（変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする） ----
-const APP_VERSION='1.7.3';
+const APP_VERSION='1.7.4';
 const isNewer=(a,b)=>{ const x=String(a).split(".").map(Number), y=String(b).split(".").map(Number); for(let i=0;i<3;i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0); } return false; };
 let upd=null; // {version, items}：新しい版が出ていたら入る。announced=放送済み
 async function checkUpdate(){
@@ -607,9 +574,11 @@ const TAIHI_NAMBU={"矢向":"up","武蔵中原":"both","武蔵溝ノ口":"down",
 // ---- JR京浜東北・根岸線（大宮〜大船）：各駅停車と快速（快速は日中に田端〜田町で一部通過、おおよそ）。下り＝大船方面（南行） ----
 const KH_ALL="大宮,さいたま新都心,与野,北浦和,浦和,南浦和,蕨,西川口,川口,赤羽,東十条,王子,上中里,田端,西日暮里,日暮里,鶯谷,上野,御徒町,秋葉原,神田,東京,有楽町,新橋,浜松町,田町,高輪ゲートウェイ,品川,大井町,大森,蒲田,川崎,鶴見,新子安,東神奈川,横浜,桜木町,関内,石川町,山手,根岸,磯子,新杉田,洋光台,港南台,本郷台,大船".split(",");
 const KH_RAPID_PASS=new Set(["西日暮里","日暮里","鶯谷","御徒町","有楽町","新橋"]);
+// 各駅停車・快速で共通の走り方（実際の所要時間に合わせた値）
+const KH_RUN={vmax:85,acc:0.55,dwell:40,long:{"東京":55,"横浜":55,"上野":50,"品川":50,"大宮":45}};
 const KINDS_KEIHIN={
-  kakueki:{label:"各駅停車",color:"#f2f2ee",fg:"#111",sub:"#00a7db",stops:null,vmax:85,acc:0.55,dwell:40,long:{"東京":55,"横浜":55,"上野":50,"品川":50,"大宮":45}},
-  kaisoku:{label:"快速",color:"#ff00ff",sub:"#00a7db",stops:KH_ALL.filter(n=>!KH_RAPID_PASS.has(n)),vmax:85,acc:0.55,dwell:40,long:{"東京":55,"横浜":55,"上野":50,"品川":50,"大宮":45}}};
+  kakueki:{label:"各駅停車",color:"#f2f2ee",fg:"#111",sub:"#00a7db",stops:null,...KH_RUN},
+  kaisoku:{label:"快速",color:"#ff00ff",sub:"#00a7db",stops:KH_ALL.filter(n=>!KH_RAPID_PASS.has(n)),...KH_RUN}};
 const SH21="U2,=,D1", SH12="U1,=,D2", YM14="U1,=,o2,o3,=,D4", YM41="U4,=,o3,o2,=,D1";
 // 山手線と並ぶ駅は間の2・3番線が山手線（o）。桜木町は配線略図.net の図で確かめた。上野・新橋・田町は記事が取れず、隣の駅にならった推定
 const LAYOUT_KEIHIN={"大宮":SH21,"さいたま新都心":SH21,"与野":SH12,"北浦和":SH21,"浦和":SH21,"南浦和":"U4,=,u3,d2,=,D1","蕨":SH21,"西川口":SH21,"川口":SH21,"赤羽":SH21,
@@ -618,17 +587,14 @@ const LAYOUT_KEIHIN={"大宮":SH21,"さいたま新都心":SH21,"与野":SH12,"�
   "川崎":"U4,=,D3","鶴見":SH21,"新子安":SH21,"東神奈川":YM41,"横浜":"U4,=,D3","桜木町":"U4,=,c3>,=,D1","関内":"=,U2,D1,=","石川町":"=,U2,D1,=","山手":"=,U2,D1,=","根岸":SH21,
   "磯子":SH12,"新杉田":"=,U2,D1,=","洋光台":SH21,"港南台":SH21,"本郷台":SH21,"大船":"U10,=,D9"};
 // ---- 路線ごとの設定 ----
+// JRの路線は1本ずつ：待避・全駅停車の指定がなければ空にする
+const jrNet=o=>({order:Object.keys(o.geo),taihi:{},terminal:new Set(),allLines:new Set(),allSt:new Set(),...o,major:new Set(o.major)});
 const NETS={
-  keikyu:{title:"京急線",geo:GEO,order:["本線","空港線","大師線","逗子線","久里浜線"],kinds:KINDS_KQ,layout:LAYOUT_KQ,taihi:TAIHI_KQ,terminal:TERMINAL_KQ,major:MAJOR_KQ,allLines:ALL_STOP_LINES_KQ,allSt:ALL_STOP_ST_KQ,
-    cars:["4","6","8","12"],defCars:"8",defSec:"品川|上大岡",presets:["品川|上大岡","横浜|上大岡","上大岡|横浜","上大岡|品川","品川|羽田空港第1・第2ターミナル","品川|三崎口"]},
-  jr:{title:"JR横須賀線",geo:GEO_JR,order:["横須賀線"],kinds:KINDS_JR,layout:LAYOUT_JR,taihi:{},terminal:new Set(),major:new Set(["品川","武蔵小杉","横浜","戸塚"]),allLines:new Set(),allSt:new Set(),
-    cars:["11","15"],defCars:"11",defSec:"品川|戸塚",presets:["品川|戸塚","戸塚|品川","品川|横浜","横浜|品川","武蔵小杉|横浜","横浜|武蔵小杉"]},
-  tokaido:{title:"JR東海道線",geo:GEO_TOKAIDO,order:["東海道線"],kinds:KINDS_TOKAIDO,layout:LAYOUT_TOKAIDO,taihi:{},terminal:new Set(),major:new Set(["品川","川崎","横浜","大船","藤沢","茅ケ崎"]),allLines:new Set(),allSt:new Set(),
-    cars:["10","15"],defCars:"15",defSec:"品川|茅ケ崎",presets:["品川|茅ケ崎","茅ケ崎|品川","品川|横浜","横浜|茅ケ崎","川崎|藤沢","大船|品川"]},
-  nambu:{title:"JR南武線",geo:GEO_NAMBU,order:["南武線"],kinds:KINDS_NAMBU,layout:LAYOUT_NAMBU,taihi:TAIHI_NAMBU,terminal:new Set(),major:new Set(["川崎","武蔵小杉","武蔵溝ノ口","登戸","府中本町","立川"]),allLines:new Set(),allSt:new Set(),
-    cars:["6"],defCars:"6",defSec:"川崎|立川",presets:["川崎|立川","立川|川崎","武蔵小杉|登戸","登戸|川崎","川崎|府中本町","武蔵溝ノ口|立川"]},
-  keihin:{title:"JR京浜東北・根岸線",geo:GEO_KEIHIN,order:["京浜東北・根岸線"],kinds:KINDS_KEIHIN,layout:LAYOUT_KEIHIN,taihi:{},terminal:new Set(),major:new Set(["大宮","赤羽","上野","東京","品川","川崎","横浜","磯子","大船"]),allLines:new Set(),allSt:new Set(),
-    cars:["10"],defCars:"10",defSec:"東京|横浜",presets:["大宮|大船","大船|大宮","東京|横浜","横浜|東京","横浜|大船","品川|川崎"]}
+  keikyu:{title:"京急線",geo:GEO,order:["本線","空港線","大師線","逗子線","久里浜線"],kinds:KINDS_KQ,layout:LAYOUT_KQ,taihi:TAIHI_KQ,terminal:TERMINAL_KQ,major:MAJOR_KQ,allLines:ALL_STOP_LINES_KQ,allSt:ALL_STOP_ST_KQ,cars:["4","6","8","12"],defCars:"8",defSec:"品川|上大岡",presets:["品川|上大岡","横浜|上大岡","上大岡|横浜","上大岡|品川","品川|羽田空港第1・第2ターミナル","品川|三崎口"]},
+  jr:jrNet({title:"JR横須賀線",geo:GEO_JR,kinds:KINDS_JR,layout:LAYOUT_JR,major:["品川","武蔵小杉","横浜","戸塚"],cars:["11","15"],defCars:"11",defSec:"品川|戸塚",presets:["品川|戸塚","戸塚|品川","品川|横浜","横浜|品川","武蔵小杉|横浜","横浜|武蔵小杉"]}),
+  tokaido:jrNet({title:"JR東海道線",geo:GEO_TOKAIDO,kinds:KINDS_TOKAIDO,layout:LAYOUT_TOKAIDO,major:["品川","川崎","横浜","大船","藤沢","茅ケ崎"],cars:["10","15"],defCars:"15",defSec:"品川|茅ケ崎",presets:["品川|茅ケ崎","茅ケ崎|品川","品川|横浜","横浜|茅ケ崎","川崎|藤沢","大船|品川"]}),
+  nambu:jrNet({title:"JR南武線",geo:GEO_NAMBU,kinds:KINDS_NAMBU,layout:LAYOUT_NAMBU,taihi:TAIHI_NAMBU,major:["川崎","武蔵小杉","武蔵溝ノ口","登戸","府中本町","立川"],cars:["6"],defCars:"6",defSec:"川崎|立川",presets:["川崎|立川","立川|川崎","武蔵小杉|登戸","登戸|川崎","川崎|府中本町","武蔵溝ノ口|立川"]}),
+  keihin:jrNet({title:"JR京浜東北・根岸線",geo:GEO_KEIHIN,kinds:KINDS_KEIHIN,layout:LAYOUT_KEIHIN,major:["大宮","赤羽","上野","東京","品川","川崎","横浜","磯子","大船"],cars:["10"],defCars:"10",defSec:"東京|横浜",presets:["大宮|大船","大船|大宮","東京|横浜","横浜|東京","横浜|大船","品川|川崎"]})
 };
 let KINDS,LAYOUT,TAIHI,TERMINAL,MAJOR,ALL_STOP_LINES,ALL_STOP_ST;
 function useNet(id){ const n=NETS[id]; buildLines(n.geo,n.order); KINDS=n.kinds; LAYOUT=n.layout; TAIHI=n.taihi; TERMINAL=n.terminal; MAJOR=n.major; ALL_STOP_LINES=n.allLines; ALL_STOP_ST=n.allSt; }
