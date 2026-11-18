@@ -343,7 +343,7 @@ ol,ul{list-style:none}
 <script src="engine.js?v=1.10.1"></script>
 <script>
 'use strict';
-const APP_VERSION = '1.25.1'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.26.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ===== データ =====
    路線データは data.js、ルートの探索は engine.js。画面はここから E.search() などを呼ぶだけ。 */
@@ -475,7 +475,7 @@ function mapHtml(pc) {
   return `<div class="map"><svg aria-hidden="true" viewBox="0 0 342 300" fill="none" stroke-linecap="round" stroke-linejoin="round">${circles}<path d="${NET}" stroke-width="${pc ? 1.2 : 1.6}" style="stroke:var(--bd)"/><circle cx="${o[0].toFixed(1)}" cy="${o[1].toFixed(1)}" r="${pc ? 5 : 6}" style="fill:var(--tx)"/></svg>${chips}<div class="here" style="left:${hx}%;top:${hy}%">${esc(cond.from)}</div></div>`;
 }
 const tapSeg = (pc) => `<div role="group" aria-label="${pc ? 'クリック' : 'タップ'}したときの動き" class="seg"><button type="button" data-tap="want" aria-pressed="${ui.tap === 'want'}">行きたい</button><button type="button" data-tap="avoid" aria-pressed="${ui.tap === 'avoid'}">さけたい</button></div>`;
-const detailLink = () => `<a href="#/detail" class="rowlink"><span><strong>詳細条件</strong><small>${esc(detailTxt(cond))}</small></span><span class="ch">›</span></a><a href="#/make" class="rowlink" style="border-top-width:1px"><span><strong>ルートを自分で作る</strong><small>路線図をなぞって組み立てる</small></span><span class="ch">›</span></a>`;
+const detailLink = () => `<a href="#/detail" class="rowlink"><span><strong>詳細条件</strong><small>${esc(detailTxt(cond))}</small></span><span class="ch">›</span></a><a href="#/make" class="rowlink" style="border-top-width:1px"><span><strong>ルートを自分で作る</strong><small>路線図をなぞって組み立てる</small></span><span class="ch">›</span></a><a href="kiosk.html" class="rowlink" style="border-top-width:1px"><span><strong>券売機モード</strong><small>券売機の画面で、きっぷを買う流れで探す</small></span><span class="ch">›</span></a>`;
 const cta = () => `<a href="#/search" class="cta"><span class="n">${searchRoutes(cond).length}</span>ルートを見る</a>`;
 const thumb = (r) => `<svg aria-hidden="true" width="92" height="81" viewBox="0 0 342 300" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="${NET}" stroke-width="4" style="stroke:var(--bd)"/>${r.legs.map((l) => `<path d="${l[4]}" stroke="${l[3]}" stroke-width="13"/>`).join('')}<circle cx="${E.xy(r.from)[0].toFixed(1)}" cy="${E.xy(r.from)[1].toFixed(1)}" r="13" style="fill:var(--tx)"/></svg>`;
 function cardHtml(r, tag, meta, cur, tagCls, no) {
