@@ -343,7 +343,7 @@ ol,ul{list-style:none}
 <script src="engine.js?v=1.10.1"></script>
 <script>
 'use strict';
-const APP_VERSION = '1.24.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.25.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ===== データ =====
    路線データは data.js、ルートの探索は engine.js。画面はここから E.search() などを呼ぶだけ。 */
@@ -618,7 +618,7 @@ V.route = (r) => { const rs = sorted(searchRoutes(cond)), i = rs.findIndex((x) =
 <button type="button" class="icon-b" data-act="share" data-id="${esc(r.id)}" aria-label="共有"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4M8 8l4-4 4 4M5 13v6h14v-6"/></svg></button></header>
 <section aria-label="概要" style="padding:6px 24px 0;display:flex;flex-direction:column;gap:4px">${okLine(r, CHECK(16))}<h1 class="rt-h1">${rtk(r).fare}円で、${esc(r.title)}</h1>
 <p class="rt-km"><b>${r.km}</b><i>km</i><small>きっぷの距離の${Math.round(r.km / rtk(r).km)}倍</small></p><p class="rt-meta">${spanTxt(r, cond)}　・　乗換${xfers(r)}回　・　列車${r.legs.length}本</p></section><div style="margin:12px 24px 0">${adjQuick(r)}</div>
-<section aria-label="経路図" style="padding:10px 24px 0">${rmapHtml(r, false)}</section><div class="grow" style="margin:18px 24px 0">${itinHtml(r)}</div>
+<section aria-label="経路図" style="padding:10px 24px 0">${rmapHtml(r, false)}<p class="note" style="margin:8px 0 0">きっぷの経由（マルス券の印字の目安）：${esc(E.keiyu(r).join('・'))}</p></section><div class="grow" style="margin:18px 24px 0">${itinHtml(r)}</div>
 <div style="margin:22px 24px 0">${adjHtml(r)}</div>
 <div style="margin:12px 24px 0">${ttLink(r)}${rodeB(r)}</div>${ovHtml(r, 'padding:14px 24px 0')}<p class="note" style="padding:14px 24px 0">時刻は載せていません。所要時間は目安です。${cond.ic ? 'ICカードは長時間の乗車で改札が閉まることがあります。止められたら有人改札で説明してください。' : '紙のきっぷで。ICカードは長時間の乗車で改札が閉まることがあります。'}</p>
 <div class="foot" style="display:flex;gap:10px">${savB(r)}<a href="#/ride" data-act="go" data-id="${esc(r.id)}" class="cta" style="flex-grow:1;width:auto">このルートで出発する</a></div></div>`; };
@@ -630,7 +630,7 @@ V.result = (r, w3) => { const rs = sorted(searchRoutes(cond));
 <p class="note" style="margin-top:auto;padding-top:24px;font-size:11px">営業キロ・所要時間・本数は手入力の目安です。発車時刻は当日の時刻表で確認してください。</p></aside>
 <main class="mn">${r ? `${okLine(r, '✓ ')}<h1 class="rt-h1">${rtk(r).fare}円で、${esc(r.title)}</h1>
 <div class="stats"><div><small>距離・きっぷの${Math.round(r.km / rtk(r).km)}倍</small><span><b>${r.km}</b><i>km</i></span></div><div><small>所要時間の目安</small><span><b>${spanTxt(r, cond).replace(/時間.*/, '')}</b><i>${spanTxt(r, cond).replace(/^[^時]*/, '')}</i></span></div><div><small>乗換</small><span><b>${xfers(r)}</b><i>回</i></span></div><div><small>運賃</small><span><b>${rtk(r).fare}</b><i>円</i></span></div></div>
-<div style="margin:14px 0 4px">${adjQuick(r)}</div>${rmapHtml(r, true)}<div class="acts"><button type="button" data-act="save" data-id="${esc(r.id)}" aria-pressed="${isSaved(r.id)}">${isSaved(r.id) ? '保存済み' : '保存'}</button><button type="button" data-act="share" data-id="${esc(r.id)}">共有</button><a href="#/ride" data-act="go" data-id="${esc(r.id)}">このルートで出発する</a></div><div style="margin-top:28px">${adjHtml(r)}</div>${w3 ? '' : `<div style="margin-top:32px;display:flex;flex-direction:column">${it}</div>`}` : '<p class="empty">左の条件を変えて、ルートをさがしてください。</p>'}</main>
+<div style="margin:14px 0 4px">${adjQuick(r)}</div>${rmapHtml(r, true)}<p class="note" style="margin:8px 0 0">きっぷの経由（マルス券の印字の目安）：${esc(E.keiyu(r).join('・'))}</p><div class="acts"><button type="button" data-act="save" data-id="${esc(r.id)}" aria-pressed="${isSaved(r.id)}">${isSaved(r.id) ? '保存済み' : '保存'}</button><button type="button" data-act="share" data-id="${esc(r.id)}">共有</button><a href="#/ride" data-act="go" data-id="${esc(r.id)}">このルートで出発する</a></div><div style="margin-top:28px">${adjHtml(r)}</div>${w3 ? '' : `<div style="margin-top:32px;display:flex;flex-direction:column">${it}</div>`}` : '<p class="empty">左の条件を変えて、ルートをさがしてください。</p>'}</main>
 ${w3 && r ? `<aside class="rs">${it}</aside>` : ''}</div>`; };
 
 const qBox = (ph) => `<label for="q" class="vh">駅名でさがす</label><input id="q" class="q" type="text" placeholder="${ph}" autocomplete="off" value="${esc(ui.q)}">`;

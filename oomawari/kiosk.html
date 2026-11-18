@@ -453,13 +453,13 @@ function kSearch(c) { kRelax = ''; let r = kSearch1(c); if (r.length) return r;
 function ooCard(r, c) {
   const sp = E.spanMins(r, c), a = Math.floor(sp[0] / 60), b = Math.round(sp[1] / 60);
   const lines = []; r.legs.forEach((l) => { if (!lines.includes(l[0])) lines.push(l[0]); });
-  return { id: r.id, from: r.from, to: r.to, km: kmTxt(r.km), time: b > a ? '約' + a + '〜' + b + '時間' : durTxt(sp[1]), xfer: (r.legs.length - 1) + '回', via: lines.join('・'),
+  return { id: r.id, from: r.from, to: r.to, km: kmTxt(r.km), time: b > a ? '約' + a + '〜' + b + '時間' : durTxt(sp[1]), xfer: (r.legs.length - 1) + '回', via: lines.join('・'), keiyu: E.keiyu(r).join('・'),
     st: r.stops.map((x) => [x[0], kmTxt(x[1])]), ln: r.legs.map((l) => l[0]), ex: [], gr: r.legs.map((l, i) => (GREEN.includes(l[0]) ? i : -1)).filter((i) => i >= 0), r };
 }
 function plainCard(r) {
   let m = 0; const st = [[r.from, '0分']]; r.legs.forEach((l, i) => { m += l[2] + (i ? 5 : 0); st.push([r.stops[i + 1][0], m + '分']); });
   const lines = []; r.legs.forEach((l) => { if (!lines.includes(l[0])) lines.push(l[0]); });
-  return { id: r.id, from: r.from, to: r.to, time: durTxt(m), st, ln: r.legs.map((l) => l[0]), via: lines.join('・'), ex: [], gr: r.legs.map((l, i) => (GREEN.includes(l[0]) ? i : -1)).filter((i) => i >= 0), normal: true, r };
+  return { id: r.id, from: r.from, to: r.to, time: durTxt(m), st, ln: r.legs.map((l) => l[0]), via: lines.join('・'), keiyu: E.keiyu(r).join('・'), ex: [], gr: r.legs.map((l, i) => (GREEN.includes(l[0]) ? i : -1)).filter((i) => i >= 0), normal: true, r };
 }
 class Component extends DCLogic {
   constructor(p) { super(p); this.state = this.init(); }
@@ -587,8 +587,8 @@ class Component extends DCLogic {
     const tk = [];
     const day = MD + '当日限り有効';
     if (buyRide) {
-      if (s.ret === 'one') tk.push({ title: icFare ? '乗車券（IC運賃）' : '乗車券', from: HERE || '－', to: to || '－', l3: rr && rr.normal ? '経由：' + rr.via : '経由：－－－', day, price: '￥' + yenOr(fare == null ? null : ridePer), note: '下車前途無効' });
-      else { tk.push({ title: icFare ? '乗車券（IC運賃）' : '乗車券', from: HERE || '－', to: to || '－', l3: (rr && rr.normal ? '経由：' + rr.via : '経由：－－－') + '　（ゆき）', day, price: '￥' + yenOr(fare == null ? null : ridePer), note: '下車前途無効' }); tk.push({ title: icFare ? '乗車券（IC運賃）' : '乗車券', from: to || '－', to: HERE || '－', l3: (rr && rr.normal ? '経由：' + rr.via : '経由：－－－') + '　（かえり）', day, price: '￥' + yenOr(fare == null ? null : ridePer), note: '下車前途無効' }); }
+      if (s.ret === 'one') tk.push({ title: icFare ? '乗車券（IC運賃）' : '乗車券', from: HERE || '－', to: to || '－', l3: '経由：' + (rr && rr.keiyu ? rr.keiyu : '－－－'), day, price: '￥' + yenOr(fare == null ? null : ridePer), note: '下車前途無効' });
+      else { tk.push({ title: icFare ? '乗車券（IC運賃）' : '乗車券', from: HERE || '－', to: to || '－', l3: '経由：' + (rr && rr.keiyu ? rr.keiyu : '－－－') + '　（ゆき）', day, price: '￥' + yenOr(fare == null ? null : ridePer), note: '下車前途無効' }); tk.push({ title: icFare ? '乗車券（IC運賃）' : '乗車券', from: to || '－', to: HERE || '－', l3: (rr && rr.normal ? '経由：' + rr.via : '経由：－－－') + '　（かえり）', day, price: '￥' + yenOr(fare == null ? null : ridePer), note: '下車前途無効' }); }
     }
     const seatName = { free: '自由席', res: '指定席（座席はイメージ）', green: 'グリーン車指定席（座席はイメージ）' }[s.seat];
     if (isGr) grTk.forEach((g) => tk.push({ title: 'Suicaグリーン券', from: g.a, to: g.b, l3: '普通列車グリーン車　' + g.km + 'km', day: MD + '当日1回限り有効', price: '￥' + yen(g.fee * (s.adult + s.child)), note: '紙のきっぷ・車内は' + yen(g.paper) + '円' }));
