@@ -342,7 +342,7 @@ ol,ul{list-style:none}
 <script src="engine.js?v=1.10.1"></script>
 <script>
 'use strict';
-const APP_VERSION = '1.18.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.19.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ===== データ =====
    路線データは data.js、ルートの探索は engine.js。画面はここから E.search() などを呼ぶだけ。 */
@@ -541,6 +541,7 @@ function adjHtml(r) {
   const cur = [].concat(cond.mustSt.map((n) => ['mustSt', n, n + 'を通る']), cond.noSt.map((n) => ['noSt', n, n + 'を通らない']), cond.noLine.map((n) => ['noLine', n, n + 'に乗らない']));
   return `<section aria-label="ルートの調整" class="adj"><h2>このルートを調整する</h2>
 <small>乗らない路線（押すと、それ以外はなるべく今のまま組み直します）</small><div class="row">${lines.map((n) => b('noLine', n, '× ' + n)).join('')}</div>
+${lines.includes('常磐線') ? `<small>乗り換え方（常磐線に東京・品川からそのまま乗る形をやめて、日暮里や上野で乗りかえます）</small><div class="row"><button type="button" data-thru="1">直通をやめて乗りかえる</button></div>` : ''}
 <small>通らない駅・寄りたい駅</small><div class="row">${mid.map((n) => b('noSt', n, '× ' + n)).join('')}<button type="button" data-act="adjMust" data-id="${esc(r.id)}">＋ 寄りたい駅</button></div>
 ${cur.length ? `<small>いまの調整（押すと外す）</small><div class="row">${cur.map((x) => `<button type="button" class="on" data-unadj="${x[0]}" data-v="${esc(x[1])}">${esc(x[2])} ×</button>`).join('')}</div>` : ''}</section>`;
 }
@@ -554,8 +555,8 @@ function adjust(r, o, msg, strict, once) { // once: 乗らない路線など、�
   if (!strict && cond.len > 0 && cond.len < 3) { tries.push([{ len: cond.len - 1 }, '長さを「' + LENS[cond.len - 1] + '」にして']); if (cond.xfer < 20) tries.push([{ len: cond.len - 1, xfer: Math.min(20, cond.xfer + 4) }, '長さを「' + LENS[cond.len - 1] + '」、乗換を' + Math.min(20, cond.xfer + 4) + '回までにして']); }
   let n = null;
   for (const t of tries) { setCond(Object.assign({}, before, o, t[0])); n = closest(searchRoutes(cond), r); if (n) { msg = t[1] + msg; break; } }
-  if (!n) { setCond(before); render(); return toast('その調整では、条件に合うルートが見つかりませんでした'); }
-  if (once) setCond({ noLine: before.noLine }); // 1回きり。次の検索には持ちこさない
+  if (!n) { setCond(Object.assign({ noThru: false }, before)); render(); return toast('その調整では、条件に合うルートが見つかりませんでした'); }
+  if (once) setCond({ noLine: before.noLine, noThru: false }); // 1回きり。次の検索には持ちこさない
   location.hash = '#/route/' + encodeURIComponent(n.id);
   setTimeout(() => { const t = document.getElementById('toast'); if (t.textContent.startsWith(msg)) t.hidden = true; }, 8000);
   toast(msg, '元に戻す', () => { setCond(before); document.getElementById('toast').hidden = true; location.hash = '#/route/' + encodeURIComponent(r.id); render(); });
@@ -709,7 +710,6 @@ V.detail = () => { const sw = (k, label) => `<button type="button" class="sw" ro
 <h2 class="h2r">列車</h2>
 <div class="opt" style="min-height:56px"><span><span>特急・グリーン車を使う</span><small>別料金がかかります</small></span>${sw('exp', '特急・グリーン車を使う')}</div>
 <div class="opt" style="min-height:56px"><span><span>速い列車を優先する</span><small>乗換がふえても速い列車に乗りかえる(例：川崎で東海道線に)</small></span>${sw('fast', '速い列車を優先する')}</div>
-<div class="opt" style="min-height:56px"><span><span>上野東京ラインの直通を使わない</span><small>常磐線に、東京・品川からそのまま乗らず、日暮里や上野で乗りかえる形にします</small></span>${sw('noThru', '上野東京ラインの直通を使わない')}</div>
 <div class="opt last"><span><span>本数の少ない路線も使う</span><small>1時間に1本以下の区間</small></span>${sw('rare', '本数の少ない路線も使う')}</div>
 <h2 class="h2r">路線・駅</h2>
 <span class="lab" style="margin-top:14px">かならず乗る路線</span>${pills('mustLine', '路線', true)}
@@ -845,6 +845,7 @@ app.addEventListener('click', (e) => {
   if (mkEl && mkEl.dataset.mk != null) { const m = mkState(), st = E.steps(m.from, m.pcs, cond.ic), c = st && st.cands[+mkEl.dataset.mk]; if (c && c.ok) { m.pcs.push(c.pc); render(); } return; }
   if (mkEl && mkEl.dataset.mkend != null) { const m = mkState(), st = E.steps(m.from, m.pcs, cond.ic), en = st && st.ends[+mkEl.dataset.mkend]; if (!en) return;
     const r = E.buildRoute(m.from, en.n, en.pcs); if (!r) return toast('このルートは組み立てられませんでした'); rCache.set((cond.fast ? 'f:' : '') + r.id, r); location.hash = '#/route/' + encodeURIComponent(r.id); return; }
+  if (d.thru) { const r = curRoute(); if (!r) return; return adjust(r, { noThru: true }, '上野東京ラインの直通をやめて、乗りかえる形にしました（この1回だけ）', false, true); }
   if (d.adj || d.unadj) { const r = curRoute(); if (!r) return; const k = d.adj || d.unadj, v = d.v;
     if (d.unadj) return adjust(r, { [k]: cond[k].filter((x) => x !== v) }, v + 'の調整を外しました');
     const other = { mustSt: 'noSt', noSt: 'mustSt', noLine: 'mustLine' }[k];
