@@ -251,6 +251,13 @@ segs: [
  st:[["大網",0],["福俵",3.8],["東金",5.8],["求名",9.6],["成東",13.8]]}
 ],
 // 旅規69条: 両端の駅を両方とも通ると、もう一方の経路を通ったものとして扱う区間。as=そのとき通ったとみなす駅
+// 直通列車の表示名: 列車の名前(svc の n)と、その区間での路線名が違うときだけ書く。{系統: {辺: 路線名}}。画面に出す名前だけで、きっぷの経由印字(engine.js の keiyu)とは別
+through: {
+  yokosuka: { sobu1: '総武快速線', sobu2: '総武快速線', sobu3: '総武快速線' },
+  utsunomiya: { tokaido1: '東海道線', tokaido2: '東海道線', tokaido3: '東海道線', tokaido4: '東海道線', tokaido5: '東海道線', tokaido6: '東海道線', tokaido7: '東海道線', tokaido8: '東海道線' },
+  takasaki: { tokaido1: '東海道線', tokaido2: '東海道線', tokaido3: '東海道線', tokaido4: '東海道線', tokaido5: '東海道線', tokaido6: '東海道線', tokaido7: '東海道線', tokaido8: '東海道線' },
+  shonan_y: { tohoku8: '宇都宮線', takasaki1: '高崎線', takasaki2: '高崎線' },
+  shonan_t: { tohoku8: '宇都宮線', takasaki1: '高崎線', takasaki2: '高崎線' } },
 tracks: { // 末期モード(線路がかぶらなければよい)で使う。目安。湘南新宿ライン(東海道直通)は戸塚で東海道線の線路に移るが、横浜〜大船は横須賀線の線路として扱う
   tokaido1: [['yamanote'], ['keihin'], ['tokaido', 'utsunomiya', 'takasaki', 'joban_r'], ['yokosuka']],
   tokaido2: [['keihin'], ['tokaido', 'utsunomiya', 'takasaki']],

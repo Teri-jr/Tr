@@ -431,14 +431,14 @@ function kSearch(c) { kRelax = ''; let r = kSearch1(c); if (r.length) return r;
 // エンジンのルートを、券売機のカードの形にする
 function ooCard(r, c) {
   const sp = E.spanMins(r, c), a = Math.floor(sp[0] / 60), b = Math.round(sp[1] / 60);
-  const lines = []; r.legs.forEach((l) => { if (!lines.includes(l[0])) lines.push(l[0]); });
+  const lines = []; r.legs.forEach((l) => { const n = l[5] && l[5].disp || l[0]; if (!lines.includes(n)) lines.push(n); });
   return { id: r.id, from: r.from, to: r.to, km: kmTxt(r.km), time: b > a ? '約' + a + '〜' + b + '時間' : durTxt(sp[1]), xfer: (r.legs.length - 1) + '回', via: lines.join('・'), keiyu: E.keiyu(r).join('・'),
-    st: r.stops.map((x) => [x[0], kmTxt(x[1])]), ln: r.legs.map((l) => l[0]), ex: [], gr: r.legs.map((l, i) => (GREEN.includes(l[0]) ? i : -1)).filter((i) => i >= 0), r };
+    st: r.stops.map((x) => [x[0], kmTxt(x[1])]), ln: r.legs.map((l) => l[5] && l[5].disp || l[0]), ex: [], gr: r.legs.map((l, i) => (GREEN.includes(l[0]) ? i : -1)).filter((i) => i >= 0), r };
 }
 function plainCard(r) {
   let m = 0; const st = [[r.from, '0分']]; r.legs.forEach((l, i) => { m += l[2] + (i ? 5 : 0); st.push([r.stops[i + 1][0], m + '分']); });
-  const lines = []; r.legs.forEach((l) => { if (!lines.includes(l[0])) lines.push(l[0]); });
-  return { id: r.id, from: r.from, to: r.to, time: durTxt(m), st, ln: r.legs.map((l) => l[0]), via: lines.join('・'), keiyu: E.keiyu(r).join('・'), ex: [], gr: r.legs.map((l, i) => (GREEN.includes(l[0]) ? i : -1)).filter((i) => i >= 0), normal: true, r };
+  const lines = []; r.legs.forEach((l) => { const n = l[5] && l[5].disp || l[0]; if (!lines.includes(n)) lines.push(n); });
+  return { id: r.id, from: r.from, to: r.to, time: durTxt(m), st, ln: r.legs.map((l) => l[5] && l[5].disp || l[0]), via: lines.join('・'), keiyu: E.keiyu(r).join('・'), ex: [], gr: r.legs.map((l, i) => (GREEN.includes(l[0]) ? i : -1)).filter((i) => i >= 0), normal: true, r };
 }
 class Component extends DCLogic {
   constructor(p) { super(p); this.state = this.init(); }

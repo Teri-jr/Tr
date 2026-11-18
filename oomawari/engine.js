@@ -209,6 +209,8 @@ function create(D) {
       if (tph <= 1) { o2.rare = true; o2.warn = '1時間に1本ほど。発車時刻を先に調べておく'; rare = true; }
       if (S.warn) o2.warn = (o2.warn ? o2.warn + '。' : '') + S.warn;
       if (seq[h0].n === '浜川崎' && h0 > 0) o2.warn = (o2.warn ? o2.warn + '。' : '') + '浜川崎は改札の外で乗り換え。ICカードは簡易改札機にタッチしない';
+      { const tb = (D.through || {})[svcIds[sv]], parts = []; // 直通列車は、走る区間ごとの路線名を「・」でつなげて見せる(例: 横須賀線・総武快速線)
+        if (tb) { for (let x = h0; x < h; x++) { const nm = tb[G[hops[x].s].id] || S.n; if (parts[parts.length - 1] !== nm) parts.push(nm); } if (parts.length > 1) o2.disp = parts.join('・'); } }
       legs.push([S.n, name + '方面', mins, S.c, pathD(seq.slice(h0, h + 1).map((x) => x.n)), o2]); legSvc.push(sv);
       const st = [name, f1(seq[h].km)]; if (h === H && noteOf(H)) st.push(noteOf(H)); else if (h < H && noteOf(h)) st.push(noteOf(h)); stops.push(st); h0 = h; }
     if (noteOf(0)) stops[0].push(noteOf(0));
