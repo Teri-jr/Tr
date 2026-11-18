@@ -351,6 +351,7 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outli
       <!-- メニュー：走行は止めずに、途中で変えられる設定だけ -->
       <div class="menu" id="menu" hidden role="dialog" aria-label="メニュー">
         <div class="menubox">
+          <div class="field"><span>種別</span><div class="seg" data-k="kind"></div></div>
           <div class="field"><span>音声</span><div class="seg" data-k="voice"><button data-v="on">読み上げあり</button><button data-v="off">なし</button></div></div>
           <div class="field"><span>天候</span><div class="seg" data-k="weather"><button data-v="fine">晴れ</button><button data-v="rain">雨（スキット注意）</button></div></div>
           <div class="field"><span>ダイヤ</span><div class="seg" data-k="disorder"><button data-v="off">平常</button><button data-v="on">ダイヤ乱れ</button></div></div>
@@ -500,7 +501,7 @@ function planTimes(route,k){
   return {ev:s.events,traj:s.traj};
 }
 // ---- バージョン（変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする） ----
-const APP_VERSION='1.8.0';
+const APP_VERSION='1.8.1';
 const isNewer=(a,b)=>{ const x=String(a).split(".").map(Number), y=String(b).split(".").map(Number); for(let i=0;i<3;i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0); } return false; };
 let upd=null; // {version, items}：新しい版が出ていたら入る。announced=放送済み
 async function checkUpdate(){
@@ -632,6 +633,7 @@ document.querySelectorAll(".seg[data-k]").forEach(seg=>{
 function segSync(){ document.querySelectorAll(".seg[data-k]").forEach(sg=>sg.querySelectorAll("button[data-v]").forEach(b=>b.setAttribute("aria-pressed",cfg[sg.dataset.k]===b.dataset.v))); }
 // 乗務中に変えた設定を反映（走行の位置や予定はそのまま）
 function applyLive(k){
+  if(k==="kind") changeKind();
   if(k==="voice") $("mset").innerHTML="☰ 放送："+(cfg.voice==="on"?"自動":"切")+"<br>音量：11";
   if(k==="disorder") $("dbadge").hidden=cfg.disorder!=="on";
   if(k==="rate"&&!testMode&&watchId!=null){ stopGeo(); startGeo(); }
@@ -656,7 +658,7 @@ function netSync(){
   const n=NETS[cfg.net]; useNet(cfg.net); cfg.sec=n.defSec; fillStations();
   $("secPresets").innerHTML=n.presets.map(p=>`<button data-p="${p}">${p.replace("|"," → ").replace("羽田空港第1・第2ターミナル","羽田空港")}</button>`).join("");
   if(!KINDS[cfg.kind]){ cfg.kind=Object.keys(KINDS)[0]; }
-  document.querySelector('[data-k="kind"]').innerHTML=Object.entries(KINDS).map(([k,v])=>`<button aria-pressed="${k===cfg.kind}" data-v="${k}">${v.label}</button>`).join("");
+  document.querySelectorAll('[data-k="kind"]').forEach(el=>el.innerHTML=Object.entries(KINDS).map(([k,v])=>`<button aria-pressed="${k===cfg.kind}" data-v="${k}">${v.label}</button>`).join(""));
   if(!n.cars.includes(cfg.cars)) cfg.cars=n.defCars;
   document.querySelector('[data-k="cars"]').innerHTML=n.cars.map(c=>`<button aria-pressed="${c===cfg.cars}" data-v="${c}">${c}</button>`).join("");
   $("appTitle").textContent="運転士タブレット（GPS連動）";
@@ -1216,6 +1218,30 @@ function parseSched(){
   return d.getTime();
 }
 
+// 種別に合わせてヘッダーの色・文字と待避ボタンを変える
+function kindLook(){
+  const hd=document.querySelector(".head"); hd.style.setProperty("--ks",K.sub); hd.style.setProperty("--ksf",K.subFg||"#fff");
+  $("taihiBtn").hidden=!K.taihi; $("taihiBtn").setAttribute("aria-pressed","false");
+  const kl=$("kindLbl"); kl.textContent=K.label; kl.style.background=K.color; kl.style.color=K.fg||"#fff";
+  // 長い種別（各駅停車など）は帯の幅に収まるよう字間と大きさを詰める
+  kl.style.removeProperty("font-size"); kl.style.letterSpacing=K.label.length>2?".05em":""; kl.style.paddingLeft=K.label.length>2?"0":"";
+  requestAnimationFrame(()=>fitText(kl,K.label.length*(K.label.length>2?1.08:1.45)));
+}
+// 乗務中に種別を変える：今の位置と遅延はそのまま、止まる駅・予定・次の停車駅を作り直す
+function changeKind(){
+  const now=nowMs(), x=lastEst.x, delay=G.delay;
+  route=buildRoute(); K=KINDS[cfg.kind]; plan=planTimes(route,K);
+  const ahead=(from,px)=>{ for(let j=from+1;j<route.length;j++) if(route[j].stop&&route[j].x>px+5) return j; return -1; };
+  if(G.mode==="run"||G.mode==="halt"){ G.target=ahead(G.last,x); if(G.target>=0) G.announced[G.target]={}; }
+  else if(G.mode==="dwell") G.target=nextStop(route,G.last);
+  G.taihiPending=false; if(!K.taihi) G.taihiAt=-1;
+  // 遅延が変わらないよう、予定の基準時刻を合わせ直す
+  const pt0=(G.mode==="dwell"||G.mode==="end")?(plan.ev[G.last]||{}).arr??planTimeAt(x):planTimeAt(x);
+  if(G.started){ planEpoch=now-delay*1000-pt0*1000; schedFixed=true; }
+  if(SIM){ SIM.target=ahead(SIM.last,SIM.x); if(SIM.mode==="run"&&SIM.target>=0) SIM.env=makeEnv(route,K,SIM.x,route[SIM.target].x,simDecel()); }
+  kindLook(); renderList(); loop.lastRow=null;
+  speak(`種別変更、${K.label}、${route[route.length-1].name}行き`,"m");
+}
 $("start").addEventListener("click",()=>{
   unlockAudio();
   testMode=cfg.src==="test";
@@ -1226,12 +1252,7 @@ $("start").addEventListener("click",()=>{
   simEpoch=Date.now(); SIM=testMode?newState(route):null; if(SIM){ SIM.dwellStart=0; SIM.gap=null; } nextFixT=0; DR=null;
   G=newG(); offset=0; lastReal=null; lastNow=nowMs(); acc=0; loop.lastRow=null;
   const sched=parseSched(); schedFixed=sched!=null; planEpoch=schedFixed?sched-plan.ev[0].dep*1000:nowMs()-plan.ev[0].dep*1000;
-  const hd=document.querySelector(".head"); hd.style.setProperty("--ks",K.sub); hd.style.setProperty("--ksf",K.subFg||"#fff");
-  $("taihiBtn").hidden=!K.taihi; $("taihiBtn").setAttribute("aria-pressed","false");
-  $("kindLbl").textContent=K.label; $("kindLbl").style.background=K.color; $("kindLbl").style.color=K.fg||"#fff";
-  // 長い種別（各駅停車など）は帯の幅に収まるよう字間と大きさを詰める
-  { const kl=$("kindLbl"); kl.style.removeProperty("font-size"); kl.style.letterSpacing=K.label.length>2?".05em":""; kl.style.paddingLeft=K.label.length>2?"0":"";
-    requestAnimationFrame(()=>fitText(kl,K.label.length*(K.label.length>2?1.08:1.45))); }
+  kindLook();
   $("carsLbl").textContent=cfg.cars;
   $("mset").innerHTML="☰ 放送："+(cfg.voice==="on"?"自動":"切")+"<br>音量：11"; msgUntil=0; skidUntil=0;
   $("rangeLbl").textContent=`${route[0].name} - ${route[route.length-1].name} 駅一覧`;
