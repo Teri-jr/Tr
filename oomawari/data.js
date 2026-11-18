@@ -25,6 +25,18 @@ fares: { // A表(幹線)。営業キロ、または幹線と地方交通線を�
 green: { // 普通列車グリーン料金(JR東日本「普通列車グリーン車 料金・きっぷ」、通年同額)。[グリーン車に乗る営業キロの上限, 通常料金(紙・車内), Suicaグリーン料金]
   fee: [[50, 1010, 750], [100, 1260, 1000], [9999, 1810, 1550]],
   svc: ['東海道線', '横須賀線', '湘南新宿ライン', '宇都宮線', '高崎線', '常磐線', '総武線快速', '中央線快速'] }, // グリーン車のある系統(中央線快速はほかの線と通しにできない)
+expFee: Object.assign([[50, 760], [100, 1020], [150, 1580], [200, 2240], [300, 2550], [400, 2900]], { inCar: 260 }), // 首都圏の特急料金(JR東日本「特急券」の首都圏の表・事前料金、座席未指定券も同額、こども半額)。[営業キロの上限, 事前料金]。車内で買うと+260円
+express: [ // 上の表で料金が決まる首都圏の特急。segs=走る辺のid、stops=停車駅(停車駅はおおまかな目安で、列車によって停まらない駅もある。要確認)
+  { id: 'odoriko', n: '踊り子', c: '#E94709', segs: ['tokaido1', 'tokaido2', 'tokaido3', 'tokaido4', 'tokaido5', 'tokaido6', 'tokaido7', 'tokaido8'], stops: ['東京', '品川', '川崎', '横浜', '大船', '小田原', '熱海'] },
+  { id: 'shonan', n: '湘南', c: '#E94709', segs: ['tokaido1', 'tokaido2', 'tokaido3', 'tokaido4', 'tokaido5', 'tokaido6', 'tokaido7', 'tokaido8'], stops: ['東京', '品川', '川崎', '横浜', '大船', '藤沢', '茅ケ崎', '平塚', '大磯', '二宮', '国府津', '小田原'] },
+  { id: 'nex', n: '成田エクスプレス', c: '#C8102E', segs: ['tokaido1', 'tokaido2', 'tokaido3', 'tokaido4', 'tokaido5', 'tokaido6', 'hinkaku1', 'hinkaku2', 'sobu1', 'sobu2', 'sobu3', 'sobu4', 'narita1'], stops: ['大船', '横浜', '武蔵小杉', '品川', '東京', '千葉', '佐倉', '成田'] },
+  { id: 'shiosai', n: 'しおさい', c: '#1B7FCC', segs: ['sobu1', 'sobu2', 'sobu3', 'sobu4', 'sobu5', 'sobu6'], stops: ['東京', '錦糸町', '千葉', '佐倉', '成東', '八日市場', '旭', '松岸'] },
+  { id: 'wakashio', n: 'わかしお', c: '#1B7FCC', segs: ['keiyo1', 'keiyo2', 'keiyo3', 'sotobo2', 'sotobo3', 'sotobo4'], stops: ['東京', '蘇我', '大網', '茂原', '上総一ノ宮', '勝浦', '安房鴨川'] },
+  { id: 'sazanami', n: 'さざなみ', c: '#1B7FCC', segs: ['keiyo1', 'keiyo2', 'keiyo3', 'uchibo1', 'uchibo2'], stops: ['東京', '蘇我', '五井', '姉ケ崎', '木更津', '君津', '館山', '安房鴨川'] },
+  { id: 'azusa', n: 'あずさ・かいじ', c: '#5B2D8A', segs: ['chuo_w1', 'chuo_w2', 'chuo_w3'], stops: ['新宿', '三鷹', '立川', '八王子'] },
+  { id: 'hitachi', n: 'ひたち・ときわ', c: '#D2232A', segs: ['tokaido1', 'tohoku1', 'tohoku2', 'tohoku3', 'joban1', 'joban2', 'joban3'], stops: ['品川', '東京', '上野', '日暮里', '柏', '取手', '土浦', '石岡', '友部'] },
+  { id: 'akagi', n: 'あかぎ', c: '#0B8043', segs: ['tokaido1', 'tohoku1', 'tohoku2', 'tohoku3', 'tohoku4', 'tohoku5', 'oku1', 'tohoku6', 'tohoku7', 'takasaki1', 'takasaki2'], stops: ['品川', '東京', '上野', '大宮', '上尾', '鴻巣', '熊谷', '深谷', '本庄', '高崎'] }
+],
 kanzan: 1.1, // 地方交通線の換算キロ ≒ 営業キロ×1.1(本当は区間ごとに決まっている。目安)
 regions: ["群馬","栃木","茨城","埼玉","成田・銚子","房総","多摩","神奈川"],
 svc: {
