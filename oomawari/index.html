@@ -92,7 +92,10 @@ ol,ul{list-style:none}
 .tg b{background:#1F8F3A;color:#fff;border-radius:999px;padding:1px 7px;font-size:11px}
 .tg.e{background:rgba(240,138,0,.16);color:#B35F00}.tg.e b{background:var(--tc,#F08A00)}
 .xc ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
-.xr{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;border:1px solid var(--bd);border-left:6px solid #1F8F3A;background:var(--sf)}
+.xr{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;border:1px solid var(--bd);border-left:6px solid #1F8F3A;background:var(--sf);width:100%;text-align:left;color:var(--tx);min-height:56px}
+.xr.on{background:rgba(31,143,58,.12);border-color:#1F8F3A}.xr.e.on{background:rgba(240,138,0,.14);border-color:var(--tc,#F08A00)}
+.xk{flex-shrink:0;width:26px;height:26px;border-radius:7px;border:2px solid var(--sub);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff}.xr.on .xk{background:#1F8F3A;border-color:#1F8F3A}.xr.e.on .xk{background:var(--tc,#F08A00);border-color:var(--tc,#F08A00)}
+.xt{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:baseline;gap:4px 12px;margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--sf);border:1px solid var(--bd);font-size:13px}.xt strong{font-family:var(--num);font-size:20px}
 .xr.e{border-left-color:var(--tc,#F08A00)}
 .xb{flex-shrink:0;min-width:34px;text-align:center;padding:3px 6px;border-radius:6px;background:#1F8F3A;color:#fff;font-size:12px;font-weight:800}.xr.e .xb{background:var(--tc,#F08A00)}
 .xm{flex-grow:1;display:flex;flex-direction:column;min-width:0}.xm strong{font-size:14px}.xm small,.xp small{font-size:11px;color:var(--sub)}
@@ -352,7 +355,7 @@ ol,ul{list-style:none}
 <script src="engine.js?v=1.10.1"></script>
 <script>
 'use strict';
-const APP_VERSION = '1.28.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.28.1'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ===== データ =====
    路線データは data.js、ルートの探索は engine.js。画面はここから E.search() などを呼ぶだけ。 */
@@ -532,20 +535,27 @@ function itinHtml(r) {
   });
   return `<section aria-label="旅程" class="itin">${h}</section>`;
 }
-// グリーン車・特急: 使う区間を、脚の下に色つきの札で出し、料金は「ルートの下の料金カード」にまとめる(券売機モードと同じ見せ方)
-const grUnits = (r) => { const u = []; r.legs.forEach((_, i) => { const j = grStart(r, i); if (j >= 0) u.push([i, j - 1]); }); return u; }; // [最初の脚, 最後の脚]
+// グリーン車・特急: 全部の区間で使うわけではないので、使う区間を選ぶ(券売機モードと同じ)。選んだ区間だけ、脚の下に色つきの札を出し、料金を合計する
+const exSel = {}; // ルートid → 選んだ区間のキー
 const exSecs = (r) => (E.expOptions(r) || []).map((e) => { const sh = r.stopHop, lg = []; for (let k = 0; k < sh.length - 1; k++) if (sh[k] < e.j && sh[k + 1] > e.i) lg.push(k); return Object.assign({ lg, fee: E.expFee(e.km, false), car: E.expFee(e.km, true) }, e); });
-const legTags = (r, i) => { if (!cond.exp) return '';
-  const t = [], gr = E.hasGreen(r.legs[i][0]);
-  if (gr) t.push('<span class="tg g"><b>G</b>グリーン車</span>');
-  exSecs(r).forEach((e) => { if (e.lg.includes(i)) t.push(`<span class="tg e" style="--tc:${e.c}"><b>特急</b>${esc(e.n)}　${esc(e.a)}〜${esc(e.b)}</span>`); });
-  return t.length ? `<span class="tgs">${t.join('')}</span>` : ''; };
+// 選べる区間の一覧: グリーン券(続けて乗る分は1枚) と 特急券
+const exItems = (r) => {
+  const g = [], gs = []; r.legs.forEach((_, i) => { const j = grStart(r, i); if (j >= 0) gs.push([i, j - 1]); });
+  gs.forEach(([a, b]) => { const km = Math.round(Math.abs(r.stops[b + 1][1] - r.stops[a][1]) * 10) / 10, ln = r.legs.slice(a, b + 1).map((l) => l[5] && l[5].disp || l[0]).filter((n, i, v) => v.indexOf(n) === i).join('・');
+    g.push({ k: 'g' + a + '-' + b, kind: 'g', a: r.stops[a][0], b: r.stops[b + 1][0], km, name: ln + 'のグリーン車', sub: b > a ? '続けて乗るので1枚' : '', fee: E.greenFee(km, true), alt: '紙・車内 ' + yenS(E.greenFee(km, false)), altL: 'Suica', lg: Array.from({ length: b - a + 1 }, (_, x) => a + x), c: '#1F8F3A' }); });
+  exSecs(r).forEach((e) => g.push({ k: 'x' + e.id + '-' + e.i + '-' + e.j, kind: 'e', a: e.a, b: e.b, km: e.km, name: e.n, sub: '', fee: e.fee, alt: '車内 ' + yenS(e.car), altL: '事前', lg: e.lg, c: e.c }));
+  return g; };
 const yenS = (n) => n.toLocaleString() + '円';
+const exOn = (r) => exItems(r).filter((x) => (exSel[r.id] || {})[x.k]);
+const legTags = (r, i) => { if (!cond.exp) return '';
+  const t = exOn(r).filter((x) => x.lg.includes(i)).map((x) => x.kind === 'g' ? '<span class="tg g"><b>G</b>グリーン車</span>' : `<span class="tg e" style="--tc:${x.c}"><b>特急</b>${esc(x.name)}　${esc(x.a)}〜${esc(x.b)}</span>`);
+  return t.length ? `<span class="tgs">${t.join('')}</span>` : ''; };
 function exHtml(r) { if (!cond.exp) return '';
-  const g = grUnits(r).map(([a, b]) => { const km = Math.round(Math.abs(r.stops[b + 1][1] - r.stops[a][1]) * 10) / 10, ln = r.legs.slice(a, b + 1).map((l) => l[5] && l[5].disp || l[0]).filter((n, i, v) => v.indexOf(n) === i).join('・');
-    return `<li class="xr g"><span class="xb">G</span><span class="xm"><strong>${esc(r.stops[a][0])} ⇒ ${esc(r.stops[b + 1][0])}</strong><small>${esc(ln)}のグリーン車　${km}km${b > a ? '　続けて乗るので1枚' : ''}</small></span><span class="xp"><b>${yenS(E.greenFee(km, true))}</b><small>Suica　紙・車内 ${yenS(E.greenFee(km, false))}</small></span></li>`; });
-  const x = exSecs(r).map((e) => `<li class="xr e" style="--tc:${e.c}"><span class="xb">特急</span><span class="xm"><strong>${esc(e.a)} ⇒ ${esc(e.b)}</strong><small>${esc(e.n)}　${e.km}km</small></span><span class="xp"><b>${yenS(e.fee)}</b><small>事前　車内 ${yenS(e.car)}</small></span></li>`);
-  return `<section aria-label="グリーン券・特急券" class="xc"><h2 class="sec-h" style="margin:14px 0 6px">グリーン券・特急券</h2>${g.length + x.length ? `<ul>${g.concat(x).join('')}</ul>` : '<p class="note" style="margin:0">このルートに、グリーン車と特急はありません</p>'}<p class="note" style="margin:8px 0 0">運賃のほかに必要な料金です。グリーン車は自由席で、座席未指定の特急券も同額。こどもの特急料金は半額、グリーン料金は大人と同額。特急は首都圏の特急料金の事前料金。停車駅は目安で、列車によって停まらない駅があります。特急のグリーン車は未対応</p></section>`; }
+  const it = exItems(r), on = exOn(r), sel = exSel[r.id] || {};
+  const row = (x) => `<li><button type="button" class="xr ${x.kind}${sel[x.k] ? ' on' : ''}" style="--tc:${x.c}" data-act="exTog" data-id="${esc(r.id)}" data-k="${esc(x.k)}" aria-pressed="${!!sel[x.k]}"><span class="xb">${x.kind === 'g' ? 'G' : '特急'}</span><span class="xm"><strong>${esc(x.a)} ⇒ ${esc(x.b)}</strong><small>${esc(x.name)}　${x.km}km${x.sub ? '　' + esc(x.sub) : ''}</small></span><span class="xp"><b>${yenS(x.fee)}</b><small>${x.altL}　${x.alt}</small></span><span class="xk" aria-hidden="true">${sel[x.k] ? '✓' : ''}</span></button></li>`;
+  const tot = on.reduce((t, x) => t + x.fee, 0), fare = rtk(r).fare;
+  return `<section aria-label="グリーン券・特急券" class="xc"><h2 class="sec-h" style="margin:0 0 4px">グリーン車・特急を使う区間</h2><p class="note" style="margin:0 0 8px">使う区間を押して選びます(選ばなければ使いません)</p>${it.length ? `<ul>${it.map(row).join('')}</ul>` : '<p class="note" style="margin:0">このルートに、グリーン車と特急はありません</p>'}
+${it.length ? `<div class="xt"><span>運賃 ${yenS(fare)}</span><span>＋ 選んだ料金 ${on.length ? yenS(tot) : '0円'}</span><strong>合計 ${yenS(fare + tot)}</strong></div>` : ''}<p class="note" style="margin:8px 0 0">グリーン車は自由席で、料金はSuica(紙・車内は高め)。特急は首都圏の特急料金の事前料金で、座席未指定の特急券も同額。こどもは特急が半額、グリーンは大人と同額。停車駅は目安で、列車によって停まらない駅があります。特急のグリーン車は未対応</p></section>`; }
 // グリーン車: 改札を出ずに続けて乗るグリーン車は1枚で通し(中央線快速はほかの線と通しにできない)。
 // leg i がグリーン券の始まりなら、その券の終わりの駅の番号を返す。始まりでなければ -1
 const grStart = (r, i) => { const g = (k) => k >= 0 && k < r.legs.length && E.hasGreen(r.legs[k][0]), cu = (k) => r.legs[k][0] === '中央線快速';
@@ -641,14 +651,14 @@ V.route = (r) => { const rs = sorted(searchRoutes(cond)), i = rs.findIndex((x) =
 <button type="button" class="icon-b" data-act="share" data-id="${esc(r.id)}" aria-label="共有"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4M8 8l4-4 4 4M5 13v6h14v-6"/></svg></button></header>
 <section aria-label="概要" style="padding:6px 24px 0;display:flex;flex-direction:column;gap:4px">${okLine(r, CHECK(16))}<h1 class="rt-h1">${rtk(r).fare}円で、${esc(r.title)}</h1>
 <p class="rt-km"><b>${r.km}</b><i>km</i><small>きっぷの距離の${Math.round(r.km / rtk(r).km)}倍</small></p><p class="rt-meta">${spanTxt(r, cond)}　・　乗換${xfers(r)}回　・　列車${r.legs.length}本</p></section><div style="margin:12px 24px 0">${adjQuick(r)}</div>
-<section aria-label="経路図" style="padding:10px 24px 0">${rmapHtml(r, false)}<p class="note" style="margin:8px 0 0">きっぷの経由（マルス券の印字の目安）：${esc(E.keiyu(r).join('・'))}</p></section><div class="grow" style="margin:18px 24px 0">${itinHtml(r)}</div>
+<section aria-label="経路図" style="padding:10px 24px 0">${rmapHtml(r, false)}<p class="note" style="margin:8px 0 0">きっぷの経由（マルス券の印字の目安）：${esc(E.keiyu(r).join('・'))}</p></section><div class="grow" style="margin:18px 24px 0">${itinHtml(r)}</div>${cond.exp ? `<div style="margin:18px 24px 0">${exHtml(r)}</div>` : ''}
 <div style="margin:22px 24px 0">${adjHtml(r)}</div>
 <div style="margin:12px 24px 0">${ttLink(r)}${rodeB(r)}</div>${ovHtml(r, 'padding:14px 24px 0')}<p class="note" style="padding:14px 24px 0">時刻は載せていません。所要時間は目安です。${cond.ic ? 'ICカードは長時間の乗車で改札が閉まることがあります。止められたら有人改札で説明してください。' : '紙のきっぷで。ICカードは長時間の乗車で改札が閉まることがあります。'}</p>
 <div class="foot" style="display:flex;gap:10px">${savB(r)}<a href="#/ride" data-act="go" data-id="${esc(r.id)}" class="cta" style="flex-grow:1;width:auto">このルートで出発する</a></div></div>`; };
 
 // タブレット・PC: 左に一覧、中央にルート、(幅があれば)右に旅程
 V.result = (r, w3) => { const rs = sorted(searchRoutes(cond));
-  const it = r ? `<h2 class="sec-h">旅程</h2>${itinHtml(r)}${exHtml(r)}<div style="margin-top:12px">${ttLink(r)}</div>${rodeB(r)}${ovHtml(r, 'margin-top:12px')}<p class="note" style="margin-top:12px">時刻は載せていません。所要時間は目安です。</p>` : '';
+  const it = r ? `<h2 class="sec-h">旅程</h2>${itinHtml(r)}<div style="margin-top:12px">${ttLink(r)}</div>${rodeB(r)}${ovHtml(r, 'margin-top:12px')}<p class="note" style="margin-top:12px">時刻は載せていません。所要時間は目安です。</p>` : '';
   return pcHeader('s') + `<div class="res"><aside class="ls"><a href="#/" class="back">‹ 条件を変更</a>${sumHtml(true)}<div style="margin-top:18px">${listHtml(rs, r && r.id, 'h2')}</div>
 <p class="note" style="margin-top:auto;padding-top:24px;font-size:11px">営業キロ・所要時間・本数は手入力の目安です。発車時刻は当日の時刻表で確認してください。</p></aside>
 <main class="mn">${r ? `${okLine(r, '✓ ')}<h1 class="rt-h1">${rtk(r).fare}円で、${esc(r.title)}</h1>
@@ -878,6 +888,7 @@ app.addEventListener('click', (e) => {
     const other = { mustSt: 'noSt', noSt: 'mustSt', noLine: 'mustLine' }[k];
     return adjust(r, { [k]: cond[k].concat(v), [other]: cond[other].filter((x) => x !== v) }, k === 'noLine' ? v + 'に乗らないルートにしました（この1回だけ）' : v + 'を通らないルートにしました', false, k === 'noLine'); }
   const act = d.act; if (!act) return;
+  if (act === 'exTog') { const o = exSel[d.id] || (exSel[d.id] = {}); if (o[d.k]) delete o[d.k]; else o[d.k] = true; return render(); }
   if (act === 'adjFast') { const r = curRoute(); setCond({ fast: !cond.fast }); if (r) { const n = routeById(r.id); toast(cond.fast ? '速い列車を優先しました' + (n ? '（乗っている時間' + durTxt(Math.round(E.rideMins(n))) + '・乗換' + xfers(n) + '回）' : '') : '乗換の少ない列車にもどしました'); } return render(); }
   if (act === 'adjFewer') { const r = curRoute(); if (!r) return; if (cond.fast) { setCond({ fast: false }); render(); return toast('速い列車の優先をやめて、乗換の少ない列車にしました'); }
     return adjust(r, { xfer: Math.max(0, xfers(r) - 1) }, '乗換を' + Math.max(0, xfers(r) - 1) + '回までにしました', true); }
