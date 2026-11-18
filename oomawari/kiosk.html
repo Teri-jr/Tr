@@ -11,6 +11,8 @@
 <style>
 /* 券売機モード(あそび): 1280×1024 の画面を作り、端末の大きさに合わせて拡大縮小する */
 html,body{height:100%;margin:0;background:#000;overflow:hidden}
+html,body{position:fixed;left:0;top:0;width:100%} /* 1280px の画面がはみ出しても、スマホが表示を広げないようにする */
+#rot{position:fixed;right:8px;bottom:8px;z-index:9;display:none;padding:8px 12px;border:1px solid #666;border-radius:18px;background:#222;color:#EEE;font-size:13px;opacity:.8}
 body{-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;touch-action:manipulation}
 button{font-family:inherit;cursor:pointer}
 #stage{position:absolute;left:0;top:0;width:1280px;height:1024px;transform-origin:0 0}
@@ -20,6 +22,7 @@ button{font-family:inherit;cursor:pointer}
 </head>
 <body>
 <div id="stage"></div>
+<button type="button" id="rot" aria-label="画面の向きを切りかえる">↻ 画面を回す</button>
 <!-- 画面のひな形。{{名前}} に下の renderVals() の値が入り、sc-if は出す/出さない、sc-for はくり返し。 -->
 <template id="tpl">
 <div style="position: relative; isolation: isolate; width: 1280px; height: 1024px; overflow: hidden; background: #DCDCDC; color: #111111; font-family: 'BIZ UDPGothic', sans-serif; line-height: 1.35; display: flex; flex-direction: column; filter: {{root}}">
@@ -77,7 +80,7 @@ button{font-family:inherit;cursor:pointer}
 <sc-for list="{{cards}}" as="c">
 <div style="width: 540px; height: 720px; box-sizing: border-box; border: 3px solid #555555; border-radius: 14px; background: #FFFFFF; overflow: hidden; display: flex; flex-direction: column">
 <div style="height: 60px; flex-shrink: 0; padding: 0 20px; background: #EDEDED; border-bottom: 2px solid #8A8A8A; display: flex; align-items: center; gap: 12px"><span style="font-size: 18px">{{c.headL}}：</span><span style="font-size: 28px; font-weight: 700">{{c.headV}}</span><span style="margin-left: auto; font-size: 18px; font-weight: 700">{{c.headR}}</span></div>
-<div style="flex-grow: 1; min-height: 0; padding: 10px 0 0"><p style="margin: 0 0 6px 20px; font-size: 17px; font-weight: 700; color: #C00000">{{c.tag}}</p><sc-for list="{{c.rows}}" as="t">
+<div style="flex-grow: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y; overscroll-behavior: contain; padding: 10px 0 0"><p style="margin: 0 0 6px 20px; font-size: 17px; font-weight: 700; color: #C00000">{{c.tag}}</p><sc-for list="{{c.rows}}" as="t">
 <sc-if value="{{t.isSt}}"><div style="height: 28px; display: flex; align-items: center"><span style="width: 78px; flex-shrink: 0; text-align: right; padding-right: 8px; font-size: 15px">{{t.km}}</span><span style="width: 16px; height: 16px; flex-shrink: 0; margin-left: -9px; box-sizing: border-box; border: 2px solid #000000; border-radius: {{t.node}}; background: #FFFFFF; position: relative; z-index: 1"></span><span style="padding-left: 12px; font-size: 22px; font-weight: 700">{{t.name}}</span></div></sc-if>
 <sc-if value="{{t.isLn}}"><div style="height: 26px; display: flex; align-items: center; background: {{t.band}}"><span style="width: 78px; flex-shrink: 0; align-self: stretch; display: flex; align-items: center; justify-content: flex-start"><span style="width: 28px; height: 100%; background: {{t.tabBg}}; color: #FFFFFF; font-size: 11px; display: flex; align-items: center; justify-content: center">{{t.tab}}</span></span><span style="width: 4px; align-self: stretch; margin-left: -3px; background: #000000"></span><span style="padding-left: 21px; font-size: 16px; font-weight: 700">{{t.name}}</span></div></sc-if>
 </sc-for></div>
@@ -89,8 +92,8 @@ button{font-family:inherit;cursor:pointer}
 </sc-if>
 
 <sc-if value="{{s4}}">
-<div style="flex-grow: 1; display: flex">
-<div style="width: 556px; flex-shrink: 0; padding-top: 20px; background: #FFFFFF"><sc-for list="{{cRows}}" as="t">
+<div style="flex-grow: 1; min-height: 0; display: flex">
+<div style="width: 556px; flex-shrink: 0; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y; overscroll-behavior: contain; padding-top: 20px; background: #FFFFFF"><sc-for list="{{cRows}}" as="t">
 <sc-if value="{{t.isSt}}"><div style="height: 28px; display: flex; align-items: center"><span style="width: 76px; flex-shrink: 0; text-align: right; padding-right: 8px; font-size: 15px">{{t.km}}</span><span style="width: 16px; height: 16px; flex-shrink: 0; margin-left: -9px; box-sizing: border-box; border: 2px solid #000000; border-radius: {{t.node}}; background: #FFFFFF; position: relative; z-index: 1"></span><span style="padding-left: 12px; font-size: 22px; font-weight: 700">{{t.name}}</span></div></sc-if>
 <sc-if value="{{t.isLn}}"><div style="height: 26px; display: flex; align-items: center; background: {{t.band}}"><span style="width: 76px; flex-shrink: 0; align-self: stretch; display: flex; align-items: center; justify-content: flex-start"><span style="width: 28px; height: 100%; background: {{t.tabBg}}; color: #FFFFFF; font-size: 11px; display: flex; align-items: center; justify-content: center">{{t.tab}}</span></span><span style="width: 4px; align-self: stretch; margin-left: -3px; background: #000000"></span><span style="padding-left: 21px; font-size: 16px; font-weight: 700">{{t.name}}</span></div></sc-if>
 </sc-for></div>
@@ -145,10 +148,10 @@ button{font-family:inherit;cursor:pointer}
 </sc-if>
 
 <sc-if value="{{s7}}">
-<div style="flex-grow: 1; display: flex">
+<div style="flex-grow: 1; min-height: 0; display: flex">
 <div style="width: 728px; flex-shrink: 0; padding: 0 10px; box-sizing: border-box; background: #FFFFFF; display: flex; flex-direction: column">
 <div style="height: 90px; margin-top: 4px; background: #5A5A5A; color: #FFF27A; font-size: 38px; font-weight: 700; display: flex; align-items: center; justify-content: center">経路／乗車券</div>
-<div style="position: relative; flex-grow: 1; padding-top: 16px">
+<div style="position: relative; flex-grow: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y; overscroll-behavior: contain; padding-top: 16px">
 <sc-for list="{{cRows}}" as="t">
 <sc-if value="{{t.isSt}}"><div style="height: 28px; display: flex; align-items: center"><span style="width: 100px; flex-shrink: 0; text-align: right; padding-right: 8px; font-size: 15px">{{t.km}}</span><span style="width: 16px; height: 16px; flex-shrink: 0; margin-left: -9px; box-sizing: border-box; border: 2px solid #000000; border-radius: {{t.node}}; background: #FFFFFF; position: relative; z-index: 1"></span><span style="padding-left: 12px; font-size: 22px; font-weight: 700">{{t.name}}</span></div></sc-if>
 <sc-if value="{{t.isLn}}"><div style="height: 26px; display: flex; align-items: center; background: {{t.band}}"><span style="width: 100px; flex-shrink: 0; align-self: stretch; display: flex; align-items: center; justify-content: flex-start"><span style="width: 28px; height: 100%; background: {{t.tabBg}}; color: #FFFFFF; font-size: 11px; display: flex; align-items: center; justify-content: center">{{t.tab}}</span></span><span style="width: 4px; align-self: stretch; margin-left: -3px; background: #000000"></span><span style="padding-left: 21px; font-size: 16px; font-weight: 700">{{t.name}}</span></div></sc-if>
@@ -391,7 +394,12 @@ const stage = document.getElementById('stage'), tpl = document.getElementById('t
 let comp = null;
 function paint() { const box = document.createElement('div'); build(tpl, comp.renderVals(), box); morph(stage, box); }
 stage.addEventListener('click', (e) => { for (let n = e.target; n && n !== stage; n = n.parentNode) if (typeof n.__click === 'function') { n.__click(e); return; } });
-function fit() { const k = Math.min(innerWidth / 1280, innerHeight / 1024); stage.style.transform = `translate(${(innerWidth - 1280 * k) / 2}px,${(innerHeight - 1024 * k) / 2}px) scale(${k})`; }
+// スマホをたてに持っているときは、画面を横に倒して(90度回して)大きく使う。右下のボタンで切りかえられる
+const rotBtn = document.getElementById('rot'); let rotOff = false; try { rotOff = localStorage.getItem('oomawari-kiosk-norot') === '1'; } catch (e) {}
+function fit() { const W = innerWidth, H = innerHeight, phone = W < H && W < 800; rotBtn.style.display = phone ? 'block' : 'none';
+  if (phone && !rotOff) { const k = Math.min(H / 1280, W / 1024); stage.style.transform = `translate(${(W - 1024 * k) / 2 + 1024 * k}px,${(H - 1280 * k) / 2}px) rotate(90deg) scale(${k})`; return; }
+  const k = Math.min(W / 1280, H / 1024); stage.style.transform = `translate(${(W - 1280 * k) / 2}px,${(H - 1024 * k) / 2}px) scale(${k})`; }
+rotBtn.addEventListener('click', () => { rotOff = !rotOff; try { localStorage.setItem('oomawari-kiosk-norot', rotOff ? '1' : '0'); } catch (e) {} fit(); });
 addEventListener('resize', fit); fit();
 
 /* ===== 券売機の中身 =====
