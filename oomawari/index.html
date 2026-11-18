@@ -461,7 +461,7 @@ function ticketHtml() {
 <span class="t3">経由：${from === to ? '一周' : '－－－'}</span>
 <span class="t4"><span><b>${d.getMonth() + 1}</b>月<b>${d.getDate()}</b>日当日限り有効</span><span class="yen">￥${fare()}</span></span>
 <span class="t5">下車前途無効</span>
-<span class="t6"><span>${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}<br><b>00000-00</b></span><span>大回りジェネレータ発行<br>（きっぷのイメージ）</span><b>見本</b></span></div><p class="tkl">駅名を押すと、出発駅・到着駅を変えられます</p>${basisHtml()}</section>`;
+<span class="t6"><span>${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}<br><b>00000-00</b></span><span>大回りジェネレータ発行</span></span></div><p class="tkl">駅名を押すと、出発駅・到着駅を変えられます</p>${basisHtml()}</section>`;
 }
 const timeHtml = () => `<section aria-label="使える時間" style="display:flex;flex-direction:column;gap:2px"><span class="lab">使える時間</span><div class="timeR">
 <button type="button" class="timeB" data-time="start" aria-label="出発 ${esc(cond.start)}">${esc(cond.start)}<input type="time" tabindex="-1" aria-hidden="true" value="${esc(cond.start)}" data-tin="start"></button><span>から</span>
