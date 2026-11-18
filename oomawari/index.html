@@ -343,7 +343,7 @@ ol,ul{list-style:none}
 <script src="engine.js?v=1.10.1"></script>
 <script>
 'use strict';
-const APP_VERSION = '1.26.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.27.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ===== データ =====
    路線データは data.js、ルートの探索は engine.js。画面はここから E.search() などを呼ぶだけ。 */
@@ -519,7 +519,7 @@ function itinHtml(r) {
     h += `<div class="it-r"><div class="it-km">${i ? s[1] : 0}</div><div class="it-rail">${up}${dn}<b${i === 0 ? ' class="s"' : i === last ? ' class="g"' : ''}></b></div><div class="it-st"><strong${i === 0 || i === last ? ' class="e"' : ''}>${esc(s[0])}</strong>${i === 0 ? '<span class="k">ここできっぷを買う</span>' : i === last ? '<span class="k">ここではじめて改札を出る</span>' : s[2] ? '<span class="k">折り返し可</span>' : '<span>乗換</span>'}</div></div>`;
     if (s[2]) h += `<div class="it-r l tb"><div class="it-km"></div><div class="it-rail">${i < last ? `<i style="background:${r.legs[i][3]}"></i>` : ''}</div><div class="it-ln"><span class="t">${esc(s[2])}</span></div></div>`;
     if (i < last) { const l = r.legs[i], w = l[5] && l[5].warn, tph = l[5] && l[5].tph;
-      h += `<div class="it-r l${w ? ' w' : ''}"><div class="it-km"></div><div class="it-rail"><i style="background:${l[3]}"></i></div><div class="it-ln"><span><span><strong>${esc(l[0])}</strong>　${esc(l[1])}</span><span class="m">${durTxt(l[2])}${tph ? '・毎時' + tph + '本' : ''}</span></span>${w ? `<span class="w">${esc(w)}</span>` : ''}${cond.exp && grStart(r, i) >= 0 ? (() => { const j = grStart(r, i), km = Math.abs(r.stops[j][1] - r.stops[i][1]); return `<span class="gr">グリーン車${j > i + 1 ? '（' + esc(r.stops[i][0]) + '〜' + esc(r.stops[j][0]) + 'は1枚で通し）' : ''} ${Math.round(km * 10) / 10}km：${E.greenFee(km, true).toLocaleString()}円（Suica）・${E.greenFee(km, false).toLocaleString()}円（紙・車内）</span>`; })() : ''}</div></div>`; }
+      h += `<div class="it-r l${w ? ' w' : ''}"><div class="it-km"></div><div class="it-rail"><i style="background:${l[3]}"></i></div><div class="it-ln"><span><span><strong>${esc(l[5] && l[5].disp || l[0])}</strong>　${esc(l[1])}</span><span class="m">${durTxt(l[2])}${tph ? '・毎時' + tph + '本' : ''}</span></span>${w ? `<span class="w">${esc(w)}</span>` : ''}${cond.exp && grStart(r, i) >= 0 ? (() => { const j = grStart(r, i), km = Math.abs(r.stops[j][1] - r.stops[i][1]); return `<span class="gr">グリーン車${j > i + 1 ? '（' + esc(r.stops[i][0]) + '〜' + esc(r.stops[j][0]) + 'は1枚で通し）' : ''} ${Math.round(km * 10) / 10}km：${E.greenFee(km, true).toLocaleString()}円（Suica）・${E.greenFee(km, false).toLocaleString()}円（紙・車内）</span>`; })() : ''}</div></div>`; }
   });
   return `<section aria-label="旅程" class="itin">${h}</section>`;
 }
@@ -751,7 +751,7 @@ V.ride = () => { const r = ride && routeById(ride.id);
   return `<div class="scr"><div class="col"><header class="hd"><a href="#/route/${esc(r.id)}" class="back">‹ 旅程</a><span class="pill">改札は出ない</span></header>
 <section aria-label="いまの列車" class="now"><span class="bar" style="background:${leg[3]}"></span><span><small>${done ? '乗りおわった列車' : 'いま乗っている列車'}</small><strong>${esc(leg[0])}　${esc(leg[1])}</strong></span></section>
 <section aria-label="次の乗換" class="next"><span>${lastLeg ? '到着駅' : '次の乗換'}　<strong>${esc(nxSt[0])}</strong>　まで</span><div><span class="ato">あと</span><span class="big">${Math.round(rem)}</span><span class="u">km</span><span class="pace"><small>${p.gps ? 'このペースなら' : '時間からの見積もり'}</small><br><b>${done ? '到着' : durTxt(Math.max(1, Math.round(rem / legKm * leg[2])))}</b></span></div></section>
-<section aria-label="乗換先" class="nx"><div><span class="bar" style="background:${nl ? nl[3] : 'var(--tx)'}"></span><span><small>降りたら</small><strong>${nl ? esc(nl[0]) + '　' + esc(nl[1]) : '改札を出る'}</strong></span><span class="r">${nl ? '発車時刻は<br>駅の発車標で' : 'ここではじめて<br>改札を出ます'}</span></div>${nl && nl[2] >= 60 ? `<p>この先は約${Math.round(r.stops[i + 2][1] - nxSt[1])}km。${nl[2] >= 105 ? '2時間近く' : nl[2] >= 80 ? '1時間半ほど' : '1時間ほど'}乗ります。</p>` : ''}</section>
+<section aria-label="乗換先" class="nx"><div><span class="bar" style="background:${nl ? nl[3] : 'var(--tx)'}"></span><span><small>降りたら</small><strong>${nl ? esc(nl[5] && nl[5].disp || nl[0]) + '　' + esc(nl[1]) : '改札を出る'}</strong></span><span class="r">${nl ? '発車時刻は<br>駅の発車標で' : 'ここではじめて<br>改札を出ます'}</span></div>${nl && nl[2] >= 60 ? `<p>この先は約${Math.round(r.stops[i + 2][1] - nxSt[1])}km。${nl[2] >= 105 ? '2時間近く' : nl[2] >= 80 ? '1時間半ほど' : '1時間ほど'}乗ります。</p>` : ''}</section>
 <section aria-label="進み具合" class="prog"><div class="tr"><div>${r.legs.map((l, k) => `<span style="flex:${r.stops[k + 1][1] - r.stops[k][1]} 1 0;background:${l[3]}${k > i ? ';opacity:.3' : ''}"></span>`).join('')}</div><b style="left:${Math.max(3, Math.min(97, pos / total * 100))}%"></b></div>
 <div class="lg"><span><b>${Math.round(pos)}</b> km 走った</span><span>残り <b>${Math.round(total - pos)}</b> km</span></div></section>
 <section aria-label="このあと" class="after">${after ? `<h2>このあとの乗換</h2>${after}` : ''}</section>
@@ -761,10 +761,10 @@ V.show = () => { const r = (ride && routeById(ride.id)) || searchRoutes(cond)[0]
   if (!r) return `<div class="scr"><div class="col"><header class="hd"><a href="#/" class="back">‹ さがす</a></header><p class="empty" style="margin:0 24px">見せるルートがありません。先にルートをえらんでください。</p></div></div>`;
   const notes = r.stops.filter((x) => x[2]).map((x) => x[2]);
   const rows = []; r.legs.forEach((l, i) => { const prev = rows[rows.length - 1];
-    if (prev && prev.line === l[0]) prev.mid.push(r.stops[i][0]); else rows.push({ st: r.stops[i][0], line: l[0], c: l[3], sl: l[5] && l[5].sl, mid: [] }); });
+    if (prev && prev.line === l[0]) prev.mid.push(r.stops[i][0]); else rows.push({ st: r.stops[i][0], line: l[0], disp: l[5] && l[5].disp, c: l[3], sl: l[5] && l[5].sl, mid: [] }); });
   return `<div class="scr"><div class="col show"><header><span>係員の方へ</span><h1>大回り乗車をしています</h1></header>
 <section aria-label="乗車券" class="stk"><span><small>乗車券</small><strong>${esc(r.from)} → ${esc(toTxt(r.from, r.to))}</strong><em>${d.getMonth() + 1}月${d.getDate()}日　${esc(r.from)} ${at ? pad(at.getHours()) + ':' + pad(at.getMinutes()) : esc(cond.start)} 入場</em></span><span class="f"><b>${rtk(r).fare}</b><br><i>円</i></span></section>
-<section aria-label="経路" class="sec"><h2 class="sh2">乗車経路</h2><ol class="via-l">${rows.map((x) => `<li><i style="background:${x.c}"></i>${esc(x.st)}<span>${esc(x.sl || x.line + (x.mid.length ? `（${x.mid.join('・')} 経由）` : ''))}</span></li>`).join('')}<li><i class="o"></i>${esc(r.to)}<span>ここで出場</span></li></ol>${notes.map((t) => `<p class="note">${esc(t)}</p>`).join('')}</section>
+<section aria-label="経路" class="sec"><h2 class="sh2">乗車経路</h2><ol class="via-l">${rows.map((x) => `<li><i style="background:${x.c}"></i>${esc(x.st)}<span>${esc(x.sl || (x.disp || x.line) + (x.mid.length ? `（${x.mid.join('・')} 経由）` : ''))}</span></li>`).join('')}<li><i class="o"></i>${esc(r.to)}<span>ここで出場</span></li></ol>${notes.map((t) => `<p class="note">${esc(t)}</p>`).join('')}</section>
 <section aria-label="確認" class="sec grow"><h2 class="sh2">確認</h2><ul class="chk">${['すべて東京近郊区間内', '同じ駅を2度通っていない', '途中で改札を出ていない'].map((t) => `<li>${CHECK(18)}${t}</li>`).join('')}</ul><p class="note" style="margin-top:6px">旅客営業規則 第157条第2項（大都市近郊区間内の選択乗車）</p></section>
 <a href="#/ride" class="btn2" data-act="closeShow">閉じる</a></div></div>`; };
 
