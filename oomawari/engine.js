@@ -40,6 +40,8 @@ function create(D) {
   const sames = (D.same || []).map((x) => ({ segs: x.segs.map((id) => segNo[id]), as: x.as, law: x.law }));
   const turns = D.turns.map((t) => ({ at: t.at, to: t.to, via: t.via, law: t.law, toward: segNo[t.toward[0]], need: t.need.map((x) => segNo[x]), except: (t.except || []).map((x) => segNo[x]), only: t.only ? t.only.map((x) => segNo[x]) : null }));
   // 分岐駅を通過する列車の特例(160条の4)の駅。停まらずに通りすぎただけなら、あとでその駅に着いてもよい(例: 横浜から東海道線で東神奈川を通過 → 最後に横浜線で東神奈川)
+  // 上野東京ライン直通(常磐線が東京・品川から日暮里まで通しで走る区間)。切ると、日暮里などで乗りかえる形になる
+  const JIDX = svcIds.indexOf('joban_r'), THRU = new Set(G.map((g, i) => (['tokaido1', 'tohoku1', 'tohoku2', 'tohoku3'].includes(g.id) ? i : -1)).filter((i) => i >= 0));
   const PASSOK = new Set(turns.filter((t) => t.need.length === 0 && /160条の4/.test(t.law)).map((t) => t.at));
 
   /* ===== 略図(342×300)への写しかた ===== */
@@ -146,7 +148,7 @@ function create(D) {
         const clash = t.via.some((v) => seen.has(v));
         if (req) { if (clash) return null; turnAt[j] = { t, req: true }; } else if (!clash) turnAt[j] = { t, req: false }; } }
     // 列車の割りあて: 乗換がいちばん少なく、同じなら早い組みあわせ
-    const opt = hops.map((hp) => G[hp.s].hops[hp.h].filter((e) => !(banned && banned[e[0]]) && !(o.noRare && e[1] <= 1) && (hp.g < 0 || inTr(hp.s, hp.g, e[0]))));
+    const opt = hops.map((hp) => G[hp.s].hops[hp.h].filter((e) => !(banned && banned[e[0]]) && !(o.noThru && e[0] === JIDX && THRU.has(hp.s)) && !(o.noRare && e[1] <= 1) && (hp.g < 0 || inTr(hp.s, hp.g, e[0]))));
     // 列車の割りあて(opt: 辺ごとに乗れる系統)。乗換がいちばん少なく、同じなら早い組みあわせ。ない場合は null
     const assign = (opt) => {
     const INF = 1e12, cost = [], back = [], XP = o.fast ? 5 : 10000; // 乗換1回の重み。速い列車を優先するときは5分ぶん
@@ -224,7 +226,7 @@ function create(D) {
     function part(s, i0, i1, tg) { const g = G[s], lo = Math.min(i0, i1), hi = Math.max(i0, i1); let mins = 0, m0 = 0, m1 = 0, km = 0, rk = 0;
       if (g.reg & avoidM) return null;
       for (let i = lo; i <= hi; i++) if (noSt.has(g.names[i]) && g.names[i] !== from && g.names[i] !== to) return null;
-      for (let h = lo; h < hi; h++) { let v = 0; for (const e of g.hops[h]) { if (banned[e[0]] || (!c.rare && e[1] <= 1) || (tg != null && !inTr(s, tg, e[0]))) continue; v = Math.max(v, SV[svcIds[e[0]]].v); if (e[0] < 32) m0 |= 1 << e[0]; else m1 |= 1 << (e[0] - 32); }
+      for (let h = lo; h < hi; h++) { let v = 0; for (const e of g.hops[h]) { if (banned[e[0]] || (c.noThru && e[0] === JIDX && THRU.has(s)) || (!c.rare && e[1] <= 1) || (tg != null && !inTr(s, tg, e[0]))) continue; v = Math.max(v, SV[svcIds[e[0]]].v); if (e[0] < 32) m0 |= 1 << e[0]; else m1 |= 1 << (e[0] - 32); }
         if (!v) return null; const dk = g.kms[h + 1] - g.kms[h]; km += dk; mins += dk / v * 60; if (ridden.has(hopKey(s, h))) rk += dk; }
       return { km, mins, m0, m1, sc: km - pen * rk, reg: g.reg }; }
     const full = G.map((g) => part(g.i, 0, g.n));
@@ -332,9 +334,9 @@ function create(D) {
     const cand = Array.from(best.values()).sort((a, b) => b.sc - a.sc), out = [], want = c.len === 3 ? 1 : KEEP;
     let tried = 0;
     for (const cd of cand) { if (out.length >= want || tried++ > 600) break;
-      let r = buildRoute(from, to, cd.pcs, { banned, noRare: !c.rare, fast: c.fast, gray: !!c.gray }); if (!r) continue;
+      let r = buildRoute(from, to, cd.pcs, { banned, noRare: !c.rare, fast: c.fast, gray: !!c.gray, noThru: !!c.noThru }); if (!r) continue;
       if (!c.fast && r.legs.length - 1 > c.xfer) continue; // 速い列車を優先するときは、速くするための乗換は回数に数えない(乗換の少ない組みかたで判定)
-      if (c.fast) { const r0 = buildRoute(from, to, cd.pcs, { banned, noRare: !c.rare, gray: !!c.gray }); if (!r0 || r0.legs.length - 1 > c.xfer) continue; }
+      if (c.fast) { const r0 = buildRoute(from, to, cd.pcs, { banned, noRare: !c.rare, gray: !!c.gray, noThru: !!c.noThru }); if (!r0 || r0.legs.length - 1 > c.xfer) continue; }
       if (r.legs.reduce((a, l) => a + l[2], 0) + (r.legs.length - 1) * c.xmin + base > c.win) continue;
       if ((c.mustLine || []).some((n) => !r.lines.includes(n)) || (c.mustSt || []).some((n) => !r.passed.includes(n))) continue;
       const ks = new Set(r.hopKeys); let dup = false;
