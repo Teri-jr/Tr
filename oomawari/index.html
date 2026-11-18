@@ -342,7 +342,7 @@ ol,ul{list-style:none}
 <script src="engine.js?v=1.10.1"></script>
 <script>
 'use strict';
-const APP_VERSION = '1.17.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.18.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ===== データ =====
    路線データは data.js、ルートの探索は engine.js。画面はここから E.search() などを呼ぶだけ。 */
@@ -358,7 +358,7 @@ const SORTS = ['長い順','短い順','乗換が少ない順','時間が短い�
 const LS = { cond:'oomawari.cond', saved:'oomawari.saved', ride:'oomawari.ride', ridden:'oomawari.ridden', mk:'oomawari.mk' };
 const load = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } };
 const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
-const DEF = { from:'横浜', to:'東神奈川', start:'07:00', end:'20:00', want:[], avoid:[], len:2, xfer:8, xmin:15, meal:true, exp:false, rare:true, mustLine:[], noLine:[], mustSt:[], noSt:[], gray:false, ic:true, fast:false, mk:false, prev:0 }; // 基本はSuica(IC)
+const DEF = { from:'横浜', to:'東神奈川', start:'07:00', end:'20:00', want:[], avoid:[], len:2, xfer:8, xmin:15, meal:true, exp:false, rare:true, mustLine:[], noLine:[], mustSt:[], noSt:[], gray:false, noThru:false, ic:true, fast:false, mk:false, prev:0 }; // 基本はSuica(IC)
 let cond = Object.assign({}, DEF, load(LS.cond, {}));
 if (!cond.icV) { cond.ic = true; cond.icV = 1; } // 1.6.1: 基本をSuicaにした(前に紙にしていた端末も一度だけSuicaにもどす)
 let saved = load(LS.saved, []);   // [{id, at, date}]
@@ -406,7 +406,7 @@ const ymd = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.g
 // 条件に合うルートを返す(同じ条件なら前の結果を使う)
 const sCache = new Map();
 function searchRoutes(c, budget) {
-  const key = JSON.stringify([c.fast, !!c.mk, !!c.gray, c.from, c.to, c.ic, c.start, c.end, c.len, c.xfer, c.xmin, c.meal, c.rare, c.want, c.avoid, c.mustLine, c.noLine, c.mustSt, c.noSt, c.prev, c.prev ? ridden : 0, budget || 0]);
+  const key = JSON.stringify([c.fast, !!c.mk, !!c.gray, !!c.noThru, c.from, c.to, c.ic, c.start, c.end, c.len, c.xfer, c.xmin, c.meal, c.rare, c.want, c.avoid, c.mustLine, c.noLine, c.mustSt, c.noSt, c.prev, c.prev ? ridden : 0, budget || 0]);
   if (!sCache.has(key)) { if (sCache.size > 60) sCache.clear();
     const res = E.find(c, ridden, budget); // 券売機モードも同じ E.find() でさがす
     res.routes.forEach((r) => rCache.set((c.fast ? 'f:' : '') + r.id, r)); sCache.set(key, res.routes); }
@@ -709,6 +709,7 @@ V.detail = () => { const sw = (k, label) => `<button type="button" class="sw" ro
 <h2 class="h2r">列車</h2>
 <div class="opt" style="min-height:56px"><span><span>特急・グリーン車を使う</span><small>別料金がかかります</small></span>${sw('exp', '特急・グリーン車を使う')}</div>
 <div class="opt" style="min-height:56px"><span><span>速い列車を優先する</span><small>乗換がふえても速い列車に乗りかえる(例：川崎で東海道線に)</small></span>${sw('fast', '速い列車を優先する')}</div>
+<div class="opt" style="min-height:56px"><span><span>上野東京ラインの直通を使わない</span><small>常磐線に、東京・品川からそのまま乗らず、日暮里や上野で乗りかえる形にします</small></span>${sw('noThru', '上野東京ラインの直通を使わない')}</div>
 <div class="opt last"><span><span>本数の少ない路線も使う</span><small>1時間に1本以下の区間</small></span>${sw('rare', '本数の少ない路線も使う')}</div>
 <h2 class="h2r">路線・駅</h2>
 <span class="lab" style="margin-top:14px">かならず乗る路線</span>${pills('mustLine', '路線', true)}
