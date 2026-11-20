@@ -187,6 +187,8 @@ button{font-family:inherit;cursor:pointer}
 <div aria-hidden="true" style="position: absolute; left: 250px; top: 330px; width: 190px; height: 70px; border: 3px solid #E0C400; border-radius: 8px 8px 0 0; background: #2A2A2A"></div>
 <div aria-hidden="true" style="position: absolute; left: 0; right: 0; bottom: 0; height: 60px; background: #2E2E2E"></div>
 </div>
+<button type="button" sc-camel-on-click="{{toggleRcpt}}" style="position: absolute; right: 40px; top: 140px; width: 210px; height: 100px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; {{rcptStyle}}; font-size: 26px">{{rcptBtn}}</button>
+<span style="position: absolute; right: 40px; top: 260px; width: 210px; font-size: 17px; text-align: center">領収書が必要な方は<br>先に押してください</span>
 </div>
 </sc-if>
 
@@ -212,11 +214,30 @@ button{font-family:inherit;cursor:pointer}
 </div>
 </div>
 
+<sc-if value="{{rcptOn}}">
+<div style="display: flex; flex-direction: column; align-items: center">
+<span style="font-size: 18px; color: #555555">領収書</span>
+<div aria-hidden="true" style="width: 210px; height: 14px; border-radius: 3px; background: #1F1F1F; box-shadow: inset 0 3px 5px rgba(0,0,0,0.6)"></div>
+<div style="width: 190px; height: 450px; overflow: hidden">
+<div class="prt" style="width: 190px; box-sizing: border-box; padding: 14px 12px 18px; background: #FFFFFF; box-shadow: 0 2px 6px rgba(0,0,0,0.2); font-size: 12px; line-height: 1.6; animation-delay: {{rcptDelay}}; display: flex; flex-direction: column">
+<strong style="align-self: center; font-size: 17px; letter-spacing: 0.4em">領収書</strong>
+<span style="margin-top: 6px; border-bottom: 1px solid #111111; font-size: 13px">お客さま　　　　　様</span>
+<span style="margin-top: 8px">{{dateDot}}</span>
+<sc-for list="{{rcptLines}}" as="x"><span style="display: flex; justify-content: space-between; gap: 6px"><span>{{x.name}}</span><span>{{x.price}}</span></span></sc-for>
+<span style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #111111; display: flex; justify-content: space-between; font-size: 15px; font-weight: 700"><span>合計</span><span>￥{{totalFmt}}</span></span>
+<span style="display: flex; justify-content: space-between"><span>お預り</span><span>{{paidLabel}}</span></span>
+<span style="display: flex; justify-content: space-between"><span>おつり</span><span>￥{{changeFmt}}</span></span>
+<span style="margin-top: 8px">上記正に領収いたしました</span>
+</div>
+</div>
+</div>
+</sc-if>
 <div style="flex-grow: 1; padding-top: 60px; display: flex; flex-direction: column; gap: 20px">
 <p style="margin: 0; font-size: 40px; font-weight: 700; line-height: 1.4">ありがとうございました</p>
 <sc-if value="{{hasChange}}"><p style="margin: 0; font-size: 30px; color: #0A6A0A; font-weight: 700">{{changeLine}}</p></sc-if>
 <p style="margin: 0; font-size: 20px">途中の駅で改札を出ると、そこで旅は終わりです。</p>
-<a href="{{goHref}}" style="margin-top: 20px; height: 90px; box-sizing: border-box; background: linear-gradient(#2FA82F 0%, #0E800E 50%, #006A00 52%, #005200 100%); border: 3px solid #B6F06A; border-radius: 10px; color: #FFFFFF; font-size: 34px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center">このルートで出発する</a>
+<button type="button" sc-camel-on-click="{{showTk}}" style="height: 72px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFF27A; font-size: 28px">きっぷを見る</button>
+<a href="{{goHref}}" style="margin-top: 0; height: 90px; box-sizing: border-box; background: linear-gradient(#2FA82F 0%, #0E800E 50%, #006A00 52%, #005200 100%); border: 3px solid #B6F06A; border-radius: 10px; color: #FFFFFF; font-size: 34px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center">このルートで出発する</a>
 <button type="button" sc-camel-on-click="{{home}}" style="height: 72px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 26px">最初の画面へ</button>
 </div>
 </div>
@@ -276,6 +297,26 @@ button{font-family:inherit;cursor:pointer}
 </div>
 <sc-if value="{{pgMulti}}"><div style="margin: auto 0 14px; display: flex; align-items: center; justify-content: center; gap: 30px"><button type="button" sc-camel-on-click="{{pgPrev}}" aria-label="前のページ" style="width: 180px; height: 72px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 28px; opacity: {{pgPrevOp}}">◀ 前へ</button><span style="font-size: 28px; font-weight: 700">{{pgTxt}}ページ</span><button type="button" sc-camel-on-click="{{pgNext}}" aria-label="次のページ" style="width: 180px; height: 72px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 28px; opacity: {{pgNextOp}}">次へ ▶</button></div></sc-if></div>
 <div style="height: 104px; flex-shrink: 0; padding: 0 40px; background: #DCDCDC; display: flex; align-items: center; gap: 20px"><button type="button" sc-camel-on-click="{{redo}}" style="height: 72px; padding: 0 14px; background: linear-gradient(#FFA448 0%, #E8780E 50%, #D46400 52%, #B85200 100%); border: 2px solid #222222; border-radius: 10px; color: #FFFFFF; font-size: 22px">入力しなおす</button></div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{mTk}}">
+<div style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; z-index: 50; background: rgba(16,16,16,0.72); display: flex; align-items: center; justify-content: center">
+<div role="dialog" aria-label="発券したきっぷ" style="position: relative; z-index: 1; width: 1170px; height: 910px; box-sizing: border-box; border: 6px solid #33FF00; border-radius: 10px; background-color: #FFFFFF; display: flex; flex-direction: column; overflow: hidden">
+<div style="height: 100px; flex-shrink: 0; padding: 0 16px; background: #DCDCDC; display: flex; align-items: center; font-size: 40px; font-weight: 700">発券した<span style="font-weight: 400; font-size: 34px">きっぷ</span></div>
+<div style="flex-grow: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y; overscroll-behavior: contain; background: #F2F2F2; padding: 24px 40px; display: grid; grid-template-columns: repeat(2, 360px); gap: 24px 60px; justify-content: center; align-content: start">
+<sc-for list="{{tickets}}" as="t">
+<div role="img" aria-label="{{t.aria}}" style="width: 360px; height: 240px; box-sizing: border-box; padding: 14px 22px 12px; border-radius: 4px; background-color: #CDEDE2; color: #3A2230; display: flex; flex-direction: column; font-family: 'Zen Kaku Gothic New', sans-serif; font-weight: 500; box-shadow: 0 2px 6px rgba(0,0,0,0.25)">
+<span style="align-self: center; padding: 0 2px 2px 0.4em; border-bottom: 2px solid #3A2230; font-size: 15px; letter-spacing: 0.4em">{{t.title}}</span>
+<span style="margin-top: 12px; display: flex; align-items: center; justify-content: space-between; font-size: 28px; line-height: 1.3"><span style="letter-spacing: 0.4em">{{t.from}}</span><svg aria-hidden="true" width="26" height="14" sc-camel-view-box="0 0 26 14" fill="currentColor"><path d="M0 5h16V0l10 7-10 7V9H0z"></path></svg><span style="letter-spacing: 0.3em">{{t.to}}</span></span>
+<span style="font-size: 12px; letter-spacing: 0.06em">{{t.l3}}</span>
+<span style="display: flex; align-items: baseline; justify-content: space-between; font-size: 13px; line-height: 1.3"><span>{{t.day}}</span><span style="font-size: 22px; letter-spacing: 0.04em">{{t.price}}</span></span>
+<span style="padding-left: 22px; font-size: 13px; letter-spacing: 0.08em">{{t.note}}</span>
+<span style="margin-top: auto; display: flex; justify-content: space-between; align-items: flex-end; font-size: 11px; line-height: 1.35; letter-spacing: 0.04em"><span>{{dateDot}}<br><span style="font-size: 14px">00000-00</span></span><span style="font-size: 16px">{{t.ppl}}</span></span>
+</div>
+</sc-for>
+</div>
+<div style="height: 104px; flex-shrink: 0; padding: 0 40px; background: #DCDCDC; display: flex; align-items: center; justify-content: flex-end"><button type="button" sc-camel-on-click="{{closeTk}}" style="width: 220px; height: 72px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 28px">閉じる</button></div>
 </div>
 </div>
 </sc-if>
@@ -583,14 +624,18 @@ class Component extends DCLogic {
     const tk = [];
     const day = MD + '当日限り有効';
     if (buyRide) {
-      if (s.ret === 'one') tk.push({ title: icFare ? '乗車券（IC運賃）' : '乗車券', from: HERE || '－', to: to || '－', l3: '経由：' + (rr && rr.keiyu ? rr.keiyu : '－－－'), day, price: '￥' + yenOr(fare == null ? null : ridePer), note: '下車前途無効' });
-      else { tk.push({ title: icFare ? '乗車券（IC運賃）' : '乗車券', from: HERE || '－', to: to || '－', l3: '経由：' + (rr && rr.keiyu ? rr.keiyu : '－－－') + '　（ゆき）', day, price: '￥' + yenOr(fare == null ? null : ridePer), note: '下車前途無効' }); tk.push({ title: icFare ? '乗車券（IC運賃）' : '乗車券', from: to || '－', to: HERE || '－', l3: (rr && rr.normal ? '経由：' + rr.via : '経由：－－－') + '　（かえり）', day, price: '￥' + yenOr(fare == null ? null : ridePer), note: '下車前途無効' }); }
+      if (s.ret === 'one') tk.push({ title: icFare ? '乗車券（IC運賃）' : '乗車券', from: HERE || '－', to: to || '－', l3: '経由：' + (rr && rr.keiyu ? rr.keiyu : '－－－'), day, price: '￥' + yenOr(fare == null ? null : ridePer), ya: fare, yc: fare == null ? null : halfF(fare), note: '下車前途無効' });
+      else { tk.push({ title: icFare ? '乗車券（IC運賃）' : '乗車券', from: HERE || '－', to: to || '－', l3: '経由：' + (rr && rr.keiyu ? rr.keiyu : '－－－') + '　（ゆき）', day, price: '￥' + yenOr(fare == null ? null : ridePer), ya: fare, yc: fare == null ? null : halfF(fare), note: '下車前途無効' }); tk.push({ title: icFare ? '乗車券（IC運賃）' : '乗車券', from: to || '－', to: HERE || '－', l3: (rr && rr.normal ? '経由：' + rr.via : '経由：－－－') + '　（かえり）', day, price: '￥' + yenOr(fare == null ? null : ridePer), ya: fare, yc: fare == null ? null : halfF(fare), note: '下車前途無効' }); }
     }
     const seatName = s.seat === 'free' ? '座席未指定' : '指定席';
-    if (isGr) grTk.forEach((g) => tk.push({ title: 'Suicaグリーン券', from: g.a, to: g.b, l3: '普通列車グリーン車　' + g.km + 'km', day: MD + '当日1回限り有効', price: '￥' + yen(g.fee * (s.adult + s.child)), note: '紙のきっぷ・車内は' + yen(g.paper) + '円' }));
-    else expSel.forEach((e) => tk.push({ title: e.name + ' 特急券', from: e.a, to: e.b, l3: seatName + '　' + e.km + 'km', day: MD, price: '￥' + yen(e.fee * s.adult + half(e.fee) * s.child), note: '座席未指定券も同額' }));
-    const pplShort = '大人' + s.adult + (s.child ? '・小児' + s.child : '');
-    const tickets = tk.map((t, i) => ({ ...t, ppl: pplShort, x: (i * 16) + 'px', y: (i * 12) + 'px', delay: (0.5 + i * 2.4) + 's', aria: t.title + '　' + t.from + 'から' + t.to + '　' + t.price + '' }));
+    if (isGr) grTk.forEach((g) => tk.push({ title: 'Suicaグリーン券', from: g.a, to: g.b, l3: '普通列車グリーン車　' + g.km + 'km', day: MD + '当日1回限り有効', price: '￥' + yen(g.fee * (s.adult + s.child)), ya: g.fee, yc: g.fee, note: '紙のきっぷ・車内は' + yen(g.paper) + '円' }));
+    else expSel.forEach((e) => tk.push({ title: e.name + ' 特急券', from: e.a, to: e.b, l3: seatName + '　' + e.km + 'km', day: MD, price: '￥' + yen(e.fee * s.adult + half(e.fee) * s.child), ya: e.fee, yc: half(e.fee), note: '座席未指定券も同額' }));
+    // 人数分のきっぷ: 大人の枚数とこどもの枚数だけ、それぞれの料金で出す
+    const tkAll = [];
+    tk.forEach((t) => { for (let k = 0; k < s.adult; k++) tkAll.push({ ...t, price: '￥' + yenOr(t.ya), ppl: '大人' }); for (let k = 0; k < s.child; k++) tkAll.push({ ...t, price: '￥' + yenOr(t.yc), ppl: 'こども' }); });
+    const tickets = tkAll.map((t, i) => ({ ...t, x: ((i % 8) * 16) + 'px', y: ((i % 8) * 12) + 'px', delay: (0.5 + i * 1.2) + 's', aria: t.title + '　' + t.ppl + '　' + t.from + 'から' + t.to + '　' + t.price }));
+    const rcptAgg = []; tkAll.forEach((t) => { const k = t.title + t.ppl + t.price, f = rcptAgg.find((x) => x.k === k); if (f) f.n++; else rcptAgg.push({ k, n: 1, t }); });
+    const rcptLines = rcptAgg.map((x) => ({ name: x.t.title + '（' + x.t.ppl + '）' + (x.n > 1 ? '×' + x.n : ''), price: '￥' + yenOr(x.t.ya == null ? null : (x.t.ppl === '大人' ? x.t.ya : x.t.yc) * x.n) }));
     const change = s.card ? 0 : Math.max(0, s.paid - total);
     const pay = (v) => () => { const p = s.paid + v; set(p >= total ? { paid: p, step: 9 } : { paid: p }); };
     // confirm table
@@ -641,7 +686,7 @@ class Component extends DCLogic {
       retOpen: s.retOpen, retRingOne: s.retOpen ? NORING : RING,
       rideKind: s.ret === 'round' ? '乗車券<往復>' : '乗車券<片道>', showRideBracket: buyRide,
       conf, totalFmt: yen(total), paidFmt: yen(s.paid), remainFmt: yen(Math.max(0, total - s.paid)),
-      tickets, paidLabel: s.card ? 'カード' : '￥' + yen(s.paid), changeFmt: yen(change),
+      tickets, rcptOn: s.rcpt, rcptBtn: s.rcpt ? '領収書　発行します' : '領収書', rcptStyle: s.rcpt ? 'color: #FFF27A; ' + RING : 'color: #FFFFFF; ' + NORING, rcptDelay: (0.5 + tkAll.length * 1.2) + 's', rcptLines, toggleRcpt: () => set({ rcpt: !s.rcpt }), mTk: s.modal === 'tkview', showTk: () => set({ modal: 'tkview' }), closeTk: () => set({ modal: null }), paidLabel: s.card ? 'カード' : '￥' + yen(s.paid), changeFmt: yen(change),
       changeLine: change > 0 ? 'おつり ' + yen(change) + '円' : '', hasChange: change > 0,
       // modals
       mKana: s.modal === 'kana', mCand: s.modal === 'cand', mPpl: s.modal === 'ppl', mCond: s.modal === 'cond',  mSum: s.modal === 'sum', mDetail: s.modal === 'detail', mTime: s.modal === 'time',
