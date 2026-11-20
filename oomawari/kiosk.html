@@ -159,12 +159,12 @@ button{font-family:inherit;cursor:pointer}
 <sc-if value="{{showRideBracket}}"><div style="position: absolute; right: 0; top: 30px; bottom: 30px; width: 110px; border-top: 4px dotted #0A6A0A; border-bottom: 4px dotted #0A6A0A; display: flex; flex-direction: column; align-items: center"><span style="flex-grow: 1; width: 4px; background: #0A6A0A"></span><span style="padding: 10px 0; background: #FFFFFF; font-size: 22px; font-weight: 700; text-align: center">{{rideKind}}</span><span style="flex-grow: 1; width: 4px; background: #0A6A0A"></span><span aria-hidden="true" style="color: #0A6A0A; font-size: 26px; line-height: 0.6">▼</span></div></sc-if>
 </div>
 </div>
-<div style="flex-grow: 1; padding: 20px 10px 0 12px; display: flex; flex-direction: column">
-<dl style="margin: 0; background: #FFFFFF; border: 3px solid #8A8A8A">
+<div style="flex-grow: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y; overscroll-behavior: contain; padding: 20px 10px 0 12px; display: flex; flex-direction: column">
+<dl style="margin: 0; flex-shrink: 0; background: #FFFFFF; border: 3px solid #8A8A8A">
 <sc-for list="{{conf}}" as="x"><div style="min-height: 82px; border-bottom: 2px solid #8A8A8A; display: flex"><dt style="width: 150px; flex-shrink: 0; padding-left: 10px; background: #5A5A5A; color: #FFFFFF; font-size: 26px; display: flex; align-items: center">{{x.k}}</dt><dd style="margin: 0; padding: 6px 12px; font-size: 22px; display: flex; align-items: center">{{x.v}}</dd></div></sc-for>
 <div style="height: 96px; padding: 0 16px; display: flex; align-items: center; justify-content: flex-end; gap: 10px"><span style="font-size: 24px">合計</span><span style="font-size: 52px; font-weight: 700">{{totalFmt}}</span><span style="font-size: 26px">円</span></div>
 </dl>
-<div style="margin-top: auto; padding-bottom: 14px; display: flex; align-items: center; justify-content: flex-end; gap: 14px"><span style="font-size: 28px">よろしければ</span><span aria-hidden="true" style="color: #0A7A0A; font-size: 30px">▶</span><button type="button" sc-camel-on-click="{{confirm}}" style="width: 196px; height: 78px; background: linear-gradient(#2FA82F 0%, #0E800E 50%, #006A00 52%, #005200 100%); border: 3px solid #B6F06A; border-radius: 10px; color: #FFFFFF; font-size: 38px; font-weight: 700">確 認</button></div>
+<div style="margin-top: auto; position: sticky; bottom: 0; flex-shrink: 0; background: #DCDCDC; padding: 10px 0 14px; display: flex; align-items: center; justify-content: flex-end; gap: 14px"><span style="font-size: 28px">よろしければ</span><span aria-hidden="true" style="color: #0A7A0A; font-size: 30px">▶</span><button type="button" sc-camel-on-click="{{confirm}}" style="width: 196px; height: 78px; background: linear-gradient(#2FA82F 0%, #0E800E 50%, #006A00 52%, #005200 100%); border: 3px solid #B6F06A; border-radius: 10px; color: #FFFFFF; font-size: 38px; font-weight: 700">確 認</button></div>
 </div>
 </div>
 </sc-if>
@@ -233,6 +233,8 @@ button{font-family:inherit;cursor:pointer}
 </div>
 </sc-if>
 <div style="flex-grow: 1; padding-top: 60px; display: flex; flex-direction: column; gap: 20px">
+<div role="status" aria-label="あと{{remNum}}枚" style="display: flex; align-items: center; gap: 16px; padding: 10px 24px; width: fit-content; background: #000000; border: 4px solid #5A5A5A; border-radius: 10px"><span style="color: #FFFFFF; font-size: 30px">あと</span><span style="display: flex; gap: 10px"><sc-for list="{{remDigits}}" as="dg"><svg aria-hidden="true" width="56" height="100" sc-camel-view-box="0 0 40 72"><polygon points="8,2 32,2 28,8 12,8" style="fill: {{dg.a}}"></polygon><polygon points="35,4 35,33 30,30 30,10" style="fill: {{dg.b}}"></polygon><polygon points="35,39 35,68 30,62 30,42" style="fill: {{dg.c}}"></polygon><polygon points="8,70 32,70 28,64 12,64" style="fill: {{dg.d}}"></polygon><polygon points="5,39 5,68 10,62 10,42" style="fill: {{dg.e}}"></polygon><polygon points="5,4 5,33 10,30 10,10" style="fill: {{dg.f}}"></polygon><polygon points="8,36 12,33 28,33 32,36 28,39 12,39" style="fill: {{dg.g}}"></polygon></svg></sc-for></span><span style="color: #FFFFFF; font-size: 30px">枚</span></div>
+<span style="font-size: 22px; color: #333333">{{remLabel}}</span>
 <p style="margin: 0; font-size: 40px; font-weight: 700; line-height: 1.4">ありがとうございました</p>
 <sc-if value="{{hasChange}}"><p style="margin: 0; font-size: 30px; color: #0A6A0A; font-weight: 700">{{changeLine}}</p></sc-if>
 <p style="margin: 0; font-size: 20px">途中の駅で改札を出ると、そこで旅は終わりです。</p>
@@ -436,6 +438,7 @@ function beep() { try { actx = actx || new (window.AudioContext || window.webkit
   const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime; o.type = 'square'; o.frequency.value = 2906.9; o.connect(g); g.connect(actx.destination);
   g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.08, t + 0.004); g.gain.setValueAtTime(0.08, t + 0.07); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.09); o.start(t); o.stop(t + 0.1); } catch (e) {} }
 stage.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b && !b.disabled) beep(); }, true);
+setInterval(() => { try { if (comp.state && comp.state.step === 9 && comp.state.t9 && Date.now() - comp.state.t9 < 60000) comp.setState({}); } catch (e) {} }, 400);
 rotBtn.addEventListener('click', () => { rotOff = !rotOff; try { localStorage.setItem('oomawari-kiosk-norot', rotOff ? '1' : '0'); } catch (e) {} fit(); });
 addEventListener('resize', fit); fit();
 
@@ -634,10 +637,16 @@ class Component extends DCLogic {
     const tkAll = [];
     tk.forEach((t) => { for (let k = 0; k < s.adult; k++) tkAll.push({ ...t, price: '￥' + yenOr(t.ya), ppl: '大人' }); for (let k = 0; k < s.child; k++) tkAll.push({ ...t, price: '￥' + yenOr(t.yc), ppl: 'こども' }); });
     const tickets = tkAll.map((t, i) => ({ ...t, x: ((i % 8) * 16) + 'px', y: ((i % 8) * 12) + 'px', delay: (0.5 + i * 1.2) + 's', aria: t.title + '　' + t.ppl + '　' + t.from + 'から' + t.to + '　' + t.price }));
+    // 発券中の「あと何枚」(7セグ風の表示)。1枚ごとに約1.2秒で出る
+    const nSheets = tkAll.length + (s.rcpt ? 1 : 0), el = s.step === 9 && s.t9 ? (Date.now() - s.t9) / 1000 : 0;
+    const remN = s.step === 9 ? Math.max(0, nSheets - Math.max(0, Math.floor((el - 0.5) / 1.2) + 1)) : nSheets;
+    const SEG = { 0: 'abcdef', 1: 'bc', 2: 'abdeg', 3: 'abcdg', 4: 'bcfg', 5: 'acdfg', 6: 'acdefg', 7: 'abc', 8: 'abcdefg', 9: 'abcdfg' };
+    const ON = '#FF3B1F', OFF = '#3A1410';
+    const remDg = String(Math.min(99, remN)).padStart(2, '0').split('').map((ch) => { const o = {}; 'abcdefg'.split('').forEach((k) => { o[k] = SEG[ch].includes(k) ? ON : OFF; }); return o; });
     const rcptAgg = []; tkAll.forEach((t) => { const k = t.title + t.ppl + t.price, f = rcptAgg.find((x) => x.k === k); if (f) f.n++; else rcptAgg.push({ k, n: 1, t }); });
     const rcptLines = rcptAgg.map((x) => ({ name: x.t.title + '（' + x.t.ppl + '）' + (x.n > 1 ? '×' + x.n : ''), price: '￥' + yenOr(x.t.ya == null ? null : (x.t.ppl === '大人' ? x.t.ya : x.t.yc) * x.n) }));
     const change = s.card ? 0 : Math.max(0, s.paid - total);
-    const pay = (v) => () => { const p = s.paid + v; set(p >= total ? { paid: p, step: 9 } : { paid: p }); };
+    const pay = (v) => () => { const p = s.paid + v; set(p >= total ? { paid: p, step: 9, t9: Date.now() } : { paid: p }); };
     // confirm table
     const conf = [
       { k: '乗車日', v: MDW },
@@ -686,6 +695,7 @@ class Component extends DCLogic {
       retOpen: s.retOpen, retRingOne: s.retOpen ? NORING : RING,
       rideKind: s.ret === 'round' ? '乗車券<往復>' : '乗車券<片道>', showRideBracket: buyRide,
       conf, totalFmt: yen(total), paidFmt: yen(s.paid), remainFmt: yen(Math.max(0, total - s.paid)),
+      remNum: remN, remDigits: remDg, remDone: remN === 0, remLabel: remN > 0 ? '発券中です' : '発券が終わりました',
       tickets, rcptOn: s.rcpt, rcptBtn: s.rcpt ? '領収書　発行します' : '領収書', rcptStyle: s.rcpt ? 'color: #FFF27A; ' + RING : 'color: #FFFFFF; ' + NORING, rcptDelay: (0.5 + tkAll.length * 1.2) + 's', rcptLines, toggleRcpt: () => set({ rcpt: !s.rcpt }), mTk: s.modal === 'tkview', showTk: () => set({ modal: 'tkview' }), closeTk: () => set({ modal: null }), paidLabel: s.card ? 'カード' : '￥' + yen(s.paid), changeFmt: yen(change),
       changeLine: change > 0 ? 'おつり ' + yen(change) + '円' : '', hasChange: change > 0,
       // modals
@@ -723,7 +733,7 @@ class Component extends DCLogic {
       rGo: () => set({ ret: 'round', rdir: 'go', retOpen: false, step: buyEx ? 5 : 7 }), rBack: () => set({ ret: 'round', rdir: 'back', retOpen: false, step: buyEx ? 5 : 7 }), rBoth: () => set({ ret: 'round', rdir: 'both', retOpen: false, step: buyEx ? 5 : 7 }),
       expNext: () => set({ step: 7 }),
       confirm: () => set({ step: 8, paid: 0, card: false }),
-      p10: pay(10), p50: pay(50), p100: pay(100), p500: pay(500), p1000: pay(1000), payCard: () => set({ card: true, step: 9 }),
+      p10: pay(10), p50: pay(50), p100: pay(100), p500: pay(500), p1000: pay(1000), payCard: () => set({ card: true, step: 9, t9: Date.now() }),
       toggleMono: () => set({ mono: !s.mono }),
       back: () => { if (s.step === 6 && s.retOpen) return set({ retOpen: false }); const p = backMap[s.step]; set({ step: p === undefined ? 0 : p, modal: null }); },
       cancel: () => set({ ...this.init(), mono: s.mono }), home: () => set({ ...this.init(), mono: s.mono })
