@@ -16,7 +16,7 @@ html,body{position:fixed;left:0;top:0;width:100%} /* 1280px の画面がはみ�
 body{-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;touch-action:manipulation}
 button{font-family:inherit;cursor:pointer}
 #stage{position:absolute;left:0;top:0;width:1280px;height:1024px;transform-origin:0 0}
-@keyframes prt{from{transform:translateY(-100%)}to{transform:translateY(0)}}
+@keyframes prt{0%{transform:translateY(-100%);opacity:0}1%{opacity:1}100%{transform:translateY(0);opacity:1}} /* 出番まえのきっぷは見えないようにする */
 .prt{animation:prt 2.2s steps(22) both}
 </style>
 </head>
@@ -642,7 +642,7 @@ class Component extends DCLogic {
     const remN = s.step === 9 ? Math.max(0, nSheets - Math.max(0, Math.floor((el - 0.5) / 1.2) + 1)) : nSheets;
     const SEG = { 0: 'abcdef', 1: 'bc', 2: 'abdeg', 3: 'abcdg', 4: 'bcfg', 5: 'acdfg', 6: 'acdefg', 7: 'abc', 8: 'abcdefg', 9: 'abcdfg' };
     const ON = '#FF3B1F', OFF = '#3A1410';
-    const remDg = String(Math.min(99, remN)).padStart(2, '0').split('').map((ch) => { const o = {}; 'abcdefg'.split('').forEach((k) => { o[k] = SEG[ch].includes(k) ? ON : OFF; }); return o; });
+    const remDg = String(remN).padStart(2, '0').split('').map((ch) => { const o = {}; 'abcdefg'.split('').forEach((k) => { o[k] = SEG[ch].includes(k) ? ON : OFF; }); return o; });
     const rcptAgg = []; tkAll.forEach((t) => { const k = t.title + t.ppl + t.price, f = rcptAgg.find((x) => x.k === k); if (f) f.n++; else rcptAgg.push({ k, n: 1, t }); });
     const rcptLines = rcptAgg.map((x) => ({ name: x.t.title + '（' + x.t.ppl + '）' + (x.n > 1 ? '×' + x.n : ''), price: '￥' + yenOr(x.t.ya == null ? null : (x.t.ppl === '大人' ? x.t.ya : x.t.yc) * x.n) }));
     const change = s.card ? 0 : Math.max(0, s.paid - total);
