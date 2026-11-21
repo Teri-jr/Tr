@@ -43,7 +43,7 @@ button{font-family:inherit;cursor:pointer}
 <sc-if value="{{s0}}">
 <div style="flex-grow: 1; background: #FFFFFF; padding: 50px 74px 0; display: flex; flex-direction: column; gap: 56px">
 <button type="button" sc-camel-on-click="{{buy0}}" style="height: 204px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px"><span style="font-size: 60px; font-weight: 700">きっぷを買う</span><span style="width: 88%; height: 1px; background: #CCCCCC"></span><span style="font-size: 34px">大回り用の乗車券・特急券</span></button>
-<a href="index.html#/saved" style="width: 550px; height: 118px; box-sizing: border-box; background: linear-gradient(#FFFFFF 0%, #F4F4F4 55%, #DADADA 90%, #B4B4B4 100%); border: 3px solid #111111; border-radius: 12px; color: #111111; text-decoration: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px"><span style="font-size: 32px; font-weight: 700">保存したルートを見る</span><span style="font-size: 22px">アプリで作ったルート</span></a>
+<button type="button" sc-camel-on-click="{{savedTop}}" style="width: 550px; height: 118px; box-sizing: border-box; background: linear-gradient(#FFFFFF 0%, #F4F4F4 55%, #DADADA 90%, #B4B4B4 100%); border: 3px solid #111111; border-radius: 12px; color: #111111; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px"><span style="font-size: 32px; font-weight: 700">保存したルートを見る</span><span style="font-size: 22px">アプリで保存したルートから買う</span></button>
 </div>
 </sc-if>
 
@@ -542,9 +542,9 @@ class Component extends DCLogic {
       start: s.tmode === 'dep' ? hmTxt(tSel) : hmTxt(aS < tSel ? aS : Math.max(5 * 60, tSel - 13 * 60)), end: s.tmode === 'dep' ? hmTxt(aE > tSel ? aE : Math.min(23 * 60 + 59, tSel + 13 * 60)) : hmTxt(tSel) }) : null;
     const savedL = s.mode === 'saved' ? load('oomawari.saved', []).map((x) => { const r = E.routeById(x.id); return r ? Object.assign(ooCard(r, APPC), { date: x.date }) : null; }).filter(Boolean) : [];
     const found = kc && s.step >= 3 ? kSearch(kc) : [];
-    const nRp = Math.max(1, Math.ceil(found.length / 2)), rp = Math.min(s.rpage || 0, nRp - 1); // 候補は2本ずつ、ページをめくって見る
+    const nRp = Math.max(1, Math.ceil((s.mode === 'saved' ? savedL.length : found.length) / 2)), rp = Math.min(s.rpage || 0, nRp - 1); // 候補は2本ずつ、ページをめくって見る
     const pr = isN && s.from && s.to && s.step >= 3 ? E.plain(s.from, s.to) : null;
-    const list = isN ? (pr ? [plainCard(pr)] : []) : s.mode === 'saved' ? savedL : found.slice(rp * 2, rp * 2 + 2).map((r) => ooCard(r, kc));
+    const list = isN ? (pr ? [plainCard(pr)] : []) : s.mode === 'saved' ? savedL.slice(rp * 2, rp * 2 + 2) : found.slice(rp * 2, rp * 2 + 2).map((r) => ooCard(r, kc));
     const ok = list.length > 0;
     // 手直しの選択肢: いま出ている候補の路線・途中の駅(と、すでに外したもの)
     const uniq = (a) => a.filter((n, i) => a.indexOf(n) === i);
@@ -672,7 +672,7 @@ class Component extends DCLogic {
     };
     const h = headers[s.step] || ['', '', '', ''];
     const notes = { 2: isN ? 'いちばん短い道のり(JR線のみ)' : s.from ? '長い大回りを優先します' : '先に出発駅を入力してください。', 3: isN ? 'いちばん短い道のり。運賃はIC・片道' : (s.mode === 'saved' ? 'アプリで保存したルート' : (APPC.mk ? '末期モード(正規の大回りではありません)。' : '') + kRelax + (found.length > 2 ? found.length + '本から長い順（' + (rp * 2 + 1) + '〜' + Math.min(found.length, rp * 2 + 2) + '件目）。' : '') + '運賃はIC・片道'), 4: '乗換時間にご注意ください', 5: expOpts.length ? (isGr ? 'Suicaグリーン料金: 〜50km 750円・〜100km 1,000円・101km〜 1,550円。続けて乗る区間は1枚' : '特急券は区間ごとに発券。料金は首都圏の特急料金(事前料金)の目安。停車駅は目安') : (isGr ? 'この経路にグリーン車はありません。' : 'この経路に使える特急はありません。') + '「乗車券のみ」にしてください', 6: '', 7: '内容をご確認ください', 8: '', 9: 'おつりをお忘れなく' };
-    const backMap = { 1: 0, 2: 1, 3: s.mode === 'saved' ? 1 : 2, 4: 3, 6: 4, 5: 6, 7: buyEx ? 5 : 6 };
+    const backMap = { 1: 0, 2: 1, 3: s.mode === 'saved' ? (s.via0 ? 0 : 1) : 2, 4: 3, 6: 4, 5: 6, 7: buyEx ? 5 : 6 };
     const v = {
       goHref: rr ? 'index.html#/route/' + encodeURIComponent(rr.id) : 'index.html', here: HERE || '－', net: E.netPath, ver: VER,
       noRouteMsg: s.mode === 'saved' ? '保存したルートはありません。' : isN ? 'この区間の経路が見つかりませんでした。' : '条件に合う大回りが見つかりませんでした。',
@@ -710,7 +710,7 @@ class Component extends DCLogic {
       dirOpts: DIRS.map((d, i) => ({ label: d, style: s.dirc === i ? 'color: #FFF27A; ' + RING : 'color: #FFFFFF; ' + NORING, pick: () => set({ dirc: i, rpage: 0 }) })),
       lenOpts: LENS.map((d, i) => ({ label: d, style: s.len === i ? 'color: #FFF27A; ' + RING : 'color: #FFFFFF; ' + NORING, pick: () => set({ len: i, rpage: 0 }) })),
       grayOpts: ['出さない', '出す'].map((d, i) => ({ label: d, style: (s.gray ? 1 : 0) === i ? 'color: #FFF27A; ' + RING : 'color: #FFFFFF; ' + NORING, pick: () => set({ gray: i === 1, rpage: 0 }) })),
-      showRp: s.step === 3 && s.mode === 'oo' && nRp > 1, rpPrev: () => set({ rpage: Math.max(0, rp - 1), route: null }), rpNext: () => set({ rpage: Math.min(nRp - 1, rp + 1), route: null }), rpLabel: (rp + 1) + ' / ' + nRp, rpHasPrev: rp > 0, rpHasNext: rp < nRp - 1,
+      showRp: s.step === 3 && (s.mode === 'oo' || s.mode === 'saved') && nRp > 1, rpPrev: () => set({ rpage: Math.max(0, rp - 1), route: null }), rpNext: () => set({ rpage: Math.min(nRp - 1, rp + 1), route: null }), rpLabel: (rp + 1) + ' / ' + nRp, rpHasPrev: rp > 0, rpHasNext: rp < nRp - 1,
       showAdj: s.step === 3 && s.mode === 'oo', adjLabel: adjOn && (s.noL.length || s.noS.length) ? '手直し中' : '手直し',
       openAdj: () => set({ modal: 'adj', adjSnap: { noL: s.noL, noS: s.noS, adjKey: s.adjKey, rpage: s.rpage } }), adjCancel: () => set(Object.assign({ modal: null }, s.adjSnap || {})), adjClear: () => set({ noL: [], noS: [], adjKey: '', rpage: 0 }),
       adjLineOpts: adjLines.map((n) => ({ label: (adjOn && s.noL.includes(n) ? '× ' : '') + n, style: adjOn && s.noL.includes(n) ? 'color: #FFF27A; ' + RING : 'color: #FFFFFF; ' + NORING, pick: () => set({ rpage: 0, adjKey: s.from + '>' + s.to, noL: adjOn && s.noL.includes(n) ? s.noL.filter((x) => x !== n) : (adjOn ? s.noL : []).concat(n), noS: adjOn ? s.noS : [] }) })),
@@ -721,7 +721,7 @@ class Component extends DCLogic {
       sumRows: [{ k: '区間', v: (HERE || '－') + ' ⇒ ' + (to || '－') }, { k: '利用日時', v: MDW + String(s.hour).padStart(2, '0') + ':' + String(s.min).padStart(2, '0') + (s.tmode === 'dep' ? ' 出発' : ' 到着') }, { k: '人数', v: ppl }, { k: '経路', v: rr ? (rr.normal ? rr.via : rr.km + 'km') : '－' }, { k: 'きっぷ', v: { only: '乗車券のみ', exp: '特急券＋乗車券', green: 'グリーン券＋乗車券' }[s.buy] }],
       // handlers
       buy0: () => set({ step: 1 }),
-      search0: () => set({ step: 2, mode: 'oo', to: null, route: null }), normal0: () => set({ step: 2, mode: 'normal', to: null, route: null }), saved0: () => set({ step: 3, mode: 'saved', to: null, route: null }),
+      search0: () => set({ step: 2, mode: 'oo', to: null, route: null }), normal0: () => set({ step: 2, mode: 'normal', to: null, route: null }), saved0: () => set({ step: 3, mode: 'saved', to: null, route: null, rpage: 0, via0: false }), savedTop: () => set({ step: 3, mode: 'saved', to: null, route: null, rpage: 0, via0: true }),
       showCond: !isN,
       openKana: () => set({ modal: 'kana', kana: '', kmode: !isN && !s.from ? 'from' : 'to' }), openFrom: () => set({ modal: 'kana', kana: '', kmode: 'from' }),
       kanaTitle: forFrom ? '出発駅名' : '到着駅名（目的地）', candTitle: forFrom ? '出発駅' : '到着駅（目的地）', fix: () => set({ kana: s.kana.slice(0, -1) }),
