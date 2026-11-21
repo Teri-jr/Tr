@@ -503,7 +503,7 @@ function planTimes(route,k){
   return {ev:s.events,traj:s.traj};
 }
 // ---- バージョン（変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする） ----
-const APP_VERSION='1.8.4';
+const APP_VERSION='1.8.5';
 const isNewer=(a,b)=>{ const x=String(a).split(".").map(Number), y=String(b).split(".").map(Number); for(let i=0;i<3;i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0); } return false; };
 let upd=null; // {version, items}：新しい版が出ていたら入る。announced=放送済み
 async function checkUpdate(){
@@ -1296,9 +1296,13 @@ $("taihiBtn").addEventListener("click",()=>{
 });
 $("haltBtn").addEventListener("click",()=>{ if(testMode) insertHalt(SIM,route,K,simDecel(),40+Math.random()*50); });
 $("gapBtn").addEventListener("click",()=>{ if(testMode) SIM.gap={from:SIM.t,len:60}; });
-$("mset").addEventListener("click",()=>{ segSync(); $("menu").hidden=false; });
-$("menuClose").addEventListener("click",()=>{ $("menu").hidden=true; });
-$("menu").addEventListener("click",e=>{ if(e.target.id==="menu") $("menu").hidden=true; });
+// テスト走行では、メニューを開いている間は一時停止（もともと止めていたら閉じても止めたまま）
+let pausedByMenu=false;
+function openMenu(){ segSync(); $("menu").hidden=false; if(testMode&&!paused){ paused=pausedByMenu=true; } }
+function closeMenu(){ $("menu").hidden=true; if(pausedByMenu){ paused=pausedByMenu=false; } }
+$("mset").addEventListener("click",openMenu);
+$("menuClose").addEventListener("click",closeMenu);
+$("menu").addEventListener("click",e=>{ if(e.target.id==="menu") closeMenu(); });
 $("minus").addEventListener("click",()=>{offset-=10;});
 $("plus").addEventListener("click",()=>{offset+=10;});
 $("dbgBtn").addEventListener("click",e=>{showDbg=!showDbg; e.target.setAttribute("aria-pressed",showDbg); $("dbg").hidden=!showDbg;});
@@ -1307,7 +1311,7 @@ document.querySelectorAll(".updGo").forEach(b=>b.addEventListener("click",reload
 // あとで：バーを閉じる（下の「更新」ボタンは残す）。乗務終了のときにもう一度出す
 $("updLater").addEventListener("click",()=>{ hideUpdBar(); if(upd) upd.later=true; });
 $("appVer").textContent="v"+APP_VERSION;
-$("back").addEventListener("click",()=>{ $("menu").hidden=true;
+$("back").addEventListener("click",()=>{ closeMenu();
   cancelAnimationFrame(raf); stopGeo(); try{speechSynthesis.cancel()}catch(_){}
   try{ wakeLock&&wakeLock.release(); }catch(_){} wakeLock=null;
   $("runv").hidden=true; $("setup").hidden=false; $("note").hidden=false;
