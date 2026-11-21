@@ -271,6 +271,7 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outli
         </div></div>
       <div class="field"><span>両数</span>
         <div class="seg" data-k="cars"></div></div>
+      <div class="field"><span>乗務</span><div class="seg" data-k="crew"><button data-v="two">ツーマン</button><button data-v="one">ワンマン</button></div></div>
       <div class="field"><span>乗っている位置</span>
         <div class="seg" data-k="pos">
           <button aria-pressed="true" data-v="head">先頭</button>
@@ -314,7 +315,7 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outli
           <div class="head">
             <div class="kind" id="kindLbl">快特</div>
             <div class="next" id="nextLbl">　</div>
-            <div class="cars"><b class="num" id="carsLbl">8</b><span>ツーマン</span></div>
+            <div class="cars"><b class="num" id="carsLbl">8</b><span id="crewLbl">ツーマン</span></div>
             <div class="updkind" id="updKind" hidden><button type="button" class="updGo">更新</button><button type="button" id="updLater">あとで</button></div>
             <div class="hover" id="hStop" hidden>停車</div>
             <div class="hover" id="hCars" hidden>8両</div>
@@ -352,6 +353,7 @@ button:focus-visible,select:focus-visible{outline:2px solid var(--dest-hi);outli
       <div class="menu" id="menu" hidden role="dialog" aria-label="メニュー">
         <div class="menubox">
           <div class="field"><span>種別</span><div class="seg" data-k="kind"></div></div>
+          <div class="field"><span>乗務</span><div class="seg" data-k="crew"><button data-v="two">ツーマン</button><button data-v="one">ワンマン</button></div></div>
           <div class="field"><span>音声</span><div class="seg" data-k="voice"><button data-v="on">読み上げあり</button><button data-v="off">なし</button></div></div>
           <div class="field"><span>天候</span><div class="seg" data-k="weather"><button data-v="fine">晴れ</button><button data-v="rain">雨（スキット注意）</button></div></div>
           <div class="field"><span>ダイヤ</span><div class="seg" data-k="disorder"><button data-v="off">平常</button><button data-v="on">ダイヤ乱れ</button></div></div>
@@ -501,7 +503,7 @@ function planTimes(route,k){
   return {ev:s.events,traj:s.traj};
 }
 // ---- バージョン（変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする） ----
-const APP_VERSION='1.8.1';
+const APP_VERSION='1.8.3';
 const isNewer=(a,b)=>{ const x=String(a).split(".").map(Number), y=String(b).split(".").map(Number); for(let i=0;i<3;i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0); } return false; };
 let upd=null; // {version, items}：新しい版が出ていたら入る。announced=放送済み
 async function checkUpdate(){
@@ -598,7 +600,7 @@ const NETS={
   keikyu:{title:"京急線",geo:GEO,order:["本線","空港線","大師線","逗子線","久里浜線"],kinds:KINDS_KQ,layout:LAYOUT_KQ,taihi:TAIHI_KQ,terminal:TERMINAL_KQ,major:MAJOR_KQ,allLines:ALL_STOP_LINES_KQ,allSt:ALL_STOP_ST_KQ,cars:["4","6","8","12"],defCars:"8",defSec:"品川|上大岡",presets:["品川|上大岡","横浜|上大岡","上大岡|横浜","上大岡|品川","品川|羽田空港第1・第2ターミナル","品川|三崎口"]},
   jr:jrNet({title:"JR横須賀線",geo:GEO_JR,kinds:KINDS_JR,layout:LAYOUT_JR,major:["品川","武蔵小杉","横浜","戸塚"],cars:["11","15"],defCars:"11",defSec:"品川|戸塚",presets:["品川|戸塚","戸塚|品川","品川|横浜","横浜|品川","武蔵小杉|横浜","横浜|武蔵小杉"]}),
   tokaido:jrNet({title:"JR東海道線",geo:GEO_TOKAIDO,kinds:KINDS_TOKAIDO,layout:LAYOUT_TOKAIDO,major:["品川","川崎","横浜","大船","藤沢","茅ケ崎"],cars:["10","15"],defCars:"15",defSec:"品川|茅ケ崎",presets:["品川|茅ケ崎","茅ケ崎|品川","品川|横浜","横浜|茅ケ崎","川崎|藤沢","大船|品川"]}),
-  nambu:jrNet({title:"JR南武線",geo:GEO_NAMBU,kinds:KINDS_NAMBU,layout:LAYOUT_NAMBU,taihi:TAIHI_NAMBU,major:["川崎","武蔵小杉","武蔵溝ノ口","登戸","府中本町","立川"],cars:["6"],defCars:"6",defSec:"川崎|立川",presets:["川崎|立川","立川|川崎","武蔵小杉|登戸","登戸|川崎","川崎|府中本町","武蔵溝ノ口|立川"]}),
+  nambu:jrNet({crew:"one",title:"JR南武線",geo:GEO_NAMBU,kinds:KINDS_NAMBU,layout:LAYOUT_NAMBU,taihi:TAIHI_NAMBU,major:["川崎","武蔵小杉","武蔵溝ノ口","登戸","府中本町","立川"],cars:["6"],defCars:"6",defSec:"川崎|立川",presets:["川崎|立川","立川|川崎","武蔵小杉|登戸","登戸|川崎","川崎|府中本町","武蔵溝ノ口|立川"]}),
   keihin:jrNet({title:"JR京浜東北・根岸線",geo:GEO_KEIHIN,kinds:KINDS_KEIHIN,layout:LAYOUT_KEIHIN,major:["大宮","赤羽","上野","東京","品川","川崎","横浜","磯子","大船"],cars:["10"],defCars:"10",defSec:"東京|横浜",presets:["大宮|大船","大船|大宮","東京|横浜","横浜|東京","横浜|大船","品川|川崎"]})
 };
 let KINDS,LAYOUT,TAIHI,TERMINAL,MAJOR,ALL_STOP_LINES,ALL_STOP_ST;
@@ -617,7 +619,7 @@ const MOVE_DIST=40;      // 止まった位置からこれ以上（精度が悪�
 const OFF_MAX=250;       // 線路からこれ以上離れた測位は使わない
 const STALE_MS=4000;     // これより古い測位しかなければ推定に切り替える
 
-let cfg={net:"keikyu",kind:"kaitoku",sec:"品川|上大岡",src:"gps",speed:"1",cars:"8",voice:"on",weather:"fine",disorder:"off",rate:"std",pos:"head"};
+let cfg={net:"keikyu",crew:"two",kind:"kaitoku",sec:"品川|上大岡",src:"gps",speed:"1",cars:"8",voice:"on",weather:"fine",disorder:"off",rate:"std",pos:"head"};
 const $=id=>document.getElementById(id);
 document.querySelectorAll(".seg[data-k]").forEach(seg=>{
   seg.addEventListener("click",e=>{
@@ -634,6 +636,7 @@ function segSync(){ document.querySelectorAll(".seg[data-k]").forEach(sg=>sg.que
 // 乗務中に変えた設定を反映（走行の位置や予定はそのまま）
 function applyLive(k){
   if(k==="kind") changeKind();
+  if(k==="crew") $("crewLbl").textContent=cfg.crew==="one"?"ワンマン":"ツーマン";
   if(k==="voice") $("mset").innerHTML="☰ 放送："+(cfg.voice==="on"?"自動":"切")+"<br>音量：11";
   if(k==="disorder") $("dbadge").hidden=cfg.disorder!=="on";
   if(k==="rate"&&!testMode&&watchId!=null){ stopGeo(); startGeo(); }
@@ -660,6 +663,7 @@ function netSync(){
   if(!KINDS[cfg.kind]){ cfg.kind=Object.keys(KINDS)[0]; }
   document.querySelectorAll('[data-k="kind"]').forEach(el=>el.innerHTML=Object.entries(KINDS).map(([k,v])=>`<button aria-pressed="${k===cfg.kind}" data-v="${k}">${v.label}</button>`).join(""));
   if(!n.cars.includes(cfg.cars)) cfg.cars=n.defCars;
+  cfg.crew=n.crew||"two"; segSync();
   document.querySelector('[data-k="cars"]').innerHTML=n.cars.map(c=>`<button aria-pressed="${c===cfg.cars}" data-v="${c}">${c}</button>`).join("");
   $("appTitle").textContent="運転士タブレット（GPS連動）";
   secSync();
@@ -1190,8 +1194,10 @@ function loop(ts){
   announceUpdate();
   draw(e,now,dt);
   updateZaisen(e);
-  const row=$("r"+((G.mode==="dwell"||G.mode==="end"||G.target<0)?G.last:G.target));
-  if(row&&row!==loop.lastRow){loop.lastRow=row;const L=$("list"); L.scrollTop=row.offsetTop-L.offsetTop-L.clientHeight/2+row.offsetHeight/2;}
+  // 駅一覧は、いま止まっている駅か最後に通過した駅をいちばん上に出す
+  let cur=G.last; if(G.started&&(G.mode==="run"||G.mode==="halt")) for(let i=G.last+1;i<route.length&&route[i].cx<=e.x;i++) cur=i;
+  const row=$("r"+cur);
+  if(row&&row!==loop.lastRow){loop.lastRow=row;const L=$("list"); L.scrollTop=row.offsetTop-L.offsetTop;}
   raf=requestAnimationFrame(loop);
 }
 
@@ -1253,7 +1259,7 @@ $("start").addEventListener("click",()=>{
   G=newG(); offset=0; lastReal=null; lastNow=nowMs(); acc=0; loop.lastRow=null;
   const sched=parseSched(); schedFixed=sched!=null; planEpoch=schedFixed?sched-plan.ev[0].dep*1000:nowMs()-plan.ev[0].dep*1000;
   kindLook();
-  $("carsLbl").textContent=cfg.cars;
+  $("carsLbl").textContent=cfg.cars; $("crewLbl").textContent=cfg.crew==="one"?"ワンマン":"ツーマン";
   $("mset").innerHTML="☰ 放送："+(cfg.voice==="on"?"自動":"切")+"<br>音量：11"; msgUntil=0; skidUntil=0;
   $("rangeLbl").textContent=`${route[0].name} - ${route[route.length-1].name} 駅一覧`;
   renderList(); Z=null;
