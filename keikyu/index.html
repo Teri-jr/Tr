@@ -503,7 +503,7 @@ function planTimes(route,k){
   return {ev:s.events,traj:s.traj};
 }
 // ---- バージョン（変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする） ----
-const APP_VERSION='1.8.5';
+const APP_VERSION='1.8.6';
 const isNewer=(a,b)=>{ const x=String(a).split(".").map(Number), y=String(b).split(".").map(Number); for(let i=0;i<3;i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0); } return false; };
 let upd=null; // {version, items}：新しい版が出ていたら入る。announced=放送済み
 async function checkUpdate(){
@@ -1296,10 +1296,8 @@ $("taihiBtn").addEventListener("click",()=>{
 });
 $("haltBtn").addEventListener("click",()=>{ if(testMode) insertHalt(SIM,route,K,simDecel(),40+Math.random()*50); });
 $("gapBtn").addEventListener("click",()=>{ if(testMode) SIM.gap={from:SIM.t,len:60}; });
-// テスト走行では、メニューを開いている間は一時停止（もともと止めていたら閉じても止めたまま）
-let pausedByMenu=false;
-function openMenu(){ segSync(); $("menu").hidden=false; if(testMode&&!paused){ paused=pausedByMenu=true; } }
-function closeMenu(){ $("menu").hidden=true; if(pausedByMenu){ paused=pausedByMenu=false; } }
+function openMenu(){ segSync(); $("menu").hidden=false; }
+function closeMenu(){ $("menu").hidden=true; }
 $("mset").addEventListener("click",openMenu);
 $("menuClose").addEventListener("click",closeMenu);
 $("menu").addEventListener("click",e=>{ if(e.target.id==="menu") closeMenu(); });
