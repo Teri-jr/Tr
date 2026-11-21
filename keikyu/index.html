@@ -503,7 +503,7 @@ function planTimes(route,k){
   return {ev:s.events,traj:s.traj};
 }
 // ---- バージョン（変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする） ----
-const APP_VERSION='1.8.3';
+const APP_VERSION='1.8.4';
 const isNewer=(a,b)=>{ const x=String(a).split(".").map(Number), y=String(b).split(".").map(Number); for(let i=0;i<3;i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0); } return false; };
 let upd=null; // {version, items}：新しい版が出ていたら入る。announced=放送済み
 async function checkUpdate(){
@@ -862,6 +862,10 @@ function estimate(now,dt){
   if(!G.started) return {x:0,v:0,src:"none"};
   const age=now-G.fixT;
   if(age<=STALE_MS){ DR=null; return {x:G.x+G.v*Math.max(0,age)/1000,v:G.v,src:"gps"}; }
+  // 駅を出てすぐトンネルに入り、発車を判定する前にGPSが切れた：動き出していたなら発車したことにする
+  // GPSが切れたまま停車時間を10秒過ぎたときも発車したことにする（ホームの先がすぐトンネルの駅。止まっていたらGPSが戻ったときに取り消される）
+  const overDwell=G.mode==="dwell"&&G.started&&now-G.dwellStart>=(route[G.last].dwell+10)*1000;
+  if((!DR||DR.mode==="halt")&&G.mode==="dwell"&&G.target>=0&&(G.moveSince!=null||G.v>=STILL_V||overDwell)){ DR=null; depart(Math.max(G.dwellStart,G.moveSince!=null?G.moveSince-1500:Math.min(now,G.dwellStart+route[G.last].dwell*1000))); G.v=Math.max(G.v,MOVE_V); }
   if(!DR) DR=makeDR(G.x+G.v*STALE_MS/1000,G.v,now);
   // 推定で駅に止まったら、そのまま止まっていることにする（勝手に発車させると、実際より先へ進んでしまう）
   DR.acc+=dt; while(DR.acc>=DT){ DR.acc-=DT; step(DR,route,K,DECEL,null,t=>{ if(t==="arr") DR.remain=1e9; }); }
@@ -944,9 +948,9 @@ function applyTaihi(i){
 }
 
 // ---- 読み上げのタイミング（GPSの距離と速度で発火） ----
-// 「停止位置」→0.8秒→「○」を、20km/h以下になるまで繰り返す
+// 「停止位置」→0.8秒→「○」を、8km/h以下になるまで繰り返す
 function stopPosLoop(k,v){
-  if(G.mode!=="run"||G.target!==k||v<=20/3.6) return;
+  if(G.mode!=="run"||G.target!==k||v<=8/3.6) return;
   const a=G.announced[k], n=performance.now();
   if(n<(a.posNext||0)) return;
   if(a.pos!==1){ speak("停止位置","f"); a.pos=1; a.posNext=n+300; a.gapAt=0; }
@@ -963,9 +967,9 @@ function checkApproach(e){
   // 距離はどれも停止位置まで。「8両、停車」は先頭がホームに入る約130m手前、「次は停車」はさらに約250m手前（速いときは止まれる距離＋250m）
   const plat=route[key].plen-10, nowR=performance.now();
   // 「次は停車」はホームの約350m手前（速いときは止まれる距離＋250m）。駅間が短いときは「次は○○停車」から8秒あける
-  if(!a.brake&&v>10/3.6&&d<=Math.max(plat+380,v*v/(2*0.9)+250)&&(d<=plat+180||nowMs()-(G.depAnnAt||0)>=8000)){a.brake=1; speak("次は、停車。　次は、停車。","f");}
+  if(!a.brake&&v>10/3.6&&d<=Math.max(plat+230,v*v/(2*0.9)+100)&&(d<=plat+130||nowMs()-(G.depAnnAt||0)>=8000)){a.brake=1; speak("次は、停車。　次は、停車。","f");}
   // 「○両、停車」はホームの少し手前（列車長＋160m）で。そのあと 喋り終わり＋3秒 → スキット注意（雨）→ 3秒 → 停止位置 ○
-  if(!a.cars&&d<=plat+130){a.cars=1; a.brake=1; a.step=cfg.weather==="rain"?"skid":"pos"; a.readyAt=0; speak(`${cfg.cars}両、停車。`,"f");}
+  if(!a.cars&&d<=plat+80){a.cars=1; a.brake=1; a.step=cfg.weather==="rain"?"skid":"pos"; a.readyAt=0; speak(`${cfg.cars}両、停車。`,"f");}
   if(!a.cars) return;
   if(!a.readyAt){ if(speechIdle()||cfg.voice!=="on") a.readyAt=nowR+ANN_GAP/Math.max(1,mult); return; }
   if(nowR<a.readyAt) return;
@@ -1013,7 +1017,7 @@ function draw(e,now,dt){
   const nowR=performance.now(), nl=$("nextLbl"), skid=nowR<skidUntil;
   $("hCars").textContent=cfg.cars+"両";
   const ann=(tg&&G.announced[G.target])||{}, blink=Math.floor(nowR/500)%2===1;
-  $("hCars").hidden=!(running&&ann.cars&&!skid&&e.v>20/3.6);
+  $("hCars").hidden=!(running&&ann.cars&&!skid&&e.v>8/3.6);
   $("hStop").hidden=!(running&&ann.brake&&!ann.cars);
   $("hStop").classList.toggle("blink",blink);
   const pdep=(plan.ev[G.last]||{}).dep, toDep=pdep!=null?Math.ceil((pt(pdep)-now)/1000):null;
