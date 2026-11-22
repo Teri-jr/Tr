@@ -12,10 +12,12 @@
 /* 券売機モード: 1280×1024 の画面を作り、端末の大きさに合わせて拡大縮小する */
 html,body{height:100%;margin:0;background:#000;overflow:hidden}
 html,body{position:fixed;left:0;top:0;width:100%} /* 1280px の画面がはみ出しても、スマホが表示を広げないようにする */
-#vo{position:fixed;left:8px;bottom:8px;z-index:9;display:none;padding:8px 12px;border:1px solid #666;border-radius:18px;background:#222;color:#EEE;font-size:13px;opacity:.8}
+#vo{position:fixed;left:8px;top:4px;z-index:9;display:none;padding:8px 12px;border:1px solid #666;border-radius:18px;background:#222;color:#EEE;font-size:13px;opacity:.8}
 #rot{position:fixed;right:8px;bottom:8px;z-index:9;display:none;padding:8px 12px;border:1px solid #666;border-radius:18px;background:#222;color:#EEE;font-size:13px;opacity:.8}
 body{-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;touch-action:manipulation}
 button{font-family:inherit;cursor:pointer}
+/* 押したとき: 実機のように、ボタンが明るく光って少し沈む */
+#stage button:active{filter:brightness(1.9) saturate(.55);transform:translateY(2px)}
 #stage{position:absolute;left:0;top:0;width:1280px;height:1024px;transform-origin:0 0}
 @keyframes prt{0%{transform:translateY(-100%);opacity:0}1%{opacity:1}100%{transform:translateY(0);opacity:1}} /* 出番まえのきっぷは見えないようにする */
 .prt{animation:prt 2.2s steps(22) both}
@@ -267,20 +269,25 @@ button{font-family:inherit;cursor:pointer}
 <div style="height: 100px; flex-shrink: 0; padding: 0 16px; background: #DCDCDC; display: flex; align-items: center; font-size: 40px; font-weight: 700">{{kanaTitle}}<span style="font-weight: 400; font-size: 34px">　を入力してください</span></div>
 <div style="flex-grow: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y; overscroll-behavior: contain; background: #FFFFFF; display: flex; flex-direction: column">
 <div style="margin: 40px 10px 0; height: 100px; padding: 0 16px; background: #4A6A6A; display: flex; align-items: center; gap: 24px">
-<span style="font-size: 18px; line-height: 1.5; color: #FFFFFF">入力例：東京　→とうきよう<br>　　　　原宿　→はらしゆく</span>
-<span style="flex-grow: 1; height: 68px; padding: 0 12px; box-sizing: border-box; border: 2px solid #333333; background: #FFF799; display: flex; align-items: center; font-size: 36px; font-weight: 700">{{kana}}■</span>
+<span style="font-size: 18px; line-height: 1.5; color: #FFFFFF">入力例：東京　→とうきよう<br>新大阪→しんおおさか</span>
+<span style="flex-grow: 1; height: 68px; padding: 0 12px; box-sizing: border-box; border: 2px solid #333333; background: #FFF799; display: flex; align-items: center; font-size: 36px; font-weight: 700">{{kanaDisp}}■</span>
 <button type="button" sc-camel-on-click="{{fix}}" style="width: 112px; height: 72px; background: linear-gradient(#FFA448 0%, #E8780E 50%, #D46400 52%, #B85200 100%); border: 2px solid #222222; border-radius: 10px; color: #FFFFFF; font-size: 30px; font-weight: 700">訂 正</button>
 </div>
 <div style="margin: 24px 10px 0; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 14px 15px">
 <sc-for list="{{keys}}" as="k">
-<button type="button" sc-camel-on-click="{{k.pick}}" aria-label="{{k.aria}}" style="visibility: {{k.vis}}; height: 76px; background: {{k.bg}}; border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 44px; font-weight: 700; line-height: 1">{{k.ch}}</button>
+<button type="button" sc-camel-on-click="{{k.pick}}" aria-label="{{k.aria}}" style="visibility: {{k.vis}}; opacity: {{k.op}}; height: 76px; background: {{k.bg}}; border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 44px; font-weight: 700; line-height: 1">{{k.ch}}</button>
 </sc-for>
 </div></div>
 <div style="height: 104px; flex-shrink: 0; padding: 0 40px; background: #DCDCDC; display: flex; align-items: center; gap: 20px"><button type="button" sc-camel-on-click="{{closeModal}}" style="height: 72px; padding: 0 14px; background: linear-gradient(#FFA448 0%, #E8780E 50%, #D46400 52%, #B85200 100%); border: 2px solid #222222; border-radius: 10px; color: #FFFFFF; font-size: 22px">前画面に戻る</button>
-<span style="flex-grow: 1; text-align: right; font-size: 22px; line-height: 1.4">{{hitCount}}駅が該当。続けて入力するか「表示」を押してください</span>
+<span style="flex-grow: 1; text-align: right; font-size: 22px; line-height: 1.4">{{hitMsg}}</span>
 <span aria-hidden="true" style="color: #0A7A0A; font-size: 26px">▶</span>
 <button type="button" sc-camel-on-click="{{show}}" style="width: 196px; height: 78px; background: linear-gradient(#2FA82F 0%, #0E800E 50%, #006A00 52%, #005200 100%); border: 3px solid #B6F06A; border-radius: 10px; color: #FFFFFF; font-size: 36px; font-weight: 700">表 示</button></div>
 </div>
+</div>
+</sc-if>
+<sc-if value="{{mWait}}">
+<div style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; z-index: 60; background: rgba(16,16,16,0.72); display: flex; align-items: center; justify-content: center">
+<div role="status" style="width: 760px; height: 420px; box-sizing: border-box; border: 6px solid #33CC33; background: #FFFFFF; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 36px"><span style="font-size: 44px; font-weight: 700">しばらくお待ちください</span><span style="font-size: 30px">問い合わせ中です</span></div>
 </div>
 </sc-if>
 <sc-if value="{{mTime}}">
@@ -532,20 +539,30 @@ class Component extends DCLogic {
       const blank = ch === ' ';
       const special = ch === '゛' || ch === '゜' || ch === 'ー';
       const teal = r === 0 || special;
-      keys.push({ ch: blank ? '' : ch, aria: blank ? '空き' : ch, vis: blank ? 'hidden' : 'visible',
+      const kk = { ch: blank ? '' : ch, aria: blank ? '空き' : ch, vis: blank ? 'hidden' : 'visible',
         bg: teal ? 'linear-gradient(#5E8C8C 0%, #3E6C6C 10%, #345E5E 55%, #2A4E4E 90%, #102020 100%)' : 'linear-gradient(#6A6A6A 0%, #4A4A4A 10%, #3C3C3C 55%, #303030 90%, #0E0E0E 100%)',
         pick: () => {
           if (blank) return;
           const last = s.kana.slice(-1);
+          if (kk.dim) return;
           if (ch === '゛') { if (DK[last]) adv(s.kana.slice(0, -1) + DK[last]); return; }
           if (ch === '゜') { if (HD[last]) adv(s.kana.slice(0, -1) + HD[last]); return; }
           if (s.kana.length < 10) adv(s.kana + ch);
-        } });
+        } };
+      keys.push(kk);
     }));
     const isN = s.mode === 'normal';
     // 大回りは運賃の出せる駅だけ。ふつうの経路はどの駅でも
     const forFrom = s.kmode === 'from';
     const pool = forFrom ? EVERY : isN ? EVERY.filter((x) => x.n !== s.from) : ooPool(s.from);
+    // 続きの駅がない文字のキーは暗くして、押せなくする(実機と同じ)
+    keys.forEach((k) => { if (!k.ch) { k.dim = true; k.op = '0'; return; }
+      const last = s.kana.slice(-1); let t;
+      if (k.ch === '゛') t = DK[last] ? s.kana.slice(0, -1) + DK[last] : null; else if (k.ch === '゜') t = HD[last] ? s.kana.slice(0, -1) + HD[last] : null; else t = s.kana + k.ch;
+      k.dim = t === null || (s.kana.length >= 10 && k.ch !== '゛' && k.ch !== '゜') || !pool.some((x) => nz(x.y).startsWith(nz(t)));
+      k.op = k.dim ? '0.4' : '1'; });
+    // 入力欄: 濁点・半濁点は、本体の文字のあとの全角1文字として見せる(例: が → か゛)
+    const kanaDisp = [...s.kana].map((c) => { const d = c.normalize('NFD'); return d.length > 1 ? d[0] + (d[1] === '\u3099' ? '゛' : '゜') : c; }).join('');
     const hits = s.kana ? pool.filter((x) => nz(x.y).startsWith(nz(s.kana))) : [];
     const PG = 9, nPg = Math.max(1, Math.ceil(hits.length / PG)), cpg = Math.min(s.cpage || 0, nPg - 1);
     const cands = hits.slice(cpg * PG, cpg * PG + PG).map((x) => ({ name: x.n, pick: () => { if (forFrom) { const keep = s.to && s.to !== x.n && (isN || ooPool(x.n).some((y) => y.n === s.to)); set({ from: x.n, to: keep ? s.to : null, route: null, modal: null, kana: '', kmode: 'to' }); } else set({ to: x.n, modal: null, kana: '' }); } }));
@@ -704,7 +721,7 @@ class Component extends DCLogic {
       depStyle: s.tmode === 'dep' ? 'border-color: #0A6A0A; color: #0A6A0A' : 'border-color: transparent; color: #9A9A9A', arrStyle: s.tmode === 'arr' ? 'border-color: #0A6A0A; color: #0A6A0A' : 'border-color: transparent; color: #9A9A9A', ppl, condDir: DIRS[s.dirc], condLen: LENS[s.len], condGray: s.gray ? '出す' : '出さない',
       inRing: NORING, searchRing: NORING, searchOpacity: s.from && to ? '1' : '0.45',
       // kana
-      keys, kana: s.kana, hitCount: String(hits.length), cands, candCount: cands.length,
+      keys, kana: s.kana, kanaDisp, hitMsg: s.kana ? '入力した文字で始まる駅は' + hits.length + '駅該当します。次の文字を入力するか「表示」を押してください。' : '', mWait: s.modal === 'wait', hitCount: String(hits.length), cands, candCount: cands.length,
       // routes
       cards, noRoute: !ok, dt: { ...dt, pick: () => set({ route: s.detail, exp: {}, step: 4, modal: null }) },
       d0: s.detail === 0, d1: s.detail === 1,
@@ -741,8 +758,8 @@ class Component extends DCLogic {
       search0: () => set({ step: 2, mode: 'oo', to: null, route: null }), normal0: () => set({ step: 2, mode: 'normal', to: null, route: null }), saved0: () => set({ step: 3, mode: 'saved', to: null, route: null, rpage: 0, via0: false }), savedTop: () => set({ step: 3, mode: 'saved', to: null, route: null, rpage: 0, via0: true }),
       showCond: !isN,
       openKana: () => set({ modal: 'kana', kana: '', kmode: !isN && !s.from ? 'from' : 'to' }), openFrom: () => set({ modal: 'kana', kana: '', kmode: 'from' }),
-      kanaTitle: forFrom ? '出発駅名' : '到着駅名（目的地）', candTitle: forFrom ? '出発駅' : '到着駅（目的地）', fix: () => set({ kana: s.kana.slice(0, -1) }),
-      show: () => { if (hits.length) set({ modal: 'cand', cpage: 0 }); }, redo: () => set({ modal: 'kana', kana: '', cpage: 0 }),
+      kanaTitle: forFrom ? '乗車券の出発駅名' : '乗車券の到着駅名', candTitle: forFrom ? '出発駅' : '到着駅（目的地）', fix: () => { const l = s.kana.slice(-1), b = l.normalize('NFD')[0]; set({ kana: b !== l ? s.kana.slice(0, -1) + b : s.kana.slice(0, -1) }); },
+      show: () => { if (hits.length) { set({ modal: 'wait' }); setTimeout(() => { if (comp.state.modal === 'wait') comp.setState({ modal: 'cand', cpage: 0 }); }, 700); } }, redo: () => set({ modal: 'kana', kana: '', cpage: 0 }),
       pgPrev: () => set({ cpage: Math.max(0, cpg - 1) }), pgNext: () => set({ cpage: Math.min(nPg - 1, cpg + 1) }), pgTxt: cpg + 1 + '/' + nPg, pgMulti: nPg > 1, pgPrevOp: cpg > 0 ? '1' : '.35', pgNextOp: cpg < nPg - 1 ? '1' : '.35',
       closeModal: () => set({ modal: null }), openTime: () => set({ modal: 'time' }),
       openPpl: () => set({ modal: 'ppl' }), openCond: () => set({ modal: 'cond' }), openSum: () => set({ modal: 'sum' }),
