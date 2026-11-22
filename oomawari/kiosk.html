@@ -17,7 +17,7 @@ html,body{position:fixed;left:0;top:0;width:100%} /* 1280px の画面がはみ�
 body{-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;touch-action:manipulation}
 button{font-family:inherit;cursor:pointer}
 /* 押したとき: 実機のように、ボタンの色が白黒反転する(全部のボタン共通)。指を離すと元に戻る */
-#stage button.pr{background:#F4F4F4 !important;color:#000000 !important;border-color:#4CC23A !important}
+#stage button.pr{background:#FFFFFF !important;color:#000000 !important;border-color:#000000 !important}
 #stage button.pr *{color:#000000 !important}
 #stage button.prc{background:var(--prc) !important;color:#000000 !important;border-color:var(--prb) !important}
 #stage button.prc *{color:#000000 !important}
@@ -280,7 +280,7 @@ button{font-family:inherit;cursor:pointer}
 <div style="margin: 24px 36px 0; height: 104px; flex-shrink: 0; padding: 0 20px; background: #3F4940; display: flex; align-items: center; gap: 24px">
 <span style="font-size: 19px; line-height: 1.5; color: #FFFFFF; white-space: nowrap">入力例：東京　→とうきよう<br>新大阪→しんおおさか</span>
 <span style="flex-grow: 1; height: 72px; padding: 0 16px; box-sizing: border-box; border: 2px solid #8A8440; background: #E8E27C; display: flex; align-items: center; font-size: 40px; font-weight: 700; color: #000000">{{kanaDisp}}■</span>
-<button type="button" sc-camel-on-click="{{fix}}" style="opacity: {{fixOp}}; width: 112px; height: 72px; background: linear-gradient(#D49A7E 0%, #B9775A 50%, #A6634A 100%); border: 2px solid #6E3E2C; border-radius: 10px; color: #FFFFFF; font-size: 30px; font-weight: 700">訂 正</button>
+<button type="button" sc-camel-on-click="{{fix}}" style="opacity: {{fixOp}}; width: 112px; height: 72px; background: #B04A3A; border: 2px solid #6A2A20; border-radius: 10px; color: #FFFFFF; font-size: 30px; font-weight: 700">訂 正</button>
 </div>
 <div style="margin: 26px 36px 0; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 14px 15px">
 <sc-for list="{{keys}}" as="k">
@@ -462,7 +462,7 @@ function beep() { try { actx = actx || new (window.AudioContext || window.webkit
 stage.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b && !b.disabled) beep(); }, true);
 // 押している間、ボタンを反転させる。短く押しても見えるように、最低0.12秒は反転を保つ
 (() => { let cur = null, t0 = 0;
-  // 暗い(色のない)ボタンは白地に緑の枠と黒文字、緑やオレンジなど色のあるボタンは、その色の明るい版になる(実機の写真より)
+  // 暗い(色のない)ボタンは白地に黒文字、緑やオレンジなど色のあるボタンは、その色の明るい版になる(実機の写真より)
   const kind = (b) => { const cs = getComputedStyle(b), m = ((cs.backgroundImage || '') + ' ' + cs.backgroundColor).match(/rgba?\((\d+), (\d+), (\d+)/); if (!m) return null;
     const [r, g, bl] = [+m[1] / 255, +m[2] / 255, +m[3] / 255], mx = Math.max(r, g, bl), mn = Math.min(r, g, bl), d = mx - mn; if (d < 0.18) return null;
     let h = mx === r ? ((g - bl) / d) % 6 : mx === g ? (bl - r) / d + 2 : (r - g) / d + 4; h = Math.round(h * 60 + 360) % 360; return h; };
@@ -486,13 +486,13 @@ function voPrime() { if (voPrimed || !synth) return; voPrimed = true; try { cons
 document.addEventListener('pointerdown', voPrime, true); document.addEventListener('touchend', voPrime, true); document.addEventListener('click', voPrime, true);
 function say(t) { try { synth.resume && synth.resume(); const u = new SpeechSynthesisUtterance(t); u.lang = 'ja-JP'; u.rate = 1; u.volume = 1; const v = jaVoice(); if (v) u.voice = v; synth.speak(u); } catch (e) {} }
 let voT9 = 0, voTimer = null;
-setInterval(() => { try { if (!synth) return; const st = comp.state;
-  if (!st || st.step !== 9) { if (voT9) { voT9 = 0; clearTimeout(voTimer); synth.cancel(); } return; }
-  if (!st.t9 || st.t9 === voT9) return; voT9 = st.t9; if (!voiceOn) return;
-  const cash = !st.card;
-  setTimeout(() => { if (!voiceOn || comp.state.t9 !== voT9) return; say((cash ? 'おつりやきっぷ' : 'きっぷ') + 'の取り忘れにご注意ください。領収書をご希望のお客様は領収書ボタンを押してください。'); }, 700);
-  clearTimeout(voTimer); voTimer = setTimeout(() => { if (voiceOn && comp.state.step === 9) say(cash ? 'きっぷと硬貨をお受け取りください。ありがとうございました。' : 'きっぷをお受け取りください。ありがとうございました。'); }, (window.__prtEnd || 3) * 1000);
-} catch (e) {} }, 200);
+// 支払いのボタンを押したその操作の中で1つ目をしゃべり始める(スマホはこうしないと鳴らないことがある)。2つ目はきっぷが出終わったころ
+window.voStart = (cash, endSec, t9) => { try { if (!synth || !voiceOn) return; voT9 = t9; clearTimeout(voTimer); if (synth.speaking) synth.cancel();
+  say((cash ? 'おつりやきっぷ' : 'きっぷ') + 'の取り忘れにご注意ください。領収書をご希望のお客様は領収書ボタンを押してください。');
+  voTimer = setTimeout(() => { if (voiceOn && comp.state.step === 9 && comp.state.t9 === voT9) say(cash ? 'きっぷと硬貨をお受け取りください。ありがとうございました。' : 'きっぷをお受け取りください。ありがとうございました。'); }, endSec * 1000);
+} catch (e) {} };
+// 支払いの画面から離れたら止める
+setInterval(() => { try { if (!synth || !voT9) return; const st = comp.state; if (!st || st.step !== 9 || st.t9 !== voT9) { voT9 = 0; clearTimeout(voTimer); synth.cancel(); } } catch (e) {} }, 300);
 rotBtn.addEventListener('click', () => { rotOff = !rotOff; try { localStorage.setItem('oomawari-kiosk-norot', rotOff ? '1' : '0'); } catch (e) {} fit(); });
 addEventListener('resize', fit); fit();
 
@@ -501,6 +501,7 @@ addEventListener('resize', fit); fit();
    当駅(出発駅)と、乗換の時間・本数の少ない路線などの細かい条件は、アプリで最後に使った条件を引きつぐ(はじめては横浜)。 */
 const E = OOMAWARI;
 const VER = ((document.querySelector('script[src^="engine.js"]') || {}).src || '').split('v=')[1] || ''; // 版は engine.js の ?v= から
+const PT0 = 3.5, PTI = 2.4; // 発券: 支払いから1枚目が出はじめるまで(秒)と、1枚ごとの間隔(秒)。実機に近い長さ
 const NOW = new Date(), MD = (NOW.getMonth() + 1) + '月' + NOW.getDate() + '日', MDW = MD + '（' + '日月火水木金土'[NOW.getDay()] + '）'; // 今日の日付
 const load = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } };
 const KDEF = { from: '横浜', start: '07:00', end: '20:00', len: 2, xfer: 8, xmin: 15, meal: true, rare: true, mustLine: [], noLine: [], mustSt: [], noSt: [], prev: 0 };
@@ -697,17 +698,17 @@ class Component extends DCLogic {
     // 人数分のきっぷ: 大人の枚数とこどもの枚数だけ、それぞれの料金で出す
     const tkAll = [];
     tk.forEach((t) => { for (let k = 0; k < s.adult; k++) tkAll.push({ ...t, price: '￥' + yenOr(t.ya), ppl: '大人' }); for (let k = 0; k < s.child; k++) tkAll.push({ ...t, price: '￥' + yenOr(t.yc), ppl: 'こども' }); });
-    const tickets = tkAll.map((t, i) => ({ ...t, x: ((i % 8) * 16) + 'px', y: ((i % 8) * 12) + 'px', delay: (0.5 + i * 1.2) + 's', aria: t.title + '　' + t.ppl + '　' + t.from + 'から' + t.to + '　' + t.price }));
+    const tickets = tkAll.map((t, i) => ({ ...t, x: ((i % 8) * 16) + 'px', y: ((i % 8) * 12) + 'px', delay: (PT0 + i * PTI) + 's', aria: t.title + '　' + t.ppl + '　' + t.from + 'から' + t.to + '　' + t.price }));
     // 発券中の「あと何枚」(7セグ風の表示)。1枚ごとに約1.2秒で出る
-    const nSheets = tkAll.length + (s.rcpt ? 1 : 0); window.__prtEnd = 0.5 + nSheets * 1.2; const el = s.step === 9 && s.t9 ? (Date.now() - s.t9) / 1000 : 0;
-    const remN = s.step === 9 ? Math.max(0, nSheets - Math.max(0, Math.floor((el - 0.5) / 1.2) + 1)) : nSheets;
+    const nSheets = tkAll.length + (s.rcpt ? 1 : 0); window.__prtEnd = PT0 + nSheets * PTI; const el = s.step === 9 && s.t9 ? (Date.now() - s.t9) / 1000 : 0;
+    const remN = s.step === 9 ? Math.max(0, nSheets - Math.max(0, Math.floor((el - PT0) / PTI) + 1)) : nSheets;
     const SEG = { 0: 'abcdef', 1: 'bc', 2: 'abdeg', 3: 'abcdg', 4: 'bcfg', 5: 'acdfg', 6: 'acdefg', 7: 'abc', 8: 'abcdefg', 9: 'abcdfg' };
     const ON = '#FF3B1F', OFF = '#3A1410';
     const remDg = String(remN).padStart(2, '0').split('').map((ch) => { const o = {}; 'abcdefg'.split('').forEach((k) => { o[k] = SEG[ch].includes(k) ? ON : OFF; }); return o; });
     const rcptAgg = []; tkAll.forEach((t) => { const k = t.title + t.ppl + t.price, f = rcptAgg.find((x) => x.k === k); if (f) f.n++; else rcptAgg.push({ k, n: 1, t }); });
     const rcptLines = rcptAgg.map((x) => ({ name: x.t.title + '（' + x.t.ppl + '）' + (x.n > 1 ? '×' + x.n : ''), price: '￥' + yenOr(x.t.ya == null ? null : (x.t.ppl === '大人' ? x.t.ya : x.t.yc) * x.n) }));
     const change = s.card ? 0 : Math.max(0, s.paid - total);
-    const pay = (v) => () => { const p = s.paid + v; set(p >= total ? { paid: p, step: 9, t9: Date.now() } : { paid: p }); };
+    const pay = (v) => () => { const p = s.paid + v; if (p >= total) { const t9 = Date.now(); set({ paid: p, step: 9, t9 }); if (window.voStart) window.voStart(true, PT0 + nSheets * PTI, t9); } else set({ paid: p }); };
     // confirm table
     const conf = [
       { k: '選択区間', v: (HERE || '－') + '⇒' + (to || '－') + (s.ret === 'round' ? '（往復）' : '（片道）') },
@@ -757,7 +758,7 @@ class Component extends DCLogic {
       rideKind: s.ret === 'round' ? '乗車券<往復>' : '乗車券<片道>', showRideBracket: buyRide,
       conf, totalFmt: yen(total), paidFmt: yen(s.paid), remainFmt: yen(Math.max(0, total - s.paid)),
       remNum: remN, remDigits: remDg, remDone: remN === 0, remLabel: remN > 0 ? '発券中です' : '発券が終わりました',
-      tickets, rcptOn: s.rcpt, rcptBtn: s.rcpt ? '領収書　発行します' : '領収書', rcptStyle: s.rcpt ? 'color: #FFF27A; ' + RING : 'color: #FFFFFF; ' + NORING, rcptDelay: (0.5 + tkAll.length * 1.2) + 's', rcptLines, toggleRcpt: () => set({ rcpt: !s.rcpt }), rcpt9: () => { if (!s.rcpt) set({ rcpt: true }); }, rcpt9Style: s.rcpt ? 'background: #F4F4F4; color: #111111; border: 4px solid #4CC23A' : 'background: linear-gradient(#5A5A5A 0%, #444444 50%, #333333 100%); color: #FFFFFF; border: 2px solid #1A1A1A', paidYen: s.card ? 'カード' : yen(s.paid) + '円', mTk: s.modal === 'tkview', showTk: () => set({ modal: 'tkview' }), closeTk: () => set({ modal: null }), paidLabel: s.card ? 'カード' : '￥' + yen(s.paid), changeFmt: yen(change),
+      tickets, rcptOn: s.rcpt, rcptBtn: s.rcpt ? '領収書　発行します' : '領収書', rcptStyle: s.rcpt ? 'color: #FFF27A; ' + RING : 'color: #FFFFFF; ' + NORING, rcptDelay: (PT0 + tkAll.length * PTI) + 's', rcptLines, toggleRcpt: () => set({ rcpt: !s.rcpt }), rcpt9: () => { if (!s.rcpt) set({ rcpt: true }); }, rcpt9Style: s.rcpt ? 'background: #F4F4F4; color: #111111; border: 4px solid #4CC23A' : 'background: linear-gradient(#5A5A5A 0%, #444444 50%, #333333 100%); color: #FFFFFF; border: 2px solid #1A1A1A', paidYen: s.card ? 'カード' : yen(s.paid) + '円', mTk: s.modal === 'tkview', showTk: () => set({ modal: 'tkview' }), closeTk: () => set({ modal: null }), paidLabel: s.card ? 'カード' : '￥' + yen(s.paid), changeFmt: yen(change),
       changeLine: change > 0 ? 'おつり ' + yen(change) + '円' : '', hasChange: change > 0,
       // modals
       mKana: s.modal === 'kana', mCand: s.modal === 'cand', mPpl: s.modal === 'ppl', mCond: s.modal === 'cond',  mSum: s.modal === 'sum', mDetail: s.modal === 'detail', mTime: s.modal === 'time',
@@ -781,7 +782,7 @@ class Component extends DCLogic {
       search0: () => set({ step: 2, mode: 'oo', to: null, route: null }), normal0: () => set({ step: 2, mode: 'normal', to: null, route: null }), saved0: () => set({ step: 3, mode: 'saved', to: null, route: null, rpage: 0, via0: false }), savedTop: () => set({ step: 3, mode: 'saved', to: null, route: null, rpage: 0, via0: true }),
       showCond: !isN,
       openKana: () => set({ modal: 'kana', kana: '', kmode: !isN && !s.from ? 'from' : 'to' }), openFrom: () => set({ modal: 'kana', kana: '', kmode: 'from' }),
-      kanaTitle: forFrom ? '出発駅名' : '到着駅名', candTitle: forFrom ? '出発駅' : '到着駅', fix: () => { const l = s.kana.slice(-1), b = l.normalize('NFD')[0]; set({ kana: b !== l ? s.kana.slice(0, -1) + b : s.kana.slice(0, -1) }); },
+      kanaTitle: forFrom ? '出発駅名' : '到着駅名', candTitle: forFrom ? '出発駅' : '到着駅', fix: () => { if (!s.kana) return; const l = s.kana.slice(-1), b = l.normalize('NFD')[0]; set({ kana: b !== l ? s.kana.slice(0, -1) + b : s.kana.slice(0, -1) }); },
       show: () => { if (hits.length) { set({ wait: true }); setTimeout(() => { if (comp.state.wait && comp.state.modal === 'kana') comp.setState({ wait: false, modal: 'cand', cpage: 0 }); else comp.setState({ wait: false }); }, 1200); } }, redo: () => set({ modal: 'kana', kana: '', cpage: 0 }),
       pgPrev: () => set({ cpage: Math.max(0, cpg - 1) }), pgNext: () => set({ cpage: Math.min(nPg - 1, cpg + 1) }), pgTxt: cpg + 1 + '/' + nPg, pgMulti: nPg > 1, pgPrevOp: cpg > 0 ? '1' : '.35', pgNextOp: cpg < nPg - 1 ? '1' : '.35',
       closeModal: () => set({ modal: null }), openTime: () => set({ modal: 'time' }),
@@ -794,7 +795,7 @@ class Component extends DCLogic {
       rGo: () => set({ ret: 'round', rdir: 'go', retOpen: false, step: buyEx ? 5 : 7 }), rBack: () => set({ ret: 'round', rdir: 'back', retOpen: false, step: buyEx ? 5 : 7 }), rBoth: () => set({ ret: 'round', rdir: 'both', retOpen: false, step: buyEx ? 5 : 7 }),
       expNext: () => set({ step: 7 }),
       confirm: () => { set({ wait: true }); setTimeout(() => { if (comp.state.wait && comp.state.step === 7) comp.setState({ wait: false, step: 8, paid: 0, card: false }); else comp.setState({ wait: false }); }, 1200); },
-      p10: pay(10), p50: pay(50), p100: pay(100), p500: pay(500), p1000: pay(1000), payCard: () => set({ card: true, step: 9, t9: Date.now() }),
+      p10: pay(10), p50: pay(50), p100: pay(100), p500: pay(500), p1000: pay(1000), payCard: () => { const t9 = Date.now(); set({ card: true, step: 9, t9 }); if (window.voStart) window.voStart(false, PT0 + nSheets * PTI, t9); },
       toggleMono: () => set({ mono: !s.mono }),
       back: () => { if (s.modal === 'kana') return set({ modal: null }); if (s.modal === 'cand') return set({ modal: 'kana', cpage: 0 }); if (s.step === 6 && s.retOpen) return set({ retOpen: false }); const p = backMap[s.step]; set({ step: p === undefined ? 0 : p, modal: null }); },
       cancel: () => set({ ...this.init(), mono: s.mono }), home: () => set({ ...this.init(), mono: s.mono })
