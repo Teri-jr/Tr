@@ -16,8 +16,8 @@ html,body{position:fixed;left:0;top:0;width:100%} /* 1280px の画面がはみ�
 #rot{position:fixed;right:8px;bottom:8px;z-index:9;display:none;padding:8px 12px;border:1px solid #666;border-radius:18px;background:#222;color:#EEE;font-size:13px;opacity:.8}
 body{-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;touch-action:manipulation}
 button{font-family:inherit;cursor:pointer}
-/* 押したとき: 実機のように、ボタンが明るく光って少し沈む(全部のボタン共通) */
-#stage button:not(:disabled):active{filter:brightness(1.9) saturate(.55);transform:translateY(2px)}
+/* 押したとき: 実機のように、ボタンの色が白黒反転する(全部のボタン共通)。指を離すと元に戻る */
+#stage button.pr{filter:invert(1) hue-rotate(180deg)}
 /* 長押しで出る「コピー／翻訳」などのメニューや文字の選択が出ないようにする */
 #stage,#stage *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
 #stage button{touch-action:manipulation}
@@ -449,6 +449,11 @@ function beep() { try { actx = actx || new (window.AudioContext || window.webkit
   const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime; o.type = 'sine'; o.frequency.value = 2906.9; o.connect(g); g.connect(actx.destination);
   g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.16, t + 0.004); g.gain.setValueAtTime(0.16, t + 0.095); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.115); o.start(t); o.stop(t + 0.12); } catch (e) {} }
 stage.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b && !b.disabled) beep(); }, true);
+// 押している間、ボタンを反転させる。短く押しても見えるように、最低0.12秒は反転を保つ
+(() => { let cur = null, t0 = 0;
+  const off = () => { const b = cur; if (!b) return; cur = null; setTimeout(() => b.classList.remove('pr'), Math.max(0, 120 - (Date.now() - t0))); };
+  stage.addEventListener('pointerdown', (e) => { const b = e.target.closest && e.target.closest('button'); if (!b || b.disabled) return; if (cur) cur.classList.remove('pr'); cur = b; t0 = Date.now(); b.classList.add('pr'); }, true);
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach((n) => addEventListener(n, off, true)); })();
 setInterval(() => { try { if (comp.state && comp.state.step === 9 && comp.state.t9 && Date.now() - comp.state.t9 < 60000) comp.setState({}); } catch (e) {} }, 400);
 // 支払いが終わったときの案内の音声(ブラウザの音声合成。使えない端末では何もしない)
 let voiceOn = true; try { voiceOn = localStorage.getItem('oomawari-kiosk-voice') !== '0'; } catch (e) {}
