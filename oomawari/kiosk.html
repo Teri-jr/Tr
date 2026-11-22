@@ -436,11 +436,11 @@ const rotBtn = document.getElementById('rot'); let rotOff = false; try { rotOff 
 function fit() { const W = innerWidth, H = innerHeight, phone = W < H && W < 800; rotBtn.style.display = phone ? 'block' : 'none';
   if (phone && !rotOff) { const k = Math.min(H / 1280, W / 1024); stage.style.transform = `translate(${(W - 1024 * k) / 2 + 1024 * k}px,${(H - 1280 * k) / 2}px) rotate(90deg) scale(${k})`; return; }
   const k = Math.min(W / 1280, H / 1024); stage.style.transform = `translate(${(W - 1280 * k) / 2}px,${(H - 1024 * k) / 2}px) scale(${k})`; }
-// 券売機の「ピッ」: 画面のボタンを押したとき。高さは実測して 2906.9Hz に固定
+// 券売機の「ピッ」: 画面のボタンを押したとき。実機の録音を測ると 2906.9Hz のほぼ純粋な正弦波で、約0.11秒
 let actx = null;
 function beep() { try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === 'suspended') actx.resume();
-  const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime; o.type = 'square'; o.frequency.value = 2906.9; o.connect(g); g.connect(actx.destination);
-  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.08, t + 0.004); g.gain.setValueAtTime(0.08, t + 0.07); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.09); o.start(t); o.stop(t + 0.1); } catch (e) {} }
+  const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime; o.type = 'sine'; o.frequency.value = 2906.9; o.connect(g); g.connect(actx.destination);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.16, t + 0.004); g.gain.setValueAtTime(0.16, t + 0.095); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.115); o.start(t); o.stop(t + 0.12); } catch (e) {} }
 stage.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b && !b.disabled) beep(); }, true);
 setInterval(() => { try { if (comp.state && comp.state.step === 9 && comp.state.t9 && Date.now() - comp.state.t9 < 60000) comp.setState({}); } catch (e) {} }, 400);
 rotBtn.addEventListener('click', () => { rotOff = !rotOff; try { localStorage.setItem('oomawari-kiosk-norot', rotOff ? '1' : '0'); } catch (e) {} fit(); });
