@@ -169,10 +169,10 @@ function create(D) {
     const INF = 1e12, cost = [], back = [], XP = o.fast ? 5 : 10000; // 乗換1回の重み。速い列車を優先するときは5分ぶん
     for (let h = 0; h < H; h++) { if (!opt[h].length) return null; cost.push(new Array(opt[h].length).fill(INF)); back.push(new Array(opt[h].length).fill(-1));
       const stn = seq[h].n, free = !!turnAt[h]; // 折り返しの特例がある駅は、通過する列車でも先の駅で乗り換えられる
-      opt[h].forEach((e, x) => { const tm = hops[h].km / SV[svcIds[e[0]]].v * 60;
-        if (h === 0) { if (free || !skip[e[0]].has(stn)) cost[0][x] = tm; return; }
+      opt[h].forEach((e, x) => { const tm = hops[h].km / SV[svcIds[e[0]]].v * 60, pen = 4 / Math.max(1, e[1]); // 乗りはじめる系統は、本数の多いほうを少し優先(横浜〜東神奈川は横浜線の直通より京浜東北線)
+        if (h === 0) { if (free || !skip[e[0]].has(stn)) cost[0][x] = tm + pen; return; }
         opt[h - 1].forEach((p, y) => { const c0 = cost[h - 1][y]; if (c0 >= INF) return; let c;
-          if (p[0] === e[0]) c = c0 + tm; else if (free || (!skip[p[0]].has(stn) && !skip[e[0]].has(stn))) c = c0 + XP + tm; else return;
+          if (p[0] === e[0]) c = c0 + tm; else if (free || (!skip[p[0]].has(stn) && !skip[e[0]].has(stn))) c = c0 + XP + tm + pen; else return;
           if (c < cost[h][x]) { cost[h][x] = c; back[h][x] = y; } }); }); }
     let bx = -1, bc = INF; const endFree = !!turnAt[H];
     opt[H - 1].forEach((e, x) => { if ((endFree || !skip[e[0]].has(to)) && cost[H - 1][x] < bc) { bc = cost[H - 1][x]; bx = x; } });
