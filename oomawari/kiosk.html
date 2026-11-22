@@ -38,9 +38,9 @@ button{font-family:inherit;cursor:pointer}
 #stage{position:absolute;left:0;top:0;width:1280px;height:1024px;transform-origin:0 0}
 @keyframes prt{0%{transform:translateY(-100%);opacity:0}1%{opacity:1}100%{transform:translateY(0);opacity:1}} /* 出番まえのきっぷは見えないようにする */
 .prt{animation:prt 2.2s steps(22) both}
-/* 取出口の上の緑のランプ: きっぷが出ているあいだ点滅する(実機の写真より) */
-@keyframes lamp{0%,100%{background:#5BEA4A;box-shadow:0 0 10px 2px rgba(90,234,74,.8)}50%{background:#2E8A26;box-shadow:none}}
-.lampOn{animation:lamp 1s ease-in-out infinite}
+/* 取出口の上の緑のランプ: きっぷが出ているあいだパッと消えてパッとつく点滅(0.5秒ずつ) */
+@keyframes lamp{0%,49.9%{background:#5BEA4A;box-shadow:0 0 10px 2px rgba(90,234,74,.8)}50%,100%{background:#4A5A4A;box-shadow:none}}
+.lampOn{animation:lamp 1s steps(1,end) infinite}
 </style>
 </head>
 <body>
