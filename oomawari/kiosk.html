@@ -12,6 +12,7 @@
 /* 券売機モード: 1280×1024 の画面を作り、端末の大きさに合わせて拡大縮小する */
 html,body{height:100%;margin:0;background:#000;overflow:hidden}
 html,body{position:fixed;left:0;top:0;width:100%} /* 1280px の画面がはみ出しても、スマホが表示を広げないようにする */
+#vo{position:fixed;left:8px;bottom:8px;z-index:9;display:none;padding:8px 12px;border:1px solid #666;border-radius:18px;background:#222;color:#EEE;font-size:13px;opacity:.8}
 #rot{position:fixed;right:8px;bottom:8px;z-index:9;display:none;padding:8px 12px;border:1px solid #666;border-radius:18px;background:#222;color:#EEE;font-size:13px;opacity:.8}
 body{-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;touch-action:manipulation}
 button{font-family:inherit;cursor:pointer}
@@ -22,6 +23,7 @@ button{font-family:inherit;cursor:pointer}
 </head>
 <body>
 <div id="stage"></div>
+<button type="button" id="vo" aria-label="案内の音声を切りかえる">案内音声：入</button>
 <button type="button" id="rot" aria-label="画面の向きを切りかえる">↻ 画面を回す</button>
 <!-- 画面のひな形。{{名前}} に下の renderVals() の値が入り、sc-if は出す/出さない、sc-for はくり返し。 -->
 <template id="tpl">
@@ -443,6 +445,21 @@ function beep() { try { actx = actx || new (window.AudioContext || window.webkit
   g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.16, t + 0.004); g.gain.setValueAtTime(0.16, t + 0.095); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.115); o.start(t); o.stop(t + 0.12); } catch (e) {} }
 stage.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b && !b.disabled) beep(); }, true);
 setInterval(() => { try { if (comp.state && comp.state.step === 9 && comp.state.t9 && Date.now() - comp.state.t9 < 60000) comp.setState({}); } catch (e) {} }, 400);
+// 支払いが終わったときの案内の音声(ブラウザの音声合成。使えない端末では何もしない)
+let voiceOn = true; try { voiceOn = localStorage.getItem('oomawari-kiosk-voice') !== '0'; } catch (e) {}
+const voBtn = document.getElementById('vo'), synth = window.speechSynthesis;
+const voShow = () => { voBtn.textContent = '案内音声：' + (voiceOn ? '入' : '切'); };
+if (synth && window.SpeechSynthesisUtterance) { voBtn.style.display = 'block'; voShow(); }
+voBtn.addEventListener('click', () => { voiceOn = !voiceOn; try { localStorage.setItem('oomawari-kiosk-voice', voiceOn ? '1' : '0'); } catch (e) {} if (!voiceOn) { try { synth.cancel(); } catch (e) {} } voShow(); });
+function say(t) { try { const u = new SpeechSynthesisUtterance(t); u.lang = 'ja-JP'; u.rate = 1; synth.speak(u); } catch (e) {} }
+let voT9 = 0, voTimer = null;
+setInterval(() => { try { if (!synth) return; const st = comp.state;
+  if (!st || st.step !== 9) { if (voT9) { voT9 = 0; clearTimeout(voTimer); synth.cancel(); } return; }
+  if (!st.t9 || st.t9 === voT9) return; voT9 = st.t9; if (!voiceOn) return;
+  const cash = !st.card;
+  setTimeout(() => { if (!voiceOn || comp.state.t9 !== voT9) return; say((cash ? 'おつりやきっぷ' : 'きっぷ') + 'の取り忘れにご注意ください。領収書をご希望のお客様は領収書ボタンを押してください。'); }, 700);
+  clearTimeout(voTimer); voTimer = setTimeout(() => { if (voiceOn && comp.state.step === 9) say(cash ? 'きっぷと硬貨をお受け取りください。ありがとうございました。' : 'きっぷをお受け取りください。ありがとうございました。'); }, (window.__prtEnd || 3) * 1000);
+} catch (e) {} }, 200);
 rotBtn.addEventListener('click', () => { rotOff = !rotOff; try { localStorage.setItem('oomawari-kiosk-norot', rotOff ? '1' : '0'); } catch (e) {} fit(); });
 addEventListener('resize', fit); fit();
 
@@ -642,7 +659,7 @@ class Component extends DCLogic {
     tk.forEach((t) => { for (let k = 0; k < s.adult; k++) tkAll.push({ ...t, price: '￥' + yenOr(t.ya), ppl: '大人' }); for (let k = 0; k < s.child; k++) tkAll.push({ ...t, price: '￥' + yenOr(t.yc), ppl: 'こども' }); });
     const tickets = tkAll.map((t, i) => ({ ...t, x: ((i % 8) * 16) + 'px', y: ((i % 8) * 12) + 'px', delay: (0.5 + i * 1.2) + 's', aria: t.title + '　' + t.ppl + '　' + t.from + 'から' + t.to + '　' + t.price }));
     // 発券中の「あと何枚」(7セグ風の表示)。1枚ごとに約1.2秒で出る
-    const nSheets = tkAll.length + (s.rcpt ? 1 : 0), el = s.step === 9 && s.t9 ? (Date.now() - s.t9) / 1000 : 0;
+    const nSheets = tkAll.length + (s.rcpt ? 1 : 0); window.__prtEnd = 0.5 + nSheets * 1.2; const el = s.step === 9 && s.t9 ? (Date.now() - s.t9) / 1000 : 0;
     const remN = s.step === 9 ? Math.max(0, nSheets - Math.max(0, Math.floor((el - 0.5) / 1.2) + 1)) : nSheets;
     const SEG = { 0: 'abcdef', 1: 'bc', 2: 'abdeg', 3: 'abcdg', 4: 'bcfg', 5: 'acdfg', 6: 'acdefg', 7: 'abc', 8: 'abcdefg', 9: 'abcdfg' };
     const ON = '#FF3B1F', OFF = '#3A1410';
