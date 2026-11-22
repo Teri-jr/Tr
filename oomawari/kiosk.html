@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#000000">
 <title>大回りジェネレータ 券売機モード</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Kaku+Gothic+New:wght@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=BIZ+UDGothic:wght@700&family=Zen+Kaku+Gothic+New:wght@500&display=swap">
 <style>
 /* 券売機モード: 1280×1024 の画面を作り、端末の大きさに合わせて拡大縮小する */
 html,body{height:100%;margin:0;background:#000;overflow:hidden}
@@ -279,7 +279,7 @@ button{font-family:inherit;cursor:pointer}
 <div style="height: 100px; flex-shrink: 0; padding: 0 40px; background: linear-gradient(#55584E, #3A3D35); display: flex; align-items: center; font-size: 40px; color: #FFFFFF"><span>乗車券の</span><strong style="color: #F2E58A">{{kanaTitle}}</strong><span>を入力してください</span></div>
 <div style="margin: 24px 36px 0; height: 104px; flex-shrink: 0; padding: 0 20px; background: #3F4940; display: flex; align-items: center; gap: 24px">
 <span style="font-size: 19px; line-height: 1.5; color: #FFFFFF; white-space: nowrap">入力例：東京　→とうきよう<br>新大阪→しんおおさか</span>
-<span style="flex-grow: 1; height: 72px; padding: 0 16px; box-sizing: border-box; border: 2px solid #8A8440; background: #E8E27C; display: flex; align-items: center; font-size: 40px; font-weight: 700; color: #000000">{{kanaDisp}}■</span>
+<span style="flex-grow: 1; height: 72px; padding: 0 16px; box-sizing: border-box; border: 2px solid #8A8440; background: #E8E27C; display: flex; align-items: center; font-family: 'BIZ UDGothic', monospace; font-size: 40px; font-weight: 700; -webkit-text-stroke: 0.6px #000000; color: #000000; white-space: pre">{{kanaDisp}}■</span>
 <button type="button" sc-camel-on-click="{{fix}}" style="opacity: {{fixOp}}; width: 112px; height: 72px; background: #B04A3A; border: 2px solid #6A2A20; border-radius: 10px; color: #FFFFFF; font-size: 30px; font-weight: 700">訂 正</button>
 </div>
 <div style="margin: 26px 36px 0; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 14px 15px">
@@ -587,7 +587,7 @@ class Component extends DCLogic {
     // 入力欄: 濁点・半濁点は、本体の文字のあとの全角1文字として見せる(例: が → か゛)
     const kanaDisp = [...s.kana].map((c) => { const d = c.normalize('NFD'); return d.length > 1 ? d[0] + (d[1] === '\u3099' ? '゛' : '゜') : c; }).join('');
     const hits = s.kana ? pool.filter((x) => nz(x.y).startsWith(nz(s.kana))) : [];
-    const PG = 9, nPg = Math.max(1, Math.ceil(hits.length / PG)), cpg = Math.min(s.cpage || 0, nPg - 1);
+    const PG = 12, nPg = Math.max(1, Math.ceil(hits.length / PG)), cpg = Math.min(s.cpage || 0, nPg - 1);
     const cands = hits.slice(cpg * PG, cpg * PG + PG).map((x) => ({ name: x.n, pick: () => { if (forFrom) { const keep = s.to && s.to !== x.n && (isN || ooPool(x.n).some((y) => y.n === s.to)); set({ from: x.n, to: keep ? s.to : null, route: null, modal: null, kana: '', kmode: 'to' }); } else set({ to: x.n, modal: null, kana: '' }); } }));
     const half = (n) => Math.floor(n / 2 / 10) * 10;
     const DIRS = ['おまかせ'].concat(REGS.map((g) => g + '方面'));
@@ -794,7 +794,7 @@ class Component extends DCLogic {
       retOne: () => set({ ret: 'one', retOpen: false, step: buyEx ? 5 : 7 }), retRound: () => (isN ? set({ ret: 'round', rdir: 'both', retOpen: false, step: buyEx ? 5 : 7 }) : set({ retOpen: true })),
       rGo: () => set({ ret: 'round', rdir: 'go', retOpen: false, step: buyEx ? 5 : 7 }), rBack: () => set({ ret: 'round', rdir: 'back', retOpen: false, step: buyEx ? 5 : 7 }), rBoth: () => set({ ret: 'round', rdir: 'both', retOpen: false, step: buyEx ? 5 : 7 }),
       expNext: () => set({ step: 7 }),
-      confirm: () => { set({ wait: true }); setTimeout(() => { if (comp.state.wait && comp.state.step === 7) comp.setState({ wait: false, step: 8, paid: 0, card: false }); else comp.setState({ wait: false }); }, 1200); },
+      confirm: () => set({ step: 8, paid: 0, card: false }),
       p10: pay(10), p50: pay(50), p100: pay(100), p500: pay(500), p1000: pay(1000), payCard: () => { const t9 = Date.now(); set({ card: true, step: 9, t9 }); if (window.voStart) window.voStart(false, PT0 + nSheets * PTI, t9); },
       toggleMono: () => set({ mono: !s.mono }),
       back: () => { if (s.modal === 'kana') return set({ modal: null }); if (s.modal === 'cand') return set({ modal: 'kana', cpage: 0 }); if (s.step === 6 && s.retOpen) return set({ retOpen: false }); const p = backMap[s.step]; set({ step: p === undefined ? 0 : p, modal: null }); },
