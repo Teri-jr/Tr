@@ -17,7 +17,8 @@ html,body{position:fixed;left:0;top:0;width:100%} /* 1280px の画面がはみ�
 body{-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;touch-action:manipulation}
 button{font-family:inherit;cursor:pointer}
 /* 押したとき: 実機のように、ボタンの色が白黒反転する(全部のボタン共通)。指を離すと元に戻る */
-#stage button.pr{filter:invert(1) hue-rotate(180deg)}
+#stage button.pr{background:#FFFFFF !important;color:#000000 !important;border-color:#000000 !important}
+#stage button.pr *{color:#000000 !important}
 /* 長押しで出る「コピー／翻訳」などのメニューや文字の選択が出ないようにする */
 #stage,#stage *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
 #stage button{touch-action:manipulation}
@@ -263,7 +264,7 @@ button{font-family:inherit;cursor:pointer}
 <sc-if value="{{showBack}}"><button type="button" sc-camel-on-click="{{back}}" style="width: 168px; height: 74px; background: linear-gradient(#FFA448 0%, #E8780E 50%, #D46400 52%, #B85200 100%); border: 2px solid #222222; border-radius: 10px; color: #FFFFFF; font-size: 22px">前画面に戻る</button></sc-if>
 <sc-if value="{{showRp}}"><sc-if value="{{rpHasPrev}}"><button type="button" sc-camel-on-click="{{rpPrev}}" style="width: 120px; height: 74px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 22px">◀ 前の2本</button></sc-if><span style="font-size: 22px; min-width: 70px; text-align: center">{{rpLabel}}</span><sc-if value="{{rpHasNext}}"><button type="button" sc-camel-on-click="{{rpNext}}" style="width: 120px; height: 74px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 22px">次の2本 ▶</button></sc-if></sc-if>
 <sc-if value="{{showAdj}}"><button type="button" sc-camel-on-click="{{openAdj}}" style="width: 168px; height: 74px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFF27A; font-size: 24px">{{adjLabel}}</button></sc-if>
-<button type="button" sc-camel-on-click="{{toggleMono}}" style="position: absolute; left: 50%; margin-left: -73px; top: 10px; width: 146px; height: 72px; border: 4px solid #FFFFFF; border-radius: 12px; background: #000000; color: #FFFFFF; font-size: 28px; box-shadow: 0 0 0 2px #000000">{{monoLabel}}</button>
+<button type="button" sc-camel-on-click="{{toggleMono}}" style="position: absolute; left: 50%; transform: translateX(-50%); top: 10px; min-width: 146px; padding: 0 18px; white-space: nowrap; height: 72px; border: 4px solid #FFFFFF; border-radius: 12px; background: #000000; color: #FFFFFF; font-size: 28px; box-shadow: 0 0 0 2px #000000">{{monoLabel}}</button>
 </div>
 
 <sc-if value="{{mKana}}">
