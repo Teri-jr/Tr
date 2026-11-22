@@ -351,11 +351,11 @@ ol,ul{list-style:none}
 <div id="app"></div>
 <div id="sheet"></div>
 <div id="toast" role="status" hidden></div>
-<script src="data.js?v=1.10.1"></script>
-<script src="engine.js?v=1.10.1"></script>
+<script src="data.js?v=1.39.0"></script>
+<script src="engine.js?v=1.39.0"></script>
 <script>
 'use strict';
-const APP_VERSION = '1.38.3'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.39.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ===== データ =====
    路線データは data.js、ルートの探索は engine.js。画面はここから E.search() などを呼ぶだけ。 */
@@ -818,6 +818,8 @@ function render() {
   const h = location.hash.replace(/^#\/?/, ''), parts = h.split('/'), wide = mqW.matches, w3 = mq3.matches;
   let rid = parts.slice(1).join('/'); try { rid = decodeURIComponent(rid); } catch (e) {}
   const name = parts[0] || 'cond', r = name === 'route' ? routeById(rid) : null;
+  // ほかの区間のルート(券売機から来たときや、保存したルート)を開いたら、条件もその区間にそろえる。そろえないと、そこからの操作や検索が前の区間のままになる
+  if (r && (r.from !== cond.from || r.to !== cond.to) && E.has(r.from) && E.has(r.to) && tkOf(r.from, r.to)) setCond({ from: r.from, to: r.to });
   let html;
   if (name === 'search' || name === 'route') html = wide ? V.result(r || sorted(searchRoutes(cond))[0] || null, w3) : (r ? V.route(r) : V.search());
   else if (name === 'cond' || !V[name]) html = V.cond(wide);
