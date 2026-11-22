@@ -30,17 +30,21 @@ button{font-family:inherit;cursor:pointer}
 #stage button.pr *{color:#000000 !important}
 #stage button.prc{background:var(--prc) !important;color:#000000 !important;border-color:var(--prb) !important}
 #stage button.prc *{color:#000000 !important}
-@keyframes wa1{0%,62%{opacity:1}63%,100%{opacity:.4}}
-@keyframes wa2{0%,30%{opacity:0}31%,62%{opacity:.4}63%,100%{opacity:1}}
+/* しばらくお待ちください: ▶が左から1つずつ増えて5つになり、まだ終わらなければ1つ目からやり直す(0.45秒ごと) */
+@keyframes wk0{0%,100%{opacity:1}}
+@keyframes wk1{0%,19.99%{opacity:0}20%,100%{opacity:1}}
+@keyframes wk2{0%,39.99%{opacity:0}40%,100%{opacity:1}}
+@keyframes wk3{0%,59.99%{opacity:0}60%,100%{opacity:1}}
+@keyframes wk4{0%,79.99%{opacity:0}80%,100%{opacity:1}}
 /* 長押しで出る「コピー／翻訳」などのメニューや文字の選択が出ないようにする */
 #stage,#stage *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
 #stage button{touch-action:manipulation}
 #stage{position:absolute;left:0;top:0;width:1280px;height:1024px;transform-origin:0 0}
 @keyframes prt{0%{transform:translateY(-100%);opacity:0}1%{opacity:1}100%{transform:translateY(0);opacity:1}} /* 出番まえのきっぷは見えないようにする */
 .prt{animation:prt 2.2s steps(22) both}
-/* 取出口の上の緑のランプ: きっぷが出ているあいだパッと消えてパッとつく点滅(0.5秒ずつ) */
+/* 取出口の上の緑のランプ: きっぷが出ているあいだパッと消えてパッとつく点滅(0.8秒ずつ) */
 @keyframes lamp{0%,49.9%{background:#5BEA4A;box-shadow:0 0 10px 2px rgba(90,234,74,.8)}50%,100%{background:#4A5A4A;box-shadow:none}}
-.lampOn{animation:lamp 1s steps(1,end) infinite}
+.lampOn{animation:lamp 1.6s steps(1,end) infinite}
 </style>
 </head>
 <body>
@@ -341,7 +345,7 @@ button{font-family:inherit;cursor:pointer}
 <div style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; z-index: 60; display: flex; align-items: center; justify-content: center">
 <div role="status" style="width: 900px; height: 600px; box-sizing: border-box; border: 5px solid #4CC23A; border-radius: 6px; background: #E6E6E8; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 70px; box-shadow: 0 6px 24px rgba(0,0,0,0.35)">
 <strong style="font-size: 52px; color: #222222">しばらくお待ちください</strong>
-<span aria-hidden="true" style="display: flex; gap: 22px"><svg width="70" height="80" sc-camel-view-box="0 0 70 80" style="animation: wa1 1.2s steps(1) infinite"><path d="M0 0L70 40L0 80Z" fill="#3DAA35"/></svg><svg width="70" height="80" sc-camel-view-box="0 0 70 80" style="animation: wa2 1.2s steps(1) infinite"><path d="M0 0L70 40L0 80Z" fill="#3DAA35"/></svg></span>
+<span aria-hidden="true" style="display: flex; gap: 22px"><svg width="70" height="80" sc-camel-view-box="0 0 70 80" style="animation: wk0 2.25s steps(1) infinite"><path d="M0 0L70 40L0 80Z" fill="#3DAA35"/></svg><svg width="70" height="80" sc-camel-view-box="0 0 70 80" style="animation: wk1 2.25s steps(1) infinite"><path d="M0 0L70 40L0 80Z" fill="#3DAA35"/></svg><svg width="70" height="80" sc-camel-view-box="0 0 70 80" style="animation: wk2 2.25s steps(1) infinite"><path d="M0 0L70 40L0 80Z" fill="#3DAA35"/></svg><svg width="70" height="80" sc-camel-view-box="0 0 70 80" style="animation: wk3 2.25s steps(1) infinite"><path d="M0 0L70 40L0 80Z" fill="#3DAA35"/></svg><svg width="70" height="80" sc-camel-view-box="0 0 70 80" style="animation: wk4 2.25s steps(1) infinite"><path d="M0 0L70 40L0 80Z" fill="#3DAA35"/></svg></span>
 <span style="font-size: 34px; color: #222222">問い合わせ中です</span>
 </div>
 </div>
@@ -636,7 +640,7 @@ class Component extends DCLogic {
     const kanaDisp = [...s.kana].map((c) => { const d = c.normalize('NFD'); return d.length > 1 ? d[0] + (d[1] === '\u3099' ? '゛' : '゜') : c; }).join('');
     const hits = s.kana ? pool.filter((x) => nz(x.y).startsWith(nz(s.kana))) : [];
     const PG = 12, nPg = Math.max(1, Math.ceil(hits.length / PG)), cpg = Math.min(s.cpage || 0, nPg - 1);
-    const cands = hits.slice(cpg * PG, cpg * PG + PG).map((x) => ({ name: x.n, pick: () => { if (isN && s.step >= 12) { if (forFrom) set({ from: x.n, to: null, route: null, modal: 'kana', kana: '', kmode: 'to', step: 13, cpage: 0 }); else { set({ to: x.n, wait: true }); setTimeout(() => { if (comp.state.wait && comp.state.step === 13) comp.setState({ wait: false, modal: null, kana: '', step: 3, route: null, npg: 0 }); else comp.setState({ wait: false }); }, 1200); } return; } if (forFrom) { const keep = s.to && s.to !== x.n && (isN || ooPool(x.n).some((y) => y.n === s.to)); set({ from: x.n, to: keep ? s.to : null, route: null, modal: null, kana: '', kmode: 'to' }); } else set({ to: x.n, modal: null, kana: '' }); } }));
+    const cands = hits.slice(cpg * PG, cpg * PG + PG).map((x) => ({ name: x.n, pick: () => { if (isN && s.step >= 12) { if (forFrom) set({ from: x.n, to: null, route: null, modal: 'kana', kana: '', kmode: 'to', step: 13, cpage: 0 }); else { set({ to: x.n, wait: true }); setTimeout(() => { if (comp.state.wait && comp.state.step === 13) comp.setState({ wait: false, modal: null, kana: '', step: 3, route: null, npg: 0 }); else comp.setState({ wait: false }); }, 750); } return; } if (forFrom) { const keep = s.to && s.to !== x.n && (isN || ooPool(x.n).some((y) => y.n === s.to)); set({ from: x.n, to: keep ? s.to : null, route: null, modal: null, kana: '', kmode: 'to' }); } else set({ to: x.n, modal: null, kana: '' }); } }));
     const half = (n) => Math.floor(n / 2 / 10) * 10;
     const DIRS = ['おまかせ'].concat(REGS.map((g) => g + '方面'));
     const LENS = ['〜100km', '〜300km', '300km〜'];
@@ -873,18 +877,19 @@ class Component extends DCLogic {
       showCond: !isN,
       openKana: () => set({ modal: 'kana', kana: '', kmode: !isN && !s.from ? 'from' : 'to' }), openFrom: () => set({ modal: 'kana', kana: '', kmode: 'from' }),
       kanaTitle: forFrom ? '出発駅名' : '到着駅名', candTitle: forFrom ? '出発駅' : '到着駅', fix: () => { if (!s.kana) return; const l = s.kana.slice(-1), b = l.normalize('NFD')[0]; set({ kana: b !== l ? s.kana.slice(0, -1) + b : s.kana.slice(0, -1) }); },
-      show: () => { if (hits.length) { set({ wait: true }); setTimeout(() => { if (comp.state.wait && comp.state.modal === 'kana') comp.setState({ wait: false, modal: 'cand', cpage: 0 }); else comp.setState({ wait: false }); }, 1200); } }, redo: () => set({ modal: 'kana', kana: '', cpage: 0 }),
+      show: () => { if (hits.length) { set({ wait: true }); setTimeout(() => { if (comp.state.wait && comp.state.modal === 'kana') comp.setState({ wait: false, modal: 'cand', cpage: 0 }); else comp.setState({ wait: false }); }, 650); } }, redo: () => set({ modal: 'kana', kana: '', cpage: 0 }),
       pgPrev: () => set({ cpage: Math.max(0, cpg - 1) }), pgNext: () => set({ cpage: Math.min(nPg - 1, cpg + 1) }), pgTxt: cpg + 1 + '/' + nPg, pgMulti: nPg > 1, pgPrevOp: cpg > 0 ? '1' : '.35', pgNextOp: cpg < nPg - 1 ? '1' : '.35',
       closeModal: () => set({ modal: null }), openTime: () => set({ modal: 'time' }),
       openPpl: () => set({ modal: 'ppl' }), openCond: () => set({ modal: 'cond' }), openSum: () => set({ modal: 'sum' }),
       aMinus: () => set({ adult: Math.max(s.child ? 0 : 1, s.adult - 1) }), aPlus: () => set({ adult: Math.min(9, s.adult + 1) }),
       cMinus: () => set({ child: Math.max(s.adult ? 0 : 1, s.child - 1) }), cPlus: () => set({ child: Math.min(9, s.child + 1) }),
-      search: () => { if (s.from && to) { set({ wait: true }); setTimeout(() => { if (comp.state.wait && comp.state.step === 2) comp.setState({ wait: false, step: 3 }); else comp.setState({ wait: false }); }, 1200); } },
+      search: () => { if (s.from && to) { set({ wait: true }); setTimeout(() => { const t0 = Date.now(); try { if (kc) kSearch(kc); } catch (e) {} const ms = Date.now() - t0; // 大回りの探索は重いので、▶が5つほど出るまで待つ。探索がもっと長ければその分続く
+        setTimeout(() => { if (comp.state.wait && comp.state.step === 2) comp.setState({ wait: false, step: 3 }); else comp.setState({ wait: false }); }, Math.max(300, (s.mode === 'oo' ? 2250 : 800) - ms)); }, 60); } },
       buyOnly: () => set({ buy: 'only', exp: {}, step: 6, retOpen: false }), buyExp: () => set({ buy: 'exp', exp: {}, step: 6, retOpen: false }), buyGr: () => set({ buy: 'green', exp: {}, step: 6, retOpen: false }),
       retOne: () => set({ ret: 'one', retOpen: false, step: !isN && buyEx ? 5 : 7 }), retRound: () => { if (!isN) return set({ retOpen: true }); const ex = { ...s.exp }; Object.keys(s.exp).forEach((k) => { if (k.startsWith('go')) ex['back' + k.slice(2)] = true; }); set({ ret: 'round', rdir: 'both', exp: ex, retOpen: false, step: 7 }); },
       rGo: () => set({ ret: 'round', rdir: 'go', retOpen: false, step: buyEx ? 5 : 7 }), rBack: () => set({ ret: 'round', rdir: 'back', retOpen: false, step: buyEx ? 5 : 7 }), rBoth: () => set({ ret: 'round', rdir: 'both', retOpen: false, step: buyEx ? 5 : 7 }),
       expNext: () => set({ step: 7 }),
-      confirm: () => { set({ wait: true }); setTimeout(() => { if (comp.state.wait && comp.state.step === 7) comp.setState({ wait: false, step: 8, paid: 0, card: false }); else comp.setState({ wait: false }); }, 1400); },
+      confirm: () => { set({ wait: true }); setTimeout(() => { if (comp.state.wait && comp.state.step === 7) comp.setState({ wait: false, step: 8, paid: 0, card: false }); else comp.setState({ wait: false }); }, isN ? 800 : 1800); },
       p10: pay(10), p50: pay(50), p100: pay(100), p500: pay(500), p1000: pay(1000), payCard: () => { const t9 = Date.now(); set({ card: true, step: 9, t9 }); if (window.voStart) window.voStart(false, PT0 + nSheets * PTI, t9); },
       toggleMono: () => set({ mono: !s.mono }),
       back: () => { if (s.modal === 'kana' && s.step === 13) return set({ modal: null, step: 12, kana: '' }); if (s.modal === 'kana') return set({ modal: null }); if (s.modal === 'ppl') return set({ modal: null }); if (s.step === 3 && isN) return set({ step: 13, modal: 'kana', kana: '', kmode: 'to', route: null }); if (s.modal === 'cand') return set({ modal: 'kana', cpage: 0 }); if (s.step === 6 && s.retOpen) return set({ retOpen: false }); const p = backMap[s.step]; set({ step: p === undefined ? 0 : p, modal: null }); },
