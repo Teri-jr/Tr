@@ -16,8 +16,11 @@ html,body{position:fixed;left:0;top:0;width:100%} /* 1280px の画面がはみ�
 #rot{position:fixed;right:8px;bottom:8px;z-index:9;display:none;padding:8px 12px;border:1px solid #666;border-radius:18px;background:#222;color:#EEE;font-size:13px;opacity:.8}
 body{-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;touch-action:manipulation}
 button{font-family:inherit;cursor:pointer}
-/* 押したとき: 実機のように、ボタンが明るく光って少し沈む */
-#stage button:active{filter:brightness(1.9) saturate(.55);transform:translateY(2px)}
+/* 押したとき: 実機のように、ボタンが明るく光って少し沈む(全部のボタン共通) */
+#stage button:not(:disabled):active{filter:brightness(1.9) saturate(.55);transform:translateY(2px)}
+/* 長押しで出る「コピー／翻訳」などのメニューや文字の選択が出ないようにする */
+#stage,#stage *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+#stage button{touch-action:manipulation}
 #stage{position:absolute;left:0;top:0;width:1280px;height:1024px;transform-origin:0 0}
 @keyframes prt{0%{transform:translateY(-100%);opacity:0}1%{opacity:1}100%{transform:translateY(0);opacity:1}} /* 出番まえのきっぷは見えないようにする */
 .prt{animation:prt 2.2s steps(22) both}
@@ -260,7 +263,7 @@ button{font-family:inherit;cursor:pointer}
 <sc-if value="{{showBack}}"><button type="button" sc-camel-on-click="{{back}}" style="width: 168px; height: 74px; background: linear-gradient(#FFA448 0%, #E8780E 50%, #D46400 52%, #B85200 100%); border: 2px solid #222222; border-radius: 10px; color: #FFFFFF; font-size: 22px">前画面に戻る</button></sc-if>
 <sc-if value="{{showRp}}"><sc-if value="{{rpHasPrev}}"><button type="button" sc-camel-on-click="{{rpPrev}}" style="width: 120px; height: 74px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 22px">◀ 前の2本</button></sc-if><span style="font-size: 22px; min-width: 70px; text-align: center">{{rpLabel}}</span><sc-if value="{{rpHasNext}}"><button type="button" sc-camel-on-click="{{rpNext}}" style="width: 120px; height: 74px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 22px">次の2本 ▶</button></sc-if></sc-if>
 <sc-if value="{{showAdj}}"><button type="button" sc-camel-on-click="{{openAdj}}" style="width: 168px; height: 74px; background: linear-gradient(#6E6E6E 0%, #4A4A4A 8%, #3C3C3C 50%, #2E2E2E 90%, #0A0A0A 100%); border: 2px solid #000000; border-radius: 10px; color: #FFF27A; font-size: 24px">{{adjLabel}}</button></sc-if>
-<button type="button" sc-camel-on-click="{{toggleMono}}" style="position: absolute; right: 24px; top: 10px; width: 146px; height: 72px; border: 4px solid #FFFFFF; border-radius: 12px; background: #000000; color: #FFFFFF; font-size: 28px; box-shadow: 0 0 0 2px #000000">白黒表示</button>
+<button type="button" sc-camel-on-click="{{toggleMono}}" style="position: absolute; left: 50%; margin-left: -73px; top: 10px; width: 146px; height: 72px; border: 4px solid #FFFFFF; border-radius: 12px; background: #000000; color: #FFFFFF; font-size: 28px; box-shadow: 0 0 0 2px #000000">{{monoLabel}}</button>
 </div>
 
 <sc-if value="{{mKana}}">
@@ -269,25 +272,20 @@ button{font-family:inherit;cursor:pointer}
 <div style="height: 100px; flex-shrink: 0; padding: 0 16px; background: #DCDCDC; display: flex; align-items: center; font-size: 40px; font-weight: 700">{{kanaTitle}}<span style="font-weight: 400; font-size: 34px">　を入力してください</span></div>
 <div style="flex-grow: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y; overscroll-behavior: contain; background: #FFFFFF; display: flex; flex-direction: column">
 <div style="margin: 40px 10px 0; height: 100px; padding: 0 16px; background: #4A6A6A; display: flex; align-items: center; gap: 24px">
-<span style="font-size: 18px; line-height: 1.5; color: #FFFFFF">入力例：東京　→とうきよう<br>新大阪→しんおおさか</span>
-<span style="flex-grow: 1; height: 68px; padding: 0 12px; box-sizing: border-box; border: 2px solid #333333; background: #FFF799; display: flex; align-items: center; font-size: 36px; font-weight: 700">{{kanaDisp}}■</span>
+<span style="font-size: 18px; line-height: 1.5; color: #FFFFFF">入力例：東京　→とうきよう<br>　　　　原宿　→はらしゆく</span>
+<span style="flex-grow: 1; height: 68px; padding: 0 12px; box-sizing: border-box; border: 2px solid #333333; background: #FFF799; display: flex; align-items: center; font-size: 36px; font-weight: 700">{{kana}}■</span>
 <button type="button" sc-camel-on-click="{{fix}}" style="width: 112px; height: 72px; background: linear-gradient(#FFA448 0%, #E8780E 50%, #D46400 52%, #B85200 100%); border: 2px solid #222222; border-radius: 10px; color: #FFFFFF; font-size: 30px; font-weight: 700">訂 正</button>
 </div>
 <div style="margin: 24px 10px 0; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 14px 15px">
 <sc-for list="{{keys}}" as="k">
-<button type="button" sc-camel-on-click="{{k.pick}}" aria-label="{{k.aria}}" style="visibility: {{k.vis}}; opacity: {{k.op}}; height: 76px; background: {{k.bg}}; border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 44px; font-weight: 700; line-height: 1">{{k.ch}}</button>
+<button type="button" sc-camel-on-click="{{k.pick}}" aria-label="{{k.aria}}" style="visibility: {{k.vis}}; height: 76px; background: {{k.bg}}; border: 2px solid #000000; border-radius: 10px; color: #FFFFFF; font-size: 44px; font-weight: 700; line-height: 1">{{k.ch}}</button>
 </sc-for>
 </div></div>
 <div style="height: 104px; flex-shrink: 0; padding: 0 40px; background: #DCDCDC; display: flex; align-items: center; gap: 20px"><button type="button" sc-camel-on-click="{{closeModal}}" style="height: 72px; padding: 0 14px; background: linear-gradient(#FFA448 0%, #E8780E 50%, #D46400 52%, #B85200 100%); border: 2px solid #222222; border-radius: 10px; color: #FFFFFF; font-size: 22px">前画面に戻る</button>
-<span style="flex-grow: 1; text-align: right; font-size: 22px; line-height: 1.4">{{hitMsg}}</span>
+<span style="flex-grow: 1; text-align: right; font-size: 22px; line-height: 1.4">{{hitCount}}駅が該当。続けて入力するか「表示」を押してください</span>
 <span aria-hidden="true" style="color: #0A7A0A; font-size: 26px">▶</span>
 <button type="button" sc-camel-on-click="{{show}}" style="width: 196px; height: 78px; background: linear-gradient(#2FA82F 0%, #0E800E 50%, #006A00 52%, #005200 100%); border: 3px solid #B6F06A; border-radius: 10px; color: #FFFFFF; font-size: 36px; font-weight: 700">表 示</button></div>
 </div>
-</div>
-</sc-if>
-<sc-if value="{{mWait}}">
-<div style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; z-index: 60; background: rgba(16,16,16,0.72); display: flex; align-items: center; justify-content: center">
-<div role="status" style="width: 760px; height: 420px; box-sizing: border-box; border: 6px solid #33CC33; background: #FFFFFF; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 36px"><span style="font-size: 44px; font-weight: 700">しばらくお待ちください</span><span style="font-size: 30px">問い合わせ中です</span></div>
 </div>
 </sc-if>
 <sc-if value="{{mTime}}">
@@ -458,7 +456,13 @@ const voBtn = document.getElementById('vo'), synth = window.speechSynthesis;
 const voShow = () => { voBtn.textContent = '案内音声：' + (voiceOn ? '入' : '切'); };
 if (synth && window.SpeechSynthesisUtterance) { voBtn.style.display = 'block'; voShow(); }
 voBtn.addEventListener('click', () => { voiceOn = !voiceOn; try { localStorage.setItem('oomawari-kiosk-voice', voiceOn ? '1' : '0'); } catch (e) {} if (!voiceOn) { try { synth.cancel(); } catch (e) {} } voShow(); });
-function say(t) { try { const u = new SpeechSynthesisUtterance(t); u.lang = 'ja-JP'; u.rate = 1; synth.speak(u); } catch (e) {} }
+// スマホ(特にiPhone)は、画面を触った操作の中で一度しゃべらせておかないと、あとの音声が出ない。最初の1回だけ、無音でしゃべらせておく
+let voPrimed = false;
+const jaVoice = () => { try { const v = synth.getVoices(); return v.find((x) => /^ja[-_]JP/i.test(x.lang)) || v.find((x) => /^ja/i.test(x.lang)) || null; } catch (e) { return null; } };
+if (synth) { try { synth.getVoices(); if (synth.addEventListener) synth.addEventListener('voiceschanged', jaVoice); } catch (e) {} }
+function voPrime() { if (voPrimed || !synth) return; voPrimed = true; try { const u = new SpeechSynthesisUtterance('。'); u.volume = 0; u.lang = 'ja-JP'; const v = jaVoice(); if (v) u.voice = v; synth.speak(u); } catch (e) {} }
+document.addEventListener('pointerdown', voPrime, true); document.addEventListener('touchend', voPrime, true); document.addEventListener('click', voPrime, true);
+function say(t) { try { synth.resume && synth.resume(); const u = new SpeechSynthesisUtterance(t); u.lang = 'ja-JP'; u.rate = 1; u.volume = 1; const v = jaVoice(); if (v) u.voice = v; synth.speak(u); } catch (e) {} }
 let voT9 = 0, voTimer = null;
 setInterval(() => { try { if (!synth) return; const st = comp.state;
   if (!st || st.step !== 9) { if (voT9) { voT9 = 0; clearTimeout(voTimer); synth.cancel(); } return; }
@@ -539,30 +543,20 @@ class Component extends DCLogic {
       const blank = ch === ' ';
       const special = ch === '゛' || ch === '゜' || ch === 'ー';
       const teal = r === 0 || special;
-      const kk = { ch: blank ? '' : ch, aria: blank ? '空き' : ch, vis: blank ? 'hidden' : 'visible',
+      keys.push({ ch: blank ? '' : ch, aria: blank ? '空き' : ch, vis: blank ? 'hidden' : 'visible',
         bg: teal ? 'linear-gradient(#5E8C8C 0%, #3E6C6C 10%, #345E5E 55%, #2A4E4E 90%, #102020 100%)' : 'linear-gradient(#6A6A6A 0%, #4A4A4A 10%, #3C3C3C 55%, #303030 90%, #0E0E0E 100%)',
         pick: () => {
           if (blank) return;
           const last = s.kana.slice(-1);
-          if (kk.dim) return;
           if (ch === '゛') { if (DK[last]) adv(s.kana.slice(0, -1) + DK[last]); return; }
           if (ch === '゜') { if (HD[last]) adv(s.kana.slice(0, -1) + HD[last]); return; }
           if (s.kana.length < 10) adv(s.kana + ch);
-        } };
-      keys.push(kk);
+        } });
     }));
     const isN = s.mode === 'normal';
     // 大回りは運賃の出せる駅だけ。ふつうの経路はどの駅でも
     const forFrom = s.kmode === 'from';
     const pool = forFrom ? EVERY : isN ? EVERY.filter((x) => x.n !== s.from) : ooPool(s.from);
-    // 続きの駅がない文字のキーは暗くして、押せなくする(実機と同じ)
-    keys.forEach((k) => { if (!k.ch) { k.dim = true; k.op = '0'; return; }
-      const last = s.kana.slice(-1); let t;
-      if (k.ch === '゛') t = DK[last] ? s.kana.slice(0, -1) + DK[last] : null; else if (k.ch === '゜') t = HD[last] ? s.kana.slice(0, -1) + HD[last] : null; else t = s.kana + k.ch;
-      k.dim = t === null || (s.kana.length >= 10 && k.ch !== '゛' && k.ch !== '゜') || !pool.some((x) => nz(x.y).startsWith(nz(t)));
-      k.op = k.dim ? '0.4' : '1'; });
-    // 入力欄: 濁点・半濁点は、本体の文字のあとの全角1文字として見せる(例: が → か゛)
-    const kanaDisp = [...s.kana].map((c) => { const d = c.normalize('NFD'); return d.length > 1 ? d[0] + (d[1] === '\u3099' ? '゛' : '゜') : c; }).join('');
     const hits = s.kana ? pool.filter((x) => nz(x.y).startsWith(nz(s.kana))) : [];
     const PG = 9, nPg = Math.max(1, Math.ceil(hits.length / PG)), cpg = Math.min(s.cpage || 0, nPg - 1);
     const cands = hits.slice(cpg * PG, cpg * PG + PG).map((x) => ({ name: x.n, pick: () => { if (forFrom) { const keep = s.to && s.to !== x.n && (isN || ooPool(x.n).some((y) => y.n === s.to)); set({ from: x.n, to: keep ? s.to : null, route: null, modal: null, kana: '', kmode: 'to' }); } else set({ to: x.n, modal: null, kana: '' }); } }));
@@ -712,7 +706,7 @@ class Component extends DCLogic {
       noRouteMsg: s.mode === 'saved' ? '保存したルートはありません。' : isN ? 'この区間の経路が見つかりませんでした。' : '条件に合う大回りが見つかりませんでした。',
       noRouteSub: s.mode === 'saved' ? 'アプリで「保存」したルートがここに出ます。' : isN ? '' : '長さ・方面・時刻を変えると見つかることがあります。',
       dateW: MDW, dateDot: NOW.getFullYear() + '.' + String(NOW.getMonth() + 1).padStart(2, '0') + '.' + String(NOW.getDate()).padStart(2, '0'),
-      root: s.mono ? 'grayscale(1) contrast(1.15)' : 'none',
+      root: s.mono ? 'grayscale(1) contrast(1.4)' : 'none', monoLabel: s.mono ? 'カラー表示' : '白黒表示',
       h1: h[0], h2: h[1], h3: h[2], h4: h[3], note: notes[s.step] || '',
       grayTop: s.step <= 1, blackTop: s.step >= 2, showSumBtn: s.step >= 2 && s.step <= 8,
       showBack: s.step >= 1 && s.step <= 7, showCancel: s.step >= 1 && s.step <= 8,
@@ -721,7 +715,7 @@ class Component extends DCLogic {
       depStyle: s.tmode === 'dep' ? 'border-color: #0A6A0A; color: #0A6A0A' : 'border-color: transparent; color: #9A9A9A', arrStyle: s.tmode === 'arr' ? 'border-color: #0A6A0A; color: #0A6A0A' : 'border-color: transparent; color: #9A9A9A', ppl, condDir: DIRS[s.dirc], condLen: LENS[s.len], condGray: s.gray ? '出す' : '出さない',
       inRing: NORING, searchRing: NORING, searchOpacity: s.from && to ? '1' : '0.45',
       // kana
-      keys, kana: s.kana, kanaDisp, hitMsg: s.kana ? '入力した文字で始まる駅は' + hits.length + '駅該当します。次の文字を入力するか「表示」を押してください。' : '', mWait: s.modal === 'wait', hitCount: String(hits.length), cands, candCount: cands.length,
+      keys, kana: s.kana, hitCount: String(hits.length), cands, candCount: cands.length,
       // routes
       cards, noRoute: !ok, dt: { ...dt, pick: () => set({ route: s.detail, exp: {}, step: 4, modal: null }) },
       d0: s.detail === 0, d1: s.detail === 1,
@@ -758,8 +752,8 @@ class Component extends DCLogic {
       search0: () => set({ step: 2, mode: 'oo', to: null, route: null }), normal0: () => set({ step: 2, mode: 'normal', to: null, route: null }), saved0: () => set({ step: 3, mode: 'saved', to: null, route: null, rpage: 0, via0: false }), savedTop: () => set({ step: 3, mode: 'saved', to: null, route: null, rpage: 0, via0: true }),
       showCond: !isN,
       openKana: () => set({ modal: 'kana', kana: '', kmode: !isN && !s.from ? 'from' : 'to' }), openFrom: () => set({ modal: 'kana', kana: '', kmode: 'from' }),
-      kanaTitle: forFrom ? '乗車券の出発駅名' : '乗車券の到着駅名', candTitle: forFrom ? '出発駅' : '到着駅（目的地）', fix: () => { const l = s.kana.slice(-1), b = l.normalize('NFD')[0]; set({ kana: b !== l ? s.kana.slice(0, -1) + b : s.kana.slice(0, -1) }); },
-      show: () => { if (hits.length) { set({ modal: 'wait' }); setTimeout(() => { if (comp.state.modal === 'wait') comp.setState({ modal: 'cand', cpage: 0 }); }, 700); } }, redo: () => set({ modal: 'kana', kana: '', cpage: 0 }),
+      kanaTitle: forFrom ? '出発駅名' : '到着駅名（目的地）', candTitle: forFrom ? '出発駅' : '到着駅（目的地）', fix: () => set({ kana: s.kana.slice(0, -1) }),
+      show: () => { if (hits.length) set({ modal: 'cand', cpage: 0 }); }, redo: () => set({ modal: 'kana', kana: '', cpage: 0 }),
       pgPrev: () => set({ cpage: Math.max(0, cpg - 1) }), pgNext: () => set({ cpage: Math.min(nPg - 1, cpg + 1) }), pgTxt: cpg + 1 + '/' + nPg, pgMulti: nPg > 1, pgPrevOp: cpg > 0 ? '1' : '.35', pgNextOp: cpg < nPg - 1 ? '1' : '.35',
       closeModal: () => set({ modal: null }), openTime: () => set({ modal: 'time' }),
       openPpl: () => set({ modal: 'ppl' }), openCond: () => set({ modal: 'cond' }), openSum: () => set({ modal: 'sum' }),
