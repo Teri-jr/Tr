@@ -564,12 +564,8 @@ class Component extends DCLogic {
     // 大回りは運賃の出せる駅だけ。ふつうの経路はどの駅でも
     const forFrom = s.kmode === 'from';
     const pool = forFrom ? EVERY : isN ? EVERY.filter((x) => x.n !== s.from) : ooPool(s.from);
-    // 続きの駅がない文字のキーは暗くして、押せなくする(実機と同じ)
-    keys.forEach((k) => { if (!k.ch) { k.dim = true; k.op = '0'; return; }
-      const last = s.kana.slice(-1); let t;
-      if (k.ch === '゛') t = DK[last] ? s.kana.slice(0, -1) + DK[last] : null; else if (k.ch === '゜') t = HD[last] ? s.kana.slice(0, -1) + HD[last] : null; else t = s.kana + k.ch;
-      k.dim = t === null || (s.kana.length >= 10 && k.ch !== '゛' && k.ch !== '゜') || !pool.some((x) => nz(x.y).startsWith(nz(t)));
-      k.op = k.dim ? '0.4' : '1'; });
+    // キーは全部いつも同じ見た目で押せる(続きがない文字も暗くしない)
+    keys.forEach((k) => { k.dim = false; k.op = k.ch ? '1' : '0'; });
     // 入力欄: 濁点・半濁点は、本体の文字のあとの全角1文字として見せる(例: が → か゛)
     const kanaDisp = [...s.kana].map((c) => { const d = c.normalize('NFD'); return d.length > 1 ? d[0] + (d[1] === '\u3099' ? '゛' : '゜') : c; }).join('');
     const hits = s.kana ? pool.filter((x) => nz(x.y).startsWith(nz(s.kana))) : [];
