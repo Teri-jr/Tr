@@ -1403,7 +1403,7 @@ body:not(.portrait) #railView.rr-swap #rvSL{order:2}body:not(.portrait) #railVie
 
 <script>
 'use strict';
-const APP_VERSION = '2.37.2'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '2.37.3'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ================= 基本 ================= */
 const $ = id => document.getElementById(id);
@@ -4346,7 +4346,7 @@ function handleEEW(d, demo) {
   if (eew && eew.demo && !demo) endEEW(); // 本物が来たらデモはやめる
   if (eew && !demo && eew.demo === false && eew.id === d.EventID && +d.Serial < eew.serial) return;
   if (d.isCancel) { if (!demo) eewDone.add(d.EventID); if (eew && eew.id === d.EventID) { endEEW(); toast('緊急地震速報は取り消されました'); } return; }
-  if (!demo && Date.now() - jst(d.OriginTime) > 600e3) return; // 10分より前に起きた地震の速報は出さない(10分以内なら、あとから開いたときも出す)
+  if (!demo && Date.now() - jst(d.OriginTime) > 120e3) return; // 2分より前に起きた地震の速報は出さない(2分以内なら、あとから開いたときも出す)
   if (!demo && eewDone.has(d.EventID) && !(eew && eew.id === d.EventID)) return;
   const L = loc();
   const M = +(d.Magnitude ?? d.Magunitude) || 0, depth = +d.Depth || 10, lat = +d.Latitude, lon = +d.Longitude;
@@ -4360,7 +4360,7 @@ function handleEEW(d, demo) {
   const hypo = Math.sqrt(kmBetween(lat, lon, L.lat, L.lon) ** 2 + depth ** 2);
   const prev = eew, same = prev && prev.id === d.EventID;
   eew = { id: d.EventID, serial: +d.Serial || 0, d, demo, M, depth, lat, lon, maxI, local, origin, hypo, warn: !!d.isWarn, final: !!d.isFinal,
-    sAt: origin + hypo / VS * 1000, pAt: origin + hypo / VP * 1000, recv: nowMs(), view: same ? prev.view : null, alarmed: same ? prev.alarmed : 0, closed: same ? prev.closed : false, seen: same ? prev.seen : nowMs() };
+    sAt: origin + hypo / VS * 1000, pAt: origin + hypo / VP * 1000, recv: nowMs(), view: same ? prev.view : null, alarmed: same ? prev.alarmed : 0, closed: same ? prev.closed : false };
   // ここではほぼ揺れない予報は出さない(「すべて全画面」のときは出す)
   if (local < 1 && !d.isWarn && !demo && !eewAll()) { eew = prev && !same ? prev : null; updateFull(); renderQBanner(); return; }
   updateFull(); renderQBanner();
@@ -4369,11 +4369,6 @@ function handleEEW(d, demo) {
 }
 function eewLevel() { if (!eew) return 0; return eewAll() || eew.local >= cfg.qFull ? 2 : 1; }
 function endEEW() { if (eew && !eew.demo) eewDone.add(eew.id); eew = null; updateFull(); renderQBanner(); }
-// 全画面で出した緊急地震速報は、そのあとに届く同じ地震の地震情報へ全画面のまま引き継ぐ(揺れがおさまるまで画面が戻らないように)
-let eewCarry = null; // { origin, until }
-const eewFullNow = () => !!eew && !eew.demo && eewLevel() === 2 && !eew.closed;
-const sameQuakeTime = (a, b) => Math.abs(a - b) < 150e3; // 速報の発生時刻と地震情報の発生時刻のずれ(2分半まで同じ地震とみる)
-function fromEEW(at) { return (eewFullNow() && sameQuakeTime(at, eew.origin)) || (!!eewCarry && nowMs() < eewCarry.until && sameQuakeTime(at, eewCarry.origin)); }
 
 /* 全画面:緊急地震速報 > 地震情報 の順に出す */
 let fullMode = null;
@@ -4386,13 +4381,7 @@ function updateFull() {
 function drawFull() { if (fullMode === 'eew') { drawEEWPanel(); drawMap(eew); } else if (fullMode === 'info') { drawInfoPanel(); drawMap(quake); } }
 function eewTick() {
   const t = nowMs();
-  if (eew) {
-    // 揺れの予想時刻から90秒(発生から最短3分)で終わり。ただし全画面のときは、同じ地震の地震情報が届くまで(発生から最長10分)そのまま続ける
-    const hold = eewFullNow() && t < eew.origin + 600e3 && !(quake && !quake.demo && sameQuakeTime(jst(quake.q.earthquake.time), eew.origin));
-    if ((t > Math.max(eew.origin + 180e3, eew.sAt + 90e3, eew.seen + 120e3) && !hold) || (eew.demo && t > eew.sAt + 25e3)) { const wasDemo = eew.demo; if (eewFullNow()) eewCarry = { origin: eew.origin, until: eew.origin + 20 * 60e3 }; endEEW(); if (wasDemo) demoInfo(true); else pollQuake(); return; }
-    if (!eew.demo && t > eew.origin + 60e3 && Date.now() - quakePolled > 15e3) pollQuake(); // 速報が出ている間は地震情報を15秒ごとに見に行く
-  }
-  if (quake && !quake.demo && t < quake.until && (quake.q.types || []).length < 3 && Date.now() - quakePolled > 20e3) pollQuake(); // 続きの発表(震源・各地の震度)を早めに拾う
+  if (eew && (t > Math.max(eew.origin + 180e3, eew.sAt + 90e3) || (eew.demo && t > eew.sAt + 25e3))) { const wasDemo = eew.demo; endEEW(); if (wasDemo) demoInfo(true); else setTimeout(pollQuake, 30e3); return; }
   if (quake && quake.full && t > quake.until) updateFull();
   if (fullMode) drawFull();
   if (fullMode === 'eew' && eew.alarmed === 2 && t < eew.sAt + 5e3 && Math.floor(t / 2500) !== Math.floor((t - 250) / 2500)) soundEew();
@@ -4583,9 +4572,7 @@ function quakeSteps(q) { // 全画面に出す「どこまで発表されたか�
   const st = (on, lab) => `<span class="${on ? 'on' : ''}">${on ? '✓ ' : ''}${lab}</span>`;
   return `<div class="steps">${prompt || !det ? st(prompt, '震度速報') + '<i>→</i>' : ''}${st(dest, '震源・規模')}<i>→</i>${st(det, '各地の震度')}</div>`;
 }
-let quakePolled = 0;
 async function pollQuake() {
-  quakePolled = Date.now();
   try {
     const r = await fetch('https://api.p2pquake.net/v2/history?codes=551&limit=20', { cache: 'no-store' });
     const groups = groupQuakes(await r.json());
@@ -4602,7 +4589,7 @@ async function pollQuake() {
     const q = groups[0];
     if (!q || !q.earthquake) return;
     const at = jst(q.earthquake.time);
-    if (nowMs() - timeOffset - at > 60 * 60e3) { if (quake && !quake.demo) { quake = null; updateFull(); renderQBanner(); } return; }
+    if (nowMs() - timeOffset - at > 30 * 60e3) { if (quake && !quake.demo) { quake = null; updateFull(); renderQBanner(); } return; }
     showQuakeInfo(q, false);
   } catch (e) {}
 }
@@ -4614,14 +4601,13 @@ function showQuakeInfo(q, demo, forceFull) {
   const maxPref = Object.keys(byPref).filter(k => byPref[k] === maxI).slice(0, 2).join('・');
   const ts = E.domesticTsunami, tsBad = ts === 'Watch' || ts === 'Warning';
   const big = (cfg.qiMax && maxI >= cfg.qiMax) || (cfg.qiMag && H.magnitude >= cfg.qiMag) || (cfg.qiTsunami && tsBad);
-  const carry = !demo && fromEEW(jst(E.time)); // 全画面の緊急地震速報から続いている
-  if (!demo && mine < 1 && maxI < 5 && !big && !carry) return; // 自分の県で揺れていない小さな地震は出さない
+  if (!demo && mine < 1 && maxI < 5 && !big) return; // 自分の県で揺れていない小さな地震は出さない
   if (!demo && quakeSeen === q.id + ':closed') return;
-  const why = forceFull ? '' : carry ? '緊急地震速報のつづき' : cfg.qiPref && mine >= cfg.qiPref ? `${L.pref} 震度${SHINDO[mine]}` : cfg.qiMax && maxI >= cfg.qiMax ? `最大震度${SHINDO[maxI]}` : cfg.qiMag && H.magnitude >= cfg.qiMag ? `M${(+H.magnitude).toFixed(1)}` : tsBad && cfg.qiTsunami ? TSUNAMI[ts] : '';
+  const why = forceFull ? '' : cfg.qiPref && mine >= cfg.qiPref ? `${L.pref} 震度${SHINDO[mine]}` : cfg.qiMax && maxI >= cfg.qiMax ? `最大震度${SHINDO[maxI]}` : cfg.qiMag && H.magnitude >= cfg.qiMag ? `M${(+H.magnitude).toFixed(1)}` : tsBad && cfg.qiTsunami ? TSUNAMI[ts] : '';
   const full = forceFull || (!!why && !demo); // 帯のデモは帯だけ
   const prev = quake, same = prev && prev.id === q.id;
   const grew = same && (q.types || []).length > (prev.q.types || []).length; // 次の発表(震源・各地の震度)が出た
-  quake = { id: q.id, q, demo, mine, maxI, maxPref, byPref, why, full, fullClosed: same && !grew ? prev.fullClosed : false, view: same && !grew ? prev.view : null, until: same && !grew ? prev.until : nowMs() + 30 * 60e3 }; // 最後の発表から30分は出しておく
+  quake = { id: q.id, q, demo, mine, maxI, maxPref, byPref, why, full, fullClosed: same && !grew ? prev.fullClosed : false, view: same && !grew ? prev.view : null, until: same && !grew ? prev.until : nowMs() + 15 * 60e3 };
   if (!same || (full && !prev.full) || (grew && full) || (mine >= cfg.qBeep && prev.mine < cfg.qBeep)) full ? SOUNDS.quake(true) : mine >= cfg.qBeep ? SOUNDS.quake(false) : 0;
   updateFull(); renderQBanner();
 }
