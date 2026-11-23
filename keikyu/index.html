@@ -503,7 +503,7 @@ function planTimes(route,k){
   return {ev:s.events,traj:s.traj};
 }
 // ---- バージョン（変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする） ----
-const APP_VERSION='1.8.9';
+const APP_VERSION='1.8.10';
 const isNewer=(a,b)=>{ const x=String(a).split(".").map(Number), y=String(b).split(".").map(Number); for(let i=0;i<3;i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0); } return false; };
 let upd=null; // {version, items}：新しい版が出ていたら入る。announced=放送済み
 async function checkUpdate(){
@@ -1290,12 +1290,21 @@ document.querySelectorAll("[data-m]").forEach(b=>b.addEventListener("click",()=>
 // 手動の補正：GPSの判定がずれたとき用。テスト走行では模擬列車を発車させる
 $("depNow").addEventListener("click",()=>{
   unlockAudio(); if(!G) return;
-  if(testMode){ if(SIM.mode==="dwell"||SIM.mode==="halt") SIM.remain=0; return; }
-  if(G.mode==="dwell"||G.mode==="halt"){ G.started=true; depart(nowMs()); }
+  if(testMode&&(SIM.mode==="dwell"||SIM.mode==="halt")) SIM.remain=0;
+  if(G.mode==="dwell"||G.mode==="halt"){ G.started=true; DR=null; depart(nowMs()); G.v=Math.max(G.v,MOVE_V); }
 });
 $("arrNow").addEventListener("click",()=>{
   if(!G||(G.mode!=="run"&&G.mode!=="halt")||G.target<0) return;
-  arrive(G.target,nowMs(),lastEst.x);
+  const i=G.target;
+  // テスト走行では模擬列車も次の停車駅に止める
+  if(testMode&&SIM.mode!=="end"&&SIM.target>=0){
+    const j=SIM.target;
+    for(let k=SIM.last+1;k<j;k++) (SIM.events[k]=SIM.events[k]||{}).pass??=SIM.t;
+    SIM.x=route[j].x; SIM.v=0; SIM.halt=null; SIM.mode="dwell"; SIM.last=j;
+    (SIM.events[j]=SIM.events[j]||{}).arr=SIM.t; SIM.remain=route[j].dwell; SIM.target=nextStop(route,j);
+    onSimEvent("arr",j);
+  }
+  DR=null; arrive(i,nowMs(),route[i].x); G.x=route[i].x; G.v=0;
 });
 $("taihiBtn").addEventListener("click",()=>{
   if(!G||!K.taihi) return;
