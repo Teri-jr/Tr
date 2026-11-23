@@ -108,7 +108,7 @@ ol,ul{list-style:none}
 .mk-l button:disabled{opacity:.45;cursor:default}.mk-l button.end strong{color:var(--ok)}
 .mk-bar{display:flex;gap:8px}.mk-bar button{flex:1;height:44px;border-radius:10px;border:1px solid var(--bd);background:var(--sf);color:var(--tx);font:inherit;font-size:14px;font-weight:700;cursor:pointer}.mk-bar button:disabled{opacity:.4}
 .adj button.qa{border-color:var(--tx);font-weight:700}
-.adj{display:flex;flex-direction:column;gap:10px}.adj h2{font-size:15px;font-weight:900}.adj .row{display:flex;flex-wrap:wrap;gap:8px}.adj button{border:1px solid var(--bd);background:var(--sf);color:var(--tx);border-radius:999px;padding:8px 13px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}.adj button.on{background:var(--ink);color:var(--it);border-color:var(--ink)}.adj small{font-size:12px;color:var(--sub)}
+.adj{display:flex;flex-direction:column;gap:10px}.adj h2{font-size:15px;font-weight:900}.adj .row{display:flex;flex-wrap:wrap;gap:8px}.adj button{border:1px solid var(--bd);background:var(--sf);color:var(--tx);border-radius:999px;padding:8px 13px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}.adj button.on{background:var(--ink);color:var(--it);border-color:var(--ink);font-weight:800;box-shadow:0 0 0 2px var(--ink)}.adj small{font-size:12px;color:var(--sub)}
 .chip.want{border-color:var(--ink);background:var(--ink);color:var(--it)}
 .chip.avoid{border:1px dashed var(--sub);color:var(--sub);text-decoration:line-through}
 .map .here{position:absolute;font-size:13px;font-weight:900}
@@ -355,7 +355,7 @@ ol,ul{list-style:none}
 <script src="engine.js?v=1.39.0"></script>
 <script>
 'use strict';
-const APP_VERSION = '1.39.0'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.39.1'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ===== データ =====
    路線データは data.js、ルートの探索は engine.js。画面はここから E.search() などを呼ぶだけ。 */
@@ -570,15 +570,19 @@ function adjQuick(r) {
   const q = (act, t, on) => `<button type="button" class="qa${on ? ' on' : ''}" data-act="${act}" data-id="${esc(r.id)}"${on != null ? ` aria-pressed="${!!on}"` : ''}>${t}</button>`;
   return `<div class="adj adjq" role="group" aria-label="すぐ調整"><div class="row">${q('adjFast', '⚡ 速い列車を優先', cond.fast)}${xfers(r) > 0 ? q('adjFewer', '乗換を減らす') : ''}${q('adjLonger', 'もっと長く')}${q('adjShorter', 'もっと短く')}${r.mk ? '' : q('mkFrom', '✎ 路線図で手直し')}</div></div>`;
 }
+const onceOf = (r) => (ui.once && r && ui.once.id === r.id ? ui.once.lines : []);
 function adjHtml(r) {
   const mid = r.stops.slice(1, -1).map((s) => s[0]).filter((n, i, a) => a.indexOf(n) === i), lines = r.legs.map((l) => l[0]).filter((n, i, a) => a.indexOf(n) === i);
   const b = (k, v, t) => `<button type="button" data-adj="${k}" data-v="${esc(v)}">${esc(t)}</button>`;
-  const cur = [].concat(cond.mustSt.map((n) => ['mustSt', n, n + 'を通る']), cond.noSt.map((n) => ['noSt', n, n + 'を通らない']), cond.noLine.map((n) => ['noLine', n, n + 'に乗らない']));
+  const once = onceOf(r);
+  const cur = [].concat(cond.mustSt.map((n) => ['mustSt', n, n + 'を通る']), cond.noSt.map((n) => ['noSt', n, n + 'を通らない']), cond.noLine.map((n) => ['noLine', n, n + 'に乗らない']), once.map((n) => ['noLine', n, n + 'に乗らない（この1回）', 1]));
+  const lb = (n) => once.includes(n) ? `<button type="button" class="on" data-adj="noLine" data-v="${esc(n)}" aria-pressed="true">✓ ${esc(n)}に乗らない</button>` : `<button type="button" data-adj="noLine" data-v="${esc(n)}" aria-pressed="false">× ${esc(n)}</button>`;
   return `<section aria-label="ルートの調整" class="adj"><h2>このルートを調整する</h2>
-<small>乗らない路線（押すと、それ以外はなるべく今のまま組み直します）</small><div class="row">${lines.map((n) => b('noLine', n, '× ' + n)).join('')}</div>
+${cur.length ? `<small>いまの調整（押すと外す）</small><div class="row">${cur.map((x) => `<button type="button" class="on" data-unadj="${x[0]}" data-v="${esc(x[1])}"${x[3] ? ' data-once="1"' : ''}>✓ ${esc(x[2])} ×</button>`).join('')}</div>` : ''}
+<small>乗らない路線（押すと、それ以外はなるべく今のまま組み直します。✓が乗らないことにした路線。もう一度押すと戻します）</small><div class="row">${once.concat(lines.filter((n) => !once.includes(n))).map(lb).join('')}</div>
 ${lines.includes('常磐線') ? `<small>乗り換え方（常磐線に東京・品川からそのまま乗る形をやめて、日暮里や上野で乗りかえます）</small><div class="row"><button type="button" data-thru="1">直通をやめて乗りかえる</button></div>` : ''}
 <small>通らない駅・寄りたい駅</small><div class="row">${mid.map((n) => b('noSt', n, '× ' + n)).join('')}<button type="button" data-act="adjMust" data-id="${esc(r.id)}">＋ 寄りたい駅</button></div>
-${cur.length ? `<small>いまの調整（押すと外す）</small><div class="row">${cur.map((x) => `<button type="button" class="on" data-unadj="${x[0]}" data-v="${esc(x[1])}">${esc(x[2])} ×</button>`).join('')}</div>` : ''}</section>`;
+</section>`;
 }
 // いまのルートといちばん重なるルート(同じなら長いほう)
 function closest(rs, r) { const ks = new Map(); r.hopKeys.forEach((k, i) => ks.set(k, r.hopKm[i])); let best = null, bs = -1;
@@ -591,7 +595,7 @@ function adjust(r, o, msg, strict, once) { // once: 乗らない路線など、�
   let n = null;
   for (const t of tries) { setCond(Object.assign({}, before, o, t[0])); n = closest(searchRoutes(cond), r); if (n) { msg = t[1] + msg; break; } }
   if (!n) { setCond(Object.assign({ noThru: false }, before)); render(); return toast('その調整では、条件に合うルートが見つかりませんでした'); }
-  if (once) setCond({ noLine: before.noLine, noThru: false }); // 1回きり。次の検索には持ちこさない
+  if (once) { const ol = (o.noLine || []).filter((x) => !before.noLine.includes(x)); ui.once = ol.length ? { id: n.id, lines: ol } : null; setCond({ noLine: before.noLine, noThru: false }); } // 1回きり。次の検索には持ちこさない(どれを外したかは、そのルートの画面にだけ出す)
   location.hash = '#/route/' + encodeURIComponent(n.id);
   setTimeout(() => { const t = document.getElementById('toast'); if (t.textContent.startsWith(msg)) t.hidden = true; }, 8000);
   toast(msg, '元に戻す', () => { setCond(before); document.getElementById('toast').hidden = true; location.hash = '#/route/' + encodeURIComponent(r.id); render(); });
@@ -886,9 +890,12 @@ app.addEventListener('click', (e) => {
     const r = E.buildRoute(m.from, en.n, en.pcs); if (!r) return toast('このルートは組み立てられませんでした'); rCache.set((cond.fast ? 'f:' : '') + r.id, r); location.hash = '#/route/' + encodeURIComponent(r.id); return; }
   if (d.thru) { const r = curRoute(); if (!r) return; return adjust(r, { noThru: true }, '上野東京ラインの直通をやめて、乗りかえる形にしました（この1回だけ）', false, true); }
   if (d.adj || d.unadj) { const r = curRoute(); if (!r) return; const k = d.adj || d.unadj, v = d.v;
+    const once = onceOf(r); // この1回だけ乗らないことにした路線(いま開いているルートのぶん)
+    if (d.unadj && d.once) { const rest = once.filter((x) => x !== v); return adjust(r, { noLine: cond.noLine.concat(rest) }, v + 'に乗らない調整を外しました', false, true); }
     if (d.unadj) return adjust(r, { [k]: cond[k].filter((x) => x !== v) }, v + 'の調整を外しました');
     const other = { mustSt: 'noSt', noSt: 'mustSt', noLine: 'mustLine' }[k];
-    return adjust(r, { [k]: cond[k].concat(v), [other]: cond[other].filter((x) => x !== v) }, k === 'noLine' ? v + 'に乗らないルートにしました（この1回だけ）' : v + 'を通らないルートにしました', false, k === 'noLine'); }
+    if (k === 'noLine' && once.includes(v)) return adjust(r, { noLine: cond.noLine.concat(once.filter((x) => x !== v)) }, v + 'に乗らない調整を外しました', false, true);
+    return adjust(r, { [k]: cond[k].concat(k === 'noLine' ? once : [], v), [other]: cond[other].filter((x) => x !== v) }, k === 'noLine' ? v + 'に乗らないルートにしました（この1回だけ）' : v + 'を通らないルートにしました', false, k === 'noLine'); }
   const act = d.act; if (!act) return;
   if (act === 'exTog') { const o = exSel[d.id] || (exSel[d.id] = {}); if (o[d.k]) delete o[d.k]; else o[d.k] = true; return render(); }
   if (act === 'adjFast') { const r = curRoute(); setCond({ fast: !cond.fast }); if (r) { const n = routeById(r.id); toast(cond.fast ? '速い列車を優先しました' + (n ? '（乗っている時間' + durTxt(Math.round(E.rideMins(n))) + '・乗換' + xfers(n) + '回）' : '') : '乗換の少ない列車にもどしました'); } return render(); }
