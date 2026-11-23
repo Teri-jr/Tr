@@ -503,7 +503,7 @@ function planTimes(route,k){
   return {ev:s.events,traj:s.traj};
 }
 // ---- バージョン（変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする） ----
-const APP_VERSION='1.8.7';
+const APP_VERSION='1.8.8';
 const isNewer=(a,b)=>{ const x=String(a).split(".").map(Number), y=String(b).split(".").map(Number); for(let i=0;i<3;i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0); } return false; };
 let upd=null; // {version, items}：新しい版が出ていたら入る。announced=放送済み
 async function checkUpdate(){
@@ -951,13 +951,13 @@ function applyTaihi(i){
 }
 
 // ---- 読み上げのタイミング（GPSの距離と速度で発火） ----
-// 「停止位置」→1秒→「○」→1.2秒、を8km/h以下になるまで繰り返す
+// 「停止位置」→1秒→「○」→0.5秒、を8km/h以下になるまで繰り返す
 function stopPosLoop(k,v){
   if(G.mode!=="run"||G.target!==k||v<=8/3.6) return;
   const a=G.announced[k], n=performance.now();
   if(n<(a.posNext||0)) return;
   if(a.pos!==1){ speak("停止位置","f"); a.pos=1; a.posNext=n+700; a.gapAt=0; }
-  else { if(!a.gapAt){ a.gapAt=n+1000/Math.max(1,mult); return; } if(n<a.gapAt) return; speak(String(cfg.cars),"f"); a.pos=2; a.posNext=n+1200/Math.max(1,mult); }
+  else { if(!a.gapAt){ a.gapAt=n+1000/Math.max(1,mult); return; } if(n<a.gapAt) return; speak(String(cfg.cars),"f"); a.pos=2; a.posNext=n+500/Math.max(1,mult); }
 }
 function checkApproach(e){
   if(G.mode!=="run"||G.target<0) return;
@@ -1030,7 +1030,8 @@ function draw(e,now,dt){
   else if(skid){nl.className="next skid"+(blink?" blink":"");nl.textContent="！スキット注意！";}
   else if(G.mode==="dwell"&&G.taihiAt===G.last){nl.className="next taihi";nl.textContent=`待避　発車まで ${Math.max(0,toDep??0)}秒`;}
   else if(nowR<msgUntil&&running){nl.className="next msg"+(blink?" blink":"");nl.textContent=msgText;}
-  else if(running&&tg||(G.mode==="dwell"&&G.last===0&&tg)){nl.className="next";nl.textContent=tg.name; fitText(nl,tg.name.length);}
+  // 停車駅の手前で8km/h以下になったら、停車中と同じく次駅の欄は空欄
+  else if(running&&tg&&!(ann.cars&&e.v<=8/3.6)||(G.mode==="dwell"&&G.last===0&&tg)){nl.className="next";nl.textContent=tg.name; fitText(nl,tg.name.length);}
   else {nl.className="next blank";nl.textContent="　";}
   let ph;
   if(!G.started) ph=testMode?"テスト走行 準備中":(G.offRoute?"線路から離れている":"GPS 受信待ち");
