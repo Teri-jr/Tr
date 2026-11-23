@@ -503,7 +503,7 @@ function planTimes(route,k){
   return {ev:s.events,traj:s.traj};
 }
 // ---- バージョン（変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする） ----
-const APP_VERSION='1.8.8';
+const APP_VERSION='1.8.9';
 const isNewer=(a,b)=>{ const x=String(a).split(".").map(Number), y=String(b).split(".").map(Number); for(let i=0;i<3;i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0); } return false; };
 let upd=null; // {version, items}：新しい版が出ていたら入る。announced=放送済み
 async function checkUpdate(){
@@ -759,6 +759,12 @@ function planTimeAt(x){
   return x1>x0? t0+(x-x0)/(x1-x0)*(t1-t0) : t1;
 }
 
+// 駅一覧のいちばん上：停車中はその駅、走っている間は次の駅（通過駅も含む）
+function listTop(e){
+  if(!G.started||!(G.mode==="run"||G.mode==="halt")) return G.last;
+  let i=G.last+1; while(i<route.length-1&&route[i].cx<=e.x) i++;
+  return Math.min(i,route.length-1);
+}
 function renderList(){
   Z=null; // 在線図も描き直す（待避の線など）
   const L=$("list"); L.innerHTML="";
@@ -1049,10 +1055,10 @@ function draw(e,now,dt){
   const hms=[Math.floor(ad/3600),Math.floor(ad/60)%60,ad%60].map(n=>String(n).padStart(2,"0")).join(":");
   const de=$("delay"); de.textContent="遅延 "+(d<-0.5?"−":"")+hms;
   de.className="delay num"+(d>60?" bad":d>=15?" warn":"");
+  const top=listTop(e);
   route.forEach((r,i)=>{
     const row=$("r"+i); if(!row) return;
-    const passed=running? r.x<e.x : i<G.last;
-    row.classList.toggle("passed",G.started&&passed&&i!==G.last);
+    row.classList.toggle("passed",G.started&&i<top);
     // ▶：停車中は今いる駅、発車したら次の停車駅
     row.classList.toggle("target",i===((G.mode==="dwell"||G.mode==="end")?G.last:G.target));
     const dp=row.querySelector(".dep"); if(dp) dp.classList.toggle("red",G.mode==="dwell"&&i===G.last&&blink);
@@ -1202,9 +1208,7 @@ function loop(ts){
   announceUpdate();
   draw(e,now,dt);
   updateZaisen(e);
-  // 駅一覧は、いま止まっている駅か最後に通過した駅をいちばん上に出す
-  let cur=G.last; if(G.started&&(G.mode==="run"||G.mode==="halt")) for(let i=G.last+1;i<route.length&&route[i].cx<=e.x;i++) cur=i;
-  const row=$("r"+cur);
+  const row=$("r"+listTop(e));
   if(row&&row!==loop.lastRow){loop.lastRow=row;const L=$("list"); L.scrollTop=row.offsetTop-L.offsetTop;}
   raf=requestAnimationFrame(loop);
 }
