@@ -503,7 +503,7 @@ function planTimes(route,k){
   return {ev:s.events,traj:s.traj};
 }
 // ---- バージョン（変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする） ----
-const APP_VERSION='1.8.6';
+const APP_VERSION='1.8.7';
 const isNewer=(a,b)=>{ const x=String(a).split(".").map(Number), y=String(b).split(".").map(Number); for(let i=0;i<3;i++){ if((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0); } return false; };
 let upd=null; // {version, items}：新しい版が出ていたら入る。announced=放送済み
 async function checkUpdate(){
@@ -790,14 +790,17 @@ const YOMI={"大宮":"おおみや","さいたま新都心":"さいたましん�
 const YOMI_KEYS=Object.keys(YOMI).sort((a,b)=>b.length-a.length);
 const YOMI_RE=new RegExp(YOMI_KEYS.join("|"),"g");
 function yomi(t){return t.replace(YOMI_RE,m=>YOMI[m]);}
-function speak(text,role="f"){
+// 声：上りの列車は男性、下りの列車は女性（今いる区間の向きで決める）
+function voiceRole(){ const r=route&&route[(G&&G.target>=0)?G.target:(G?G.last:0)]; return r&&r.down===false?"m":"f"; }
+function speak(text){
+  const role=voiceRole();
   const el=$("annc"); el.textContent="🔊 "+text; el.classList.add("on");
   clearTimeout(speak.tm); speak.tm=setTimeout(()=>el.classList.remove("on"),3500);
   if(cfg.voice!=="on"||!("speechSynthesis" in window)) return;
   try{
     // 倍速のときは喋りが追いつかないので、前の発話中は新しいものを捨てる（溜めて遅れて鳴るのを防ぐ）
     if(mult>1&&(speechSynthesis.speaking||speechSynthesis.pending)) return;
-    const u=new SpeechSynthesisUtterance(yomi(text)); u.lang="ja-JP"; u.rate=1.1;
+    const u=new SpeechSynthesisUtterance(yomi(text)); u.lang="ja-JP"; u.rate=0.95;
     const male=jaVoices.find(v=>/otoya|ichiro|keita|male|男/i.test(v.name)), female=jaVoices.find(v=>/kyoko|o-ren|haruka|ayumi|nanami|female|女/i.test(v.name));
     if(role==="m"){ if(male) u.voice=male; else if(jaVoices[0]) u.voice=jaVoices[0]; u.pitch=male?1:0.7; }
     else { if(female) u.voice=female; else if(jaVoices[1]||jaVoices[0]) u.voice=jaVoices[1]||jaVoices[0]; u.pitch=female?1.1:1.5; }
@@ -948,13 +951,13 @@ function applyTaihi(i){
 }
 
 // ---- 読み上げのタイミング（GPSの距離と速度で発火） ----
-// 「停止位置」→0.8秒→「○」を、8km/h以下になるまで繰り返す
+// 「停止位置」→1秒→「○」→1.2秒、を8km/h以下になるまで繰り返す
 function stopPosLoop(k,v){
   if(G.mode!=="run"||G.target!==k||v<=8/3.6) return;
   const a=G.announced[k], n=performance.now();
   if(n<(a.posNext||0)) return;
-  if(a.pos!==1){ speak("停止位置","f"); a.pos=1; a.posNext=n+300; a.gapAt=0; }
-  else { if(!a.gapAt){ a.gapAt=n+800/Math.max(1,mult); return; } if(n<a.gapAt) return; speak(String(cfg.cars),"f"); a.pos=2; a.posNext=n+300; }
+  if(a.pos!==1){ speak("停止位置","f"); a.pos=1; a.posNext=n+700; a.gapAt=0; }
+  else { if(!a.gapAt){ a.gapAt=n+1000/Math.max(1,mult); return; } if(n<a.gapAt) return; speak(String(cfg.cars),"f"); a.pos=2; a.posNext=n+1200/Math.max(1,mult); }
 }
 function checkApproach(e){
   if(G.mode!=="run"||G.target<0) return;
