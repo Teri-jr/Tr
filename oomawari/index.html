@@ -122,6 +122,7 @@ ol,ul{list-style:none}
 .btn2{height:56px;border:1px solid var(--bd);border-radius:14px;background:transparent;color:var(--tx);font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center}
 .foot{padding:16px 24px 24px}
 .note{font-size:12px;color:var(--sub)}
+.note.partial{color:var(--wn);font-weight:700}
 
 /* PCの条件画面 */
 .pc-cond{max-width:1120px;margin:0 auto;padding:40px 32px 48px;display:flex;flex-wrap:wrap;gap:40px 64px}
@@ -299,6 +300,9 @@ ol,ul{list-style:none}
 .chk{display:flex;flex-direction:column;gap:6px;font-size:15px;font-weight:700}
 .chk li{display:flex;align-items:center;gap:10px}
 .chk svg{color:var(--ok);flex-shrink:0}
+.chk li.ng{color:var(--wn)}
+.chk li.ng b{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:currentColor;font-size:12px;flex-shrink:0}
+.chk li.ng b::before{content:"!";color:var(--sf)}
 
 /* 駅をえらぶ・保存・詳細条件・使い方 */
 .pg-h1{font-size:24px;font-weight:900;line-height:1.35}
@@ -352,10 +356,10 @@ ol,ul{list-style:none}
 <div id="sheet"></div>
 <div id="toast" role="status" hidden></div>
 <script src="data.js?v=1.39.0"></script>
-<script src="engine.js?v=1.39.0"></script>
+<script src="engine.js?v=1.40.0"></script>
 <script>
 'use strict';
-const APP_VERSION = '1.39.2'; // 変えたら changelog.json の先頭も同じ番号にする
+const APP_VERSION = '1.40.0'; // 変えたら changelog.json の先頭も同じ番号にする
 
 /* ===== データ =====
    路線データは data.js、ルートの探索は engine.js。画面はここから E.search() などを呼ぶだけ。 */
@@ -417,14 +421,17 @@ const dateTxt = (d) => (d.getMonth() + 1) + '月' + d.getDate() + '日（' + WD[
 const ymd = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
 
 // 条件に合うルートを返す(同じ条件なら前の結果を使う)
-const sCache = new Map();
+const sCache = new Map(), sPart = new Map(); // sPart: 探索の上限に達して、途中で打ち切ったか
+const sKey = (c, budget) => JSON.stringify([c.fast, !!c.mk, !!c.gray, !!c.noThru, c.keep || 0, c.from, c.to, c.ic, c.start, c.end, c.len, c.xfer, c.xmin, c.meal, c.rare, c.want, c.avoid, c.mustLine, c.noLine, c.mustSt, c.noSt, c.prev, c.prev ? ridden : 0, budget || 0]);
 function searchRoutes(c, budget) {
-  const key = JSON.stringify([c.fast, !!c.mk, !!c.gray, !!c.noThru, c.keep || 0, c.from, c.to, c.ic, c.start, c.end, c.len, c.xfer, c.xmin, c.meal, c.rare, c.want, c.avoid, c.mustLine, c.noLine, c.mustSt, c.noSt, c.prev, c.prev ? ridden : 0, budget || 0]);
-  if (!sCache.has(key)) { if (sCache.size > 60) sCache.clear();
+  const key = sKey(c, budget);
+  if (!sCache.has(key)) { if (sCache.size > 60) { sCache.clear(); sPart.clear(); }
     const res = E.find(c, ridden, budget); // 券売機モードも同じ E.find() でさがす
-    res.routes.forEach((r) => rCache.set((c.fast ? 'f:' : '') + r.id, r)); sCache.set(key, res.routes); }
+    res.routes.forEach((r) => rCache.set((c.fast ? 'f:' : '') + r.id, r)); sCache.set(key, res.routes); sPart.set(key, !!res.partial); }
   return sCache.get(key);
 }
+// 探索の上限で打ち切ったときの知らせ(先に searchRoutes() を呼んでおく)
+const partNote = (c, st) => sPart.get(sKey(c)) ? `<p class="note partial" style="${st || ''}">探索上限に達したため、候補は一部です。条件をしぼると、ほかのルートが出ることがあります。</p>` : '';
 function sorted(rs) {
   const a = rs.slice();
   if (ui.sort === 1) a.sort((x, y) => x.km - y.km);
@@ -565,7 +572,8 @@ const ttLink = (r) => `<a class="tt" target="_blank" rel="noopener" href="https:
 const isSaved = (id) => saved.some((s) => s.id === id);
 // ルートの調整: 乗換駅を通らない・路線に乗らない・寄りたい駅を足す。条件(詳細条件と同じ noSt/noLine/mustSt)に足して、いまのルートにいちばん近いルートをさがしなおす
 // ルートの画面のいちばん上に出す、すぐ使える調整
-const okLine = (r, ic) => r.gray ? `<p class="okline mkl">グレー：途中で通った${esc(r.to)}で最後に降りる「6の字」の形です。JRの回答が分かれていて、係員の判断しだいで認められないおそれがあります</p>` : r.mk && !E.buildRoute(r.from, r.to, r.pcs.map((p) => p.slice(0, 3))) ? `<p class="okline mkl">末期モード：同じ駅を、停まらずに2回通る(線路は別)。正規の大回り(きっぷの経路)にはならない</p>` : `<p class="okline">${ic}ルール上、成立しています</p>`;
+const mkOdd = (r) => !!r.mk && !E.buildRoute(r.from, r.to, r.pcs.map((p) => p.slice(0, 3))); // 末期モードで、ふつうの大回りにならないルート
+const okLine = (r, ic) => r.gray ? `<p class="okline mkl">グレー：途中で通った${esc(r.to)}で最後に降りる「6の字」の形です。JRの回答が分かれていて、係員の判断しだいで認められないおそれがあります</p>` : mkOdd(r) ? `<p class="okline mkl">末期モード：同じ駅を、停まらずに2回通る(線路は別)。正規の大回り(きっぷの経路)にはならない</p>` : `<p class="okline">${ic}ルール上、成立しています</p>`;
 function adjQuick(r) {
   const q = (act, t, on) => `<button type="button" class="qa${on ? ' on' : ''}" data-act="${act}" data-id="${esc(r.id)}"${on != null ? ` aria-pressed="${!!on}"` : ''}>${t}</button>`;
   return `<div class="adj adjq" role="group" aria-label="すぐ調整"><div class="row">${q('adjFast', '⚡ 速い列車を優先', cond.fast)}${xfers(r) > 0 ? q('adjFewer', '乗換を減らす') : ''}${q('adjLonger', 'もっと長く')}${q('adjShorter', 'もっと短く')}${r.mk ? '' : q('mkFrom', '✎ 路線図で手直し')}</div></div>`;
@@ -644,7 +652,7 @@ V.cond = (wide) => wide ? pcHeader('s') + `<main class="pc-cond"><div class="lef
 
 V.search = () => { const rs = sorted(searchRoutes(cond));
   return `<div class="scr"><header class="hd"><a href="#/" class="back">‹ 条件</a><a href="#/saved" class="hl">保存したルート</a></header><div style="margin:4px 24px 0">${sumHtml(false)}</div>
-<section aria-label="ルート一覧" class="grow" style="margin:22px 24px 0;display:flex;flex-direction:column">${listHtml(rs, null, 'h1')}</section>
+${partNote(cond, 'margin:12px 24px 0')}<section aria-label="ルート一覧" class="grow" style="margin:22px 24px 0;display:flex;flex-direction:column">${listHtml(rs, null, 'h1')}</section>
 <p class="note" style="padding:14px 24px 22px;font-size:11px">営業キロ・所要時間・本数は手入力の目安です。発車時刻は当日の時刻表で確認してください。</p></div>`; };
 
 const savB = (r) => `<button type="button" class="sq" data-act="save" data-id="${esc(r.id)}" aria-label="保存" aria-pressed="${isSaved(r.id)}"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 4h12v16l-6-4-6 4z"/></svg></button>`;
@@ -663,7 +671,7 @@ V.route = (r) => { const rs = sorted(searchRoutes(cond)), i = rs.findIndex((x) =
 // タブレット・PC: 左に一覧、中央にルート、(幅があれば)右に旅程
 V.result = (r, w3) => { const rs = sorted(searchRoutes(cond));
   const it = r ? `<h2 class="sec-h">旅程</h2>${itinHtml(r)}<div style="margin-top:12px">${ttLink(r)}</div>${rodeB(r)}${ovHtml(r, 'margin-top:12px')}<p class="note" style="margin-top:12px">時刻は載せていません。所要時間は目安です。</p>` : '';
-  return pcHeader('s') + `<div class="res"><aside class="ls"><a href="#/" class="back">‹ 条件を変更</a>${sumHtml(true)}<div style="margin-top:18px">${listHtml(rs, r && r.id, 'h2')}</div>
+  return pcHeader('s') + `<div class="res"><aside class="ls"><a href="#/" class="back">‹ 条件を変更</a>${sumHtml(true)}${partNote(cond, 'margin-top:12px')}<div style="margin-top:18px">${listHtml(rs, r && r.id, 'h2')}</div>
 <p class="note" style="margin-top:auto;padding-top:24px;font-size:11px">営業キロ・所要時間・本数は手入力の目安です。発車時刻は当日の時刻表で確認してください。</p></aside>
 <main class="mn">${r ? `${okLine(r, '✓ ')}<h1 class="rt-h1">${rtk(r).fare}円で、${esc(r.title)}</h1>
 <div class="stats"><div><small>距離・きっぷの${Math.round(r.km / rtk(r).km)}倍</small><span><b>${r.km}</b><i>km</i></span></div><div><small>所要時間の目安</small><span><b>${spanTxt(r, cond).replace(/時間.*/, '')}</b><i>${spanTxt(r, cond).replace(/^[^時]*/, '')}</i></span></div><div><small>乗換</small><span><b>${xfers(r)}</b><i>回</i></span></div><div><small>運賃</small><span><b>${rtk(r).fare}</b><i>円</i></span></div></div>
@@ -794,6 +802,10 @@ V.ride = () => { const r = ride && routeById(ride.id);
 <section aria-label="このあと" class="after">${after ? `<h2>このあとの乗換</h2>${after}` : ''}</section>
 <div class="two"><button type="button" data-act="replan">ここから組み直す</button><a href="#/show">係員に見せる</a></div></div></div>`; };
 
+// 係員に見せる確認の項目。グレー(6の字)や、末期モードのふつうでないルートは、そこだけ注意にする(okLine と同じ判定)
+const chkItems = (r) => [['すべて東京近郊区間内', true],
+  r.gray ? [`到着駅の${r.to}を、途中で1回通っている（6の字）`, false] : mkOdd(r) ? ['同じ駅を、停まらずに2回通る区間がある', false] : ['同じ駅を2度通っていない', true],
+  ['途中で改札を出ていない', true]];
 V.show = () => { const r = (ride && routeById(ride.id)) || searchRoutes(cond)[0], at = ride ? new Date(ride.at) : null, d = at || today();
   if (!r) return `<div class="scr"><div class="col"><header class="hd"><a href="#/" class="back">‹ さがす</a></header><p class="empty" style="margin:0 24px">見せるルートがありません。先にルートをえらんでください。</p></div></div>`;
   const notes = r.stops.filter((x) => x[2]).map((x) => x[2]);
@@ -802,7 +814,7 @@ V.show = () => { const r = (ride && routeById(ride.id)) || searchRoutes(cond)[0]
   return `<div class="scr"><div class="col show"><header><span>係員の方へ</span><h1>大回り乗車をしています</h1></header>
 <section aria-label="乗車券" class="stk"><span><small>乗車券</small><strong>${esc(r.from)} → ${esc(toTxt(r.from, r.to))}</strong><em>${d.getMonth() + 1}月${d.getDate()}日　${esc(r.from)} ${at ? pad(at.getHours()) + ':' + pad(at.getMinutes()) : esc(cond.start)} 入場</em></span><span class="f"><b>${rtk(r).fare}</b><br><i>円</i></span></section>
 <section aria-label="経路" class="sec"><h2 class="sh2">乗車経路</h2><ol class="via-l">${rows.map((x) => `<li><i style="background:${x.c}"></i>${esc(x.st)}<span>${esc(x.sl || (x.disp || x.line) + (x.mid.length ? `（${x.mid.join('・')} 経由）` : ''))}</span></li>`).join('')}<li><i class="o"></i>${esc(r.to)}<span>ここで出場</span></li></ol>${notes.map((t) => `<p class="note">${esc(t)}</p>`).join('')}</section>
-<section aria-label="確認" class="sec grow"><h2 class="sh2">確認</h2><ul class="chk">${['すべて東京近郊区間内', '同じ駅を2度通っていない', '途中で改札を出ていない'].map((t) => `<li>${CHECK(18)}${t}</li>`).join('')}</ul><p class="note" style="margin-top:6px">旅客営業規則 第157条第2項（大都市近郊区間内の選択乗車）</p></section>
+<section aria-label="確認" class="sec grow"><h2 class="sh2">確認</h2><ul class="chk">${chkItems(r).map((t) => t[1] ? `<li>${CHECK(18)}${t[0]}</li>` : `<li class="ng"><b aria-hidden="true"></b>${esc(t[0])}</li>`).join('')}</ul>${r.gray || mkOdd(r) ? '<p class="note" style="margin-top:6px">ふつうの大回りの決まりから外れるところがあり、認められないことがあります。</p>' : ''}<p class="note" style="margin-top:6px">旅客営業規則 第157条第2項（大都市近郊区間内の選択乗車）</p></section>
 <a href="#/ride" class="btn2" data-act="closeShow">閉じる</a></div></div>`; };
 
 V.guide = () => `<div class="scr"><div class="col guide"><header class="hd"><a href="#/" class="back">‹ さがす</a></header><section class="grow" style="margin:4px 24px 24px;display:flex;flex-direction:column">

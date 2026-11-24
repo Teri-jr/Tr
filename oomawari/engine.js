@@ -260,11 +260,21 @@ function create(D) {
     if (tSeg) { const g = G[tSeg[0]]; [[g.a, 0], [g.b, g.n]].forEach((x) => { const p = part(tSeg[0], x[1], tSeg[1]); if (p) endAt[x[0]] = { pc: [tSeg[0], x[1], tSeg[1]], p }; }); }
     // かならず通る駅があるときは、その駅を通る道だけを残す(あとでしぼると、同じ仲間の別の道に負けて消えてしまうため)
     const mustN = c.mustSt || [], passAll = (pcs) => { const seen = new Set(); pcs.forEach((p) => { const g = G[p[0]]; for (let i = Math.min(p[1], p[2]); i <= Math.max(p[1], p[2]); i++) seen.add(g.names[i]); }); return mustN.every((n) => seen.has(n)); };
+    // かならず乗る路線があるときは、その路線の列車が走っている区間を通る道だけを残す(同じ理由。列車の割りあては最後に確かめる)
+    const mustL = (c.mustLine || []).map((n) => svcIds.map((k, i) => (SV[k].n === n && !banned[i] ? i : -1)).filter((i) => i >= 0));
+    const hasLine = (pcs, set) => pcs.some((p) => { const g = G[p[0]]; for (let h = Math.min(p[1], p[2]); h < Math.max(p[1], p[2]); h++) if (g.hops[h].some((e) => set.includes(e[0]))) return true; return false; });
+    // 条件があると、あとで落ちる道もあるので、仲間ごとに何本か残す(折り返しの特例で通らない駅を通る、など)
+    const KK = mustL.length || noSt.size ? 4 : 1;
     function record(km, mins, legs, sc, reg, k0, k1, endPc) {
       if (km < minKm || km > maxKm || (reg & wantM) !== wantM || mins + (legs - 1) * c.xmin + base > c.win) return;
-      if (mustN.length && !passAll(endPc ? stack.concat([endPc]) : stack)) return; // かならず通る駅を通らない
+      const pcs = endPc ? stack.concat([endPc]) : stack;
+      if (mustN.length && !passAll(pcs)) return; // かならず通る駅を通らない
+      if (mustL.length && mustL.some((set) => !hasLine(pcs, set))) return; // かならず乗る路線の区間を通らない
       const key = k1 * 67108864 + k0, b = best.get(key);
-      if (!b || sc > b.sc) best.set(key, { sc, km, pcs: endPc ? stack.concat([endPc]) : stack.slice() });
+      if (b && b.length >= KK && sc <= b[b.length - 1].sc) return;
+      const it = { sc, km, pcs: endPc ? pcs : pcs.slice() };
+      if (!b) { best.set(key, [it]); return; }
+      let i = b.length; while (i > 0 && b[i - 1].sc < sc) i--; b.splice(i, 0, it); if (b.length > KK) b.pop();
     }
     // x:いまいる分岐駅 km:ここまでの距離 mins:最短の分 legs:列車の本数の下限 m0,m1:いまの列車でありうる系統 sc:点数 reg:方面 k0,k1:仲間分けのしるし
     function dfs(x, km, mins, legs, m0, m1, sc, reg, k0, k1) {
@@ -326,7 +336,7 @@ function create(D) {
           for (let k = 0; k < TR[s].length; k++) { steps++; const p = fullT[s][k]; if (!p || used[s * 16 + k]) continue;
             const nk = km + p.km; if (nk > maxKm) continue;
             let l = legs, a0 = m0 & p.m0, a1 = m1 & p.m1;
-            if (!a0 && !a1) { if (legs && !((m0 & ~sk0[x]) | (m1 & ~sk1[x]) && (p.m0 & ~sk0[x]) | (p.m1 & ~sk1[x]))) continue; // ここに停まらないので乗り換えられない
+            if (!a0 && !a1) { if (legs && !(((m0 & ~sk0[x]) | (m1 & ~sk1[x])) && ((p.m0 & ~sk0[x]) | (p.m1 & ~sk1[x])))) continue; // ここに停まらないので乗り換えられない
               l++; a0 = p.m0; a1 = p.m1; } if (l > maxLegs) continue;
             const nm = mins + p.mins; if (nm + (l - 1) * c.xmin + base > c.win) continue;
             const ci = cls[s], c0 = ci >= 0 && ci < 26 ? k0 | (1 << ci) : k0, c1 = ci >= 26 ? k1 | (1 << (ci - 26)) : k1;
@@ -348,7 +358,8 @@ function create(D) {
     }
     function pickRoutes() {
     // 点数の高い順に、列車を割りあてて確かめ、似ていないものを選ぶ
-    const cand = Array.from(best.values()).sort((a, b) => b.sc - a.sc), out = [], want = c.len === 3 ? 1 : (c.keep || KEEP), dupAt = c.keep > KEEP ? 0.9 : 0.72;
+    const byScore = (a, b) => b.sc - a.sc, groups = Array.from(best.values()); // 仲間ごとの1番を先に、2番手以下はそのあとに試す
+    const cand = groups.map((b) => b[0]).sort(byScore).concat(groups.flatMap((b) => b.slice(1)).sort(byScore)), out = [], want = c.len === 3 ? 1 : (c.keep || KEEP), dupAt = c.keep > KEEP ? 0.9 : 0.72;
     let tried = 0;
     for (const cd of cand) { if (out.length >= want || tried++ > (c.keep > KEEP ? 2500 : 600)) break;
       let r = buildRoute(from, to, cd.pcs, { banned, noRare: !c.rare, fast: c.fast, gray: !!c.gray, noThru: !!c.noThru }); if (!r) continue;
@@ -356,6 +367,7 @@ function create(D) {
       if (c.fast) { const r0 = buildRoute(from, to, cd.pcs, { banned, noRare: !c.rare, gray: !!c.gray, noThru: !!c.noThru }); if (!r0 || r0.legs.length - 1 > c.xfer) continue; }
       if (r.legs.reduce((a, l) => a + l[2], 0) + (r.legs.length - 1) * c.xmin + base > c.win) continue;
       if ((c.mustLine || []).some((n) => !r.lines.includes(n)) || (c.mustSt || []).some((n) => !r.passed.includes(n))) continue;
+      if (r.passed.some((n) => noSt.has(n) && n !== from && n !== to)) continue; // 折り返しの特例・みなしで通る駅も、通らない駅に入っていないか
       const ks = new Set(r.hopKeys); let dup = false;
       for (const q of out) { let sh = 0; q.hopKeys.forEach((k, i) => { if (ks.has(k)) sh += q.hopKm[i]; }); if (sh / Math.min(q.km, r.km) > dupAt) { dup = true; break; } }
       if (!dup) out.push(r); }
