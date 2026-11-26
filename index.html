@@ -1414,6 +1414,25 @@ html.ui-m3 .set-body .sub-h { color: var(--m-primary); font-size: 14px; font-wei
 html.ui-m3 .m3-push { animation: m3-push 0.32s cubic-bezier(0.2, 0, 0, 1); }
 html.ui-m3 .m3-pop { animation: m3-pop 0.32s cubic-bezier(0.2, 0, 0, 1); }
 html.ui-m3 .m3-fade { animation: m3-fade 0.25s ease-out; }
+
+/* ⋯ メニューの印は、そろった線のアイコン(高さ・太さをそろえる) */
+.apm-ic { width: 21px; height: 21px; flex: none; }
+html.ui-m3 #apMenu .apm-ic { width: 24px; height: 24px; color: var(--m-on-sv); }
+html.ui-m3 #apMenu button.red .apm-ic { color: var(--m-error); }
+/* Apple風の設定の「戻る」: 丸のまん中に ‹ を置き、上で切れないようにする */
+html.ui-apple #setBack { top: calc(6px + env(safe-area-inset-top)); height: 44px; display: block !important; }
+html.ui-apple #setBack[hidden] { display: none !important; }
+html.ui-apple #setBack::before { position: absolute; left: 50%; top: 50%; margin: 0; transform: translate(-30%, -50%) rotate(45deg); }
+
+/* Apple風: 選ぶ欄はぜんぶ iPhone と同じ「⌃⌄」の印(ブラウザの ⌄ を使わない) */
+html.ui-apple select { -webkit-appearance: none; appearance: none; padding-right: 30px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 18'%3E%3Cpath d='M2 7l4-4 4 4M2 11l4 4 4-4' fill='none' stroke='%238e8e93' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; background-size: 10px 15px; }
+/* 「タスクを追加 … 閉じる」: 右のふちから離し、印は文字の高さにそろった細い山形にする */
+html.ui-apple .fold-head { padding: 0 6px 0 4px; }
+html.ui-apple .fold-head .chev { display: inline-flex; align-items: center; }
+html.ui-apple .fold-head .chev::after { content: "閉じる"; color: var(--accent); }
+html.ui-apple .fold-head .chev::before { content: ""; order: 2; width: 7px; height: 7px; margin: -3px 2px 0 7px; border: solid var(--accent); border-width: 0 2px 2px 0; transform: rotate(45deg); transition: transform 0.25s; }
+html.ui-apple #formCard.collapsed .fold-head .chev::after { content: "開く"; }
+html.ui-apple #formCard.collapsed .fold-head .chev::before { transform: rotate(-45deg); margin-top: 0; }
 </style>
 <script>
 // 画面の見た目(Apple風)を、描く前に決めておく(一瞬いつもの見た目が出ないように)。?ui=apple / ?ui=classic で切り替えも残す
@@ -1883,11 +1902,11 @@ document.documentElement.dataset.ap = 'today';
 </div>
 <div id="apMenu" role="menu" hidden aria-label="この日の時刻表への操作">
   <div class="ap-mh" id="apMenuHead">今日の時刻表</div>
-  <button type="button" role="menuitem" data-apm="copyPrev">前日をコピー<span aria-hidden="true">📋</span></button>
-  <button type="button" role="menuitem" data-apm="carryOver">未完了を翌日へ<span aria-hidden="true">➡</span></button>
-  <button type="button" role="menuitem" data-apm="tplOpen">ひな形から追加<span aria-hidden="true">🗂</span></button>
+  <button type="button" role="menuitem" data-apm="copyPrev">前日をコピー<svg class="apm-ic" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6.5A2.5 2.5 0 0 0 13.5 4h-7A2.5 2.5 0 0 0 4 6.5v7A2.5 2.5 0 0 0 6.5 16H8"/></svg></button>
+  <button type="button" role="menuitem" data-apm="carryOver">未完了を翌日へ<svg class="apm-ic" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 6l6 6-6 6"/></svg></button>
+  <button type="button" role="menuitem" data-apm="tplOpen">ひな形から追加<svg class="apm-ic" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg></button>
   <hr>
-  <button type="button" role="menuitem" data-apm="reset" class="red"><span id="apResetTxt">今日の予定をリセット</span><span aria-hidden="true">🗑</span></button>
+  <button type="button" role="menuitem" data-apm="reset" class="red"><span id="apResetTxt">今日の予定をリセット</span><svg class="apm-ic" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 7h15M10 7V5h4v2M6.5 7l1 13h9l1-13M10.5 11v5.5M13.5 11v5.5"/></svg></button>
 </div>
 <div id="dock" hidden><button type="button" id="dockGo" aria-label="運行状況へ戻る"><span id="dockName"></span><b class="num" id="dockTimer"></b></button><button type="button" class="primary" id="dockFinish" data-act="finish" data-id="">終了</button></div>
 <button type="button" id="fab" hidden aria-label="タスクを追加">＋</button>
@@ -3645,7 +3664,7 @@ document.addEventListener('keydown', e => {
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '4.13.0';
+const APP_VERSION = '4.13.1';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
