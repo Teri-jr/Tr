@@ -1512,7 +1512,7 @@ html.ui-m3[data-m3t="C"] #currentCard .cur-ctl { grid-template-areas: "m p p pl"
 #focus.fx-ui-apple .focus-name { font-size: min(5.5vw, 26px); font-weight: 600; color: #fff; margin: 0; }
 #focus.fx-ui-apple .focus-now { order: -1; }
 #focus.fx-ui-apple .focus-now-label { display: none; }
-#focus.fx-ui-apple .focus-now-time { font-size: 17px; color: rgba(235, 235, 245, 0.6); font-weight: 600; }
+#focus.fx-ui-apple .focus-now-time { font-size: min(calc(min(7vw, 5.2vh) * var(--clock-scale, 1)), 22vw); color: rgba(235, 235, 245, 0.6); font-weight: 600; }
 .fa-ring { position: relative; width: min(80vw, 56vh, 520px); aspect-ratio: 1; display: grid; place-items: center; }
 .fa-ring svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
 .fa-ring circle { fill: none; stroke-width: 2.6; stroke-linecap: round; }
@@ -1539,7 +1539,7 @@ html.ui-m3[data-m3t="C"] #currentCard .cur-ctl { grid-template-areas: "m p p pl"
 /* Material風: 選んでいるタイマーを大きく(暗い画面) */
 html.ui-m3 #focus.fx-ui-material { --m-primary: #d0bcff; --m-on-primary: #381e72; --m-pc: #4f378b; --m-on-pc: #eaddff; --m-sc: #4a4458; --m-on-sc: #e8def8; --m-tc: #633b48; --m-on-tc: #ffd8e4; --m-s: #141218; --m-on-s: #e6e0e9; --m-on-sv: #cac4d0; --m-error: #f2b8b5; --m-high: #2b2930; background: var(--m-s); color: var(--m-on-s); }
 html.ui-m3 #focus.fx-ui-material .focus-now-label { display: none; }
-html.ui-m3 #focus.fx-ui-material .focus-now-time { font-size: 18px; color: var(--m-on-sv); }
+html.ui-m3 #focus.fx-ui-material .focus-now-time { font-size: min(calc(min(7vw, 5.2vh) * var(--clock-scale, 1)), 22vw); color: var(--m-on-sv); }
 html.ui-m3 #focus.fx-ui-material .focus-now { order: -1; }
 html.ui-m3 #focus.fx-ui-material .pill { background: var(--m-sc); color: var(--m-on-sc); border-radius: 8px; }
 html.ui-m3 #focus.fx-ui-material .focus-name { font-size: min(5.5vw, 26px); font-weight: 500; color: var(--m-on-s); margin: 0; }
@@ -3734,7 +3734,7 @@ function renderFocus(sc) {
     body = `${clock}<div class="focus-name">${esc(f.t.name)}</div>
       <div class="fa-ring"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="trk" cx="50" cy="50" r="47"/><circle class="act" id="faAct" cx="50" cy="50" r="47" pathLength="100"/></svg>
         <div class="fa-mid"><div class="fa-cap">${esc(f.state)}</div><div class="fa-dig num" id="focusTimer"></div><div class="fa-end num">${f.over ? '⏰ 時間です' : `🔔 ${f.toLabel} ${fmt(f.to)}`}</div></div></div>
-      <div class="focus-sub num">${f.sub}</div>${btns}`;
+      ${/^終了見込み/.test(f.sub) ? '' : `<div class="focus-sub num">${f.sub}</div>`}${btns}`; // 終了の時刻は輪の中に出しているので、同じものは出さない
   } else if (d === 'ui' && uiKind() === 'material') {
     // Material風: 選んでいるタイマー(A 波の輪 / B クッキー / C 大きい数字)を大きく
     body = `${clock}<div class="focus-label">${f.label}</div><div class="focus-name">${esc(f.t.name)}</div>
@@ -3838,7 +3838,7 @@ document.addEventListener('keydown', e => {
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '4.15.0';
+const APP_VERSION = '4.15.1';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
