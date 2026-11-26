@@ -781,7 +781,8 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
 .side-warn { background: var(--late-bg); color: var(--late); border-radius: 10px; padding: 6px 10px; font-size: 13px; font-weight: 700; margin-bottom: 10px; }
 .side-warn[hidden] { display: none; }
 .side-tabs button { font-size: 13px; }
-.sc-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px; margin-bottom: 10px; }
+.sc-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px; margin-bottom: 10px; }
+.sc-form input { min-width: 0; }
 .sc-form .wide { grid-column: 1 / -1; }
 .sc-form .pair { display: flex; align-items: center; gap: 4px; }
 .sc-form .pair input { min-width: 0; }
@@ -1263,11 +1264,40 @@ html.ui-apple .set-nav button { gap: 10px; }
 html.ui-apple .set-nav button[data-sec] { padding-left: 12px; }
 html.ui-apple .set-body { padding-bottom: calc(120px + env(safe-area-inset-bottom)); }
 html.ui-apple .set-body .card { position: relative; margin-top: 30px; padding: 6px 16px 14px; }
-html.ui-apple .set-body .card > h2:first-child { position: absolute; top: -25px; left: 16px; right: 16px; margin: 0; font-size: 13px; font-weight: 600; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.ui-apple .set-body .card > h2:first-of-type { position: absolute; top: -25px; left: 16px; right: 16px; margin: 0; font-size: 13px; font-weight: 600; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 html.ui-apple .set-body .sub-h { font-size: 13px; font-weight: 600; color: var(--sub); }
 html.ui-apple .set-body .toggle { min-height: 50px; }
 html.ui-apple .set-body .toggle + .toggle { border-top: 0.5px solid var(--line); }
-html.ui-apple .set-body button:not(.primary):not(.danger):not([aria-pressed="true"]) { color: var(--accent); }
+html.ui-apple .set-body button:not(.primary):not(.danger):not([aria-pressed="true"]):not(.qk-chips > button) { color: var(--accent); }
+/* 設定の中の行: 「名前 …… 値 ⌃⌄」の iOS の表の行に。選ぶ欄は灰色の箱でなく、右に寄せた値と上下の矢印 */
+html.ui-apple .set-body .qk-row { min-height: 50px; padding: 8px 0; border-bottom: 0.5px solid var(--line); font-size: 16px; }
+html.ui-apple .set-body .qk-row:not([style]) { flex-wrap: nowrap; }
+html.ui-apple .set-body .qk-row:not([style]) > label { flex: 1 1 auto; min-width: 0; }
+html.ui-apple .set-body .qk-row:not([style]) > select { flex: 0 0 auto; }
+html.ui-apple .set-body .qk-row .btnrow button { white-space: nowrap; }
+html.ui-apple .set-body #qkPref { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* はじめの長い説明は、上の大きいアイコンの説明と重なるので、表のいちばん下(注意書きの場所)へ */
+html.ui-apple .set-body .card { display: flex; flex-direction: column; }
+html.ui-apple .set-body .card > h2:first-of-type + .note { order: 90; margin-top: 12px !important; }
+html.ui-apple .set-body .card > * { flex: none; }
+html.ui-apple .set-body .qk-row > label, html.ui-apple .set-body .qk-row > b { font-size: 16px; color: var(--text); font-weight: 400; }
+html.ui-apple .set-body .qk-row select, html.ui-apple .set-body .burn-opts select, html.ui-apple .set-body #qkPref {
+  -webkit-appearance: none; appearance: none; width: auto; max-width: 60%; min-height: 36px; padding: 0 24px 0 8px; border-radius: 8px;
+  background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 18'%3E%3Cpath d='M2 7l4-4 4 4M2 11l4 4 4-4' fill='none' stroke='%238e8e93' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 6px center / 10px 15px;
+  color: var(--sub); text-align: right; text-align-last: right; font-size: 16px; }
+html.ui-apple .set-body .qk-row select:active, html.ui-apple .set-body #qkPref:active { background-color: var(--ap-fill); }
+html.ui-apple .set-body .burn-opts { justify-content: space-between; min-height: 50px; border-top: 0.5px solid var(--line); margin-top: 0; }
+html.ui-apple .set-body .burn-opts label { font-size: 16px; color: var(--text); }
+html.ui-apple .set-body .qk-row .btnrow { justify-content: space-between; align-items: center; flex-wrap: nowrap; }
+html.ui-apple .set-body .qk-row .btnrow button, html.ui-apple .set-body .card > .btnrow > button:not(.primary):not(.danger) { background: transparent; padding: 0 4px; font-weight: 400; font-size: 16px; }
+html.ui-apple .set-body .qk-row .btnrow button { flex: 0 1 auto; justify-content: flex-start; text-align: left; }
+html.ui-apple .set-body .card > .btnrow { border-top: 0.5px solid var(--line); margin-top: 4px; padding-top: 4px; }
+/* 「全画面で出す震度」は、つながった切り替え(選んだ所は赤) */
+html.ui-apple .qk-chips { flex-wrap: nowrap; gap: 0; background: var(--ap-fill); border-radius: 10px; padding: 2px; margin-top: 8px; }
+html.ui-apple .qk-chips button { flex: 1 1 0; min-width: 0; min-height: 32px; padding: 0; border-radius: 8px; background: transparent; color: var(--text); font-size: 14px; font-weight: 600; }
+html.ui-apple .qk-chips button[aria-pressed="true"] { background: #ff383c; color: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15); }
+html.ui-apple .set-body .toggle { font-size: 16px; }
+html.ui-apple .set-body .qk-row + .toggle, html.ui-apple .set-body .qk-row + .qk-row { border-top: 0; }
 html.ui-apple .set-body .card + .card { margin-top: 38px; }
 @media (max-width: 759px) {
   html.ui-apple #setPanel:not(.in-sec) .set-head { min-height: calc(8px + env(safe-area-inset-top)); padding-bottom: 0; }
@@ -3483,7 +3513,7 @@ document.addEventListener('keydown', e => {
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '4.11.0';
+const APP_VERSION = '4.11.1';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
