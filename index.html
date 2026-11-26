@@ -1645,6 +1645,36 @@ document.documentElement.dataset.ap = 'today';
       <p class="note" id="wakeState"></p>
 
     </section>
+    <section class="card" id="pushCard">
+      <h2>閉じていても通知する</h2>
+      <p class="note" style="margin-top:0">StudyLine を閉じているとき・画面が消えているときも、休憩・作業再開・時間切れを通知します。小さなプログラムを無料の Cloudflare に1つ置いて、そこから決まった時刻に通知を送ります。最初に1回だけ準備が必要です(10〜15分くらい)。</p>
+      <div id="pushReady">
+        <ol class="gt-steps">
+          <li><a href="https://dash.cloudflare.com/sign-up" target="_blank" rel="noopener">Cloudflare</a> で無料のアカウントを作る</li>
+          <li>左のメニューの「ストレージとデータベース」→「D1 SQL データベース」→「作成」。名前は <b>studyline</b></li>
+          <li>「Workers & Pages」→「作成」→「Hello World から始める」。名前を <b>studyline-push</b> にして「デプロイ」</li>
+          <li>「コードを編集」を押し、はじめから書いてあるコードを全部消して、下のコードを貼り付けて「デプロイ」</li>
+          <li>ワーカーの「設定」→「バインディング」→「追加」→「D1 データベース」。変数名は <b>DB</b>、データベースは手順2の studyline</li>
+          <li>同じ「設定」の「トリガー イベント」→「追加」→「Cron トリガー」→ <b>毎分</b>(<code>* * * * *</code>)</li>
+          <li>ワーカーの URL(<code>https://studyline-push.…workers.dev</code>)を下に貼って「つなぐ」</li>
+        </ol>
+        <p class="note">画面の名前は Cloudflare の変更で少し違うことがあります。</p>
+        <textarea id="pushCode" rows="8" readonly class="num" style="font-size:12px"></textarea>
+        <div class="btnrow" style="margin-top:6px"><button type="button" id="pushCopy" class="grow">📋 コードをコピー</button></div>
+        <label for="pushUrl" style="margin-top:12px">ワーカーの URL</label>
+        <input id="pushUrl" type="url" placeholder="https://studyline-push.○○.workers.dev" autocomplete="off">
+        <div class="btnrow"><button type="button" id="pushConnect" class="primary grow">つなぐ</button></div>
+      </div>
+      <div id="pushOnBox" hidden>
+        <div class="btnrow" style="margin-top:0">
+          <button type="button" id="pushTest" class="grow">▶ テスト(20秒後に届く)</button>
+          <button type="button" id="pushOff" class="danger">やめる</button>
+        </div>
+      </div>
+      <div class="msg" id="pushMsg" role="status"></div>
+      <div class="cur-sub" id="pushState"></div>
+      <p class="note">iPhone・iPad はホーム画面に追加した StudyLine で使えます(iOS 16.4 以降)。通知の時刻とタスク名は、送るときまで自分の Cloudflare に置かれ、送ったら消えます。合言葉とつなぎ先はこの端末の中にだけ保存します(「書き出す」のファイルにも入れません)。通知は数秒ずれることがあります。電波がないときに一時停止などをすると、前の予定のまま通知が届くことがあります。</p>
+    </section>
       </div>
       <div class="set-sec" data-sec="data" hidden>
     <section class="card" id="dataCard">
@@ -2343,6 +2373,7 @@ async function showNotice(title, body) {
 // 画面を見ているときは音と点滅で十分なので、裏にあるときだけ通知する
 function notifyPhase(kind, body) {
   if (!notifyEnabled()) return;
+  if (pushOn()) return; // 閉じていても通知する(Webプッシュ)を使っているときは、サーバーから届く
   if (!document.hidden && document.hasFocus()) return;
   showNotice(signalTitle(kind), body);
 }
@@ -2538,6 +2569,7 @@ function render() {
   renderDock(sc);
   renderExam();
   updatePhaseKey(runSc);
+  pushSync(); // 閉じていても通知する: 予定が変わったら送り直す
   if (modalValid && !$('modal').hidden && !modalValid()) closeModal(); // 確認の対象がもう無ければ閉じる
   const running = sc.rows.find(r => r.st === 'running');
   syncWakeLock(!!((running && (running.t.pomo || focusOpen)) || !$('clockFull').hidden));
@@ -3532,7 +3564,7 @@ document.addEventListener('keydown', e => {
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '4.11.3';
+const APP_VERSION = '4.12.0';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
@@ -3802,6 +3834,7 @@ function selectSet(sec) {
   if (sec === 'exam') syncExamUI();
   if (sec === 'dia') renderFixedList();
   if (sec === 'history') { store.set('seenVersion', APP_VERSION); $('clNew').hidden = true; updateSetDot(); }
+  if (sec === 'sound') syncPushUI();
   if (sec === 'sound') for (const [kind] of SOUND_KINDS) if (customSounds[kind]) renderSoundRow(kind); // 波形は見えてから描く
 }
 function closeSettings() {
@@ -4933,6 +4966,127 @@ function renderDock(sc) {
 }
 $('dockGo').addEventListener('click', () => $('currentCard').scrollIntoView({ behavior: 'smooth', block: 'start' }));
 $('fab').addEventListener('click', () => { setFormCollapsed(false); $('formCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+
+/* ================= 閉じていても通知する(Webプッシュ) =================
+   自分の Cloudflare に置いたプログラム(push-worker.js)へ「いつ・どんな通知を出すか」を送っておくと、
+   その時刻に Web プッシュで届く。予定が変わるたびに送り直す(数秒まとめてから) */
+var pushTimer = null, pushSentSig = null, pushWaitSig = null, pushExtra = [];
+function pushCfg() { const c = store.get('push'); return c && typeof c === 'object' ? c : {}; }
+function pushSet(o) { store.set('push', { ...pushCfg(), ...o }); }
+function pushOn() { const c = pushCfg(); return !!(c.on && c.url); }
+function pushKey() { let k = pushCfg().key; if (!k) { const a = new Uint8Array(12); crypto.getRandomValues(a); k = [...a].map(x => x.toString(16).padStart(2, '0')).join(''); pushSet({ key: k }); } return k; }
+// これから出す通知の一覧(実行中のタスクの区切り)。時刻は本当の時計(Date.now)で
+function pushJobs() {
+  const out = [];
+  const real = ms => Math.round(ms - debugOffset);
+  const r = runSc && runSc.rows.find(x => x.st === 'running');
+  if (r && !isPaused(r.t)) {
+    const base = baseOf(runDay || dayStr), at = m => base + m * 60000, now = nowMs(), t = r.t;
+    const add = (kind, ms, title, body) => { if (ms > now + 1000) out.push({ id: `${t.id}:${kind}:${Math.round(real(ms) / 1000)}`, at: real(ms), title, body }); };
+    if (r.sw) {
+      if (r.curPh && r.curPh.k === 'b' && isFinite(r.curPh.e)) add('work', at(r.curPh.e), SIGNALS.work.title, `${t.name} ・ 作業を再開します`);
+      else if (t.pomo && r.sw && !r.sw.ask) add('ask', now + (swNextAsk(t) - r.sw.workMin) * 60000, `🍅 ${cfgOf(t).work}分たちました`, `${t.name} ・ 休憩しますか?`);
+    } else {
+      const ph = r.phases || [];
+      for (let i = 0; i < ph.length - 1; i++) {
+        const nx = ph[i + 1];
+        add(nx.k === 'b' ? 'brk' : 'work', at(ph[i].e), SIGNALS[nx.k === 'b' ? 'brk' : 'work'].title, `${t.name} ・ ${fmt(nx.e)} まで${nx.k === 'b' ? (nx.long ? '長休憩' : '休憩') : '作業'}`);
+      }
+      add('over', at(r.target), SIGNALS.over.title, `${t.name} ・ 予定の所要時間(${fmt(r.target)}終了)に達しました`);
+    }
+  }
+  pushExtra = pushExtra.filter(j => j.at > Date.now());
+  return out.concat(pushExtra).slice(0, 50);
+}
+async function pushSub() {
+  if (!SW_OK || !('PushManager' in window)) return null;
+  const reg = swReg || await navigator.serviceWorker.ready;
+  return reg.pushManager.getSubscription();
+}
+async function pushPost(body, keepalive) {
+  const r = await fetch(pushCfg().url, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ key: pushKey(), ...body }), keepalive: !!keepalive });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || `つなぎ先が ${r.status} を返しました`);
+  return j;
+}
+// 予定が変わったら送り直す。render から毎回呼ばれるので、変わったときだけ(少しまとめて)送る
+function pushSync(now) {
+  if (!pushOn()) return;
+  const jobs = pushJobs(), sig = JSON.stringify(jobs.map(j => [j.id, j.title, j.body]));
+  if (sig === pushSentSig && !now) return;
+  if (pushTimer && sig === pushWaitSig && !now) return; // 同じ中身を送る準備中(画面は毎秒描き直すので、待ち時間をのばさない)
+  clearTimeout(pushTimer); pushWaitSig = sig;
+  pushTimer = setTimeout(async () => {
+    pushTimer = null; pushWaitSig = null;
+    try {
+      const sub = await pushSub();
+      if (!sub) { setText('pushState', '⚠ 通知の登録が切れています。「やめる」→「つなぐ」でつなぎ直してください。'); return; }
+      await pushPost({ type: 'sync', sub: sub.toJSON(), jobs }, now);
+      pushSentSig = sig;
+    } catch (e) { pushSentSig = null; } // 次の render でやり直す
+  }, now ? 0 : 1500);
+}
+// 裏へ回る(アプリを閉じる)ときは、待たずにすぐ送る
+document.addEventListener('visibilitychange', () => { if (document.hidden && pushOn()) { pushSentSig = null; pushSync(true); } });
+const b64uToBytes = s => { s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; return Uint8Array.from(atob(s), c => c.charCodeAt(0)); };
+async function pushConnect() {
+  const url = $('pushUrl').value.trim().replace(/\/+$/, '');
+  setText('pushMsg', '');
+  if (!/^https:\/\//.test(url)) { setText('pushMsg', 'https:// で始まるワーカーの URL を入れてください。'); return; }
+  if (IS_IOS && !IS_STANDALONE) { setText('pushMsg', 'iPhone・iPad では、ホーム画面に追加した StudyLine から開いて「つなぐ」を押してください(Safari のままでは通知を受け取れません)。'); return; }
+  if (!SW_OK || !('PushManager' in window) || !notifySupported()) { setText('pushMsg', 'このブラウザは、閉じているときの通知に対応していません。'); return; }
+  setText('pushMsg', 'つないでいます…');
+  try {
+    const perm = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
+    if (perm !== 'granted') { setText('pushMsg', '通知が許可されませんでした。端末の設定で StudyLine の通知を許可してください。'); return; }
+    store.set('notify', true);
+    const info = await fetch(url).then(r => r.json());
+    if (!info || info.app !== 'studyline-push' || !info.key) throw new Error(info && info.error || 'StudyLine 用のプログラムではないようです。URL とコードを確かめてください。');
+    const reg = swReg || await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (sub && pushCfg().vapid && pushCfg().vapid !== info.key) { await sub.unsubscribe(); sub = null; } // つなぎ先が変わったら登録し直す
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uToBytes(info.key) });
+    pushSet({ url, vapid: info.key, on: true });
+    await pushPost({ type: 'sync', sub: sub.toJSON(), jobs: pushJobs() });
+    pushSentSig = null; pushSync();
+    setText('pushMsg', '✅ つながりました。「テスト」で、閉じていても届くか試せます。');
+  } catch (e) {
+    setText('pushMsg', '⚠ つなげませんでした: ' + (e && e.message || e));
+  }
+  syncPushUI();
+}
+async function syncPushUI() {
+  const c = pushCfg();
+  $('pushReady').hidden = !!c.on; $('pushOnBox').hidden = !c.on;
+  if (!$('pushUrl').value && c.url) $('pushUrl').value = c.url;
+  if (!$('pushCode').value) {
+    try { const code = await fetch('push-worker.js', { cache: 'no-cache' }).then(r => r.text()); $('pushCode').value = code.replace('__KEY__', pushKey()); }
+    catch (e) { $('pushCode').value = '(コードを読み込めませんでした。電波のある所でもう一度開いてください)'; }
+  }
+  if (!c.on) { setText('pushState', ''); return; }
+  setText('pushState', `🔔 ON: ${c.url.replace(/^https:\/\//, '')} につないでいます`);
+  try {
+    const info = await fetch(c.url).then(r => r.json());
+    const ago = info.cron ? (Date.now() - info.cron) / 1000 : Infinity;
+    setText('pushState', ago < 150 ? `🔔 ON ・ 毎分の見回りが動いています(${Math.round(ago)}秒前)` : '⚠ ON ですが、毎分の見回り(Cron トリガー)がまだ動いていません。手順6を確かめてください(設定してから動き出すまで数分かかります)。');
+  } catch (e) { setText('pushState', '⚠ つなぎ先に届きません。電波か URL を確かめてください。'); }
+}
+$('pushConnect').addEventListener('click', pushConnect);
+$('pushCopy').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText($('pushCode').value); setText('pushMsg', 'コードをコピーしました。Cloudflare のコードの画面に貼り付けてください。'); }
+  catch (e) { $('pushCode').select(); setText('pushMsg', 'コピーできなかったので、上の欄を長押し(または選択)してコピーしてください。'); }
+});
+$('pushTest').addEventListener('click', () => {
+  pushExtra.push({ id: 'test:' + Date.now(), at: Date.now() + 20000, title: '🔔 テスト通知', body: '閉じていても、このように届きます' });
+  pushSentSig = null; pushSync(true);
+  setText('pushMsg', '20秒後に届きます。今のうちにアプリを閉じるか、画面を消して待ってください。');
+});
+$('pushOff').addEventListener('click', async () => {
+  try { const sub = await pushSub(); if (sub) { await pushPost({ type: 'remove', sub: sub.toJSON() }).catch(() => {}); await sub.unsubscribe(); } } catch (e) {}
+  pushSet({ on: false }); pushSentSig = null;
+  setText('pushMsg', '閉じているときの通知をやめました。');
+  syncPushUI();
+});
 
 /* ================= 画面の見た目「Apple風」「Material風」 ================= */
 // 移動 = タブ(Apple: 下に浮かぶ・横長では上 / Material: 下のバー・広い画面では左のレール)
