@@ -888,7 +888,7 @@ html.ui-apple .mode-tog button.on, html.ui-apple .side-tabs button[aria-selected
 /* チェックの切り替えは iOS のスイッチにする */
 html.ui-apple .toggle { justify-content: space-between; flex-direction: row-reverse; gap: 12px; width: 100%; }
 html.ui-apple .toggle input[type="checkbox"] { -webkit-appearance: none; appearance: none; flex: none; width: 51px; height: 31px; border-radius: 999px; background: var(--ap-fill); position: relative; cursor: pointer; transition: background 0.2s; padding: 0; }
-html.ui-apple .toggle input[type="checkbox"]::before { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15), 0 1px 1px rgba(0, 0, 0, 0.16); transition: transform 0.2s; }
+html.ui-apple .toggle input[type="checkbox"]::before { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 999px; background: #fff; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15), 0 1px 1px rgba(0, 0, 0, 0.16); transition: transform 0.2s; }
 html.ui-apple .toggle input[type="checkbox"]:checked { background: var(--ap-green); }
 html.ui-apple .toggle input[type="checkbox"]:checked::before { transform: translateX(20px); }
 /* ---- 内容の層: カード・表 ---- */
@@ -1005,8 +1005,8 @@ html.ui-apple .set-nav { background: transparent; border-right: 0; gap: 0; paddi
 html.ui-apple .set-nav button { background: var(--panel); border-radius: 0; border-bottom: 0.5px solid var(--line); min-height: 50px; font-weight: 400; font-size: 17px; white-space: nowrap; flex: none; }
 html.ui-apple .set-nav button:first-of-type { border-radius: 14px 14px 0 0; }
 html.ui-apple .set-nav button:nth-last-of-type(2) { border-radius: 0 0 14px 14px; border-bottom: 0; }
-html.ui-apple .set-nav button[aria-current="true"] { background: var(--accent); color: #fff; }
-html.ui-apple .set-nav button[aria-current="true"]::after { color: #fff; }
+html.ui-apple .set-nav button[aria-current="true"] { background: rgba(120, 120, 128, 0.2); color: var(--text); font-weight: 600; }
+
 html.ui-apple #setPanel:not(.in-sec) .set-nav::before { content: "設定"; font-size: 34px; line-height: 41px; font-weight: 700; padding: 0 4px 14px; }
 @media (max-width: 759px) { html.ui-apple #setPanel:not(.in-sec) #setTitle { visibility: hidden; } html.ui-apple .set-nav button::after { color: rgba(60, 60, 67, 0.3); } }
 @media (min-width: 760px) { html.ui-apple .set-wrap { grid-template-columns: 290px minmax(0, 1fr); } html.ui-apple .set-body { padding-top: 8px; } html.ui-apple .set-nav::before { content: "設定"; font-size: 28px; font-weight: 700; padding: 0 4px 12px; } html.ui-apple #setTitle { visibility: hidden; } }
@@ -1177,18 +1177,37 @@ html.ui-m3 .set-body .card { border-radius: 24px; }
 /* ================= 押したときの動き(Apple風・Material風) =================
    :active は iPhone ですぐ付かず、短いタップでは見えないので、指がふれた瞬間に JS で .pressing を付ける。
    付くときは速く(0.08秒)、離したあとはばねのように戻す(0.4秒) */
-html.ui-x button, html.ui-x .toggle input[type="checkbox"]::before { transition: transform 0.4s var(--pr-spring), border-radius 0.4s var(--pr-spring), background-color 0.25s, box-shadow 0.25s, filter 0.25s, color 0.2s, width 0.3s var(--pr-spring), left 0.3s var(--pr-spring), margin 0.3s var(--pr-spring), height 0.3s var(--pr-spring); }
+html.ui-x button, html.ui-x li.row, html.ui-x .toggle input[type="checkbox"]::before { transition: opacity 0.3s ease-out, top 0.3s var(--pr-spring), transform 0.4s var(--pr-spring), border-radius 0.4s var(--pr-spring), background-color 0.25s, box-shadow 0.25s, filter 0.25s, color 0.2s, width 0.3s var(--pr-spring), left 0.3s var(--pr-spring), margin 0.3s var(--pr-spring), height 0.3s var(--pr-spring); }
 html.ui-x { --pr-spring: cubic-bezier(0.3, 1.6, 0.5, 1); }
 html.ui-x button:active { filter: none; }
 html.ui-x .pressing, html.ui-x .pressing::before, html.ui-x .pressing input::before, html.ui-x .pressing svg { transition-duration: 0.08s !important; transition-timing-function: ease-out !important; }
-/* Apple風: ふつうのボタンは少し縮んで暗く、ガラスのボタンはふくらむ、一覧の行は灰色になる */
-html.ui-apple button.pressing { transform: scale(0.95); filter: brightness(0.9); }
-html.ui-apple button.big.pressing, html.ui-apple button.primary.grow.pressing { transform: scale(0.97); }
-html.ui-apple .ap-circ.pressing, html.ui-apple .ap-pill.pressing { transform: scale(1.14); filter: brightness(1.04); }
-html.ui-apple :is(.set-nav, #apMenu) button.pressing, html.ui-apple .row button.pressing { transform: none; filter: none; background-color: rgba(120, 120, 128, 0.26) !important; }
-html.ui-apple .set-head button.pressing { transform: scale(1.1); filter: none; }
-html.ui-apple .toggle.pressing input[type="checkbox"]::before { width: 34px; }
-html.ui-apple .toggle.pressing input[type="checkbox"]:checked::before { transform: translateX(13px); }
+/* Apple風(iOS 26 の動きに合わせる):
+   ふつうのボタン・チップ・切り替えは縮まずに薄くなる(離すとふわっと戻る) / ガラスの丸ボタンと大きいカプセルはふくらむ /
+   一覧の行は行ぜんたいが灰色になる / スイッチはつまみが大きな透明のガラスの粒になって、後ろの色を透かしながら動く */
+html.ui-apple button.pressing { opacity: 0.45; }
+html.ui-apple button.primary.pressing, html.ui-apple button.big.pressing { opacity: 1; transform: scale(1.05); filter: brightness(1.12) saturate(1.1); }
+html.ui-apple .ap-circ.pressing, html.ui-apple .ap-pill.pressing { opacity: 1; transform: scale(1.15); filter: brightness(1.06); }
+html.ui-apple .set-head button.pressing { opacity: 1; transform: scale(1.12); }
+html.ui-apple :is(.set-nav, #apMenu) button.pressing, html.ui-apple li.row.pressing { opacity: 1; transform: none; filter: none; background-color: rgba(120, 120, 128, 0.22) !important; }
+html.ui-apple .toggle.pressing input[type="checkbox"]::before {
+  top: -4px; left: -7px; width: 45px; height: 39px; border-radius: 999px;
+  background: rgba(255, 255, 255, 0.42);
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.98), inset 0 4px 5px rgba(255, 255, 255, 0.8), inset 0 -3px 8px rgba(0, 0, 0, 0.12), inset 2px 0 4px rgba(0, 0, 0, 0.05), 0 6px 18px rgba(0, 0, 0, 0.2);
+  -webkit-backdrop-filter: blur(0.6px) saturate(0.75) brightness(1.08); backdrop-filter: blur(0.6px) saturate(0.75) brightness(1.08);
+  transition: top 0.14s ease-out, left 0.14s ease-out, width 0.14s ease-out, height 0.14s ease-out, background 0.14s, box-shadow 0.14s, transform 0.38s var(--pr-spring) !important;
+}
+html.ui-apple .toggle.pressing input[type="checkbox"]:checked::before { transform: translateX(20px); }
+@media (prefers-color-scheme: dark) {
+  html.ui-apple .toggle.pressing input[type="checkbox"]::before { background: rgba(255, 255, 255, 0.07); box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.55), inset 0 3px 4px rgba(255, 255, 255, 0.3), 0 6px 16px rgba(0, 0, 0, 0.4); }
+}
+/* 設定の行を押すと、次の画面が右からすべり込む(戻るときは左から)。広い画面では右側を入れかえる */
+@keyframes ap-push { from { transform: translateX(100%); } }
+@keyframes ap-pop { from { transform: translateX(-28%); opacity: 0.5; } }
+@keyframes ap-fade { from { opacity: 0; transform: translateY(6px); } }
+html.ui-apple .set-wrap { overflow: hidden; }
+html.ui-apple .ap-push { animation: ap-push 0.5s cubic-bezier(0.2, 0.9, 0.2, 1); }
+html.ui-apple .ap-pop { animation: ap-pop 0.45s cubic-bezier(0.2, 0.9, 0.2, 1); }
+html.ui-apple .ap-fade { animation: ap-fade 0.22s ease-out; }
 /* Material風: 角が四角くなり、上に薄い色の層(ステートレイヤー)が乗る */
 html.ui-m3 button.pressing { border-radius: 10px; box-shadow: inset 0 0 0 999px color-mix(in srgb, currentColor 12%, transparent); }
 html.ui-m3 .chips button.pressing { border-radius: 18px; }
@@ -3397,7 +3416,7 @@ document.addEventListener('keydown', e => {
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '4.9.1';
+const APP_VERSION = '4.9.2';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
@@ -3647,8 +3666,14 @@ function updateSetDot() {
 }
 $('setOpen').addEventListener('click', () => openSettings());
 $('setClose').addEventListener('click', closeSettings);
-$('setBack').addEventListener('click', () => selectSet(null));
-$('setNav').addEventListener('click', e => { const b = e.target.closest('[data-sec]'); if (b) selectSet(b.dataset.sec); });
+// Apple風: 行を押すと次の画面が右からすべり込み、戻ると一覧が左から戻る
+function setSlide(el, cls) {
+  if (uiKind() !== 'apple') return;
+  el.classList.remove('ap-push', 'ap-pop', 'ap-fade'); void el.offsetWidth; el.classList.add(cls);
+  el.addEventListener('animationend', () => el.classList.remove(cls), { once: true });
+}
+$('setBack').addEventListener('click', () => { selectSet(null); setSlide($('setNav'), 'ap-pop'); });
+$('setNav').addEventListener('click', e => { const b = e.target.closest('[data-sec]'); if (!b) return; selectSet(b.dataset.sec); setSlide($('setBody'), wideSettings() ? 'ap-fade' : 'ap-push'); });
 $('diaLine').addEventListener('click', () => openSettings('dia'));
 addEventListener('resize', () => { if (!$('setPanel').hidden) { const cur = document.querySelector('.set-sec:not([hidden])'); selectSet(cur ? cur.dataset.sec : wideSettings() ? 'dia' : null); } });
 
@@ -4911,14 +4936,14 @@ $('uiOpts').addEventListener('change', e => {
 // 押した瞬間に「押している」見た目を付ける(Apple風・Material風)。
 // iPhone は :active がすぐ付かないので自分で付ける。スクロールのつもりの指で光らないよう 40ms だけ待ち、
 // 短いタップでも見えるように最低 0.18 秒は残す
-const PRESS_SEL = 'button, label.toggle, .logo-opts label';
+const PRESS_SEL = 'button, label.toggle, .logo-opts label, li.row';
 let pressEl = null, pressT = 0, pressTimer = null, pressX = 0, pressY = 0;
 function pressOn() { clearTimeout(pressTimer); pressTimer = null; if (pressEl) { pressEl.classList.add('pressing'); pressT = performance.now(); } }
 function pressOff(keep) {
   clearTimeout(pressTimer); pressTimer = null;
   const el = pressEl; pressEl = null; if (!el) return;
   if (keep && !el.classList.contains('pressing')) { el.classList.add('pressing'); pressT = performance.now(); }
-  const left = keep ? 180 - (performance.now() - pressT) : 0;
+  const left = keep ? (el.matches('label.toggle') ? 420 : 180) - (performance.now() - pressT) : 0; // スイッチはガラスの粒が動き終わるまで
   if (left > 0) setTimeout(() => el.classList.remove('pressing'), left); else el.classList.remove('pressing');
 }
 document.addEventListener('pointerdown', e => {
