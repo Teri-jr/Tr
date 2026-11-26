@@ -1663,13 +1663,15 @@ document.documentElement.dataset.ap = 'today';
         <div class="btnrow" style="margin-top:6px"><button type="button" id="pushCopy" class="grow">📋 コードをコピー</button></div>
         <label for="pushUrl" style="margin-top:12px">ワーカーの URL</label>
         <input id="pushUrl" type="url" placeholder="https://studyline-push.○○.workers.dev" autocomplete="off">
-        <div class="btnrow"><button type="button" id="pushConnect" class="primary grow">つなぐ</button></div>
+        <p class="note" style="margin-top:4px">ほかの端末でコードをコピーしたときは、その端末の「📋 ほかの端末用にコピー」で写した文字(URL#合言葉)をここに貼ってください。</p>
+        <div class="btnrow"><button type="button" id="pushConnect" class="primary grow">つなぐ</button><button type="button" id="pushShare" class="grow">📋 ほかの端末用にコピー</button></div>
       </div>
       <div id="pushOnBox" hidden>
         <div class="btnrow" style="margin-top:0">
           <button type="button" id="pushTest" class="grow">▶ テスト(20秒後に届く)</button>
           <button type="button" id="pushOff" class="danger">やめる</button>
         </div>
+        <div class="btnrow"><button type="button" id="pushShare2" class="grow">📋 ほかの端末用にコピー(URL#合言葉)</button></div>
       </div>
       <div class="msg" id="pushMsg" role="status"></div>
       <div class="cur-sub" id="pushState"></div>
@@ -3564,7 +3566,7 @@ document.addEventListener('keydown', e => {
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '4.12.0';
+const APP_VERSION = '4.12.1';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
@@ -5006,6 +5008,7 @@ async function pushSub() {
 async function pushPost(body, keepalive) {
   const r = await fetch(pushCfg().url, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({ key: pushKey(), ...body }), keepalive: !!keepalive });
   const j = await r.json().catch(() => ({}));
+  if (r.status === 403) throw new Error('合言葉がちがいます。Cloudflare に貼ったコードをコピーした端末で「📋 ほかの端末用にコピー」を押し、写した文字(URL#合言葉)をこの端末の「ワーカーの URL」に貼ってから「つなぐ」を押してください。');
   if (!r.ok) throw new Error(j.error || `つなぎ先が ${r.status} を返しました`);
   return j;
 }
@@ -5030,7 +5033,10 @@ function pushSync(now) {
 document.addEventListener('visibilitychange', () => { if (document.hidden && pushOn()) { pushSentSig = null; pushSync(true); } });
 const b64uToBytes = s => { s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; return Uint8Array.from(atob(s), c => c.charCodeAt(0)); };
 async function pushConnect() {
-  const url = $('pushUrl').value.trim().replace(/\/+$/, '');
+  let url = $('pushUrl').value.trim();
+  const shared = /^(https:\/\/[^#\s]+)#([0-9a-f]{16,64})$/.exec(url); // ほかの端末で写した「URL#合言葉」
+  if (shared) { url = shared[1]; if (shared[2] !== pushCfg().key) { pushSet({ key: shared[2] }); $('pushCode').value = ''; } $('pushUrl').value = url; }
+  url = url.replace(/\/+$/, '');
   setText('pushMsg', '');
   if (!/^https:\/\//.test(url)) { setText('pushMsg', 'https:// で始まるワーカーの URL を入れてください。'); return; }
   if (IS_IOS && !IS_STANDALONE) { setText('pushMsg', 'iPhone・iPad では、ホーム画面に追加した StudyLine から開いて「つなぐ」を押してください(Safari のままでは通知を受け取れません)。'); return; }
@@ -5046,8 +5052,9 @@ async function pushConnect() {
     let sub = await reg.pushManager.getSubscription();
     if (sub && pushCfg().vapid && pushCfg().vapid !== info.key) { await sub.unsubscribe(); sub = null; } // つなぎ先が変わったら登録し直す
     if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uToBytes(info.key) });
-    pushSet({ url, vapid: info.key, on: true });
+    pushSet({ url, vapid: info.key });
     await pushPost({ type: 'sync', sub: sub.toJSON(), jobs: pushJobs() });
+    pushSet({ on: true }); // 合言葉が合ってつながったときだけ ON にする
     pushSentSig = null; pushSync();
     setText('pushMsg', '✅ つながりました。「テスト」で、閉じていても届くか試せます。');
   } catch (e) {
@@ -5072,6 +5079,16 @@ async function syncPushUI() {
   } catch (e) { setText('pushState', '⚠ つなぎ先に届きません。電波か URL を確かめてください。'); }
 }
 $('pushConnect').addEventListener('click', pushConnect);
+// ほかの端末用に「URL#合言葉」を写す(Google ToDo と同じ形)
+async function pushShareCopy() {
+  const url = ($('pushUrl').value.trim().split('#')[0] || pushCfg().url || '').replace(/\/+$/, '');
+  if (!/^https:\/\//.test(url)) { setText('pushMsg', '先に「ワーカーの URL」を入れてください。'); return; }
+  const text = `${url}#${pushKey()}`;
+  try { await navigator.clipboard.writeText(text); setText('pushMsg', '✅ コピーしました。ほかの端末(ホーム画面に追加した StudyLine など)の「ワーカーの URL」に貼って「つなぐ」を押してください。'); }
+  catch (e) { setText('pushMsg', 'コピーできなかったので、次の文字を写してください: ' + text); }
+}
+$('pushShare').addEventListener('click', pushShareCopy);
+$('pushShare2').addEventListener('click', pushShareCopy);
 $('pushCopy').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText($('pushCode').value); setText('pushMsg', 'コードをコピーしました。Cloudflare のコードの画面に貼り付けてください。'); }
   catch (e) { $('pushCode').select(); setText('pushMsg', 'コピーできなかったので、上の欄を長押し(または選択)してコピーしてください。'); }
