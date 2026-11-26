@@ -887,6 +887,7 @@ html.ui-apple .mode-tog button, html.ui-apple .side-tabs button { background: tr
 html.ui-apple .mode-tog button.on, html.ui-apple .side-tabs button[aria-selected="true"] { background: var(--ap-seg); color: var(--text); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12), 0 0 0 0.5px rgba(0, 0, 0, 0.04); }
 /* チェックの切り替えは iOS のスイッチにする */
 html.ui-apple .toggle { justify-content: space-between; flex-direction: row-reverse; gap: 12px; width: 100%; }
+html.ui-x .toggle input[type="checkbox"] { touch-action: pan-y; }
 html.ui-apple .toggle input[type="checkbox"] { -webkit-appearance: none; appearance: none; flex: none; width: 51px; height: 31px; border-radius: 999px; background: var(--ap-fill); position: relative; cursor: pointer; transition: background 0.2s; padding: 0; }
 html.ui-apple .toggle input[type="checkbox"]::before { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 999px; background: #fff; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15), 0 1px 1px rgba(0, 0, 0, 0.16); transition: transform 0.2s; }
 html.ui-apple .toggle input[type="checkbox"]:checked { background: var(--ap-green); }
@@ -1182,12 +1183,12 @@ html.ui-x { --pr-spring: cubic-bezier(0.3, 1.6, 0.5, 1); }
 html.ui-x button:active { filter: none; }
 html.ui-x .pressing, html.ui-x .pressing::before, html.ui-x .pressing input::before, html.ui-x .pressing svg { transition-duration: 0.08s !important; transition-timing-function: ease-out !important; }
 /* Apple風(iOS 26 の動きに合わせる):
-   ふつうのボタン・チップ・切り替えは縮まずに薄くなる(離すとふわっと戻る) / ガラスの丸ボタンと大きいカプセルはふくらむ /
+   ボタンは大きさを変えずに薄くなる(離すとふわっと戻る) /
    一覧の行は行ぜんたいが灰色になる / スイッチはつまみが大きな透明のガラスの粒になって、後ろの色を透かしながら動く */
 html.ui-apple button.pressing { opacity: 0.45; }
-html.ui-apple button.primary.pressing, html.ui-apple button.big.pressing { opacity: 1; transform: scale(1.05); filter: brightness(1.12) saturate(1.1); }
-html.ui-apple .ap-circ.pressing, html.ui-apple .ap-pill.pressing { opacity: 1; transform: scale(1.15); filter: brightness(1.06); }
-html.ui-apple .set-head button.pressing { opacity: 1; transform: scale(1.12); }
+html.ui-apple button.primary.pressing { opacity: 0.7; }
+html.ui-apple .ap-circ.pressing, html.ui-apple .ap-pill.pressing { opacity: 0.55; }
+
 html.ui-apple :is(.set-nav, #apMenu) button.pressing, html.ui-apple li.row.pressing { opacity: 1; transform: none; filter: none; background-color: rgba(120, 120, 128, 0.22) !important; }
 html.ui-apple .toggle.pressing input[type="checkbox"]::before {
   top: -4px; left: -7px; width: 45px; height: 39px; border-radius: 999px;
@@ -1220,6 +1221,60 @@ html.ui-m3 #apTabs button.pressing { box-shadow: none; }
 html.ui-m3 #apTabs button.pressing svg { background: color-mix(in srgb, var(--m-on-s) 12%, var(--m-sc)); width: 64px; }
 html.ui-m3 .toggle.pressing input[type="checkbox"]::before { width: 28px; height: 28px; margin-top: -14px; }
 html.ui-m3 .toggle.pressing input[type="checkbox"]:checked::before { left: 18px; }
+
+/* ================= Apple風の設定: iPad・iPhone の「設定」アプリの雰囲気 =================
+   色つきの角丸の四角に白い絵のアイコン / 中央の見出し / 開いた項目の上に大きいアイコンと説明 /
+   グループの見出しは表の外に小さい灰色の字 / 設定もタブの1つなので「完了」は出さず、タブで戻る */
+.sn-ic { display: none; }
+html.ui-x .sn-em { display: none; }
+html.ui-x .sn-ic { display: inline-grid; place-items: center; flex: none; width: 30px; height: 30px; border-radius: 8px; background: var(--c); color: #fff; margin-right: 4px; }
+html.ui-x .sn-ic svg { width: 19px; height: 19px; }
+html.ui-m3 .sn-ic { background: transparent; color: var(--m-on-sv); }
+html.ui-m3 .sn-ic svg { width: 22px; height: 22px; }
+#apSetHero { display: none; }
+html.ui-apple #apSetHero:not([hidden]) { display: block; background: var(--panel); border-radius: 22px; padding: 20px; margin: 0 0 8px; max-width: 640px; }
+#apSetHero .sn-ic { width: 60px; height: 60px; border-radius: 15px; margin: 0 0 12px; }
+#apSetHero .sn-ic svg { width: 36px; height: 36px; }
+#apSetHero b { display: block; font-size: 22px; font-weight: 700; }
+#apSetHero p { margin: 4px 0 0; color: var(--sub); font-size: 15px; line-height: 1.45; }
+html.ui-apple #setPanel { z-index: 55; }
+html.ui-apple.set-open #apBar { background: none; pointer-events: none; }
+html.ui-apple.set-open #apBar > :not(#apTabs) { visibility: hidden; }
+html.ui-apple.set-open #apTabs { pointer-events: auto; }
+html.ui-apple.set-open #dock { display: none; }
+html.ui-apple #setClose { display: none; }
+html.ui-apple .set-head { position: relative; justify-content: center; min-height: calc(56px + env(safe-area-inset-top)); }
+html.ui-apple .set-head b { margin: 0; position: absolute; left: 70px; right: 70px; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html.ui-apple #setBack { position: absolute; left: calc(16px + env(safe-area-inset-left)); width: 44px; padding: 0; font-size: 0; }
+html.ui-apple #setBack { display: grid; place-items: center; }
+html.ui-apple #setBack[hidden] { display: none; }
+html.ui-apple #setBack::before { content: ""; display: block; width: 11px; height: 11px; border: solid var(--text); border-width: 0 0 2.6px 2.6px; transform: translateX(2px) rotate(45deg); border-radius: 1px; }
+html.ui-apple .set-nav button { gap: 10px; }
+html.ui-apple .set-nav button[data-sec] { padding-left: 12px; }
+html.ui-apple .set-body { padding-bottom: calc(120px + env(safe-area-inset-bottom)); }
+html.ui-apple .set-body .card { position: relative; margin-top: 30px; padding: 6px 16px 14px; }
+html.ui-apple .set-body .card > h2:first-child { position: absolute; top: -25px; left: 16px; right: 16px; margin: 0; font-size: 13px; font-weight: 600; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.ui-apple .set-body .sub-h { font-size: 13px; font-weight: 600; color: var(--sub); }
+html.ui-apple .set-body .toggle { min-height: 50px; }
+html.ui-apple .set-body .toggle + .toggle { border-top: 0.5px solid var(--line); }
+html.ui-apple .set-body button:not(.primary):not(.danger):not([aria-pressed="true"]) { color: var(--accent); }
+html.ui-apple .set-body .card + .card { margin-top: 38px; }
+@media (max-width: 759px) {
+  html.ui-apple #setPanel:not(.in-sec) .set-head { min-height: calc(8px + env(safe-area-inset-top)); padding-bottom: 0; }
+  html.ui-apple .set-nav { padding-bottom: calc(120px + env(safe-area-inset-bottom)); }
+  html.ui-apple .set-nav button[data-sec]::after { content: ""; width: 8px; height: 8px; border: solid var(--sub); opacity: 0.55; border-width: 2px 2px 0 0; transform: rotate(45deg); margin-left: auto; margin-right: 4px; }
+}
+/* 広い画面: 左は色の付いたサイドバー(行に背景なし・選ぶと灰色の丸)、右は内容。上のタブはそのまま */
+@media (min-width: 760px) {
+  html.ui-apple .set-head { display: none; }
+  html.ui-apple .set-wrap { padding-top: calc(64px + env(safe-area-inset-top)); grid-template-columns: 320px minmax(0, 1fr); }
+  html.ui-apple .set-nav { background: var(--ap-side); margin: 0 0 12px 12px; border-radius: 24px; padding: 16px 10px 20px; }
+  html.ui-apple .set-nav button, html.ui-apple .set-nav button:first-of-type, html.ui-apple .set-nav button:nth-last-of-type(2) { background: transparent; border: 0; border-radius: 12px; min-height: 46px; }
+  html.ui-apple .set-nav button[aria-current="true"] { background: rgba(120, 120, 128, 0.2); }
+  html.ui-apple .set-body { padding: 4px 28px 40px; }
+}
+html.ui-apple { --ap-side: #e9e9ef; }
+@media (prefers-color-scheme: dark) { html.ui-apple { --ap-side: #1c1c1e; } }
 </style>
 <script>
 // 画面の見た目(Apple風)を、描く前に決めておく(一瞬いつもの見た目が出ないように)。?ui=apple / ?ui=classic で切り替えも残す
@@ -1452,6 +1507,7 @@ document.documentElement.dataset.ap = 'today';
       <button type="button" data-sec="reset">🗑 リセット</button>
     </nav>
     <div class="set-body" id="setBody">
+      <div id="apSetHero" hidden><i class="sn-ic"></i><b></b><p></p></div>
       <div class="set-sec" data-sec="dia" hidden>
     <section class="card" id="settingsCard">
       <h2>ダイヤ設定(開始時刻・就寝期限)</h2>
@@ -3416,7 +3472,7 @@ document.addEventListener('keydown', e => {
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '4.9.2';
+const APP_VERSION = '4.10.0';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
@@ -3629,11 +3685,48 @@ $('installHow').addEventListener('click', () => openOkModal({ title: '📱 ホ�
 /* ================= ⚙ 設定(ダイヤ・ポモドーロ・音・データ・デザイン・リセット・使い方・変更履歴) ================= */
 const SET_TITLES = { quake: '🌏 地震', exam: '📅 受験日', gtodo: '✅ Google ToDo', dia: '🚃 ダイヤ', pomo: '🍅 ポモドーロ', sound: '🔊 音・通知', data: '💾 データ', design: '🎨 デザイン', reset: '🗑 リセット', guide: '❓ 使い方', history: '📝 変更履歴' };
 const wideSettings = () => matchMedia('(min-width: 760px)').matches;
+/* 設定の一覧のアイコン(Apple風・Material風)。いつもの見た目では絵文字のまま */
+const SET_ICONS = {
+  dia: ['#34c759', '<rect x="6" y="3.5" width="12" height="13" rx="3"/><path d="M6 10.5h12M9 20l1.5-3.5M15 20l-1.5-3.5"/><circle cx="9.5" cy="13.5" r=".6" fill="currentColor"/><circle cx="14.5" cy="13.5" r=".6" fill="currentColor"/>'],
+  pomo: ['#ff383c', '<circle cx="12" cy="13.5" r="7"/><path d="M12 10v3.8l2.4 1.6M9.5 3.5h5"/>'],
+  sound: ['#ff2d55', '<path d="M4.5 9.5h3.2L12 6v12l-4.3-3.5H4.5z" fill="currentColor"/><path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a7.6 7.6 0 0 1 0 11"/>'],
+  exam: ['#ff8d28', '<rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M8.5 3v4M15.5 3v4"/><path d="M8.5 14.5l2.2 2.2 4.5-4.5"/>'],
+  design: ['#0088ff', '<path d="M12 3.5a8.5 8.5 0 0 0 0 17c1.4 0 2-.9 1.6-2-.5-1.3.3-2.5 1.7-2.5H17a3.5 3.5 0 0 0 3.5-3.5c0-5-3.8-9-8.5-9z"/><circle cx="8" cy="11" r="1.2" fill="currentColor"/><circle cx="11.5" cy="7.5" r="1.2" fill="currentColor"/><circle cx="16" cy="9" r="1.2" fill="currentColor"/>'],
+  quake: ['#a2845e', '<path d="M3 12h3l2-5 3 10 2.5-7 2 4H21"/>'],
+  gtodo: ['#0088ff', '<circle cx="12" cy="12" r="8.5"/><path d="M8 12.2l2.8 2.8L16.2 9.5"/>'],
+  data: ['#8e8e93', '<rect x="4" y="4.5" width="16" height="5" rx="1.5"/><path d="M5.5 9.5v8.5a1.5 1.5 0 0 0 1.5 1.5h10a1.5 1.5 0 0 0 1.5-1.5V9.5M10 13h4"/>'],
+  guide: ['#00c3d0', '<circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.6a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.6"/><circle cx="12" cy="16.8" r=".7" fill="currentColor"/>'],
+  history: ['#6155f5', '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>'],
+  reset: ['#ff383c', '<path d="M5 7h14M10 7V5h4v2M7 7l1 12.5h8L17 7"/>'],
+};
+const SET_DESC = {
+  dia: '勉強を始める時刻と寝る時刻、塾・夕食などの決まった予定を決めます。', pomo: '作業と休憩の長さと、長い休憩をとる回数を決めます。',
+  sound: '区切りの音と通知、画面を消さない設定です。', exam: '受験日までの日数を、目標の上に出します。',
+  design: '画面の見た目と、ロゴ・全画面タイマーのデザインを選びます。', quake: '緊急地震速報と揺れたあとの震度を、現在地に合わせて知らせます。',
+  gtodo: 'Google ToDo のタスクを取り込み、終えたら完了にします。', data: 'すべての記録をファイルに書き出したり、読み込んだりします。',
+  guide: 'StudyLine の使い方です。', history: 'これまでの更新の内容です。', reset: '表示中の日の予定を消します。',
+};
+const setIconHTML = k => SET_ICONS[k] ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${SET_ICONS[k][1]}</svg>` : '';
+for (const b of $('setNav').querySelectorAll('[data-sec]')) {
+  const t = b.firstChild, k = b.dataset.sec;
+  if (t && t.nodeType === 3) { const m = /^(\S+\s)/.exec(t.textContent); if (m) { t.textContent = t.textContent.slice(m[1].length); const em = document.createElement('span'); em.className = 'sn-em'; em.textContent = m[1]; b.insertBefore(em, t); } }
+  const ic = document.createElement('i'); ic.className = 'sn-ic'; ic.setAttribute('aria-hidden', 'true'); ic.style.setProperty('--c', SET_ICONS[k] ? SET_ICONS[k][0] : '#8e8e93'); ic.innerHTML = setIconHTML(k);
+  b.insertBefore(ic, b.firstChild);
+}
+function setHero(sec) {
+  const h = $('apSetHero');
+  h.hidden = !sec || uiKind() !== 'apple';
+  if (h.hidden) return;
+  const ic = h.querySelector('.sn-ic'); ic.style.setProperty('--c', SET_ICONS[sec] ? SET_ICONS[sec][0] : '#8e8e93'); ic.innerHTML = setIconHTML(sec);
+  h.querySelector('b').textContent = (SET_TITLES[sec] || '').replace(/^\S+\s/, '');
+  h.querySelector('p').textContent = SET_DESC[sec] || '';
+}
 function openSettings(sec) {
   $('setPanel').hidden = false;
   document.documentElement.classList.add('set-open');
   $('logoPrev').appendChild($('logoAnim')); // ヘッダーは設定の下に隠れるので、ロゴは設定の中の見本で流す
   selectSet(sec || (wideSettings() ? 'dia' : null));
+  if (isNewUi()) apTabsSel();
 }
 function selectSet(sec) {
   for (const el of document.querySelectorAll('.set-sec')) el.hidden = el.dataset.sec !== sec;
@@ -3641,8 +3734,9 @@ function selectSet(sec) {
   $('setPanel').classList.toggle('in-sec', !!sec);
   $('setBack').hidden = !sec || wideSettings();
   const stt = sec && !wideSettings() ? SET_TITLES[sec] : '⚙ 設定';
-  $('setTitle').textContent = uiKind() === 'material' ? stt.replace(/^\S+\s/, '') : stt; // Material風は文字だけ
+  $('setTitle').textContent = isNewUi() ? stt.replace(/^\S+\s/, '') : stt; // Apple風・Material風は文字だけ
   $('setBody').scrollTop = 0;
+  setHero(sec);
   if (sec === 'gtodo') syncGtSettings();
   if (sec === 'quake') syncQkSettings();
   if (sec === 'exam') syncExamUI();
@@ -4796,7 +4890,8 @@ function applyUi() {
 // タブの切り替え。スマホ(1列): today = 運行状況・時刻表・追加 / goal = 今週の目標 / stats = 記録(勉強時間・🍅・点数)
 // 横長の画面: 「今日」は常に見えているので、タブは右の列の中身(目標・記録・ポモドーロ・点数)を選ぶ
 function setApTab(k, quiet) {
-  if (k === 'set') { openSettings(); apTabsSel(); return; }
+  if (k === 'set') { if ($('setPanel').hidden) openSettings(); apTabsSel(); return; }
+  if (!quiet && !$('setPanel').hidden) closeSettings(); // 設定を開いているときにほかのタブを押したら、設定を閉じてそこへ
   if (!isOneCol() && k !== 'today') { selectSide(k); apTabsSel(); return; }
   if (k === 'pomo' || k === 'score') { document.documentElement.dataset.ap = 'stats'; selectSide(k); }
   else {
@@ -4811,6 +4906,7 @@ function setApTab(k, quiet) {
 }
 // 今どのタブが選ばれているか
 function apCurTab() {
+  if (!$('setPanel').hidden) return 'set';
   const side = store.get('sideTab') || 'goal';
   if (!isOneCol()) return side;
   const ap = document.documentElement.dataset.ap;
@@ -4954,7 +5050,26 @@ document.addEventListener('pointerdown', e => {
   pressEl = el; pressX = e.clientX; pressY = e.clientY;
   if (e.pointerType === 'mouse') pressOn(); else pressTimer = setTimeout(pressOn, 40);
 }, { capture: true, passive: true });
-document.addEventListener('pointermove', e => { if (pressEl && Math.hypot(e.clientX - pressX, e.clientY - pressY) > 10) pressOff(false); }, { capture: true, passive: true });
+document.addEventListener('pointermove', e => {
+  if (!pressEl) return;
+  const dx = e.clientX - pressX, dy = e.clientY - pressY;
+  // スイッチは横になぞるとオン・オフ(右へ = オン、左へ = オフ)。縦に動いたらスクロールとみなしてやめる
+  if (pressEl.matches('label.toggle') && Math.abs(dy) < 24) {
+    const cb = pressEl.querySelector('input[type=checkbox]');
+    if (cb && Math.abs(dx) > 8) {
+      if (!pressEl.classList.contains('pressing')) pressOn();
+      toggleSlid = pressEl;
+      const want = dx > 0;
+      if (cb.checked !== want) { cb.checked = want; cb.dispatchEvent(new Event('input', { bubbles: true })); cb.dispatchEvent(new Event('change', { bubbles: true })); }
+    }
+    return;
+  }
+  if (Math.hypot(dx, dy) > 10) pressOff(false);
+}, { capture: true, passive: true });
+// なぞってオン・オフしたあとの「クリック」で、もう一度切り替わらないようにする
+let toggleSlid = null;
+document.addEventListener('click', e => { if (toggleSlid && toggleSlid.contains(e.target)) { e.preventDefault(); } toggleSlid = null; }, true);
+document.addEventListener('pointerdown', () => { toggleSlid = null; }, true);
 document.addEventListener('pointerup', () => pressOff(true), { capture: true, passive: true });
 document.addEventListener('pointercancel', () => pressOff(false), { capture: true, passive: true });
 addEventListener('scroll', () => pressOff(false), { capture: true, passive: true });
