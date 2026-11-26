@@ -781,8 +781,12 @@ button.brk-btn { background: var(--break-line); color: #fff; border-color: trans
 .side-warn { background: var(--late-bg); color: var(--late); border-radius: 10px; padding: 6px 10px; font-size: 13px; font-weight: 700; margin-bottom: 10px; }
 .side-warn[hidden] { display: none; }
 .side-tabs button { font-size: 13px; }
-.sc-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px; margin-bottom: 10px; }
+.sc-form { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.sc-form > * { flex: 1 1 100%; min-width: 0; }
+.sc-form > #scDate { flex: 0 0 auto; width: auto; }
+.sc-form > .pair { flex: 1 1 130px; }
 .sc-form input { min-width: 0; }
+.sc-form .pair input { padding-left: 10px; padding-right: 6px; }
 .sc-form .wide { grid-column: 1 / -1; }
 .sc-form .pair { display: flex; align-items: center; gap: 4px; }
 .sc-form .pair input { min-width: 0; }
@@ -1296,6 +1300,16 @@ html.ui-apple .set-body .card > .btnrow { border-top: 0.5px solid var(--line); m
 html.ui-apple .qk-chips { flex-wrap: nowrap; gap: 0; background: var(--ap-fill); border-radius: 10px; padding: 2px; margin-top: 8px; }
 html.ui-apple .qk-chips button { flex: 1 1 0; min-width: 0; min-height: 32px; padding: 0; border-radius: 8px; background: transparent; color: var(--text); font-size: 14px; font-weight: 600; }
 html.ui-apple .qk-chips button[aria-pressed="true"] { background: #ff383c; color: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15); }
+/* Apple風の「全画面で出す震度」: 選んだ所はその震度の色の丸。ほかは下に色の線。押すとほかの切り替えと同じガラスの粒 */
+html.ui-apple #qkFullChips .seg-lens { background: var(--lc, #ff383c); }
+html.ui-apple #qkFullChips.press .seg-lens { background: rgba(255, 255, 255, 0.05); }
+html.ui-apple #qkFullChips > button { color: var(--text); }
+html.ui-apple #qkFullChips > button[aria-pressed="true"] { color: #fff; }
+html.ui-apple #qkFullChips > button.qk-light[aria-pressed="true"] { color: #3a2a00; }
+html.ui-apple #qkFullChips.press > button[aria-pressed="true"]:not(.hov) { color: var(--text); }
+html.ui-apple #qkFullChips > button::after { content: ""; position: absolute; left: 28%; right: 28%; bottom: 4px; height: 3px; border-radius: 2px; background: var(--qc); transition: opacity 0.2s; }
+html.ui-apple #qkFullChips > button[aria-pressed="true"]::after { opacity: 0; }
+html.ui-apple #qkFullChips > button.hov { color: var(--qc) !important; }
 html.ui-apple .set-body .toggle { font-size: 16px; }
 html.ui-apple .set-body .qk-row + .toggle, html.ui-apple .set-body .qk-row + .qk-row { border-top: 0; }
 html.ui-apple .set-body .card + .card { margin-top: 38px; }
@@ -3513,7 +3527,7 @@ document.addEventListener('keydown', e => {
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '4.11.1';
+const APP_VERSION = '4.11.2';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
@@ -4019,6 +4033,8 @@ $('gtSync').addEventListener('change', () => { gtSet({ sync: $('gtSync').checked
 // 設定 { on, full: 全画面にする震度, beep: 音を鳴らす震度(0 = 鳴らさない), small: 'band' | 'none', pause, after }。震度は 0〜9 の番号(5 = 5弱, 6 = 5強, 7 = 6弱, 8 = 6強, 9 = 7)
 // 現在地 'quakeLoc' = { lat, lon, pref, how: 'gps' | 'pref', at } はこの端末だけ(書き出しに入れない)
 const SHINDO = ['0', '1', '2', '3', '4', '5弱', '5強', '6弱', '6強', '7'];
+// 震度ごとの色(弱い揺れは青、強くなるほど黄・橙・赤・紫)
+const QK_COLORS = ['#8e8e93', '#8e8e93', '#00aaff', '#0055ff', '#f2c200', '#ffb000', '#ff8d28', '#ff383c', '#c4002f', '#9b1fa8'];
 const shindoIdx = x => SHINDO.indexOf(String(x ?? '').replace('-', '弱').replace('+', '強').normalize('NFKC'));
 const P2P_SCALE = { 10: 1, 20: 2, 30: 3, 40: 4, 45: 5, 46: 5, 50: 6, 55: 7, 60: 8, 70: 9 };
 const qkCfg = () => { const c = store.get('quake'), o = isObj(c) ? c : {}; const lv = (v, d) => Number.isInteger(v) && v >= 0 && v <= 9 ? v : d; return { on: o.on !== false, full: Math.max(1, lv(o.full, 5)), beep: lv(o.beep, 5), small: o.small === 'none' ? 'none' : 'band', pause: o.pause !== false, after: o.after !== false }; };
@@ -4207,7 +4223,9 @@ function qkDemoInfo() {
 function syncQkSettings() {
   const c = qkCfg(), L = qkLoc();
   $('qkOn').checked = c.on; $('qkPause').checked = c.pause; $('qkAfter').checked = c.after; $('qkSmall').value = c.small;
-  $('qkFullChips').innerHTML = SHINDO.slice(1).map((s2, i) => `<button type="button" data-qkfull="${i + 1}" aria-pressed="${c.full === i + 1}">${s2}</button>`).join('');
+  const fc = $('qkFullChips'), lens = fc.querySelector('.seg-lens'); // Apple風のすべる丸は残す
+  fc.innerHTML = SHINDO.slice(1).map((s2, i) => `<button type="button" data-qkfull="${i + 1}" aria-pressed="${c.full === i + 1}" style="--qc:${QK_COLORS[i + 1]}"${i + 1 === 4 || i + 1 === 5 ? ' class="qk-light"' : ''}>${s2}</button>`).join('');
+  if (lens) fc.prepend(lens);
   $('qkBeep').innerHTML = '<option value="0">鳴らさない</option>' + SHINDO.slice(1).map((s2, i) => `<option value="${i + 1}" ${c.beep === i + 1 ? 'selected' : ''}>${s2}以上</option>`).join('');
   if (!c.beep) $('qkBeep').value = '0';
   $('qkLocTxt').textContent = L ? `${L.how === 'gps' ? '現在地' : '手で選んだ都道府県'}: ${L.pref || '(都道府県が分かりません)'}${L.at ? `(${new Date(L.at).getMonth() + 1}/${new Date(L.at).getDate()} に設定)` : ''}` : 'まだ設定していません。現在地を取得するか、都道府県を選んでください(設定するまで知らせは出ません)。';
@@ -5121,17 +5139,18 @@ addEventListener('scroll', () => pressOff(false), { capture: true, passive: true
 document.addEventListener('touchstart', () => {}, { passive: true }); // iPhone で :active も効くように
 
 /* ===== Apple風の切り替え(セグメント): 選んだ所の白い丸。押すとガラスの粒になり、なぞると指についてきて、離した所を選ぶ ===== */
-const segSel = c => c.querySelector(':scope > button.on, :scope > button[aria-selected="true"]');
+const segSel = c => c.querySelector(':scope > button.on, :scope > button[aria-selected="true"], :scope > button[aria-pressed="true"]');
 function segPlace(c) {
   const l = c.querySelector(':scope > .seg-lens'), b = segSel(c); if (!l || c.classList.contains('press')) return;
   if (!b || !b.offsetWidth) { l.style.opacity = '0'; return; }
   l.style.opacity = '1'; l.style.width = b.offsetWidth + 'px'; l.style.setProperty('--lx', b.offsetLeft + 'px');
+  const qc = b.style.getPropertyValue('--qc'); if (qc) l.style.setProperty('--lc', qc); // 震度の色
 }
 const segRO = 'ResizeObserver' in window ? new ResizeObserver(es => { for (const e of es) segPlace(e.target); }) : null;
-for (const c of document.querySelectorAll('.mode-tog, .side-tabs')) {
+for (const c of document.querySelectorAll('.mode-tog, .side-tabs, #qkFullChips')) {
   c.classList.add('has-lens');
   const l = document.createElement('i'); l.className = 'seg-lens'; l.setAttribute('aria-hidden', 'true'); c.prepend(l);
-  new MutationObserver(() => segPlace(c)).observe(c, { subtree: true, attributes: true, attributeFilter: ['class', 'aria-selected'] });
+  new MutationObserver(() => segPlace(c)).observe(c, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'aria-selected', 'aria-pressed'] });
   if (segRO) segRO.observe(c);
   segPlace(c);
 }
