@@ -2,7 +2,7 @@
 
 GitHub Pages で公開している個人用の学習アプリ置き場。main に push すると 1〜数分で https://teri-jr.github.io/Tr/ に反映される。
 
-- `/`(index.html, sw.js, manifest.json, changelog.json, アイコン): 受験勉強の運行表アプリ「StudyLine」
+- `/`(index.html, sw.js, manifest.json, changelog.json, アイコン): 受験勉強の運行表アプリ「StudyLine」。`push-worker.js` は「閉じていても通知する」用に利用者が自分の Cloudflare Workers に貼るプログラム(StudyLine の設定画面が読み込んで合言葉を入れて表示する。GitHub Pages では動かさない)
 - `vocab/`: 単語・熟語・漢字の暗記アプリ「記憶回路」(別アプリ。触るときはそちらの changelog.json を使う)
 - `home/`: 学校の iPad に置く待機画面「Platform」(別アプリ。触るときは `home/index.html` の `APP_VERSION` と `home/changelog.json` を使う。番号は StudyLine と同じ「大.中.小」)。StudyLine・記憶回路の保存データを同じサイトの localStorage から読む(記憶回路の復習記録は書き込みもする)
 - `oomawari/`: JRの大回り乗車のルートを見せる「大回りジェネレータ」(別アプリ)。`index.html` がアプリ本体(スマホ・タブレット・PCで並びが変わる)、`kiosk.html` が券売機モード(あそび)。`index.html` の `APP_VERSION` と `oomawari/changelog.json` で版を管理(番号は StudyLine と同じ「大.中.小」)。`data.js` が路線データ(分岐駅から分岐駅までの辺・営業キロ・運転系統・折り返しの特例。手入力の目安で、差し替えるときはここだけ直す)、`engine.js` がルート探索(同じ駅を2回通らない道をさがす。画面とは別なので `node` でも動かせる)。`sw.js` は電波がないときに前回の控えを返す
