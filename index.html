@@ -968,8 +968,13 @@ html.ui-x #apTabs .ap-wide { display: none; }
 #apTabs .dot { position: absolute; top: 6px; left: calc(50% + 8px); width: 9px; height: 9px; border-radius: 50%; background: var(--late); }
 #apTabs .dot[hidden] { display: none; }
 html.ui-x #apMenu:not([hidden]) { display: block; position: fixed; z-index: 85; }
-html.ui-apple #apMenu:not([hidden]) { width: 260px; padding: 6px; border-radius: 22px; background: var(--ap-glass); -webkit-backdrop-filter: blur(24px) saturate(200%); backdrop-filter: blur(24px) saturate(200%); box-shadow: 0 16px 50px rgba(0, 0, 0, 0.22), var(--ap-gl-edge); transform-origin: top right; animation: ap-pop 0.18s ease-out; }
-@keyframes ap-pop { from { opacity: 0; transform: scale(0.85); } }
+html.ui-apple #apMenu:not([hidden]) { width: 260px; padding: 6px; border-radius: 22px; background: var(--ap-glass); -webkit-backdrop-filter: blur(24px) saturate(200%); backdrop-filter: blur(24px) saturate(200%); box-shadow: 0 16px 50px rgba(0, 0, 0, 0.22), var(--ap-gl-edge); transform-origin: top right; animation: ap-menu-in 0.42s cubic-bezier(0.3, 1.25, 0.5, 1); }
+/* iOS 26: メニューは ⋯ のボタンがそのままふくらんで出てくる(ボタンの上に重なり、右上を軸に広がる) */
+@keyframes ap-menu-in { from { opacity: 0; transform: scale(0.18); border-radius: 26px; } 40% { opacity: 1; } }
+@keyframes ap-menu-out { to { opacity: 0; transform: scale(0.25); } }
+html.ui-apple #apMenu.closing { animation: ap-menu-out 0.18s ease-in forwards; pointer-events: none; }
+html.ui-apple #apMore[aria-expanded="true"] { opacity: 0; transition: opacity 0.1s; }
+html.ui-apple #apAdd { display: none !important; } /* タスクの追加欄は今日の画面に出ているので、＋は出さない */
 #apMenu .ap-mh { font-size: 13px; color: var(--sub); padding: 8px 12px 6px; }
 #apMenu button { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 10px; background: transparent; border-radius: 14px; font-weight: 400; font-size: 17px; min-height: 46px; padding: 0 12px; text-align: left; color: var(--text); }
 #apMenu button:active { background: var(--ap-fill); }
@@ -3527,7 +3532,7 @@ document.addEventListener('keydown', e => {
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '4.11.2';
+const APP_VERSION = '4.11.3';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
@@ -5054,15 +5059,23 @@ $('apTabs').addEventListener('click', e => { if (e.detail !== 0) return; const b
 addEventListener('resize', () => { if (isNewUi()) apTabsSel(); });
 $('dockGo').addEventListener('click', () => { if (document.documentElement.dataset.ap !== 'today') { setApTab('today', true); requestAnimationFrame(() => $('currentCard').scrollIntoView({ block: 'start' })); } }, true);
 // ⋯ のメニュー: この日の時刻表への操作(前日をコピー・未完了を翌日へ・ひな形・リセット)
-function closeApMenu() { $('apMenu').hidden = true; $('apMore').setAttribute('aria-expanded', 'false'); }
+function closeApMenu() {
+  const m = $('apMenu'); if (m.hidden || m.classList.contains('closing')) return;
+  $('apMore').setAttribute('aria-expanded', 'false');
+  if (uiKind() !== 'apple') { m.hidden = true; return; }
+  m.classList.add('closing'); // Apple風: ⋯ のボタンへ縮んで消える
+  setTimeout(() => { m.hidden = true; m.classList.remove('closing'); }, 170);
+}
 $('apMore').addEventListener('click', e => {
   e.stopPropagation();
-  if (!$('apMenu').hidden) { closeApMenu(); return; }
+  if (!$('apMenu').hidden && !$('apMenu').classList.contains('closing')) { closeApMenu(); return; }
+  $('apMenu').classList.remove('closing');
   setText('apMenuHead', `${dayLabel()}の時刻表`);
   setText('apResetTxt', `${dayLabel()}の予定をリセット`);
   for (const b of $('apMenu').querySelectorAll('[data-apm]')) b.disabled = b.dataset.apm === 'reset' ? !data.tasks.length : $(b.dataset.apm).disabled;
   const r = $('apMore').getBoundingClientRect();
-  $('apMenu').style.top = (r.bottom + 8) + 'px';
+  // Apple風はボタンに重ねて(ボタンがふくらむように)、Material風はボタンの下に出す
+  $('apMenu').style.top = (uiKind() === 'apple' ? r.top : r.bottom + 8) + 'px';
   $('apMenu').style.right = Math.max(8, innerWidth - r.right) + 'px';
   $('apMenu').hidden = false; $('apMore').setAttribute('aria-expanded', 'true');
 });
