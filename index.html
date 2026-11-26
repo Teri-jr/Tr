@@ -1335,6 +1335,85 @@ html.ui-apple .set-body .card + .card { margin-top: 38px; }
 html.ui-apple { --ap-side: #e9e9ef; --ap-rim: inset 0 0 0 1px rgba(255, 255, 255, 0.85), inset 0 1.5px 1px rgba(255, 255, 255, 0.95), inset 0 -1px 1px rgba(255, 255, 255, 0.55), 0 0 0 0.5px rgba(0, 0, 0, 0.3), 0 6px 18px rgba(0, 0, 0, 0.16); }
 @media (prefers-color-scheme: dark) { html.ui-apple { --ap-rim: inset 0 0 0 1px rgba(255, 255, 255, 0.3), inset 0 1.5px 1px rgba(255, 255, 255, 0.45), 0 0 0 0.5px rgba(0, 0, 0, 0.7), 0 6px 18px rgba(0, 0, 0, 0.45); } }
 @media (prefers-color-scheme: dark) { html.ui-apple { --ap-side: #1c1c1e; } }
+
+/* ================= Material風を Pixel(Android 16〜17 の標準アプリ)に寄せる =================
+   設定・時計・ToDo の録画に合わせる: 薄い灰色がかった背景に白いカード / 一覧は細いすき間でつながった板 /
+   アイコンは薄い色の丸 / 見出しは小さい色の字 / タイマーは太い輪 / 大きいボタンは縦に並べる */
+html.ui-m3 { --m-card: #ffffff; --m-ring: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='44' fill='none' stroke='black' stroke-width='5'/%3E%3C/svg%3E"); --bg: var(--m-c); --panel: var(--m-card); }
+@media (prefers-color-scheme: dark) { html.ui-m3 { --m-card: #1f1e24; --bg: #121115; } }
+html.ui-m3 .card, html.ui-m3 #currentCard.ring { background: var(--m-card); }
+html.ui-m3 #apBar, html.ui-m3 #setPanel, html.ui-m3 .set-head { background: var(--bg); }
+@media (min-width: 600px) { html.ui-m3 #apTabs { background: var(--bg); } }
+/* タブ・切り替え: 線で囲まず、選んだ所だけ薄い色の丸(ToDo アプリの上のタブと同じ) */
+html.ui-m3 .mode-tog, html.ui-m3 .side-tabs { border: 0; gap: 4px; overflow: visible; background: transparent; }
+html.ui-m3 .mode-tog button, html.ui-m3 .side-tabs button { border-radius: 999px !important; border-left: 0 !important; background: transparent; color: var(--m-on-sv); min-height: 40px; }
+html.ui-m3 .mode-tog button.on, html.ui-m3 .side-tabs button[aria-selected="true"] { background: var(--m-sc); color: var(--m-on-sc); font-weight: 600; }
+html.ui-m3 .side-tabs button[aria-selected="true"] .st-a::before, html.ui-m3 .in-tabs button.on::before { content: none; }
+/* 時刻表: カードの中の線ではなく、細いすき間でつながった板(はしだけ大きく丸い) */
+html.ui-m3 #tableCard { background: transparent; padding: 4px 0 0; }
+html.ui-m3 #tableCard > h2 { padding: 0 12px; font-size: 14px; color: var(--m-primary); }
+html.ui-m3 .dia-line { background: var(--m-card); border-radius: 20px; padding: 12px 16px; }
+html.ui-m3 .tt-head { border-bottom: 0; padding: 0 16px 6px; }
+html.ui-m3 .tt { display: flex; flex-direction: column; gap: 2px; }
+html.ui-m3 .tt > .row { background: var(--m-card); border: 0; border-radius: 4px; padding: 14px 12px; box-shadow: none; }
+html.ui-m3 .tt > .row:first-child { border-radius: 22px 22px 4px 4px; }
+html.ui-m3 .tt > .row:last-child { border-radius: 4px 4px 22px 22px; }
+html.ui-m3 .tt > .row:only-child { border-radius: 22px; }
+html.ui-m3 .tt > .row.running { background: var(--m-sc); }
+html.ui-m3 .tt > .row.seg, html.ui-m3 .tt > .row.fixedrow { background: var(--m-card); outline: 0; }
+html.ui-m3 .tt > .row.seg.now { background: var(--m-sc); }
+/* 実行中: 時計アプリのタイマーのような太い輪。終了・一時停止・中断は大きいボタンを縦に並べる(中断はストップウォッチの「停止」の色) */
+html.ui-m3 #currentCard { position: relative; }
+html.ui-m3 #currentCard.ring .cur-remain::after { -webkit-mask-image: var(--m-ring); mask-image: var(--m-ring); }
+html.ui-m3 #currentCard.ring .cur-remain::before { background: var(--m-sc); -webkit-mask-image: var(--m-ring); mask-image: var(--m-ring); }
+html.ui-m3 #currentCard.ring .cur-remain { font-size: clamp(28px, 9vw, 42px); }
+html.ui-m3 #currentCard .btnrow:has(> .big) { flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: 8px; }
+html.ui-m3 #currentCard .btnrow > button.big { flex: none !important; width: 100%; min-height: 64px; font-size: 18px; border-radius: 32px; }
+html.ui-m3 #currentCard .btnrow > button.big.pressing { border-radius: 18px; }
+html.ui-m3 #currentCard .btnrow > button[data-act="focus"] { position: absolute; top: 10px; right: 10px; width: 48px !important; min-height: 48px; height: 48px; padding: 0; border-radius: 50%; background: var(--m-high); color: var(--m-on-sv); }
+html.ui-m3 #currentCard .btnrow > button.intr { background: #ffb4ab; color: #690005; }
+@media (prefers-color-scheme: dark) { html.ui-m3 #currentCard .btnrow > button.intr { background: #f2766a; color: #2d0000; } }
+html.ui-m3 #currentCard .btnrow button:not(.big) { background: var(--m-high); border: 0; color: var(--m-on-s); }
+html.ui-m3 #currentCard .btnrow button.danger:not(.big) { color: var(--m-error); }
+/* ＋: 時計アプリと同じ、角の丸い四角の大きいボタン(文字なし) */
+@media (max-width: 599px) {
+  html.ui-m3 #apAdd { width: 64px; height: 64px; padding: 0 !important; justify-content: center; border-radius: 20px !important; }
+  html.ui-m3 #apAdd .ap-lab { display: none !important; }
+  html.ui-m3 #apAdd svg { width: 28px; height: 28px; }
+}
+/* スライダー: 太い棒と細い縦のつまみ(音の設定の音量と同じ) */
+html.ui-m3 input[type="range"] { -webkit-appearance: none; appearance: none; height: 44px; padding: 0; border: 0; background: transparent; }
+html.ui-m3 input[type="range"]::-webkit-slider-runnable-track { height: 16px; border-radius: 8px; background: linear-gradient(to right, var(--m-primary) 0 calc(var(--v, 50%) - 6px), transparent calc(var(--v, 50%) - 6px) calc(var(--v, 50%) + 6px), var(--m-sc) calc(var(--v, 50%) + 6px)); }
+html.ui-m3 input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 4px; height: 40px; margin-top: -12px; border-radius: 2px; background: var(--m-primary); }
+html.ui-m3 input[type="range"]::-moz-range-track { height: 16px; border-radius: 8px; background: var(--m-sc); }
+html.ui-m3 input[type="range"]::-moz-range-progress { height: 16px; border-radius: 8px; background: var(--m-primary); }
+html.ui-m3 input[type="range"]::-moz-range-thumb { width: 4px; height: 40px; border: 0; border-radius: 2px; background: var(--m-primary); }
+/* 設定: 薄い色の丸のアイコン・名前の下に説明・グループごとに細いすき間でつながった板 */
+.sn-desc { display: none; }
+html.ui-m3 .set-nav { gap: 2px; padding: 4px 16px 40px; }
+html.ui-m3 .set-nav button[data-sec] { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; grid-template-rows: auto auto; column-gap: 16px; align-items: center; text-align: left; min-height: 72px; padding: 10px 16px; background: var(--m-card); border-radius: 4px; }
+html.ui-m3 .set-nav button[data-sec] .sn-ic { grid-row: 1 / 3; width: 40px; height: 40px; border-radius: 50%; margin: 0; background: color-mix(in srgb, var(--c) 16%, var(--m-card)); color: color-mix(in srgb, var(--c) 82%, #000); }
+@media (prefers-color-scheme: dark) { html.ui-m3 .set-nav button[data-sec] .sn-ic { background: color-mix(in srgb, var(--c) 30%, var(--m-card)); color: color-mix(in srgb, var(--c) 55%, #fff); } }
+html.ui-m3 .set-nav button[data-sec] .sn-ic svg { width: 22px; height: 22px; }
+html.ui-m3 .set-nav .sn-t { grid-column: 2; font-size: 17px; font-weight: 400; align-self: end; }
+html.ui-m3 .set-nav .sn-desc { display: block; grid-column: 2; margin: 0; font-size: 13.5px; font-weight: 400; color: var(--m-on-sv); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; align-self: start; }
+html.ui-m3 .set-nav button[data-sec]::after { grid-column: 3; grid-row: 1 / 3; }
+html.ui-m3 .set-nav button.sn-gs { border-radius: 24px 24px 4px 4px; margin-top: 14px; }
+html.ui-m3 .set-nav button.sn-ge { border-radius: 4px 4px 24px 24px; }
+html.ui-m3 .set-nav button[data-sec]:first-of-type { margin-top: 0; }
+html.ui-m3 .set-nav button[aria-current="true"] { background: var(--m-sc); }
+/* 開いた項目: 見出しは表の外に小さい色の字(デバイス情報の「基本情報」と同じ)、表は白い板 */
+html.ui-m3 .set-body .card { position: relative; margin-top: 34px; background: var(--m-card); }
+html.ui-m3 .set-body .card > h2:first-of-type { position: absolute; top: -26px; left: 16px; right: 16px; margin: 0; font-size: 14px; font-weight: 500; color: var(--m-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.ui-m3 .set-body .card + .card { margin-top: 40px; }
+html.ui-m3 .set-body .sub-h { color: var(--m-primary); font-size: 14px; font-weight: 500; }
+/* 項目を開くときは、少し横にずれながらふわっと入れかわる(Android の画面の切りかえ) */
+@keyframes m3-push { from { transform: translateX(40px); opacity: 0; } }
+@keyframes m3-pop { from { transform: translateX(-40px); opacity: 0; } }
+@keyframes m3-fade { from { opacity: 0; } }
+html.ui-m3 .m3-push { animation: m3-push 0.32s cubic-bezier(0.2, 0, 0, 1); }
+html.ui-m3 .m3-pop { animation: m3-pop 0.32s cubic-bezier(0.2, 0, 0, 1); }
+html.ui-m3 .m3-fade { animation: m3-fade 0.25s ease-out; }
 </style>
 <script>
 // 画面の見た目(Apple風)を、描く前に決めておく(一瞬いつもの見た目が出ないように)。?ui=apple / ?ui=classic で切り替えも残す
@@ -3566,7 +3645,7 @@ document.addEventListener('keydown', e => {
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '4.12.1';
+const APP_VERSION = '4.13.0';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
@@ -3800,10 +3879,18 @@ const SET_DESC = {
   gtodo: 'Google ToDo のタスクを取り込み、終えたら完了にします。', data: 'すべての記録をファイルに書き出したり、読み込んだりします。',
   guide: 'StudyLine の使い方です。', history: 'これまでの更新の内容です。', reset: '表示中の日の予定を消します。',
 };
+// Material風の一覧で名前の下に出す短い説明
+const SET_SUB = { dia: '開始・就寝・固定の予定', pomo: '作業と休憩の長さ', sound: '区切りの音、通知', exam: 'カウントダウン', design: '画面の見た目、ロゴ、タイマー', quake: '緊急地震速報、震度', gtodo: 'タスクの取り込み', data: '書き出し、読み込み', guide: 'StudyLine の使い方', history: '更新の内容', reset: '表示中の日の予定を消す' };
 const setIconHTML = k => SET_ICONS[k] ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${SET_ICONS[k][1]}</svg>` : '';
 for (const b of $('setNav').querySelectorAll('[data-sec]')) {
   const t = b.firstChild, k = b.dataset.sec;
   if (t && t.nodeType === 3) { const m = /^(\S+\s)/.exec(t.textContent); if (m) { t.textContent = t.textContent.slice(m[1].length); const em = document.createElement('span'); em.className = 'sn-em'; em.textContent = m[1]; b.insertBefore(em, t); } }
+  const tt = document.createElement('span'); tt.className = 'sn-t'; // 名前(と赤い点など)をまとめる
+  for (const n of [...b.childNodes]) if (!(n.classList && n.classList.contains('sn-em'))) tt.appendChild(n);
+  b.appendChild(tt);
+  const ds = document.createElement('small'); ds.className = 'sn-desc'; ds.textContent = SET_SUB[k] || ''; b.appendChild(ds);
+  if (['dia', 'design', 'data'].includes(k)) b.classList.add('sn-gs'); // グループのはじめ
+  if (['exam', 'gtodo', 'history'].includes(k)) b.classList.add('sn-ge'); // グループのおわり
   const ic = document.createElement('i'); ic.className = 'sn-ic'; ic.setAttribute('aria-hidden', 'true'); ic.style.setProperty('--c', SET_ICONS[k] ? SET_ICONS[k][0] : '#8e8e93'); ic.innerHTML = setIconHTML(k);
   b.insertBefore(ic, b.firstChild);
 }
@@ -3857,8 +3944,9 @@ $('setOpen').addEventListener('click', () => openSettings());
 $('setClose').addEventListener('click', closeSettings);
 // Apple風: 行を押すと次の画面が右からすべり込み、戻ると一覧が左から戻る
 function setSlide(el, cls) {
-  if (uiKind() !== 'apple') return;
-  el.classList.remove('ap-push', 'ap-pop', 'ap-fade'); void el.offsetWidth; el.classList.add(cls);
+  const k = uiKind(); if (k === 'classic') return;
+  if (k === 'material') cls = { 'ap-push': 'm3-push', 'ap-pop': 'm3-pop', 'ap-fade': 'm3-fade' }[cls]; // Material風は少し横にずれて入れかわる
+  el.classList.remove('ap-push', 'ap-pop', 'ap-fade', 'm3-push', 'm3-pop', 'm3-fade'); void el.offsetWidth; el.classList.add(cls);
   el.addEventListener('animationend', () => el.classList.remove(cls), { once: true });
 }
 $('setBack').addEventListener('click', () => { selectSet(null); setSlide($('setNav'), 'ap-pop'); });
@@ -5377,6 +5465,10 @@ document.addEventListener('pointercancel', () => segEnd(), true);
 // なぞったあとに来るふつうのクリックで、別の所が選ばれないようにする
 document.addEventListener('click', e => { if (segSlid && e.isTrusted && segSlid.contains(e.target)) { e.preventDefault(); e.stopPropagation(); } segSlid = null; }, true);
 addEventListener('resize', () => { for (const c of document.querySelectorAll('.has-lens')) segPlace(c); });
+// スライダーの濃い色の長さ(Material風の太い棒)
+function rangeFill(el) { const mn = +el.min || 0, mx = +el.max || 100; el.style.setProperty('--v', ((+el.value - mn) / ((mx - mn) || 1) * 100).toFixed(1) + '%'); }
+document.addEventListener('input', e => { if (e.target.type === 'range') rangeFill(e.target); }, true);
+new MutationObserver(() => { for (const el of document.querySelectorAll('input[type=range]')) rangeFill(el); }).observe(document.getElementById('setBody'), { childList: true, subtree: true });
 applyUi(); apSync(); updateSetDot();
 
 /* ================= 受験日(カウントダウン) ================= */
