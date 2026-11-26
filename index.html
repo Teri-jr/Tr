@@ -3664,7 +3664,7 @@ document.addEventListener('keydown', e => {
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '4.13.1';
+const APP_VERSION = '4.13.2';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
@@ -5329,9 +5329,12 @@ $('apTabs').addEventListener('pointermove', e => {
 $('apTabs').addEventListener('pointerup', e => {
   if (!apDrag || e.pointerId !== apDrag.id) return;
   const b = apTabAt(e.clientX, e.clientY); apDragEnd();
+  apEatClick = Date.now() + 600; // このあとに来る「クリック」が、開いた画面(設定の一覧など)の下の項目を押さないようにする
   if (b) setApTab(b.dataset.ap); else apLensTo();
 });
 $('apTabs').addEventListener('pointercancel', () => { apDragEnd(); apLensTo(); });
+let apEatClick = 0;
+document.addEventListener('click', e => { if (Date.now() < apEatClick && e.isTrusted && e.detail !== 0) { apEatClick = 0; if (!e.target.closest('#apTabs')) { e.preventDefault(); e.stopPropagation(); } } }, true);
 // キーボード(Enter・スペース)で押したとき
 $('apTabs').addEventListener('click', e => { if (e.detail !== 0) return; const b = e.target.closest('[data-ap]'); if (b) setApTab(b.dataset.ap); });
 addEventListener('resize', () => { if (isNewUi()) apTabsSel(); });
