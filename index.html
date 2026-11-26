@@ -930,7 +930,7 @@ html.ui-x #apBar { display: flex; align-items: center; gap: 8px; position: stick
 html.ui-apple #apBar { background: linear-gradient(var(--bg) 55%, transparent); }
 .ap-circ { width: 44px; height: 44px; min-width: 44px; padding: 0 !important; border-radius: 50% !important; display: grid; place-items: center; font-size: 22px; line-height: 1; }
 html.ui-apple .ap-circ, html.ui-apple .ap-pill { background: var(--ap-gl-bg) !important; -webkit-backdrop-filter: var(--ap-gl-blur); backdrop-filter: var(--ap-gl-blur); box-shadow: var(--ap-shadow), var(--ap-gl-edge); color: var(--text); transition: transform 0.25s cubic-bezier(0.3, 1.5, 0.5, 1); }
-html.ui-apple .ap-circ:active, html.ui-apple .ap-pill:active { transform: scale(1.12); filter: none; }
+
 html.ui-apple .ap-circ svg { width: 22px; height: 22px; }
 html.ui-apple .ap-circ.ap-prom { background: linear-gradient(180deg, #2a9bff, var(--accent)) !important; color: #fff; box-shadow: 0 6px 20px rgba(0, 136, 255, 0.35), inset 0 1px 0.5px rgba(255, 255, 255, 0.6), inset 0 0 0 0.5px rgba(255, 255, 255, 0.25); }
 html.ui-apple .ap-pill { border-radius: 999px !important; padding: 0 16px; min-height: 44px; font-size: 15px; color: var(--accent); }
@@ -1037,8 +1037,8 @@ html.ui-m3 {
 }
 html.ui-m3 body { font-family: Roboto, "Google Sans", "Noto Sans JP", "Noto Sans CJK JP", "Hiragino Sans", system-ui, sans-serif; font-size: 16px; letter-spacing: 0.01em; }
 /* ---- 部品: ボタンは丸い形。押すと角が少し四角くなる(Expressive の形の変化) ---- */
-html.ui-m3 button { border: 0; border-radius: 999px; background: var(--m-sc); color: var(--m-on-sc); font-weight: 500; transition: border-radius 0.3s var(--m-ease), background 0.2s; }
-html.ui-m3 button:active:not(:disabled) { border-radius: 12px; filter: brightness(0.94); }
+html.ui-m3 button { border: 0; border-radius: 22px; background: var(--m-sc); color: var(--m-on-sc); font-weight: 500; }
+
 html.ui-m3 button.primary { background: var(--m-primary); color: var(--m-on-primary); }
 html.ui-m3 button.danger { background: var(--m-ec); color: var(--m-error); }
 html.ui-m3 input, html.ui-m3 select, html.ui-m3 textarea { border: 0; border-bottom: 1px solid var(--m-on-sv); border-radius: 4px 4px 0 0; background: var(--m-highest); color: var(--m-on-s); }
@@ -1046,7 +1046,7 @@ html.ui-m3 input:focus, html.ui-m3 select:focus, html.ui-m3 textarea:focus { out
 html.ui-m3 label { font-size: 13px; font-weight: 500; }
 /* チップ: 角丸8・細い線。選んだら色が付く */
 html.ui-m3 .chips button, html.ui-m3 #durChips button { border-radius: 8px; background: transparent; border: 1px solid var(--m-ov); color: var(--m-on-sv); min-height: 40px; }
-html.ui-m3 .chips button:active:not(:disabled) { border-radius: 16px; }
+
 html.ui-m3 .chips button[aria-pressed="true"] { border-color: transparent; }
 /* つながったボタン(セグメント): 線で囲み、選んだ所は ✓ と色 */
 html.ui-m3 .mode-tog, html.ui-m3 .side-tabs { border: 1px solid var(--m-outline); border-radius: 999px; background: transparent; padding: 0; gap: 0; overflow: hidden; }
@@ -1063,8 +1063,8 @@ html.ui-m3 .toggle input[type="checkbox"] { -webkit-appearance: none; appearance
 html.ui-m3 .toggle input[type="checkbox"]::before { content: ""; position: absolute; top: 50%; left: 6px; width: 16px; height: 16px; margin-top: -8px; border-radius: 50%; background: var(--m-outline); transition: all 0.25s var(--m-spring); }
 html.ui-m3 .toggle input[type="checkbox"]:checked { background: var(--m-primary); border-color: var(--m-primary); }
 html.ui-m3 .toggle input[type="checkbox"]:checked::before { left: 22px; width: 24px; height: 24px; margin-top: -12px; background: var(--m-on-primary); }
-html.ui-m3 .toggle input[type="checkbox"]:active::before { width: 28px; height: 28px; margin-top: -14px; }
-html.ui-m3 .toggle input[type="checkbox"]:checked:active::before { left: 18px; }
+
+
 /* ---- 面: カードは角丸24、明るさの段階で分ける ---- */
 html.ui-m3 main { column-gap: 16px; }
 html.ui-m3 .card { border: 0; border-radius: 24px; padding: 16px; box-shadow: none; background: var(--m-low); }
@@ -1093,15 +1093,15 @@ html.ui-m3 #currentCard.ring .cur-remain::after { -webkit-mask-image: var(--m-wa
 html.ui-m3 #currentCard.ring .cur-remain.over { --ring: var(--m-error); }
 html.ui-m3 #currentCard.ring .cur-remain.sw-over { --ring: #a0570c; }
 html.ui-m3 #currentCard.paused .cur-remain::after { opacity: 0.45; }
-html.ui-m3 #currentCard .btnrow button.big { min-height: 64px; border-radius: 999px; font-size: 18px; }
-html.ui-m3 #currentCard .btnrow button.big:active:not(:disabled) { border-radius: 18px; }
+html.ui-m3 #currentCard .btnrow button.big { min-height: 64px; border-radius: 32px; font-size: 18px; }
+
 html.ui-m3 #currentCard .btnrow button.intr { background: var(--m-tc); color: var(--m-on-tc); }
 html.ui-m3 #currentCard .btnrow button:not(.big) { background: transparent; border: 1px solid var(--m-ov); color: var(--m-on-sv); }
 html.ui-m3 #currentCard .btnrow button.danger:not(.big) { color: var(--m-error); }
 /* ---- 上の行(トップアプリバー)・アイコンボタン・⋮ メニュー ---- */
 html.ui-m3 #apBar { background: var(--m-s); padding-top: calc(4px + env(safe-area-inset-top)); padding-bottom: 4px; gap: 4px; }
 html.ui-m3 .ap-circ { width: 48px; height: 48px; min-width: 48px; background: transparent !important; color: var(--m-on-sv); }
-html.ui-m3 .ap-circ:active:not(:disabled) { border-radius: 50% !important; background: var(--m-high) !important; }
+
 html.ui-m3 .ap-circ svg { width: 24px; height: 24px; }
 html.ui-m3 #apMore svg { transform: rotate(90deg); }
 html.ui-m3 .ap-pill { border-radius: 999px !important; padding: 0 16px; min-height: 40px; font-size: 14px; background: transparent; border: 1px solid var(--m-outline); color: var(--m-primary); }
@@ -1112,7 +1112,7 @@ html.ui-m3 #apMenu:not([hidden]) { min-width: 240px; padding: 8px 0; border-radi
 @keyframes m-menu { from { opacity: 0; transform: scaleY(0.6); } }
 html.ui-m3 #apMenu .ap-mh { font-size: 12px; color: var(--m-on-sv); padding: 6px 16px; }
 html.ui-m3 #apMenu button { display: flex; flex-direction: row-reverse; justify-content: flex-end; gap: 14px; width: 100%; background: transparent; border-radius: 0; min-height: 48px; padding: 0 16px; font-size: 16px; font-weight: 400; color: var(--m-on-s); text-align: left; }
-html.ui-m3 #apMenu button:active { background: var(--m-high); border-radius: 0; }
+
 html.ui-m3 #apMenu button.red { color: var(--m-error); }
 html.ui-m3 #apMenu hr { border: 0; border-top: 1px solid var(--m-ov); margin: 8px 0; }
 /* ---- ナビゲーションバー(スマホ): 下いっぱい・高さ80。選んだ所は丸い印 ---- */
@@ -1126,7 +1126,7 @@ html.ui-m3 #apTabs button.hov { color: var(--m-on-s); }
 html.ui-m3 #apTabs .dot { top: 10px; left: calc(50% + 10px); width: 8px; height: 8px; background: var(--m-error); }
 /* 「＋ タスク」: スマホでは右下の大きいボタン(FAB)。角丸16・押すと形が変わる */
 html.ui-m3 #apAdd { position: fixed; z-index: 73; right: calc(16px + env(safe-area-inset-right)); bottom: calc(96px + env(safe-area-inset-bottom) + var(--dock, 0px)); width: auto; height: 56px; padding: 0 20px 0 16px !important; border-radius: 16px !important; display: flex; gap: 10px; align-items: center; background: var(--m-pc) !important; color: var(--m-on-pc); font-size: 16px; font-weight: 500; box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15), 0 2px 3px rgba(0, 0, 0, 0.12); transition: border-radius 0.3s var(--m-spring), bottom 0.25s; }
-html.ui-m3 #apAdd:active { border-radius: 28px !important; }
+
 html.ui-m3 #apAdd .ap-lab { display: inline; }
 html.ui-m3 #dock { background: var(--m-high); border-radius: 16px; box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15); }
 html.ui-m3 #dockGo { color: var(--m-on-s); }
@@ -1162,7 +1162,7 @@ html.ui-m3 #setPanel { background: var(--m-s); }
 html.ui-m3 .set-head { background: var(--m-s); color: var(--m-on-s); padding-top: calc(4px + env(safe-area-inset-top)); padding-bottom: 4px; }
 html.ui-m3 .set-head b { font-size: 22px; font-weight: 400; }
 html.ui-m3 .set-head button { background: transparent; color: var(--m-on-sv); font-size: 22px; min-width: 48px; min-height: 48px; padding: 0; border-radius: 50%; }
-html.ui-m3 .set-head button:active:not(:disabled) { background: var(--m-high); border-radius: 50%; }
+
 html.ui-m3 #setPanel:not(.in-sec) #setBack { display: none; }
 html.ui-m3 .set-nav { background: transparent; border-right: 0; gap: 2px; padding: 8px 16px 40px; }
 html.ui-m3 .set-nav button { background: var(--m-c); color: var(--m-on-s); border-radius: 4px; border-bottom: 0; min-height: 56px; font-weight: 400; font-size: 16px; white-space: nowrap; flex: none; padding: 0 16px; }
@@ -1173,6 +1173,34 @@ html.ui-m3 .set-nav button::after { color: var(--m-on-sv); }
 html.ui-m3 #setPanel:not(.in-sec) #setTitle::after { content: ""; }
 @media (min-width: 760px) { html.ui-m3 .set-wrap { grid-template-columns: 300px minmax(0, 1fr); } html.ui-m3 .set-nav button::after { content: none; } }
 html.ui-m3 .set-body .card { border-radius: 24px; }
+
+/* ================= 押したときの動き(Apple風・Material風) =================
+   :active は iPhone ですぐ付かず、短いタップでは見えないので、指がふれた瞬間に JS で .pressing を付ける。
+   付くときは速く(0.08秒)、離したあとはばねのように戻す(0.4秒) */
+html.ui-x button, html.ui-x .toggle input[type="checkbox"]::before { transition: transform 0.4s var(--pr-spring), border-radius 0.4s var(--pr-spring), background-color 0.25s, box-shadow 0.25s, filter 0.25s, color 0.2s, width 0.3s var(--pr-spring), left 0.3s var(--pr-spring), margin 0.3s var(--pr-spring), height 0.3s var(--pr-spring); }
+html.ui-x { --pr-spring: cubic-bezier(0.3, 1.6, 0.5, 1); }
+html.ui-x button:active { filter: none; }
+html.ui-x .pressing, html.ui-x .pressing::before, html.ui-x .pressing input::before, html.ui-x .pressing svg { transition-duration: 0.08s !important; transition-timing-function: ease-out !important; }
+/* Apple風: ふつうのボタンは少し縮んで暗く、ガラスのボタンはふくらむ、一覧の行は灰色になる */
+html.ui-apple button.pressing { transform: scale(0.95); filter: brightness(0.9); }
+html.ui-apple button.big.pressing, html.ui-apple button.primary.grow.pressing { transform: scale(0.97); }
+html.ui-apple .ap-circ.pressing, html.ui-apple .ap-pill.pressing { transform: scale(1.14); filter: brightness(1.04); }
+html.ui-apple :is(.set-nav, #apMenu) button.pressing, html.ui-apple .row button.pressing { transform: none; filter: none; background-color: rgba(120, 120, 128, 0.26) !important; }
+html.ui-apple .set-head button.pressing { transform: scale(1.1); filter: none; }
+html.ui-apple .toggle.pressing input[type="checkbox"]::before { width: 34px; }
+html.ui-apple .toggle.pressing input[type="checkbox"]:checked::before { transform: translateX(13px); }
+/* Material風: 角が四角くなり、上に薄い色の層(ステートレイヤー)が乗る */
+html.ui-m3 button.pressing { border-radius: 10px; box-shadow: inset 0 0 0 999px color-mix(in srgb, currentColor 12%, transparent); }
+html.ui-m3 .chips button.pressing { border-radius: 18px; }
+html.ui-m3 #currentCard .btnrow button.big.pressing { border-radius: 18px; }
+html.ui-m3 .mode-tog button.pressing, html.ui-m3 .side-tabs button.pressing, html.ui-m3 #apMenu button.pressing { border-radius: 0; }
+html.ui-m3 .set-nav button.pressing { border-radius: 12px; }
+html.ui-m3 .ap-circ.pressing, html.ui-m3 .set-head button.pressing { border-radius: 50% !important; box-shadow: none; background: var(--m-high) !important; transform: scale(0.92); }
+html.ui-m3 #apAdd.pressing { border-radius: 28px !important; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), inset 0 0 0 999px color-mix(in srgb, currentColor 12%, transparent); }
+html.ui-m3 #apTabs button.pressing { box-shadow: none; }
+html.ui-m3 #apTabs button.pressing svg { background: color-mix(in srgb, var(--m-on-s) 12%, var(--m-sc)); width: 64px; }
+html.ui-m3 .toggle.pressing input[type="checkbox"]::before { width: 28px; height: 28px; margin-top: -14px; }
+html.ui-m3 .toggle.pressing input[type="checkbox"]:checked::before { left: 18px; }
 </style>
 <script>
 // 画面の見た目(Apple風)を、描く前に決めておく(一瞬いつもの見た目が出ないように)。?ui=apple / ?ui=classic で切り替えも残す
@@ -3369,7 +3397,7 @@ document.addEventListener('keydown', e => {
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '4.9.0';
+const APP_VERSION = '4.9.1';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
@@ -4879,6 +4907,33 @@ $('uiOpts').addEventListener('change', e => {
   c.toggle('ui-x', v !== 'classic'); c.toggle('ui-apple', v === 'apple'); c.toggle('ui-m3', v === 'material');
   applyUi(); apSync();
 });
+
+// 押した瞬間に「押している」見た目を付ける(Apple風・Material風)。
+// iPhone は :active がすぐ付かないので自分で付ける。スクロールのつもりの指で光らないよう 40ms だけ待ち、
+// 短いタップでも見えるように最低 0.18 秒は残す
+const PRESS_SEL = 'button, label.toggle, .logo-opts label';
+let pressEl = null, pressT = 0, pressTimer = null, pressX = 0, pressY = 0;
+function pressOn() { clearTimeout(pressTimer); pressTimer = null; if (pressEl) { pressEl.classList.add('pressing'); pressT = performance.now(); } }
+function pressOff(keep) {
+  clearTimeout(pressTimer); pressTimer = null;
+  const el = pressEl; pressEl = null; if (!el) return;
+  if (keep && !el.classList.contains('pressing')) { el.classList.add('pressing'); pressT = performance.now(); }
+  const left = keep ? 180 - (performance.now() - pressT) : 0;
+  if (left > 0) setTimeout(() => el.classList.remove('pressing'), left); else el.classList.remove('pressing');
+}
+document.addEventListener('pointerdown', e => {
+  if (!isNewUi() || e.button) return;
+  const el = e.target.closest(PRESS_SEL);
+  if (!el || el.disabled || el.closest('#apTabs') && document.documentElement.classList.contains('ui-apple')) return; // Apple のタブはガラスの粒が動く
+  pressOff(false);
+  pressEl = el; pressX = e.clientX; pressY = e.clientY;
+  if (e.pointerType === 'mouse') pressOn(); else pressTimer = setTimeout(pressOn, 40);
+}, { capture: true, passive: true });
+document.addEventListener('pointermove', e => { if (pressEl && Math.hypot(e.clientX - pressX, e.clientY - pressY) > 10) pressOff(false); }, { capture: true, passive: true });
+document.addEventListener('pointerup', () => pressOff(true), { capture: true, passive: true });
+document.addEventListener('pointercancel', () => pressOff(false), { capture: true, passive: true });
+addEventListener('scroll', () => pressOff(false), { capture: true, passive: true });
+document.addEventListener('touchstart', () => {}, { passive: true }); // iPhone で :active も効くように
 applyUi(); apSync(); updateSetDot();
 
 /* ================= 受験日(カウントダウン) ================= */
