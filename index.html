@@ -1433,12 +1433,85 @@ html.ui-apple .fold-head .chev::after { content: "閉じる"; color: var(--accen
 html.ui-apple .fold-head .chev::before { content: ""; order: 2; width: 7px; height: 7px; margin: -3px 2px 0 7px; border: solid var(--accent); border-width: 0 2px 2px 0; transform: rotate(45deg); transition: transform 0.25s; }
 html.ui-apple #formCard.collapsed .fold-head .chev::after { content: "開く"; }
 html.ui-apple #formCard.collapsed .fold-head .chev::before { transform: rotate(-45deg); margin-top: 0; }
+
+/* ================= Material風のタイマー(A 波の輪 / B クッキーの形 / C 大きい数字)。設定 → デザインで選ぶ ================= */
+.m3v, .m3-lab { display: none; }
+.cur-ctl { display: contents; }
+.m3t-only { display: none; }
+html.ui-m3 .m3t-only { display: block; }
+html.ui-m3 #currentCard.ring .cur-remain::before, html.ui-m3 #currentCard.ring .cur-remain::after { content: none !important; }
+html.ui-m3 #currentCard.ring .cur-remain { width: min(74vw, 290px); margin: 6px auto 2px; display: grid; place-items: center; align-content: center; font-weight: 500; color: var(--m-on-s); }
+html.ui-m3 #currentCard.ring .cur-remain > * { grid-area: 1 / 1; }
+html.ui-m3 #currentCard.ring .m3v { display: block; width: 100%; height: 100%; overflow: visible; }
+html.ui-m3 #currentCard.ring .m3-dig { font-size: clamp(44px, 15vw, 64px); line-height: 1; letter-spacing: -0.02em; margin-top: -14px; }
+html.ui-m3 #currentCard.ring .m3-lab { display: block; align-self: center; margin-top: 62px; font-size: 14px; font-weight: 500; color: var(--m-on-sv); }
+html.ui-m3 #currentCard.ring .cur-remain.over .m3-dig { color: var(--m-error); }
+html.ui-m3 .m3v .trk { stroke: var(--m-sc); fill: none; stroke-linecap: round; }
+html.ui-m3 .m3v .act { stroke: var(--m-primary); fill: none; stroke-linecap: round; stroke-linejoin: round; }
+html.ui-m3 #currentCard .cur-remain.over .m3v .act { stroke: var(--m-error); }
+html.ui-m3 #currentCard .cur-remain.sw-over .m3v .act { stroke: #a0570c; }
+html.ui-m3 #currentCard.in-break .m3v .act { stroke: #2b8a7e; }
+html.ui-m3 .m3v .ck { fill: var(--m-pc); transform-origin: 150px 150px; animation: m3-spin 24s linear infinite; }
+html.ui-m3 #currentCard.paused .m3v .ck { animation-play-state: paused; }
+html.ui-m3 .m3v .dot { fill: var(--m-primary); }
+@keyframes m3-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { html.ui-m3 .m3v .ck { animation: none; } }
+/* B: 数字はクッキーの上 */
+html.ui-m3[data-m3t="B"] #currentCard.ring .m3-dig { color: var(--m-on-pc); font-weight: 600; }
+html.ui-m3[data-m3t="B"] #currentCard.ring .m3-lab { color: var(--m-on-pc); }
+/* C: 輪をやめて、大きい太い数字と波打つ線 */
+html.ui-m3[data-m3t="C"] #currentCard.ring { text-align: left; }
+html.ui-m3[data-m3t="C"] #currentCard.ring .cur-remain { width: auto; aspect-ratio: auto; border-radius: 0; display: flex; flex-direction: column; align-items: stretch; margin: 14px 0 4px; }
+html.ui-m3[data-m3t="C"] #currentCard.ring .m3-dig { order: 1; font-size: clamp(72px, 25vw, 120px); font-weight: 800; letter-spacing: -0.04em; margin: 0; }
+html.ui-m3[data-m3t="C"] #currentCard.ring .m3-lab { order: 2; margin: 2px 0 0; align-self: auto; }
+html.ui-m3[data-m3t="C"] #currentCard.ring .m3v { order: 3; height: 40px; margin-top: 14px; }
+html.ui-m3[data-m3t="C"] #currentCard.ring .cur-sub { text-align: left; }
+/* ボタン: まん中の大きい ⏸ と左右の −5・+5 がくっついた組。終了と中断はその下 */
+html.ui-m3 #currentCard .cur-ctl { display: grid; grid-template-columns: 1fr 1.35fr 1fr; grid-template-areas: "m p pl" "f f i" "u u u"; gap: 10px 4px; align-items: center; margin-top: 12px; }
+html.ui-m3 #currentCard .cur-ctl > .btnrow { display: contents; }
+html.ui-m3 #currentCard .cur-ctl button { width: 100% !important; margin: 0; }
+html.ui-m3 #currentCard .cur-ctl [data-act="adj"][data-v="-5"] { grid-area: m; min-height: 68px; border-radius: 34px 10px 10px 34px; background: var(--m-sc); color: var(--m-on-sc); font-size: 16px; }
+html.ui-m3 #currentCard .cur-ctl [data-act="adj"][data-v="5"] { grid-area: pl; min-height: 68px; border-radius: 10px 34px 34px 10px; background: var(--m-sc); color: var(--m-on-sc); font-size: 16px; }
+html.ui-m3 #currentCard .cur-ctl :is([data-act="pause"], [data-act="resume"]) { display: inline-flex; align-items: center; justify-content: center; grid-area: p; min-height: 86px !important; border-radius: 28px !important; background: var(--m-primary) !important; color: var(--m-on-primary) !important; font-size: 0 !important; }
+html.ui-m3 #currentCard .cur-ctl [data-act="pause"]::before { content: ""; display: block; flex: none; width: 26px; height: 28px; background: linear-gradient(90deg, currentColor 0 9px, transparent 9px 17px, currentColor 17px); border-radius: 3px; }
+html.ui-m3 #currentCard .cur-ctl [data-act="resume"]::before { content: ""; display: block; flex: none; width: 26px; height: 30px; background: currentColor; clip-path: polygon(10% 0, 100% 50%, 10% 100%); border-radius: 3px; margin-left: 6px; }
+html.ui-m3 #currentCard .cur-ctl :is([data-act="pause"], [data-act="resume"]).pressing { border-radius: 43px !important; }
+html.ui-m3 #currentCard .cur-ctl:not(:has([data-act="adj"])) :is([data-act="pause"], [data-act="resume"]) { grid-column: 1 / -1; }
+html.ui-m3 #currentCard .cur-ctl [data-act="finish"] { grid-area: f; min-height: 60px !important; border-radius: 30px !important; background: var(--m-pc) !important; color: var(--m-on-pc) !important; font-size: 17px !important; }
+html.ui-m3 #currentCard .cur-ctl [data-act="finish"]::before { content: "✓ "; }
+html.ui-m3 #currentCard .cur-ctl:not(:has([data-act="intr"])) [data-act="finish"] { grid-column: 1 / -1; }
+html.ui-m3 #currentCard .cur-ctl [data-act="intr"] { grid-area: i; min-height: 60px !important; border-radius: 30px !important; background: var(--m-tc) !important; color: var(--m-on-tc) !important; font-size: 16px !important; }
+html.ui-m3 #currentCard .cur-ctl [data-act="unstart"] { grid-area: u; min-height: 40px; background: transparent !important; border: 0 !important; font-size: 14px; }
+html.ui-m3 #currentCard .cur-ctl [data-act="focus"] { grid-area: auto; }
+html.ui-m3 #currentCard .cur-ctl .pressing:not([data-act="pause"]):not([data-act="resume"]) { border-radius: 14px !important; }
+/* B のボタン: 丸い ±5、まん中は角の丸い四角(押すと丸くなる)、終了・中断は角の丸い四角 */
+html.ui-m3[data-m3t="B"] #currentCard .cur-ctl { grid-template-columns: 1fr 96px 1fr; justify-items: center; }
+html.ui-m3[data-m3t="B"] #currentCard .cur-ctl [data-act="adj"] { width: 64px !important; min-height: 64px; height: 64px; border-radius: 50%; background: var(--m-high); color: var(--m-on-s); font-size: 15px; }
+html.ui-m3[data-m3t="B"] #currentCard .cur-ctl [data-act="adj"][data-v="-5"] { justify-self: end; }
+html.ui-m3[data-m3t="B"] #currentCard .cur-ctl [data-act="adj"][data-v="5"] { justify-self: start; }
+html.ui-m3[data-m3t="B"] #currentCard .cur-ctl :is([data-act="pause"], [data-act="resume"]) { width: 92px !important; min-height: 92px !important; height: 92px; border-radius: 34px !important; transform: rotate(45deg); }
+html.ui-m3[data-m3t="B"] #currentCard .cur-ctl :is([data-act="pause"], [data-act="resume"])::before { transform: rotate(-45deg); }
+html.ui-m3[data-m3t="B"] #currentCard .cur-ctl :is([data-act="pause"], [data-act="resume"]).pressing { border-radius: 50% !important; }
+html.ui-m3[data-m3t="B"] #currentCard .cur-ctl :is([data-act="finish"], [data-act="intr"]) { border-radius: 20px !important; }
+html.ui-m3[data-m3t="B"] #currentCard .cur-ctl [data-act="finish"] { background: var(--m-primary) !important; color: var(--m-on-primary) !important; }
+html.ui-m3[data-m3t="B"] #currentCard .cur-ctl [data-act="finish"]::before { content: none; }
+html.ui-m3[data-m3t="B"] #currentCard .cur-ctl :is([data-act="finish"], [data-act="intr"]) { justify-self: stretch; }
+/* C のボタン: 小さい四角の ±5 と、横に長い大きい ⏸ */
+html.ui-m3[data-m3t="C"] #currentCard .cur-ctl { grid-template-columns: 58px 1fr 1fr 58px; gap: 10px 8px; }
+html.ui-m3[data-m3t="C"] #currentCard .cur-ctl [data-act="adj"] { min-height: 58px; border-radius: 16px; background: var(--m-high); color: var(--m-on-s); }
+html.ui-m3:is([data-m3t="B"], [data-m3t="C"]) #currentCard .cur-ctl [data-act="adj"] { font-size: 0 !important; }
+html.ui-m3:is([data-m3t="B"], [data-m3t="C"]) #currentCard .cur-ctl [data-act="adj"][data-v="-5"]::before { content: "−5"; font-size: 17px; }
+html.ui-m3:is([data-m3t="B"], [data-m3t="C"]) #currentCard .cur-ctl [data-act="adj"][data-v="5"]::before { content: "+5"; font-size: 17px; }
+html.ui-m3[data-m3t="C"] #currentCard .cur-ctl :is([data-act="pause"], [data-act="resume"]) { min-height: 96px !important; border-radius: 48px !important; }
+html.ui-m3[data-m3t="C"] #currentCard .cur-ctl :is([data-act="pause"], [data-act="resume"]).pressing { border-radius: 24px !important; }
+html.ui-m3[data-m3t="C"] #currentCard .cur-ctl { grid-template-areas: "m p p pl" "f f i i" "u u u u"; }
 </style>
 <script>
 // 画面の見た目(Apple風)を、描く前に決めておく(一瞬いつもの見た目が出ないように)。?ui=apple / ?ui=classic で切り替えも残す
 // ui-x = いつもの以外(タブ・⋯ メニューなどの並びは共通) / ui-apple・ui-m3 = 色と形
 try { const q = /[?&]ui=(apple|material|classic)/.exec(location.search); if (q) localStorage.setItem('ttable:ui', JSON.stringify(q[1])); const u = JSON.parse(localStorage.getItem('ttable:ui')); if (u === 'apple' || u === 'material') document.documentElement.classList.add('ui-x', u === 'apple' ? 'ui-apple' : 'ui-m3'); } catch (e) {}
 document.documentElement.dataset.ap = 'today';
+try { const t = JSON.parse(localStorage.getItem('ttable:m3Timer')); document.documentElement.dataset.m3t = ['A', 'B', 'C'].includes(t) ? t : 'A'; } catch (e) { document.documentElement.dataset.m3t = 'A'; }
 </script>
 </head>
 <body>
@@ -1804,6 +1877,15 @@ document.documentElement.dataset.ap = 'today';
         <label><input type="radio" name="uiStyle" value="material"> Material風</label>
       </div>
       <p class="note">「Apple風」は iPhone の標準アプリ、「Material風」は Android の標準アプリに近い見た目です。どちらも、タブで「今日・目標・記録・設定」を切り替え、前日をコピー・リセットなどの時刻表への操作は右上の「⋯」(Material風は「⋮」)にまとめます。タブは、Apple風ではスマホは下・iPad 横は上、Material風ではスマホは下・タブレットは左に出ます。データはどれでも同じです。Apple風・Material風ではヘッダーのロゴは出ません。</p>
+      <div class="m3t-only">
+        <h3 class="sub-h">Material風のタイマー</h3>
+        <div class="logo-opts" id="m3tOpts">
+          <label><input type="radio" name="m3Timer" value="A"> A 波の輪</label>
+          <label><input type="radio" name="m3Timer" value="B"> B クッキーの形</label>
+          <label><input type="radio" name="m3Timer" value="C"> C 大きい数字</label>
+        </div>
+        <p class="note">実行中の残り時間の見せ方です。A は波打つ輪、B は回るクッキーの形と波の輪、C は大きい数字と波打つ線。一時停止中は波が止まって平らになります。</p>
+      </div>
       <h3 class="sub-h">ロゴ</h3>
       <div class="logo-opts" id="logoOpts">
         <label><input type="radio" name="logoAnim" value="random"> ランダム</label>
@@ -2824,13 +2906,13 @@ function renderCurrent(sc) {
     const pm = Math.round(pausedMin(t));
     h += `${pill}
       <div class="cur-name">${esc(t.name)}</div>
-      <div class="cur-remain num ${over ? 'over' : ''} ${sw && !swBrk && sw.over ? 'sw-over' : ''}" id="curTimer"></div>
+      <div class="cur-remain num ${over ? 'over' : ''} ${sw && !swBrk && sw.over ? 'sw-over' : ''}"><svg class="m3v" id="m3Viz" aria-hidden="true"></svg><span class="m3-dig" id="curTimer"></span><span class="m3-lab" id="m3Lab"></span></div>
       <div class="cur-bar ${over ? 'over' : ''} ${sw && !swBrk && sw.over ? 'sw-over' : ''}" aria-hidden="true"><i id="curBar"></i></div>
       ${paused ? '<div class="cur-sub num" id="curPause"></div>' : pm ? `<div class="cur-sub num">一時停止 合計${pm}分(後ろの時刻に反映済み)</div>` : ''}
       ${phaseLine ? `<div class="cur-sub num">${phaseLine}</div>` : ''}
       ${sw ? '' : `<div class="cur-sub num">開始 ${fmt(running.s)} ・ 終了見込み ${fmt(running.target)} ・ ${t.pomo ? '作業' : '所要'} ${effDur(t)}分${adj ? `(${adj > 0 ? '+' : ''}${adj})` : ''}</div>`}
       ${extraBtns}
-      <div class="btnrow">
+      <div class="cur-ctl"><div class="btnrow">
         ${paused
           ? `<button class="primary big grow" data-act="resume" data-id="${esc(t.id)}">▶ 再開</button>
              <button class="big" data-act="finish" data-id="${esc(t.id)}">終了</button>
@@ -2844,7 +2926,7 @@ function renderCurrent(sc) {
         ${sw ? '' : `<button class="grow" data-act="adj" data-v="-5" data-id="${esc(t.id)}" ${effDur(t) <= 5 ? 'disabled' : ''}>${t.pomo ? '作業 ' : ''}−5分</button>
         <button class="grow" data-act="adj" data-v="5" data-id="${esc(t.id)}">${t.pomo ? '作業 ' : ''}+5分</button>`}
         ${armBtn('unstart', t.id, '開始を取消', 'danger')}
-      </div>
+      </div></div>
       ${t.pomo ? `<p class="note">${!soundOn() ? '🔇 音はOFFです(点滅と通知は出ます)。' : audio.ready ? '🔊 音は有効です。' : '🔇 音が無効です(「⚙ 設定」→「音・通知」のボタンで有効化)。'}画面を閉じている間は音や通知が出ないことがあります。</p>` : ''}`;
   } else if (next) {
     h += `<div class="cur-sub">次の発車</div>
@@ -2865,7 +2947,8 @@ function renderCurrent(sc) {
   $('currentCard').classList.toggle('in-break', inBreak && !(running && isPaused(running.t)));
   $('currentCard').classList.toggle('paused', !!(running && isPaused(running.t)));
   $('currentCard').classList.toggle('sw-ask', !!(running && running.sw && running.sw.ask));
-  if (running && running.curPh && sc.now !== null) { setText('curTimer', timerText(running, sc.now)); const cb = $('curBar'); const pr = progressOf(running, sc.now); if (cb) cb.style.width = (pr * 100).toFixed(1) + '%'; $('currentCard').style.setProperty('--p', Math.min(1, Math.max(0, pr)).toFixed(4)); }
+  if (running && running.curPh && sc.now !== null && uiKind() === 'material') m3Tick(running, sc.now);
+  else if (running && running.curPh && sc.now !== null) { setText('curTimer', timerText(running, sc.now)); const cb = $('curBar'); const pr = progressOf(running, sc.now); if (cb) cb.style.width = (pr * 100).toFixed(1) + '%'; $('currentCard').style.setProperty('--p', Math.min(1, Math.max(0, pr)).toFixed(4)); }
   $('currentCard').classList.toggle('ring', !!$('curBar'));
   if (running && isPaused(running.t)) setText('curPause', `停止して ${fmtSec(pauseElapsed(running.t))}(この分だけ後ろがずれます)`);
 }
@@ -3664,7 +3747,7 @@ document.addEventListener('keydown', e => {
 // 変更するたびに APP_VERSION と changelog.json の先頭を同じ番号にする
 // 番号は「大.中.小」(例 2.8.1)。大=大きな変更、中=新機能、小=不具合修正。数字ごとに比べる
 // 2.71 のような昔の小数の番号は「2.7.1」と読み替える(2.71 以前の版は parseFloat で比べるので、2.8.0 は 2.8 として新しいと判定される)
-const APP_VERSION = '4.13.2';
+const APP_VERSION = '4.14.0';
 const versionParts = v => {
   const p = String(v).split('.');
   if (p.length === 2) { const d = (p[1] + '00').slice(0, 2); return [+p[0] || 0, +d[0], +d[1]]; } // 2.71 → 2.7.1, 2.7 → 2.7.0
@@ -3817,7 +3900,7 @@ $('resetUndo').addEventListener('click', () => {
 });
 
 /* ================= export / import ================= */
-const VALID_KEY = k => /^day:\d{4}-\d{2}-\d{2}$/.test(k) || ['lastSettings', 'pomo', 'lastPomo', 'sound', 'sounds', 'clockSize', 'lastSw', 'logoAnim', 'timerDesign', 'inMode', 'subjList', 'goals', 'burn', 'exam', 'templates', 'fixed', 'scores', 'quake'].includes(k);
+const VALID_KEY = k => /^day:\d{4}-\d{2}-\d{2}$/.test(k) || ['lastSettings', 'pomo', 'lastPomo', 'sound', 'sounds', 'clockSize', 'lastSw', 'logoAnim', 'timerDesign', 'inMode', 'subjList', 'goals', 'burn', 'exam', 'templates', 'fixed', 'scores', 'quake', 'ui', 'm3Timer'].includes(k);
 function buildExport() {
   const out = {};
   for (const k of store.keys()) if (VALID_KEY(k)) out[k] = store.get(k);
@@ -5210,6 +5293,83 @@ $('pushOff').addEventListener('click', async () => {
   pushSet({ on: false }); pushSentSig = null;
   setText('pushMsg', '閉じているときの通知をやめました。');
   syncPushUI();
+});
+
+/* ================= Material風のタイマー(A 波の輪 / B クッキーの形 / C 大きい数字) ================= */
+let m3S = { p: 0, amp: 1, kind: '', paused: false, marks: [], key: '' }, m3Raf = 0;
+const m3Kind = () => document.documentElement.dataset.m3t || 'A';
+// 数字: のこり時間(または経過・超過)を「11:05」の形で
+function m3Text(r, now) {
+  if (r.sw) return r.curPh.k === 'b' ? [fmtSec(r.curPh.e - now), '休憩のこり'] : [fmtUp(r.sw.workMin), r.sw.over ? `目安 ${effDur(r.t)}分をこえました` : `経過 ・ 目安 ${effDur(r.t)}分`];
+  if (r.curPh === 'over') return now - r.target < 1 ? ['00:00', '時間です'] : ['+' + fmtUp(now - r.target), '超過'];
+  if (r.t.pomo) return [fmtSec(r.curPh.e - now), r.curPh.k === 'b' ? '休憩のこり' : 'のこり'];
+  return [fmtSec(r.target - now), `のこり ・ ${effDur(r.t)}分のうち`];
+}
+function m3Tick(r, now) {
+  let [d, lab] = m3Text(r, now);
+  d = d.replace(/(^|[+])(\d):/, '$10$2:'); // 6:05 → 06:05
+  setText('curTimer', d); setText('m3Lab', lab);
+  m3S.p = progressOf(r, now); m3S.paused = isPaused(r.t);
+  // C の線の上の点: ポモドーロの区切り(休憩のはじめ)
+  m3S.marks = !r.sw && r.t.pomo && r.target > r.s ? r.phases.filter(ph => ph.k === 'b').map(ph => (ph.s - r.s) / (r.target - r.s)) : [];
+  if (!m3Raf) m3Raf = requestAnimationFrame(m3Frame);
+}
+const m3Reduce = matchMedia('(prefers-reduced-motion: reduce)');
+function m3Arc(cx, cy, r, a0, a1) {
+  if (a1 - a0 < 0.5) return '';
+  const pt = a => [cx + r * Math.sin(a * Math.PI / 180), cy - r * Math.cos(a * Math.PI / 180)];
+  const [x0, y0] = pt(a0), [x1, y1] = pt(a1);
+  return `M${x0.toFixed(2)} ${y0.toFixed(2)}A${r} ${r} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
+}
+function m3Wave(cx, cy, r, amp, n, a1, ph) {
+  if (a1 < 0.5) return '';
+  let d = '';
+  for (let a = 0; a <= a1 + 1e-6; a += 1.2) { const t = a * Math.PI / 180, rr = r + amp * Math.sin(n * t - ph); d += (d ? 'L' : 'M') + (cx + rr * Math.sin(t)).toFixed(2) + ' ' + (cy - rr * Math.cos(t)).toFixed(2); }
+  return d;
+}
+function m3Cookie(cx, cy, r, k, amp) {
+  let d = '';
+  for (let i = 0; i <= 360; i++) { const t = i / 360 * 2 * Math.PI, rr = r + amp * Math.cos(k * t); d += (i ? 'L' : 'M') + (cx + rr * Math.cos(t)).toFixed(2) + ' ' + (cy + rr * Math.sin(t)).toFixed(2); }
+  return d + 'Z';
+}
+function m3Frame(ts) {
+  m3Raf = 0;
+  const v = document.getElementById('m3Viz');
+  if (!v || uiKind() !== 'material' || !v.isConnected || !$('currentCard').classList.contains('ring')) return;
+  const kind = m3Kind();
+  // 一時停止中は波を平らにする(なめらかに)
+  m3S.amp += ((m3S.paused ? 0 : 1) - m3S.amp) * 0.12;
+  const ph = m3Reduce.matches ? 0 : (ts / 1000) * 2.2, p = m3S.p, A = m3S.amp;
+  if (m3S.kind !== kind || m3S.el !== v || !v.querySelector('.act')) { // 画面が描き直されたら、入れ物も作り直す
+    m3S.kind = kind; m3S.el = v; m3S.key = '';
+    v.setAttribute('viewBox', kind === 'C' ? '0 0 300 40' : '0 0 300 300');
+    v.setAttribute('preserveAspectRatio', kind === 'C' ? 'none' : 'xMidYMid meet');
+    v.innerHTML = (kind === 'B' ? `<path class="ck" d="${m3Cookie(150, 150, 104, 12, 7)}"/>` : '') + '<path class="trk"/><path class="act"/><g class="dots"></g>';
+  }
+  const trk = v.querySelector('.trk'), act = v.querySelector('.act');
+  if (kind === 'C') {
+    const W = 300, x0 = 6, x1 = 6 + (W - 12) * p, gap = 10;
+    let d = '';
+    if (x1 - x0 > 1) for (let x = x0; x <= x1; x += 1.5) d += (d ? 'L' : 'M') + x.toFixed(1) + ' ' + (20 + 4.5 * A * Math.sin((x - x0) / 26 * 2 * Math.PI - ph)).toFixed(2);
+    act.setAttribute('d', d); act.setAttribute('stroke-width', 9);
+    trk.setAttribute('d', x1 + gap < W - 6 ? `M${(x1 + gap).toFixed(1)} 20H${W - 6}` : ''); trk.setAttribute('stroke-width', 9);
+    const key = m3S.marks.join(',') + '|' + (p >= 0.995);
+    if (key !== m3S.key) { m3S.key = key; v.querySelector('.dots').innerHTML = m3S.marks.map(m => `<circle class="dot" cx="${(6 + (W - 12) * m).toFixed(1)}" cy="20" r="3"/>`).join('') + '<circle class="dot" cx="294" cy="20" r="3"/>'; }
+  } else {
+    const B = kind === 'B', R = B ? 136 : 130, sw = B ? 8 : 13, n = B ? 28 : 20, amp = (B ? 3 : 3.6) * A;
+    const a1 = Math.min(360, p * 360), gapA = (sw + 8) / (2 * Math.PI * R) * 360;
+    act.setAttribute('d', m3Wave(150, 150, R, amp, n, a1, ph)); act.setAttribute('stroke-width', sw);
+    trk.setAttribute('d', a1 < 360 - 2 * gapA ? m3Arc(150, 150, R, a1 < 0.5 ? 0 : a1 + gapA, a1 < 0.5 ? 359.9 : 360 - gapA) : ''); trk.setAttribute('stroke-width', sw);
+  }
+  // 画面に出ている間だけ動かす(裏に回ると requestAnimationFrame は止まる)
+  m3Raf = requestAnimationFrame(m3Frame);
+}
+for (const rb of document.querySelectorAll('input[name=m3Timer]')) rb.checked = rb.value === m3Kind();
+$('m3tOpts').addEventListener('change', e => {
+  if (e.target.name !== 'm3Timer') return;
+  store.set('m3Timer', e.target.value);
+  document.documentElement.dataset.m3t = e.target.value;
+  m3S.kind = '';
 });
 
 /* ================= 画面の見た目「Apple風」「Material風」 ================= */
